@@ -4,8 +4,6 @@
 # Copyright (c) 2016, Mario Santos <mario.rf.santos@gmail.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import absolute_import, division, print_function
-
 
 ANSIBLE_METADATA = {'status': ['preview'],
                     'supported_by': 'community',
