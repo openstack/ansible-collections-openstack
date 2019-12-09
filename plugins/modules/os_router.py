@@ -329,7 +329,6 @@ def _validate_subnets(module, cloud, filters=None):
     internal_subnet_ids = []
     internal_port_ids = []
     existing_port_ips = []
-    existing_port_ids = []
     if module.params['external_fixed_ips']:
         for iface in module.params['external_fixed_ips']:
             subnet = cloud.get_subnet(iface['subnet'])
