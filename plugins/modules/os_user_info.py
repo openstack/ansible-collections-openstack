@@ -118,9 +118,10 @@ openstack_users:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
+    openstack_full_argument_spec,
+    openstack_cloud_from_module,
+)
 
 
 def main():

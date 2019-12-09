@@ -99,9 +99,6 @@ volume:
   type: dict
   sample: {'...'}
 '''
-from distutils.version import StrictVersion
-
-
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
                                                                                 openstack_module_kwargs,
