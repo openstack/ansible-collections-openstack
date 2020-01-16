@@ -1,0 +1,6 @@
+ansible
+pycodestyle
+flake8
+pylint
+voluptuous
+yamllint

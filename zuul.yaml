@@ -1,0 +1,11 @@
+# yamllint disable
+---
+- project:
+    check:
+      jobs:
+        - tox-pep8
+        - openstack-tox-linters
+    gate:
+      jobs:
+        - tox-pep8
+        - openstack-tox-linters
