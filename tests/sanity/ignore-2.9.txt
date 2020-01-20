@@ -122,3 +122,4 @@ tests/unit/modules/conftest.py future-import-boilerplate
 tests/unit/modules/conftest.py metaclass-boilerplate
 tests/unit/modules/utils.py future-import-boilerplate
 tests/unit/modules/utils.py metaclass-boilerplate
+ci/run-ansible-tests-collection.sh shebang

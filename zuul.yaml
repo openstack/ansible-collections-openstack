@@ -1,11 +1,71 @@
 # yamllint disable
 ---
+- job:
+    name: openstacksdk-functional-devstack-collections
+    parent: devstack-tox-functional
+    description: |
+      Minimum job for devstack-based functional tests
+    post-run: ci/playbooks/devstack/post.yaml
+    required-projects:
+      - openstack/os-client-config
+      - openstack/openstacksdk
+    timeout: 9000
+    vars:
+      devstack_plugins:
+        neutron: https://opendev.org/openstack/neutron
+        #heat: https://opendev.org/openstack/heat
+      devstack_local_conf:
+        post-config:
+          $CINDER_CONF:
+            DEFAULT:
+              osapi_max_limit: 6
+      devstack_localrc:
+        Q_ML2_PLUGIN_EXT_DRIVERS: qos,port_security
+        DISABLE_AMP_IMAGE_BUILD: true
+        Q_SERVICE_PLUGIN_CLASSES: qos,trunk
+      devstack_services:
+        # sdk doesn't need vnc access
+        n-cauth: false
+        n-novnc: false
+        # sdk testing uses config drive only
+        n-api-meta: false
+        q-meta: false
+        neutron-qos: true
+        neutron-trunk: true
+        neutron-port-forwarding: true
+      tox_environment:
+        # Do we really need to set this? It's cargo culted
+        PYTHONUNBUFFERED: 'true'
+        # Is there a way we can query the localconf variable to get these
+        # rather than setting them explicitly?
+        OPENSTACKSDK_HAS_DESIGNATE: 0
+        OPENSTACKSDK_HAS_HEAT: 0
+        OPENSTACKSDK_HAS_MAGNUM: 0
+        OPENSTACKSDK_HAS_NEUTRON: 1
+        OPENSTACKSDK_HAS_SWIFT: 1
+      tox_install_siblings: false
+      tox_envlist: ansible
+      zuul_copy_output:
+          '{{ ansible_user_dir }}/ansible_logs': logs
+      zuul_work_dir: src/opendev.org/openstack/ansible-collections-openstack
+
+- job:
+    name: ansible-collections-openstack-functional-devstack
+    parent: openstacksdk-functional-devstack-collections
+    description: |
+      Run openstacksdk ansible functional tests against a master devstack
+      using Openstack collections
+    vars:
+      tox_envlist: ansible-new
+
 - project:
     check:
       jobs:
         - tox-pep8
         - openstack-tox-linters
+        - ansible-collections-openstack-functional-devstack
     gate:
       jobs:
         - tox-pep8
         - openstack-tox-linters
+        - ansible-collections-openstack-functional-devstack
