@@ -118,7 +118,6 @@ plugins/modules/os_volume.py validate-modules:doc-missing-type
 plugins/modules/os_volume.py validate-modules:parameter-type-not-in-doc
 plugins/modules/os_volume.py validate-modules:undocumented-parameter
 plugins/modules/os_volume_snapshot.py validate-modules:doc-missing-type
-plugins/modules/os_zone.py validate-modules:doc-choices-do-not-match-spec
 plugins/modules/os_zone.py validate-modules:doc-missing-type
 plugins/modules/os_zone.py validate-modules:parameter-type-not-in-doc
 plugins/doc_fragments/openstack.py future-import-boilerplate
