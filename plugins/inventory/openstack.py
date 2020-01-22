@@ -256,24 +256,26 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
     def _set_variables(self, hostvars, groups):
 
+	strict = self.get_option('strict')
+
         # set vars in inventory from hostvars
         for host in hostvars:
-
-            # create composite vars
-            self._set_composite_vars(
-                self._config_data.get('compose'), hostvars[host], host)
 
             # actually update inventory
             for key in hostvars[host]:
                 self.inventory.set_variable(host, key, hostvars[host][key])
 
+            # create composite vars
+            self._set_composite_vars(
+                self._config_data.get('compose'), self.inventory.get_host(host).get_vars(), host, strict)
+
             # constructed groups based on conditionals
             self._add_host_to_composed_groups(
-                self._config_data.get('groups'), hostvars[host], host)
+                self._config_data.get('groups'), hostvars[host], host, strict)
 
             # constructed groups based on jinja expressions
             self._add_host_to_keyed_groups(
-                self._config_data.get('keyed_groups'), hostvars[host], host)
+                self._config_data.get('keyed_groups'), hostvars[host], host, strict)
 
         for group_name, group_hosts in groups.items():
             gname = self.inventory.add_group(group_name)
