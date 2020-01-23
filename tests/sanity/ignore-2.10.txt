@@ -81,6 +81,8 @@ plugins/modules/os_recordset.py validate-modules:doc-required-mismatch
 plugins/modules/os_recordset.py validate-modules:parameter-type-not-in-doc
 plugins/modules/os_router.py validate-modules:doc-missing-type
 plugins/modules/os_router.py validate-modules:parameter-type-not-in-doc
+plugins/modules/os_routers_info.py validate-modules:doc-missing-type
+plugins/modules/os_routers_info.py validate-modules:undocumented-parameter
 plugins/modules/os_security_group.py validate-modules:doc-missing-type
 plugins/modules/os_security_group_rule.py validate-modules:doc-missing-type
 plugins/modules/os_security_group_rule.py validate-modules:parameter-type-not-in-doc
