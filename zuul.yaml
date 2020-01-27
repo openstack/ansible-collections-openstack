@@ -9,6 +9,7 @@
     required-projects:
       - openstack/os-client-config
       - openstack/openstacksdk
+      - openstack/ansible-collections-openstack
     timeout: 9000
     vars:
       devstack_plugins:
