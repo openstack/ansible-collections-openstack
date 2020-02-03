@@ -23,4 +23,5 @@
     - { role: subnet, tags: subnet }
     - { role: user, tags: user }
     - { role: user_group, tags: user_group }
+    - { role: user_role, tags: user_role }
     - { role: volume, tags: volume }
