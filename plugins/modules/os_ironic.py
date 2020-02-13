@@ -100,8 +100,8 @@ options:
         root_device:
           description:
             - Root disk device hints for deployment.
-              (see U(https://docs.openstack.org/ironic/latest/install/include/root-device-hints.html)
-              for allowed hints)
+            - See U(https://docs.openstack.org/ironic/latest/install/advanced.html#specifying-the-disk-for-deployment-root-device-hints)
+              for allowed hints.
           default: ""
     skip_update_of_driver_password:
       description:
