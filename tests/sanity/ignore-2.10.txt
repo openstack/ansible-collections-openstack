@@ -22,9 +22,7 @@ plugins/modules/os_image_info.py validate-modules:doc-missing-type
 plugins/modules/os_ironic.py validate-modules:doc-choices-do-not-match-spec
 plugins/modules/os_ironic.py validate-modules:doc-missing-type
 plugins/modules/os_ironic.py validate-modules:doc-required-mismatch
-plugins/modules/os_ironic.py validate-modules:nonexistent-parameter-documented
 plugins/modules/os_ironic.py validate-modules:parameter-type-not-in-doc
-plugins/modules/os_ironic.py validate-modules:undocumented-parameter
 plugins/modules/os_ironic_inspect.py validate-modules:doc-missing-type
 plugins/modules/os_ironic_node.py validate-modules:doc-choices-do-not-match-spec
 plugins/modules/os_ironic_node.py validate-modules:doc-default-does-not-match-spec

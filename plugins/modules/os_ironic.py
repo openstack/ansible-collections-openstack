@@ -103,15 +103,18 @@ options:
             - See U(https://docs.openstack.org/ironic/latest/install/advanced.html#specifying-the-disk-for-deployment-root-device-hints)
               for allowed hints.
           default: ""
-    skip_update_of_driver_password:
+    skip_update_of_masked_password:
       description:
         - Allows the code that would assert changes to nodes to skip the
           update if the change is a single line consisting of the password
-          field.  As of Kilo, by default, passwords are always masked to API
+          field.
+        - As of Kilo, by default, passwords are always masked to API
           requests, which means the logic as a result always attempts to
           re-assert the password field.
+        - C(skip_update_of_driver_password) is deprecated alias and will be removed in 2.14.
       type: bool
       default: 'no'
+      aliases: [ skip_update_of_driver_password ]
     availability_zone:
       description:
         - Ignored. Present for backwards compatibility
@@ -224,7 +227,12 @@ def main():
         properties=dict(type='dict', default={}),
         ironic_url=dict(required=False),
         chassis_uuid=dict(required=False),
-        skip_update_of_masked_password=dict(required=False, type='bool'),
+        skip_update_of_masked_password=dict(
+            required=False,
+            type='bool',
+            aliases=['skip_update_of_driver_password'],
+            deprecated_aliases=[dict(name='skip_update_of_driver_password', version='2.14')]
+        ),
         state=dict(required=False, default='present')
     )
     module_kwargs = openstack_module_kwargs()
