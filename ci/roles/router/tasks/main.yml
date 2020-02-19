@@ -29,6 +29,20 @@
      interfaces:
          - shade_subnet1
 
+- name: Gather routers info
+  openstack.cloud.os_routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+     filters:
+       admin_state_up: true
+  register: result
+
+- name: Verify routers info
+  assert:
+    that:
+      - "result.openstack_routers.0.name == router_name"
+      - (result.openstack_routers.0.interfaces_info|length) == 1
+
 # Admin operation
 - name: Create external network
   openstack.cloud.os_network:
@@ -59,6 +73,20 @@
          - shade_subnet1
   when:
     - network_external
+
+- name: Gather routers info
+  openstack.cloud.os_routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+     filters:
+       admin_state_up: true
+  register: result
+
+- name: Verify routers info
+  assert:
+    that:
+      - "result.openstack_routers.0.name == router_name"
+      - (result.openstack_routers.0.interfaces_info|length) == 1
 
 - name: Delete router
   openstack.cloud.os_router:
