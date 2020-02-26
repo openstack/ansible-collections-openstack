@@ -8,7 +8,23 @@
      display_description: Test volume
   register: vol
 
+- name: Create volume backup
+  openstack.cloud.volume_backup:
+    cloud: "{{ cloud }}"
+    state: present
+    display_name: ansible_volume_backup
+    volume: ansible_volume
+  register: vol_backup
+
 - debug: var=vol
+
+- debug: var=vol_backup
+
+- name: Delete volume backup
+  openstack.cloud.volume_backup:
+    cloud: "{{ cloud }}"
+    display_name: ansible_volume_backup
+    state: absent
 
 - name: Delete volume
   openstack.cloud.volume:

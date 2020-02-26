@@ -88,6 +88,7 @@ action_groups:
     - subnet
     - subnets_info
     - volume
+    - volume_backup
     - volume_info
     - volume_snapshot
   os:
