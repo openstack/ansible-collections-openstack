@@ -1,0 +1,3 @@
+.tox
+build_artifact
+ansible_collections

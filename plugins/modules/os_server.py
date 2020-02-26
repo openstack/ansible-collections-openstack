@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # coding: utf-8 -*-
 
+# Copyright 2019 Red Hat, Inc.
 # Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
 # Copyright (c) 2013, Benno Joy <benno@ansible.com>
 # Copyright (c) 2013, John Dewey <john@dewey.ws>
@@ -19,6 +20,7 @@ DOCUMENTATION = '''
 ---
 module: os_server
 short_description: Create/Delete Compute Instances from OpenStack
+version_added: "2.0"
 author: "Monty Taylor (@emonty)"
 description:
    - Create or Remove compute instances from OpenStack.
@@ -141,6 +143,7 @@ options:
    scheduler_hints:
      description:
         - Arbitrary key/value pairs to the scheduler for custom use
+     version_added: "2.1"
    state:
      description:
        - Should the resource be present or absent.
@@ -152,6 +155,7 @@ options:
          associated with the instance will be deleted along with the instance.
      type: bool
      default: 'no'
+     version_added: "2.2"
    reuse_ips:
      description:
        - When I(auto_ip) is true and this option is true, the I(auto_ip) code
@@ -163,6 +167,7 @@ options:
          the server is deleted using I(delete_fip).
      type: bool
      default: 'yes'
+     version_added: "2.2"
    availability_zone:
      description:
        - Availability zone in which to create the server.
@@ -428,16 +433,8 @@ EXAMPLES = '''
 
 '''
 
-from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    openstack_find_nova_addresses, openstack_cloud_from_module,
-    openstack_full_argument_spec, openstack_module_kwargs)
-
-
-def _exit_hostvars(module, cloud, server, changed=True):
-    hostvars = cloud.get_openstack_vars(server)
-    module.exit_json(
-        changed=changed, server=server, id=server.id, openstack=hostvars)
+    openstack_find_nova_addresses, OpenStackModule)
 
 
 def _parse_nics(nics):
@@ -501,95 +498,6 @@ def _parse_meta(meta):
     if not meta:
         return {}
     return meta
-
-
-def _delete_server(module, cloud):
-    try:
-        cloud.delete_server(
-            module.params['name'], wait=module.params['wait'],
-            timeout=module.params['timeout'],
-            delete_ips=module.params['delete_fip'])
-    except Exception as e:
-        module.fail_json(msg="Error in deleting vm: %s" % e.message)
-    module.exit_json(changed=True, result='deleted')
-
-
-def _create_server(module, cloud):
-    flavor = module.params['flavor']
-    flavor_ram = module.params['flavor_ram']
-    flavor_include = module.params['flavor_include']
-
-    image_id = None
-    if not module.params['boot_volume']:
-        image_id = cloud.get_image_id(
-            module.params['image'], module.params['image_exclude'])
-        if not image_id:
-            module.fail_json(msg="Could not find image %s" %
-                             module.params['image'])
-
-    if flavor:
-        flavor_dict = cloud.get_flavor(flavor)
-        if not flavor_dict:
-            module.fail_json(msg="Could not find flavor %s" % flavor)
-    else:
-        flavor_dict = cloud.get_flavor_by_ram(flavor_ram, flavor_include)
-        if not flavor_dict:
-            module.fail_json(msg="Could not find any matching flavor")
-
-    nics = _network_args(module, cloud)
-
-    module.params['meta'] = _parse_meta(module.params['meta'])
-
-    bootkwargs = dict(
-        name=module.params['name'],
-        image=image_id,
-        flavor=flavor_dict['id'],
-        nics=nics,
-        meta=module.params['meta'],
-        security_groups=module.params['security_groups'],
-        userdata=module.params['userdata'],
-        config_drive=module.params['config_drive'],
-    )
-    for optional_param in (
-            'key_name', 'availability_zone', 'network',
-            'scheduler_hints', 'volume_size', 'volumes'):
-        if module.params[optional_param]:
-            bootkwargs[optional_param] = module.params[optional_param]
-
-    server = cloud.create_server(
-        ip_pool=module.params['floating_ip_pools'],
-        ips=module.params['floating_ips'],
-        auto_ip=module.params['auto_ip'],
-        boot_volume=module.params['boot_volume'],
-        boot_from_volume=module.params['boot_from_volume'],
-        terminate_volume=module.params['terminate_volume'],
-        reuse_ips=module.params['reuse_ips'],
-        wait=module.params['wait'], timeout=module.params['timeout'],
-        **bootkwargs
-    )
-
-    _exit_hostvars(module, cloud, server)
-
-
-def _update_server(module, cloud, server):
-    changed = False
-
-    module.params['meta'] = _parse_meta(module.params['meta'])
-
-    # cloud.set_server_metadata only updates the key=value pairs, it doesn't
-    # touch existing ones
-    update_meta = {}
-    for (k, v) in module.params['meta'].items():
-        if k not in server.metadata or server.metadata[k] != v:
-            update_meta[k] = v
-
-    if update_meta:
-        cloud.set_server_metadata(server, update_meta)
-        changed = True
-        # Refresh server vars
-        server = cloud.get_server(module.params['name'])
-
-    return (changed, server)
 
 
 def _detach_ip_list(cloud, server, extra_ips):
@@ -685,28 +593,9 @@ def _check_security_groups(module, cloud, server):
     return (changed, server)
 
 
-def _get_server_state(module, cloud):
-    state = module.params['state']
-    server = cloud.get_server(module.params['name'])
-    if server and state == 'present':
-        if server.status not in ('ACTIVE', 'SHUTOFF', 'PAUSED', 'SUSPENDED'):
-            module.fail_json(
-                msg="The instance is available but not Active state: " + server.status)
-        (ip_changed, server) = _check_ips(module, cloud, server)
-        (sg_changed, server) = _check_security_groups(module, cloud, server)
-        (server_changed, server) = _update_server(module, cloud, server)
-        _exit_hostvars(module, cloud, server,
-                       ip_changed or sg_changed or server_changed)
-    if server and state == 'absent':
-        return True
-    if state == 'absent':
-        module.exit_json(changed=False, result="not present")
-    return True
+class ServerModule(OpenStackModule):
 
-
-def main():
-
-    argument_spec = openstack_full_argument_spec(
+    argument_spec = dict(
         name=dict(required=True),
         image=dict(default=None),
         image_exclude=dict(default='(deprecated)'),
@@ -733,7 +622,7 @@ def main():
         delete_fip=dict(default=False, type='bool'),
         reuse_ips=dict(default=True, type='bool'),
     )
-    module_kwargs = openstack_module_kwargs(
+    module_kwargs = dict(
         mutually_exclusive=[
             ['auto_ip', 'floating_ips'],
             ['auto_ip', 'floating_ip_pools'],
@@ -747,36 +636,145 @@ def main():
             ('boot_from_volume', True, ['volume_size', 'image']),
         ],
     )
-    module = AnsibleModule(argument_spec, **module_kwargs)
 
-    state = module.params['state']
-    image = module.params['image']
-    boot_volume = module.params['boot_volume']
-    flavor = module.params['flavor']
-    flavor_ram = module.params['flavor_ram']
+    def run(self):
+        state = self.params['state']
+        image = self.params['image']
+        boot_volume = self.params['boot_volume']
+        flavor = self.params['flavor']
+        flavor_ram = self.params['flavor_ram']
 
-    if state == 'present':
-        if not (image or boot_volume):
-            module.fail_json(
-                msg="Parameter 'image' or 'boot_volume' is required "
-                    "if state == 'present'"
-            )
-        if not flavor and not flavor_ram:
-            module.fail_json(
-                msg="Parameter 'flavor' or 'flavor_ram' is required "
-                    "if state == 'present'"
-            )
-
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
         if state == 'present':
-            _get_server_state(module, cloud)
-            _create_server(module, cloud)
+            if not (image or boot_volume):
+                self.fail_json(
+                    msg="Parameter 'image' or 'boot_volume' is required "
+                        "if state == 'present'"
+                )
+            if not flavor and not flavor_ram:
+                self.fail_json(
+                    msg="Parameter 'flavor' or 'flavor_ram' is required "
+                        "if state == 'present'"
+                )
+
+        if state == 'present':
+            self._get_server_state()
+            self._create_server()
         elif state == 'absent':
-            _get_server_state(module, cloud)
-            _delete_server(module, cloud)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+            self._get_server_state()
+            self._delete_server()
+
+    def _exit_hostvars(self, server, changed=True):
+        hostvars = self.conn.get_openstack_vars(server)
+        self.exit_json(
+            changed=changed, server=server, id=server.id, openstack=hostvars)
+
+    def _get_server_state(self):
+        state = self.params['state']
+        server = self.conn.get_server(self.params['name'])
+        if server and state == 'present':
+            if server.status not in ('ACTIVE', 'SHUTOFF', 'PAUSED', 'SUSPENDED'):
+                self.fail_json(
+                    msg="The instance is available but not Active state: " + server.status)
+            (ip_changed, server) = _check_ips(self, self.conn, server)
+            (sg_changed, server) = _check_security_groups(self, self.conn, server)
+            (server_changed, server) = self._update_server(server)
+            self._exit_hostvars(server, ip_changed or sg_changed or server_changed)
+        if server and state == 'absent':
+            return True
+        if state == 'absent':
+            self.exit_json(changed=False, result="not present")
+        return True
+
+    def _create_server(self):
+        flavor = self.params['flavor']
+        flavor_ram = self.params['flavor_ram']
+        flavor_include = self.params['flavor_include']
+
+        image_id = None
+        if not self.params['boot_volume']:
+            image_id = self.conn.get_image_id(
+                self.params['image'], self.params['image_exclude'])
+            if not image_id:
+                self.fail_json(
+                    msg="Could not find image %s" % self.params['image'])
+
+        if flavor:
+            flavor_dict = self.conn.get_flavor(flavor)
+            if not flavor_dict:
+                self.fail_json(msg="Could not find flavor %s" % flavor)
+        else:
+            flavor_dict = self.conn.get_flavor_by_ram(flavor_ram, flavor_include)
+            if not flavor_dict:
+                self.fail_json(msg="Could not find any matching flavor")
+
+        nics = _network_args(self, self.conn)
+
+        self.params['meta'] = _parse_meta(self.params['meta'])
+
+        bootkwargs = dict(
+            name=self.params['name'],
+            image=image_id,
+            flavor=flavor_dict['id'],
+            nics=nics,
+            meta=self.params['meta'],
+            security_groups=self.params['security_groups'],
+            userdata=self.params['userdata'],
+            config_drive=self.params['config_drive'],
+        )
+        for optional_param in (
+                'key_name', 'availability_zone', 'network',
+                'scheduler_hints', 'volume_size', 'volumes'):
+            if self.params[optional_param]:
+                bootkwargs[optional_param] = self.params[optional_param]
+
+        server = self.conn.create_server(
+            ip_pool=self.params['floating_ip_pools'],
+            ips=self.params['floating_ips'],
+            auto_ip=self.params['auto_ip'],
+            boot_volume=self.params['boot_volume'],
+            boot_from_volume=self.params['boot_from_volume'],
+            terminate_volume=self.params['terminate_volume'],
+            reuse_ips=self.params['reuse_ips'],
+            wait=self.params['wait'], timeout=self.params['timeout'],
+            **bootkwargs
+        )
+
+        self._exit_hostvars(server)
+
+    def _update_server(self, server):
+        changed = False
+
+        self.params['meta'] = _parse_meta(self.params['meta'])
+
+        # cloud.set_server_metadata only updates the key=value pairs, it doesn't
+        # touch existing ones
+        update_meta = {}
+        for (k, v) in self.params['meta'].items():
+            if k not in server.metadata or server.metadata[k] != v:
+                update_meta[k] = v
+
+        if update_meta:
+            self.conn.set_server_metadata(server, update_meta)
+            changed = True
+            # Refresh server vars
+            server = self.conn.get_server(self.params['name'])
+
+        return (changed, server)
+
+    def _delete_server(self):
+        try:
+            self.conn.delete_server(
+                self.params['name'], wait=self.params['wait'],
+                timeout=self.params['timeout'],
+                delete_ips=self.params['delete_fip'])
+        except Exception as e:
+            self.fail_json(msg="Error in deleting vm: %s" % e.message)
+        self.exit_json(changed=True, result='deleted')
+
+
+def main():
+    module = ServerModule()
+    module()
 
 
 if __name__ == '__main__':

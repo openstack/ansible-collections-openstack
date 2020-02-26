@@ -4,6 +4,7 @@
 # still belong to the author of the module, and may assign their own license
 # to the complete work.
 #
+# Copyright 2019 Red Hat, Inc.
 # Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
 # All rights reserved.
 #
@@ -26,10 +27,11 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import abc
 import os
 
+from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.six import iteritems
-from distutils.version import StrictVersion
 
 
 def openstack_argument_spec():
@@ -110,10 +112,10 @@ def openstack_module_kwargs(**kwargs):
 
 
 def openstack_cloud_from_module(module, min_version='0.12.0'):
-
+    from distutils.version import StrictVersion
     try:
         # Due to the name shadowing we should import other way
-        import importlib  # pylint: disable=import-outside-toplevel
+        import importlib
         sdk = importlib.import_module('openstack')
         sdk_version = importlib.import_module('openstack.version')
     except ImportError:
@@ -162,3 +164,27 @@ def openstack_cloud_from_module(module, min_version='0.12.0'):
     except sdk.exceptions.SDKException as e:
         # Probably a cloud configuration/login error
         module.fail_json(msg=str(e))
+
+
+class OpenStackModule(AnsibleModule):
+
+    argument_spec = {}
+    module_kwargs = {}
+
+    def __init__(self):
+
+        super(OpenStackModule, self).__init__(
+            openstack_full_argument_spec(**self.argument_spec),
+            **self.module_kwargs)
+
+        self.sdk, self.conn = openstack_cloud_from_module(self)
+
+    @abc.abstractmethod
+    def run(self):
+        pass
+
+    def __call__(self):
+        try:
+            self.run()
+        except self.sdk.exceptions.OpenStackCloudException as e:
+            self.fail_json(msg=str(e), extra_data=e.extra_data)
