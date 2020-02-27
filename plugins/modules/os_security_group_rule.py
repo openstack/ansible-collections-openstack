@@ -223,9 +223,13 @@ def _ports_match(protocol, module_min, module_max, rule_min, rule_max):
             module_min = None
             module_max = None
 
-        if ((module_min is None and module_max is None) and
-                (rule_min and int(rule_min) == 1 and
-                    rule_max and int(rule_max) == 65535)):
+        if (
+            (module_min is None and module_max is None)
+            and (
+                rule_min and int(rule_min) == 1
+                and rule_max and int(rule_max) == 65535
+            )
+        ):
             # (None, None) == (1, 65535)
             return True
 
@@ -254,16 +258,19 @@ def _find_matching_rule(module, secgroup, remotegroup):
     remote_group_id = remotegroup['id']
 
     for rule in secgroup['security_group_rules']:
-        if (protocol == rule['protocol'] and
-                remote_ip_prefix == rule['remote_ip_prefix'] and
-                ethertype == rule['ethertype'] and
-                direction == rule['direction'] and
-                remote_group_id == rule['remote_group_id'] and
-                _ports_match(protocol,
-                             module.params['port_range_min'],
-                             module.params['port_range_max'],
-                             rule['port_range_min'],
-                             rule['port_range_max'])):
+        if (
+            protocol == rule['protocol']
+            and remote_ip_prefix == rule['remote_ip_prefix']
+            and ethertype == rule['ethertype']
+            and direction == rule['direction']
+            and remote_group_id == rule['remote_group_id']
+            and _ports_match(
+                protocol,
+                module.params['port_range_min'],
+                module.params['port_range_max'],
+                rule['port_range_min'],
+                rule['port_range_max'])
+        ):
             return rule
     return None
 

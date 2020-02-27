@@ -76,10 +76,12 @@ def _needs_update(module, aggregate):
     if module.params['availability_zone'] is not None:
         new_metadata['availability_zone'] = module.params['availability_zone']
 
-    if ((module.params['name'] != aggregate.name) or
-            (module.params['hosts'] is not None and set(module.params['hosts']) != set(aggregate.hosts)) or
-            (module.params['availability_zone'] is not None and module.params['availability_zone'] != aggregate.availability_zone) or
-            (module.params['metadata'] is not None and new_metadata != aggregate.metadata)):
+    if (
+        (module.params['name'] != aggregate.name)
+        or (module.params['hosts'] is not None and set(module.params['hosts']) != set(aggregate.hosts))
+        or (module.params['availability_zone'] is not None and module.params['availability_zone'] != aggregate.availability_zone)
+        or (module.params['metadata'] is not None and new_metadata != aggregate.metadata)
+    ):
         return True
 
     return False

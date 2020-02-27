@@ -240,13 +240,17 @@ def main():
 
     if not HAS_JSONPATCH:
         module.fail_json(msg='jsonpatch is required for this module')
-    if (module.params['auth_type'] in [None, 'None'] and
-            module.params['ironic_url'] is None):
+    if (
+        module.params['auth_type'] in [None, 'None']
+        and module.params['ironic_url'] is None
+    ):
         module.fail_json(msg="Authentication appears to be disabled, "
                              "Please define an ironic_url parameter")
 
-    if (module.params['ironic_url'] and
-            module.params['auth_type'] in [None, 'None']):
+    if (
+        module.params['ironic_url']
+        and module.params['auth_type'] in [None, 'None']
+    ):
         module.params['auth'] = dict(
             endpoint=module.params['ironic_url']
         )

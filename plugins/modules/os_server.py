@@ -572,8 +572,10 @@ def _check_security_groups(module, cloud, server):
     # server security groups were added to shade in 1.19. Until then this
     # module simply ignored trying to update security groups and only set them
     # on newly created hosts.
-    if not (hasattr(cloud, 'add_server_security_groups') and
-            hasattr(cloud, 'remove_server_security_groups')):
+    if not (
+        hasattr(cloud, 'add_server_security_groups')
+        and hasattr(cloud, 'remove_server_security_groups')
+    ):
         return changed, server
 
     module_security_groups = set(module.params['security_groups'])

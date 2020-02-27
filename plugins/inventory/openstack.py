@@ -184,8 +184,10 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
         if not source_data:
             clouds_yaml_path = self._config_data.get('clouds_yaml_path')
             if clouds_yaml_path:
-                config_files = (clouds_yaml_path +
-                                client_config.CONFIG_FILES)
+                config_files = (
+                    clouds_yaml_path
+                    + client_config.CONFIG_FILES
+                )
             else:
                 config_files = None
 

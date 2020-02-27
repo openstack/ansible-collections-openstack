@@ -185,10 +185,12 @@ def main():
                     network_id = None
                 # check if we have floating ip on given nat_destination network
                 if nat_destination:
-                    nat_floating_addrs = [addr for addr in server.addresses.get(
-                        cloud.get_network(nat_destination)['name'], [])
-                        if addr['addr'] == public_ip and
-                        addr['OS-EXT-IPS:type'] == 'floating']
+                    nat_floating_addrs = [
+                        addr for addr in server.addresses.get(
+                            cloud.get_network(nat_destination)['name'], [])
+                        if addr['addr'] == public_ip
+                        and addr['OS-EXT-IPS:type'] == 'floating'
+                    ]
 
                     if len(nat_floating_addrs) == 0:
                         module.fail_json(msg="server {server} already has a "
