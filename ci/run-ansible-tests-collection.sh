@@ -98,6 +98,7 @@ then
 fi
 
 # install collections
+tox -ebuild
 ansible-galaxy collection build --force . --output-path ./build_artifact
 ansible-galaxy collection install $(ls build_artifact/openstack-cloud-*) --force
 pushd ci/
