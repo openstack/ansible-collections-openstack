@@ -43,7 +43,7 @@ options:
      description:
        - Ignored. Present for backwards compatibility
 requirements:
-    - "python >= 2.7"
+    - "python >= 3.6""
     - "openstacksdk"
 
 extends_documentation_fragment:

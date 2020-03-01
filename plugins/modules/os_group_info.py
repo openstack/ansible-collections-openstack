@@ -17,7 +17,7 @@ author: "Phillipe Smith (@phsmith)"
 description:
     - Retrieve info about a one or more OpenStack groups.
 requirements:
-    - "python >= 2.7"
+    - "python >= 3.6""
     - "openstacksdk"
 options:
    name:

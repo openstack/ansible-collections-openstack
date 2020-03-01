@@ -40,7 +40,7 @@ options:
        - Ignored. Present for backwards compatibility
      required: false
 requirements:
-    - "python >= 2.7"
+    - "python >= 3.6""
     - "openstacksdk"
 
 extends_documentation_fragment:

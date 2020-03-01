@@ -18,7 +18,7 @@ description:
     - This module was called C(os_image_facts) before Ansible 2.9, returning C(ansible_facts).
       Note that the M(os_image_info) module no longer returns C(ansible_facts)!
 requirements:
-    - "python >= 2.7"
+    - "python >= 3.6""
     - "openstacksdk"
 options:
    image:

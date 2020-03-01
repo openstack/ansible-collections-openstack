@@ -21,7 +21,7 @@ description:
 notes:
     - The result contains a list of servers.
 requirements:
-    - "python >= 2.7"
+    - "python >= 3.6""
     - "openstacksdk"
 options:
    server:

@@ -17,7 +17,7 @@ author: "Monty Taylor (@emonty)"
 description:
     - Retrieve an auth token from an OpenStack Cloud
 requirements:
-    - "python >= 2.7"
+    - "python >= 3.6""
     - "openstacksdk"
 options:
   availability_zone:
