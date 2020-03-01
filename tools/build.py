@@ -22,7 +22,7 @@ import pbr.version
 
 from ruamel.yaml import YAML
 
-import os
+import shutil
 
 
 def generate_version_info():
@@ -41,16 +41,9 @@ def generate_version_info():
         yaml.dump(config, fp)
 
 
-def clean_build():
-    if not os.path.exists('build_artifact'):
-        return
-    for tarball in os.listdir('build_artifact'):
-        os.unlink('build_artifact/{tarball}'.format(tarball=tarball))
-
-
 def main():
     generate_version_info()
-    clean_build()
+    shutil.rmtree('build_artifact', ignore_errors=True)
 
 
 if __name__ == '__main__':
