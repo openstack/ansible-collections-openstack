@@ -22,6 +22,8 @@ import pbr.version
 
 from ruamel.yaml import YAML
 
+import os
+
 
 def generate_version_info():
     version_info = pbr.version.VersionInfo('openstack-cloud')
@@ -39,8 +41,16 @@ def generate_version_info():
         yaml.dump(config, fp)
 
 
+def clean_build():
+    if not os.path.exists('build_artifact'):
+        return
+    for tarball in os.listdir('build_artifact'):
+        os.unlink('build_artifact/{tarball}'.format(tarball=tarball))
+
+
 def main():
     generate_version_info()
+    clean_build()
 
 
 if __name__ == '__main__':
