@@ -272,8 +272,11 @@ def main():
     if state == 'present':
         if not module.params['network_name']:
             module.fail_json(msg='network_name required with present state')
-        if (not module.params['cidr'] and not use_default_subnetpool and
-                not extra_specs.get('subnetpool_id', False)):
+        if (
+            not module.params['cidr']
+            and not use_default_subnetpool
+            and not extra_specs.get('subnetpool_id', False)
+        ):
             module.fail_json(msg='cidr or use_default_subnetpool or '
                                  'subnetpool_id required with present state')
 

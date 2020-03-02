@@ -150,8 +150,10 @@ def _needs_update(params_dict, user):
 
     # We don't get password back in the user object, so assume any supplied
     # password is a change.
-    if (params_dict['password'] is not None and
-            params_dict['update_password'] == 'always'):
+    if (
+        params_dict['password'] is not None
+        and params_dict['update_password'] == 'always'
+    ):
         return True
 
     return False

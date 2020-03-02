@@ -194,11 +194,15 @@ def _check_set_power_state(module, cloud, node):
             cloud.set_machine_power_off(node['uuid'])
             module.exit_json(changed=True, msg="Power requested off")
     if 'power off' in str(node['power_state']):
-        if (_is_false(module.params['power']) and
-                _is_false(module.params['state'])):
+        if (
+            _is_false(module.params['power'])
+            and _is_false(module.params['state'])
+        ):
             return False
-        if (_is_false(module.params['power']) and
-                _is_false(module.params['state'])):
+        if (
+            _is_false(module.params['power'])
+            and _is_false(module.params['state'])
+        ):
             module.exit_json(
                 changed=False,
                 msg="Power for node is %s, node must be reactivated "
@@ -207,8 +211,10 @@ def _check_set_power_state(module, cloud, node):
         # In the event the power has been toggled on and
         # deployment has been requested, we need to skip this
         # step.
-        if (_is_true(module.params['power']) and
-                _is_false(module.params['deploy'])):
+        if (
+            _is_true(module.params['power'])
+            and _is_false(module.params['deploy'])
+        ):
             # Node is powered down when it is not awaiting to be provisioned
             cloud.set_machine_power_on(node['uuid'])
             return True
@@ -234,19 +240,25 @@ def main():
     module_kwargs = openstack_module_kwargs()
     module = AnsibleModule(argument_spec, **module_kwargs)
 
-    if (module.params['auth_type'] in [None, 'None'] and
-            module.params['ironic_url'] is None):
+    if (
+        module.params['auth_type'] in [None, 'None']
+        and module.params['ironic_url'] is None
+    ):
         module.fail_json(msg="Authentication appears disabled, Please "
                              "define an ironic_url parameter")
 
-    if (module.params['ironic_url'] and
-            module.params['auth_type'] in [None, 'None']):
+    if (
+        module.params['ironic_url']
+        and module.params['auth_type'] in [None, 'None']
+    ):
         module.params['auth'] = dict(
             endpoint=module.params['ironic_url']
         )
 
-    if (module.params['config_drive'] and
-            not isinstance(module.params['config_drive'], (str, dict))):
+    if (
+        module.params['config_drive']
+        and not isinstance(module.params['config_drive'], (str, dict))
+    ):
         config_drive_type = type(module.params['config_drive'])
         msg = ('argument config_drive is of type %s and we expected'
                ' str or dict') % config_drive_type

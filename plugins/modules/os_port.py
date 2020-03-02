@@ -252,8 +252,10 @@ def _needs_update(module, port, cloud):
         if module.params[key] is not None and module.params[key] != port[key]:
             return True
     for key in compare_list:
-        if module.params[key] is not None and (set(module.params[key]) !=
-                                               set(port[key])):
+        if (
+            module.params[key] is not None
+            and set(module.params[key]) != set(port[key])
+        ):
             return True
 
     for key in compare_list_dict:
