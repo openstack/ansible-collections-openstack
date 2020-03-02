@@ -33,12 +33,12 @@ try:
     # Allow wildcard import because we really do want to import all of mock's
     # symbols into this compat shim
     # pylint: disable=wildcard-import,unused-wildcard-import
-    from unittest.mock import *
+    from unittest.mock import *  # noqa
 except ImportError:
     # Python 2
     # pylint: disable=wildcard-import,unused-wildcard-import
     try:
-        from mock import *
+        from mock import *  # noqa
     except ImportError:
         print('You need the mock library installed on python2.x to run tests')
 
@@ -102,9 +102,9 @@ if sys.version_info >= (3,) and sys.version_info < (3, 4, 4):
             file_spec = list(set(dir(_io.TextIOWrapper)).union(set(dir(_io.BytesIO))))
 
         if mock is None:
-            mock = MagicMock(name='open', spec=open)
+            mock = MagicMock(name='open', spec=open)  # noqa
 
-        handle = MagicMock(spec=file_spec)
+        handle = MagicMock(spec=file_spec)  # noqa
         handle.__enter__.return_value = handle
 
         _data = _iterate_read_data(read_data)
