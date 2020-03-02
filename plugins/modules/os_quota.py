@@ -236,9 +236,10 @@ except ImportError:
     HAS_KEYSTONEAUTH1 = False
 
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
+    openstack_full_argument_spec,
+    openstack_cloud_from_module,
+)
 
 
 def _get_volume_quotas(cloud, project):
