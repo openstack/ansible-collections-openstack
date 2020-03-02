@@ -1,0 +1,2 @@
+bugfixes:
+- os_coe_cluster: Retrieve the correct id/uuid depending on whether it is a create/get request.
