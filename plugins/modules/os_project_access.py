@@ -121,7 +121,6 @@ def main():
 
     sdk, cloud = openstack_cloud_from_module(module)
 
-    changed = False
     state = module.params['state']
     resource_name = module.params['resource_name']
     resource_type = module.params['resource_type']
