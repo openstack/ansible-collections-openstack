@@ -2,3 +2,5 @@
 build_artifact
 ansible_collections
 galaxy.yml
+FILES.json
+MANIFEST.json

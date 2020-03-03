@@ -1,6 +1,5 @@
 namespace: openstack
 name: cloud
-version: 1.0.0
 readme: README.md
 authors: Openstack
 description: Openstack Ansible modules
