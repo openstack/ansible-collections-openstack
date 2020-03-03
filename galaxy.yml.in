@@ -4,8 +4,8 @@ version: 1.0.0
 readme: README.md
 authors: Openstack
 description: Openstack Ansible modules
-license: GPLv3
-license_file: LICENSE
+license: GPL-3.0-or-later
+license_file: COPYING
 tags:
   - cloud
   - openstack
