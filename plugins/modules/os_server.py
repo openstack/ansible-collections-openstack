@@ -169,7 +169,7 @@ options:
      description:
        - Availability zone in which to create the server.
 requirements:
-    - "python >= 2.7"
+    - "python >= 3.6""
     - "openstacksdk"
 
 extends_documentation_fragment:

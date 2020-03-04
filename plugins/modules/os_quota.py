@@ -98,7 +98,7 @@ options:
 
 
 requirements:
-    - "python >= 2.7"
+    - "python >= 3.6""
     - "openstacksdk >= 0.13.0"
     - "keystoneauth1 >= 3.4.0"
 

@@ -26,7 +26,7 @@ description:
 notes:
     - The result contains a list of unsorted flavors.
 requirements:
-    - "python >= 2.7"
+    - "python >= 3.6""
     - "openstacksdk"
 options:
    name:

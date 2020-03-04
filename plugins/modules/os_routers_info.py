@@ -18,7 +18,7 @@ author: "Bram Verschueren (@bverschueren)"
 description:
     - Retrieve information about one or more routers from OpenStack.
 requirements:
-    - "python >= 2.7"
+    - "python >= 3.6""
     - "openstacksdk"
 options:
    name:
