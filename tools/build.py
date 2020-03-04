@@ -13,10 +13,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# The next two lines are pointless for this file, but the collection
+# The next line is pointless for this file, but the collection
 # linter freaks out if they are not there.
 from __future__ import absolute_import, division, print_function
-__metaclass__ = type
 
 import pbr.version
 
