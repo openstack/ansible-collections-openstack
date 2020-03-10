@@ -62,6 +62,9 @@ Libraries
 * All OpenStack API interactions should happen via the openstacksdk and not via
   OpenStack Client libraries. The OpenStack Client libraries do no have end
   users as a primary audience, they are for intra-server communication.
+* All modules should be registered in ``meta/action_groups.yml`` for enabling the
+  variables to be set in `group level
+  <https://docs.ansible.com/ansible/latest/user_guide/playbooks_module_defaults.html>`.
 
 Testing
 -------
