@@ -2,7 +2,6 @@
 # Copyright 2016 Jakub Jursa <jakub.jursa1@gmail.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-
 ANSIBLE_METADATA = {'metadata_version': '1.1',
                     'status': ['preview'],
                     'supported_by': 'community'}
@@ -21,18 +20,24 @@ options:
   name:
     description: Name of the aggregate.
     required: true
+    type: str
   metadata:
     description: Metadata dict.
+    type: dict
   availability_zone:
     description: Availability zone to create aggregate into.
+    type: str
   hosts:
     description: List of hosts to set for an aggregate.
+    type: list
+    elements: str
   state:
     description: Should the resource be present or absent.
     choices: [present, absent]
     default: present
+    type: str
 requirements:
-    - "python >= 3.6""
+    - "python >= 3.6"
     - "openstacksdk"
 
 extends_documentation_fragment:
@@ -102,7 +107,7 @@ def main():
         name=dict(required=True),
         metadata=dict(required=False, default=None, type='dict'),
         availability_zone=dict(required=False, default=None),
-        hosts=dict(required=False, default=None, type='list'),
+        hosts=dict(required=False, default=None, type='list', elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
     )
 

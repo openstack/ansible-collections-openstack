@@ -48,8 +48,6 @@ plugins/modules/os_networks_info.py validate-modules:doc-missing-type
 plugins/modules/os_networks_info.py validate-modules:parameter-type-not-in-doc
 plugins/modules/os_nova_flavor.py validate-modules:doc-missing-type
 plugins/modules/os_nova_flavor.py validate-modules:parameter-type-not-in-doc
-plugins/modules/os_nova_host_aggregate.py validate-modules:doc-missing-type
-plugins/modules/os_nova_host_aggregate.py validate-modules:parameter-type-not-in-doc
 plugins/modules/os_object.py validate-modules:doc-missing-type
 plugins/modules/os_pool.py validate-modules:doc-missing-type
 plugins/modules/os_port.py validate-modules:doc-missing-type
