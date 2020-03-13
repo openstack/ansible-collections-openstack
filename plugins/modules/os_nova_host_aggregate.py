@@ -31,6 +31,10 @@ options:
     description: List of hosts to set for an aggregate.
     type: list
     elements: str
+  purge_hosts:
+    description: Whether hosts not in I(hosts) should be removed from the aggregate
+    type: bool
+    default: true
   state:
     description: Should the resource be present or absent.
     choices: [present, absent]
@@ -55,6 +59,18 @@ EXAMPLES = '''
       - host2
     metadata:
       type: dbcluster
+
+# Add an additional host to the aggregate
+- os_nova_host_aggregate:
+    cloud: mycloud
+    state: present
+    name: db_aggregate
+    hosts:
+      - host3
+    purge_hosts: false
+    metadata:
+      type: dbcluster
+
 # Delete an aggregate
 - os_nova_host_aggregate:
     cloud: mycloud
@@ -78,13 +94,22 @@ def _needs_update(module, aggregate):
     if module.params['availability_zone'] is not None:
         new_metadata['availability_zone'] = module.params['availability_zone']
 
-    if (
-        (module.params['name'] != aggregate.name)
-        or (module.params['hosts'] is not None and set(module.params['hosts']) != set(aggregate.hosts))
-        or (module.params['availability_zone'] is not None and module.params['availability_zone'] != aggregate.availability_zone)
-        or (module.params['metadata'] is not None and new_metadata != aggregate.metadata)
-    ):
+    if module.params['name'] != aggregate.name:
         return True
+    if module.params['hosts'] is not None:
+        if module.params['purge_hosts']:
+            if set(module.params['hosts']) != set(aggregate.hosts):
+                return True
+        else:
+            intersection = set(module.params['hosts']).intersection(set(aggregate.hosts))
+            if set(module.params['hosts']) != intersection:
+                return True
+    if module.params['availability_zone'] is not None:
+        if module.params['availability_zone'] != aggregate.availability_zone:
+            return True
+    if module.params['metadata'] is not None:
+        if new_metadata != aggregate.metadata:
+            return True
 
     return False
 
@@ -102,12 +127,29 @@ def _system_state_change(module, aggregate):
     return False
 
 
+def _update_hosts(cloud, aggregate, hosts, purge_hosts):
+    if hosts is None:
+        return
+
+    hosts_to_add = set(hosts) - set(aggregate.hosts)
+    for i in hosts_to_add:
+        cloud.add_host_to_aggregate(aggregate.id, i)
+
+    if not purge_hosts:
+        return
+
+    hosts_to_remove = set(aggregate.hosts) - set(hosts)
+    for i in hosts_to_remove:
+        cloud.remove_host_from_aggregate(aggregate.id, i)
+
+
 def main():
     argument_spec = openstack_full_argument_spec(
         name=dict(required=True),
         metadata=dict(required=False, default=None, type='dict'),
         availability_zone=dict(required=False, default=None),
         hosts=dict(required=False, default=None, type='list', elements='str'),
+        purge_hosts=dict(default=True, type='bool'),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
@@ -120,6 +162,7 @@ def main():
     metadata = module.params['metadata']
     availability_zone = module.params['availability_zone']
     hosts = module.params['hosts']
+    purge_hosts = module.params['purge_hosts']
     state = module.params['state']
 
     if metadata is not None:
@@ -143,9 +186,7 @@ def main():
             if aggregate is None:
                 aggregate = cloud.create_aggregate(name=name,
                                                    availability_zone=availability_zone)
-                if hosts:
-                    for h in hosts:
-                        cloud.add_host_to_aggregate(aggregate.id, h)
+                _update_hosts(cloud, aggregate, hosts, False)
                 if metadata:
                     cloud.set_aggregate_metadata(aggregate.id, metadata)
                 changed = True
@@ -160,11 +201,7 @@ def main():
                             if i != 'availability_zone':
                                 metas[i] = None
                         cloud.set_aggregate_metadata(aggregate.id, metas)
-                    if hosts is not None:
-                        for i in (set(aggregate.hosts) - set(hosts)):
-                            cloud.remove_host_from_aggregate(aggregate.id, i)
-                        for i in (set(hosts) - set(aggregate.hosts)):
-                            cloud.add_host_to_aggregate(aggregate.id, i)
+                    _update_hosts(cloud, aggregate, hosts, purge_hosts)
                     changed = True
                 else:
                     changed = False
@@ -174,9 +211,7 @@ def main():
             if aggregate is None:
                 changed = False
             else:
-                if hosts:
-                    for h in hosts:
-                        cloud.remove_host_from_aggregate(aggregate.id, h)
+                _update_hosts(cloud, aggregate, [], True)
                 cloud.delete_aggregate(aggregate.id)
                 changed = True
             module.exit_json(changed=changed)
