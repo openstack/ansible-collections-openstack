@@ -17,6 +17,7 @@ import pbr.version
 
 from ruamel.yaml import YAML
 
+import os
 import shutil
 
 
@@ -39,6 +40,8 @@ def generate_version_info():
 def main():
     generate_version_info()
     shutil.rmtree('build_artifact', ignore_errors=True)
+    if os.path.exists('MANIFEST.json'):
+        os.unlink('MANIFEST.json')
 
 
 if __name__ == '__main__':
