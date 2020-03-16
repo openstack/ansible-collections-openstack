@@ -239,7 +239,7 @@ def main():
             aliases=['skip_update_of_driver_password'],
             deprecated_aliases=[dict(name='skip_update_of_driver_password', version='2.14')]
         ),
-        state=dict(required=False, default='present')
+        state=dict(required=False, default='present', choices=['present', 'absent'])
     )
     module_kwargs = openstack_module_kwargs()
     module = AnsibleModule(argument_spec, **module_kwargs)

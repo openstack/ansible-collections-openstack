@@ -37,11 +37,13 @@ options:
      description:
         - The format of the disk that is getting uploaded
      default: qcow2
+     choices: ['ami', 'ari', 'aki', 'vhd', 'vmdk', 'raw', 'qcow2', 'vdi', 'iso', 'vhdx', 'ploop']
      type: str
    container_format:
      description:
         - The format of the container
      default: bare
+     choices: ['ami', 'aki', 'ari', 'bare', 'ovf', 'ova', 'docker']
      type: str
    owner:
      description:

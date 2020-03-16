@@ -28,6 +28,7 @@ options:
             - A value of present sets the quota and a value of absent resets the quota to system defaults.
         default: present
         type: str
+        choices: ['absent', 'present']
     backup_gigabytes:
         description: Maximum size of backups in GB's.
         type: int
