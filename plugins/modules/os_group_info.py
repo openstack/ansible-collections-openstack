@@ -20,7 +20,6 @@ options:
    name:
      description:
         - Name or ID of the group.
-     required: true
      type: str
    domain:
      description:

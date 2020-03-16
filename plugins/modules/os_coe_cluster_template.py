@@ -23,6 +23,7 @@ options:
          - The Container Orchestration Engine for this clustertemplate
       choices: [kubernetes, swarm, mesos]
       type: str
+      required: true
    dns_nameserver:
       description:
          - The DNS nameserver address
@@ -66,6 +67,7 @@ options:
       description:
          - Image id the cluster will be based on
       type: str
+      required: true
    labels:
       description:
          - One or more key/value pairs

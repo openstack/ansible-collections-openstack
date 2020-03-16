@@ -21,7 +21,6 @@ options:
    name:
      description:
         - Name or ID of the user
-     required: true
      type: str
    domain:
      description:

@@ -185,7 +185,7 @@ def main():
     argument_spec = openstack_full_argument_spec(
         state=dict(required=False, default='present',
                    choices=['absent', 'present']),
-        name=dict(required=False),
+        name=dict(required=True),
 
         # required when state is 'present'
         ram=dict(required=False, type='int'),

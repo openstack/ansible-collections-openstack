@@ -21,7 +21,7 @@ options:
    network:
      description:
         - Network ID or name this port belongs to.
-     required: true
+        - Required when creating a new port.
      type: str
    name:
      description:

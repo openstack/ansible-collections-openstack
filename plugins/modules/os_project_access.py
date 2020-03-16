@@ -41,10 +41,12 @@ options:
   resource_type:
     description:
       - The resource type (eg. nova_flavor, cinder_volume_type).
+    required: true
     type: str
   resource_name:
     description:
       - The resource name (eg. tiny).
+    required: true
     type: str
 requirements:
     - "python >= 3.6"

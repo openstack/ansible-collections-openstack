@@ -31,7 +31,7 @@ options:
    image:
      description:
         - The name or id of the base image to boot.
-     required: true
+        - Required when I(boot_from_volume=true)
      type: str
    image_exclude:
      description:

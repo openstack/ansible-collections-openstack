@@ -37,7 +37,7 @@ options:
     driver:
       description:
         - The name of the Ironic Driver to use with this node.
-      required: true
+        - Required when I(state=present)
       type: str
     chassis_uuid:
       description:
@@ -54,6 +54,7 @@ options:
         - Information for this server's driver. Will vary based on which
           driver is in use. Any sub-field which is populated will be validated
           during creation.
+      required: true
       type: dict
       suboptions:
         power:

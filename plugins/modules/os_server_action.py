@@ -42,8 +42,8 @@ options:
          changed as the servers API does not provide lock status.
      choices: [stop, start, pause, unpause, lock, unlock, suspend, resume,
                rebuild]
-     default: present
      type: str
+     required: true
    image:
      description:
        - Image the server should be rebuilt with

@@ -31,12 +31,12 @@ options:
    recordset_type:
      description:
         - Recordset type
-     required: true
+        - Required when I(state=present).
      type: str
    records:
      description:
-        - List of recordset definitions
-     required: true
+        - List of recordset definitions.
+        - Required when I(state=present).
      type: list
    description:
      description:
