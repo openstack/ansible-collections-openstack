@@ -62,7 +62,9 @@ options:
           User defined portip is often required when a multiple router need
           to be connected to a single subnet for which the default gateway has
           been already used.
-requirements: ["openstacksdk"]
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

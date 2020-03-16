@@ -75,7 +75,8 @@ options:
           Network will use Openstack defaults if this option is
           not provided.
 requirements:
-     - "openstacksdk"
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

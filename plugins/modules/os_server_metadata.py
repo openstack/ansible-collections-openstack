@@ -38,8 +38,8 @@ options:
        - Availability zone in which to create the snapshot.
      required: false
 requirements:
-    - "python >= 3.6""
-    - "openstack"
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

@@ -17,9 +17,6 @@ description:
     - Retrieve information about a one or more OpenStack domains
     - This module was called C(os_keystone_domain_facts) before Ansible 2.9, returning C(ansible_facts).
       Note that the M(os_keystone_domain_info) module no longer returns C(ansible_facts)!
-requirements:
-    - "python >= 3.6""
-    - "sdk"
 options:
    name:
      description:
@@ -28,6 +25,9 @@ options:
      description:
         - A dictionary of meta data to use for further filtering.  Elements of
           this dictionary may be additional dictionaries.
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

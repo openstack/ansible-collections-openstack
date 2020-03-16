@@ -84,6 +84,9 @@ options:
       description:
         - An integer value representing the number of seconds to
           wait for the node activation or deactivation to complete.
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

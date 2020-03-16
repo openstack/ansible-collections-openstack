@@ -36,7 +36,7 @@ options:
      description:
       - Device you want to attach. Defaults to auto finding a device name.
 requirements:
-    - "python >= 3.6""
+    - "python >= 3.6"
     - "openstacksdk"
 
 extends_documentation_fragment:

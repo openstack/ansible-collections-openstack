@@ -20,9 +20,6 @@ description:
       Note that the M(os_server_info) module no longer returns C(ansible_facts)!
 notes:
     - The result contains a list of servers.
-requirements:
-    - "python >= 3.6""
-    - "openstacksdk"
 options:
    server:
      description:
@@ -44,6 +41,9 @@ options:
          scoped project.
      type: bool
      default: 'no'
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

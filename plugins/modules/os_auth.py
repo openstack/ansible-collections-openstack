@@ -17,9 +17,8 @@ author: "Monty Taylor (@emonty)"
 description:
     - Retrieve an auth token from an OpenStack Cloud
 requirements:
-    - "python >= 3.6""
+    - "python >= 3.6"
     - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

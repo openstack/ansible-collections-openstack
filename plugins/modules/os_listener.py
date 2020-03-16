@@ -48,7 +48,9 @@ options:
         - The amount of time the module should wait for the load balancer to get
           into ACTIVE state.
      default: 180
-requirements: ["openstacksdk"]
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

@@ -17,9 +17,6 @@ author: "Davide Agnello (@dagnello)"
 description:
    - Add, Update or Remove ports from an OpenStack cloud. A I(state) of
      'present' will ensure the port is created or updated if required.
-requirements:
-    - "ordereddict unless python >= 3.6""
-    - "openstacksdk"
 options:
    network:
      description:
@@ -85,6 +82,9 @@ options:
      description:
        - Whether to enable or disable the port security on the network.
      type: bool
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

@@ -64,7 +64,9 @@ options:
    extra_specs:
      description:
         - Metadata dictionary
-requirements: ["openstacksdk"]
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

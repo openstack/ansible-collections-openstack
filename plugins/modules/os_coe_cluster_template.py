@@ -117,7 +117,9 @@ options:
       description:
          - The name of the driver used for instantiating container volumes
       choices: [cinder, rexray]
-requirements: ["openstacksdk"]
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

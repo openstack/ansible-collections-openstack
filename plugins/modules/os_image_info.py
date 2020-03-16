@@ -17,9 +17,6 @@ description:
     - Retrieve information about a image image from OpenStack.
     - This module was called C(os_image_facts) before Ansible 2.9, returning C(ansible_facts).
       Note that the M(os_image_info) module no longer returns C(ansible_facts)!
-requirements:
-    - "python >= 3.6""
-    - "openstacksdk"
 options:
    image:
      description:
@@ -30,6 +27,9 @@ options:
         - Dict of properties of the images used for query
      type: dict
      required: false
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

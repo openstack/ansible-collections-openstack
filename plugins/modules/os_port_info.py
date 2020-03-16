@@ -17,9 +17,6 @@ description:
     - Retrieve information about ports from OpenStack.
     - This module was called C(os_port_facts) before Ansible 2.9, returning C(ansible_facts).
       Note that the M(os_port_info) module no longer returns C(ansible_facts)!
-requirements:
-    - "python >= 3.6""
-    - "openstacksdk"
 options:
     port:
         description:
@@ -30,6 +27,9 @@ options:
               of this dictionary will be matched against the returned port
               dictionaries. Matching is currently limited to strings within
               the port dictionary, or strings within nested dictionaries.
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

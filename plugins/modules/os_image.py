@@ -79,7 +79,9 @@ options:
      description:
        - ID of a volume to create an image from.
        - The volume must be in AVAILABLE state.
-requirements: ["openstacksdk"]
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

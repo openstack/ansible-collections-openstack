@@ -61,7 +61,9 @@ options:
          - Timeout for creating the cluster in minutes. Default to 60 mins
            if not set
       default: 60
-requirements: ["openstacksdk"]
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

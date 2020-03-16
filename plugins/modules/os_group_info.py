@@ -16,9 +16,6 @@ short_description: Retrieve info about one or more OpenStack groups
 author: "Phillipe Smith (@phsmith)"
 description:
     - Retrieve info about a one or more OpenStack groups.
-requirements:
-    - "python >= 3.6""
-    - "openstacksdk"
 options:
    name:
      description:
@@ -34,6 +31,9 @@ options:
         - A dictionary of meta data to use for further filtering.  Elements of
           this dictionary may be additional dictionaries.
      type: dict
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

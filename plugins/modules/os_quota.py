@@ -94,7 +94,7 @@ options:
         description: Number of LVM volumes to allow.
 
 requirements:
-    - "python >= 3.6""
+    - "python >= 3.6"
     - "openstacksdk >= 0.13.0"
     - "keystoneauth1 >= 3.4.0"
 

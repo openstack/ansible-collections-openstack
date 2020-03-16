@@ -38,6 +38,9 @@ options:
         with the new content.
     choices: [present, absent, replace]
     default: present
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

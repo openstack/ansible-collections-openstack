@@ -45,7 +45,7 @@ options:
      description:
        - Image the server should be rebuilt with
 requirements:
-    - "python >= 3.6""
+    - "python >= 3.6"
     - "openstacksdk"
 
 extends_documentation_fragment:

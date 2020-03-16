@@ -17,9 +17,6 @@ version_added: "2.10"
 author: "Bram Verschueren (@bverschueren)"
 description:
     - Retrieve information about one or more routers from OpenStack.
-requirements:
-    - "python >= 3.6""
-    - "openstacksdk"
 options:
    name:
      description:
@@ -59,6 +56,9 @@ options:
          description:
            - A list of tags to filter the list result by. Resources that match all tags in this list will be returned.
          type: list
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 extends_documentation_fragment: openstack
 '''
 

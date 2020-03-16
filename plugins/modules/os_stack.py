@@ -52,7 +52,7 @@ options:
         - Maximum number of seconds to wait for the stack creation
       default: 3600
 requirements:
-    - "python >= 3.6""
+    - "python >= 3.6"
     - "openstacksdk"
 
 extends_documentation_fragment:

@@ -18,9 +18,6 @@ description:
     - Retrieve information about one or more subnets from OpenStack.
     - This module was called C(os_subnets_facts) before Ansible 2.9, returning C(ansible_facts).
       Note that the M(os_subnets_info) module no longer returns C(ansible_facts)!
-requirements:
-    - "python >= 3.6""
-    - "openstacksdk"
 options:
    name:
      description:
@@ -33,6 +30,9 @@ options:
         - A dictionary of meta data to use for further filtering.  Elements of
           this dictionary may be additional dictionaries.
      required: false
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

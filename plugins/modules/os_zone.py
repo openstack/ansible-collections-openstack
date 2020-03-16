@@ -44,7 +44,7 @@ options:
      choices: [present, absent]
      default: present
 requirements:
-    - "python >= 3.6""
+    - "python >= 3.6"
     - "openstacksdk"
 
 extends_documentation_fragment:
