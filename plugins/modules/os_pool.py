@@ -53,9 +53,6 @@ options:
         - The amount of time the module should wait for the pool to get
           into ACTIVE state.
      default: 180
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
 requirements: ["openstacksdk"]
 
 extends_documentation_fragment:

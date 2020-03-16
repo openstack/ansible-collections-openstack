@@ -61,9 +61,6 @@ options:
         - ID for the flavor. This is optional as a unique UUID will be
           assigned if a value is not specified.
      default: "auto"
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
    extra_specs:
      description:
         - Metadata dictionary

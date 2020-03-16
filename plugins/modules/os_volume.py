@@ -50,9 +50,6 @@ options:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
    scheduler_hints:
      description:
        - Scheduler hints passed to volume API in form of dict

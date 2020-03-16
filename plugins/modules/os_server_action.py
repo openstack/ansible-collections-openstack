@@ -44,9 +44,6 @@ options:
    image:
      description:
        - Image the server should be rebuilt with
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
 requirements:
     - "python >= 3.6""
     - "openstacksdk"

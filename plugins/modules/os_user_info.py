@@ -32,9 +32,6 @@ options:
      description:
         - A dictionary of meta data to use for further filtering.  Elements of
           this dictionary may be additional dictionaries.
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

@@ -38,9 +38,6 @@ options:
         with the new content.
     choices: [present, absent, replace]
     default: present
-  availability_zone:
-    description:
-      - Ignored. Present for backwards compatibility
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

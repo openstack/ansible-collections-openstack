@@ -32,9 +32,6 @@ options:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
 requirements:
     - "python >= 3.6""
     - "openstacksdk"

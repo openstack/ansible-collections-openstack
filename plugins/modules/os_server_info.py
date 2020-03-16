@@ -38,9 +38,6 @@ options:
      description:
         - restrict results to servers matching a dictionary of
           filters
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
    all_projects:
      description:
        - Whether to list servers from all projects or just the current auth

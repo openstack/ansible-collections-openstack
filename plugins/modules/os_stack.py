@@ -51,9 +51,6 @@ options:
       description:
         - Maximum number of seconds to wait for the stack creation
       default: 3600
-    availability_zone:
-      description:
-        - Ignored. Present for backwards compatibility
 requirements:
     - "python >= 3.6""
     - "openstacksdk"

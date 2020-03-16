@@ -77,9 +77,6 @@ options:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
    vnic_type:
      description:
        - The type of the port that should be created

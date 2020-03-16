@@ -62,9 +62,6 @@ options:
           User defined portip is often required when a multiple router need
           to be connected to a single subnet for which the default gateway has
           been already used.
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
 requirements: ["openstacksdk"]
 
 extends_documentation_fragment:

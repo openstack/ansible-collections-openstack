@@ -80,11 +80,15 @@ options:
     aliases: [ key ]
   interface:
     description:
-        - Endpoint URL type to fetch from the service catalog.
+      - Endpoint URL type to fetch from the service catalog.
     type: str
     choices: [ admin, internal, public ]
     default: public
     aliases: [ endpoint_type ]
+  availability_zone:
+    description:
+      - Ignored. Present for backwards compatibility
+    type: str
 requirements:
   - python >= 3.6
   - openstacksdk >= 0.12.0

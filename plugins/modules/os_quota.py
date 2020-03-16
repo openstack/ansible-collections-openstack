@@ -92,10 +92,6 @@ options:
         description: Number of volumes to allow.
     volumes_lvm:
         description: Number of LVM volumes to allow.
-    availability_zone:
-      description:
-        - Ignored. Present for backwards compatibility
-
 
 requirements:
     - "python >= 3.6""

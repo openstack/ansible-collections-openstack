@@ -35,9 +35,6 @@ options:
    device:
      description:
       - Device you want to attach. Defaults to auto finding a device name.
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
 requirements:
     - "python >= 3.6""
     - "openstacksdk"

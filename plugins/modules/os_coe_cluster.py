@@ -17,9 +17,6 @@ author: "Feilong Wang (@flwang)"
 description:
    - Add or Remove COE cluster from the OpenStack Container Infra service.
 options:
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
    cluster_template_id:
      description:
         - The template ID of cluster template.

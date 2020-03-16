@@ -41,9 +41,6 @@ options:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
-   availability_zone:
-     description:
-       - Availability zone in which to create the snapshot.
 requirements:
      - "python >= 3.6""
      - "openstacksdk"

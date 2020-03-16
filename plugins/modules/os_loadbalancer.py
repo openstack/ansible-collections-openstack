@@ -119,9 +119,6 @@ options:
     description:
       - The amount of time the module should wait.
     default: 180
-  availability_zone:
-    description:
-      - Ignored. Present for backwards compatibility
 requirements: ["openstacksdk"]
 
 extends_documentation_fragment:

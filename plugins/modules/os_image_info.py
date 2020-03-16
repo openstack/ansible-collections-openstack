@@ -30,10 +30,6 @@ options:
         - Dict of properties of the images used for query
      type: dict
      required: false
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
-     required: false
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

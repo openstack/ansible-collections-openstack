@@ -35,10 +35,6 @@ options:
           valid policy names are anti-affinity, affinity, soft-anti-affinity
           and soft-affinity.
      required: false
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
-     required: false
 requirements:
     - "python >= 3.6""
     - "openstacksdk"

@@ -69,9 +69,6 @@ options:
           IP completely, or only detach it from the server. Default is to detach only.
      type: bool
      default: 'no'
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
 requirements: ["openstacksdk"]
 
 extends_documentation_fragment:

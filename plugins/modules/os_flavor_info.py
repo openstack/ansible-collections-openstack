@@ -64,9 +64,6 @@ options:
          storage. Format is the same as the I(ram) parameter
      type: bool
      default: 'no'
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

@@ -57,9 +57,6 @@ options:
    project:
      description:
         - Project name or ID containing the network (name admin-only)
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
    port_security_enabled:
      description:
         -  Whether port security is enabled on the network or not.

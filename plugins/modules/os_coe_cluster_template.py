@@ -18,9 +18,6 @@ description:
    - Add or Remove COE cluster template from the OpenStack Container Infra
      service.
 options:
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
    coe:
      description:
         - The Container Orchestration Engine for this clustertemplate

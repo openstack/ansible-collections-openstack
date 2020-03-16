@@ -19,11 +19,6 @@ description:
 requirements:
     - "python >= 3.6""
     - "openstacksdk"
-options:
-  availability_zone:
-    description:
-      - Ignored. Present for backwards compatibility
-    required: false
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

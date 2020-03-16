@@ -84,9 +84,6 @@ options:
       description:
         - An integer value representing the number of seconds to
           wait for the node activation or deactivation to complete.
-    availability_zone:
-      description:
-        - Ignored. Present for backwards compatibility
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

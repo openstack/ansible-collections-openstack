@@ -43,9 +43,6 @@ options:
        - Should the roles be present or absent on the user.
      choices: [present, absent]
      default: present
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
 requirements:
     - "python >= 3.6""
     - "openstacksdk"

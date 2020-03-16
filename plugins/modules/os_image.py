@@ -75,9 +75,6 @@ options:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
    volume:
      description:
        - ID of a volume to create an image from.

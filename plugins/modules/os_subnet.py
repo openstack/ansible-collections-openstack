@@ -85,9 +85,6 @@ options:
    project:
      description:
         - Project name or ID containing the subnet (name admin-only)
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
    extra_specs:
      description:
         - Dictionary with extra key/value pairs passed to the API

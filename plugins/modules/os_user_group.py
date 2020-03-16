@@ -29,10 +29,6 @@ options:
        - Should the user be present or absent in the group
      choices: [present, absent]
      default: present
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
-     required: false
 requirements:
     - "python >= 3.6""
     - "openstacksdk"

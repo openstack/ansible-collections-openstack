@@ -30,9 +30,6 @@ options:
               of this dictionary will be matched against the returned port
               dictionaries. Matching is currently limited to strings within
               the port dictionary, or strings within nested dictionaries.
-    availability_zone:
-      description:
-        - Ignored. Present for backwards compatibility
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

@@ -42,9 +42,6 @@ options:
   resource_name:
     description:
       - The resource name (eg. tiny).
-  availability_zone:
-    description:
-      - The availability zone of the resource.
 requirements:
     - "openstacksdk"
 

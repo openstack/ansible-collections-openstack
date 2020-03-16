@@ -37,9 +37,6 @@ options:
       description:
         - A timeout in seconds to tell the role to wait for the node to complete introspection if wait is set to True.
       default: 1200
-    availability_zone:
-      description:
-        - Ignored. Present for backwards compatibility
 
 requirements: ["openstacksdk"]
 

@@ -35,9 +35,6 @@ options:
      description:
         - Unique name or ID of the project.
      required: false
-   availability_zone:
-     description:
-       - Ignored. Present for backwards compatibility
 
 extends_documentation_fragment:
 - openstack.cloud.openstack

@@ -112,10 +112,6 @@ options:
       type: bool
       default: 'no'
       aliases: [ skip_update_of_driver_password ]
-    availability_zone:
-      description:
-        - Ignored. Present for backwards compatibility
-
 requirements: ["openstacksdk", "jsonpatch"]
 
 extends_documentation_fragment:
