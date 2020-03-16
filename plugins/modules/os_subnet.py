@@ -66,6 +66,7 @@ options:
      description:
         - List of DNS nameservers for this subnet.
      type: list
+     elements: str
    allocation_pool_start:
      description:
         - From the subnet pool the starting address from which the IP should
@@ -80,6 +81,16 @@ options:
      description:
         - A list of host route dictionaries for the subnet.
      type: list
+     elements: dict
+     suboptions:
+        destination:
+           description: The destination network (CIDR).
+           type: str
+           required: true
+        nexthop:
+           description: The next hop (aka gateway) for the I(destination).
+           type: str
+           required: true
    ipv6_ra_mode:
      description:
         - IPv6 router advertisement mode
@@ -239,10 +250,10 @@ def main():
         enable_dhcp=dict(type='bool', default=True),
         gateway_ip=dict(type='str'),
         no_gateway_ip=dict(type='bool', default=False),
-        dns_nameservers=dict(type='list', default=None),
+        dns_nameservers=dict(type='list', default=None, elements='str'),
         allocation_pool_start=dict(type='str'),
         allocation_pool_end=dict(type='str'),
-        host_routes=dict(type='list', default=None),
+        host_routes=dict(type='list', default=None, elements='dict'),
         ipv6_ra_mode=dict(type='str', choices=ipv6_mode_choices),
         ipv6_address_mode=dict(type='str', choices=ipv6_mode_choices),
         use_default_subnetpool=dict(type='bool', default=False),

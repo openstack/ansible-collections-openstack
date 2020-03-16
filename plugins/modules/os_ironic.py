@@ -77,6 +77,12 @@ options:
         - 'A list of network interface cards, eg, " - mac: aa:bb:cc:aa:bb:cc"'
       required: true
       type: list
+      elements: dict
+      suboptions:
+        mac:
+            description: The MAC address of the network interface card.
+            type: str
+            required: true
     properties:
       description:
         - Definition of the physical characteristics of this server, used for scheduling purposes
@@ -229,7 +235,7 @@ def main():
         name=dict(required=False),
         driver=dict(required=False),
         driver_info=dict(type='dict', required=True),
-        nics=dict(type='list', required=True),
+        nics=dict(type='list', required=True, elements="dict"),
         properties=dict(type='dict', default={}),
         ironic_url=dict(required=False),
         chassis_uuid=dict(required=False),

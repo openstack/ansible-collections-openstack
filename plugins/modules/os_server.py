@@ -72,6 +72,7 @@ options:
           added. This may be a YAML list or a comma separated string.
      type: list
      default: ['default']
+     elements: str
    network:
      description:
         - Name or ID of a network to attach this instance to. A simpler
@@ -87,6 +88,7 @@ options:
           Eg: nics: "net-id=uuid-1,port-name=myport"
           Only one of network or nics should be supplied.'
      type: list
+     elements: raw
      suboptions:
        tag:
          description:
@@ -102,10 +104,12 @@ options:
      description:
         - list of valid floating IPs that pre-exist to assign to this node
      type: list
+     elements: str
    floating_ip_pools:
      description:
         - Name of floating IP pool from which to choose a floating IP
      type: list
+     elements: str
    meta:
      description:
         - 'A list of key value pairs that should be provided as a metadata to
@@ -160,6 +164,7 @@ options:
        - A list of preexisting volumes names or ids to attach to the instance
      default: []
      type: list
+     elements: str
    scheduler_hints:
      description:
         - Arbitrary key/value pairs to the scheduler for custom use
@@ -628,20 +633,20 @@ class ServerModule(OpenStackModule):
         flavor_ram=dict(default=None, type='int'),
         flavor_include=dict(default=None),
         key_name=dict(default=None),
-        security_groups=dict(default=['default'], type='list'),
+        security_groups=dict(default=['default'], type='list', elements='str'),
         network=dict(default=None),
-        nics=dict(default=[], type='list'),
+        nics=dict(default=[], type='list', elements='raw'),
         meta=dict(default=None, type='raw'),
         userdata=dict(default=None, aliases=['user_data']),
         config_drive=dict(default=False, type='bool'),
         auto_ip=dict(default=True, type='bool', aliases=['auto_floating_ip', 'public_ip']),
-        floating_ips=dict(default=None, type='list'),
-        floating_ip_pools=dict(default=None, type='list'),
+        floating_ips=dict(default=None, type='list', elements='str'),
+        floating_ip_pools=dict(default=None, type='list', elements='str'),
         volume_size=dict(default=None, type='int'),
         boot_from_volume=dict(default=False, type='bool'),
         boot_volume=dict(default=None, aliases=['root_volume']),
         terminate_volume=dict(default=False, type='bool'),
-        volumes=dict(default=[], type='list'),
+        volumes=dict(default=[], type='list', elements='str'),
         scheduler_hints=dict(default=None, type='dict'),
         state=dict(default='present', choices=['absent', 'present']),
         delete_fip=dict(default=False, type='bool'),

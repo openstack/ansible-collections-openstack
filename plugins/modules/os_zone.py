@@ -44,6 +44,7 @@ options:
      description:
         - Master nameservers (only applies if zone_type is secondary)
      type: list
+     elements: str
    state:
      description:
        - Should the resource be present or absent.
@@ -168,7 +169,7 @@ def main():
         email=dict(required=False, default=None),
         description=dict(required=False, default=None),
         ttl=dict(required=False, default=None, type='int'),
-        masters=dict(required=False, default=None, type='list'),
+        masters=dict(required=False, default=None, type='list', elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
     )
 

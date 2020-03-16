@@ -117,6 +117,7 @@ options:
                 description:
                   - The name or ID of the subnet the member service is
                     accessible from.
+    elements: dict
     type: list
   wait:
     description:
@@ -336,7 +337,7 @@ def main():
         vip_subnet=dict(required=False),
         vip_port=dict(required=False),
         vip_address=dict(required=False),
-        listeners=dict(type='list', default=[]),
+        listeners=dict(type='list', default=[], elements='dict'),
         public_ip_address=dict(required=False, default=None),
         auto_public_ip=dict(required=False, default=False, type='bool'),
         public_network=dict(required=False),

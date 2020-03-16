@@ -55,6 +55,15 @@ options:
           address to assign on the subnet (ip). If no IP is specified,
           one is automatically assigned from that subnet.
      type: list
+     elements: dict
+     suboptions:
+        ip:
+           description: The fixed IP address to attempt to allocate.
+           required: true
+           type: str
+        subnet:
+           description: The subnet to attach the IP address to.
+           type: str
    interfaces:
      description:
         - List of subnets to attach to the router internal interface. Default
@@ -62,12 +71,13 @@ options:
           with the router's internal interface.
           In order to provide an ip address different from the default
           gateway,parameters are passed as dictionary with keys as network
-          name or ID(net), subnet name or ID (subnet) and the IP of
-          port (portip) from the network.
+          name or ID (I(net)), subnet name or ID (I(subnet)) and the IP of
+          port (I(portip)) from the network.
           User defined portip is often required when a multiple router need
           to be connected to a single subnet for which the default gateway has
           been already used.
      type: list
+     elements: raw
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -377,8 +387,8 @@ def main():
         admin_state_up=dict(type='bool', default=True),
         enable_snat=dict(type='bool'),
         network=dict(default=None),
-        interfaces=dict(type='list', default=None),
-        external_fixed_ips=dict(type='list', default=None),
+        interfaces=dict(type='list', default=None, elements='raw'),
+        external_fixed_ips=dict(type='list', default=None, elements='dict'),
         project=dict(default=None)
     )
 

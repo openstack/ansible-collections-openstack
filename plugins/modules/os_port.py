@@ -32,6 +32,15 @@ options:
         - Desired IP and/or subnet for this port.  Subnet is referenced by
           subnet_id and IP is referenced by ip_address.
      type: list
+     elements: dict
+     suboptions:
+        ip_address:
+           description: The fixed IP address to attempt to allocate.
+           required: true
+           type: str
+        subnet_id:
+           description: The subnet to attach the IP address to.
+           type: str
    admin_state_up:
      description:
         - Sets admin state.
@@ -45,6 +54,7 @@ options:
         - Security group(s) ID(s) or name(s) associated with the port (comma
           separated string or YAML list)
      type: list
+     elements: str
    no_security_groups:
      description:
         - Do not associate a security group with this port.
@@ -59,6 +69,14 @@ options:
                     mac_address: ab:cd:ef:12:34:56
                   - ip_address: ..."
      type: list
+     elements: dict
+     suboptions:
+        ip_address:
+           description: The IP address.
+           type: str
+        mac_address:
+           description: The MAC address.
+           type: str
    extra_dhcp_opts:
      description:
         - "Extra dhcp options to be assigned to this port. Extra options are
@@ -70,6 +88,20 @@ options:
                     ip_version: 4
                   - opt_name: ..."
      type: list
+     elements: dict
+     suboptions:
+        opt_name:
+           description: The name of the DHCP option to set.
+           type: str
+           required: true
+        opt_value:
+           description: The value of the DHCP option to set.
+           type: str
+           required: true
+        ip_version:
+           description: The IP version this DHCP option is for.
+           type: int
+           required: true
    device_owner:
      description:
         - The ID of the entity that uses this port.
@@ -354,13 +386,13 @@ def main():
     argument_spec = openstack_full_argument_spec(
         network=dict(required=False),
         name=dict(required=False),
-        fixed_ips=dict(type='list', default=None),
+        fixed_ips=dict(type='list', default=None, elements='dict'),
         admin_state_up=dict(type='bool', default=None),
         mac_address=dict(default=None),
-        security_groups=dict(default=None, type='list'),
+        security_groups=dict(default=None, type='list', elements='str'),
         no_security_groups=dict(default=False, type='bool'),
-        allowed_address_pairs=dict(type='list', default=None),
-        extra_dhcp_opts=dict(type='list', default=None),
+        allowed_address_pairs=dict(type='list', default=None, elements='dict'),
+        extra_dhcp_opts=dict(type='list', default=None, elements='dict'),
         device_owner=dict(default=None),
         device_id=dict(default=None),
         state=dict(default='present', choices=['absent', 'present']),

@@ -38,6 +38,7 @@ options:
           and soft-affinity.
      required: false
      type: list
+     elements: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -119,7 +120,7 @@ def _system_state_change(state, server_group):
 def main():
     argument_spec = openstack_full_argument_spec(
         name=dict(required=True),
-        policies=dict(required=False, type='list'),
+        policies=dict(required=False, type='list', elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
     )
     module_kwargs = openstack_module_kwargs()

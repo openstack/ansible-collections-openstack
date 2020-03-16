@@ -38,6 +38,7 @@ options:
         - List of recordset definitions.
         - Required when I(state=present).
      type: list
+     elements: str
    description:
      description:
         - Description of the recordset
@@ -150,7 +151,7 @@ def main():
         zone=dict(required=True),
         name=dict(required=True),
         recordset_type=dict(required=False),
-        records=dict(required=False, type='list'),
+        records=dict(required=False, type='list', elements='str'),
         description=dict(required=False, default=None),
         ttl=dict(required=False, default=None, type='int'),
         state=dict(default='present', choices=['absent', 'present']),

@@ -44,6 +44,7 @@ options:
       description:
         - List of environment files that should be used for the stack creation
       type: list
+      elements: str
     parameters:
       description:
         - Dictionary of parameters for the stack creation
@@ -221,7 +222,7 @@ def main():
         name=dict(required=True),
         tag=dict(required=False, default=None),
         template=dict(default=None),
-        environment=dict(default=None, type='list'),
+        environment=dict(default=None, type='list', elements='str'),
         parameters=dict(default={}, type='dict'),
         rollback=dict(default=False, type='bool'),
         timeout=dict(default=3600, type='int'),

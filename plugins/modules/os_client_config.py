@@ -25,6 +25,7 @@ options:
      required: false
      default: []
      type: list
+     elements: str
 requirements: [ os-client-config ]
 author: "Monty Taylor (@emonty)"
 '''
@@ -55,7 +56,7 @@ from ansible.module_utils.basic import AnsibleModule
 
 def main():
     module = AnsibleModule(argument_spec=dict(
-        clouds=dict(required=False, type='list', default=[]),
+        clouds=dict(required=False, type='list', default=[], elements='str'),
     ))
 
     if not HAS_OS_CLIENT_CONFIG:
