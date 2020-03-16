@@ -21,32 +21,39 @@ options:
     description:
       - Name that has to be given to the load balancer
     required: true
+    type: str
   state:
     description:
       - Should the resource be present or absent.
     choices: [present, absent]
     default: present
+    type: str
   vip_network:
     description:
       - The name or id of the network for the virtual IP of the load balancer.
         One of I(vip_network), I(vip_subnet), or I(vip_port) must be specified
         for creation.
+    type: str
   vip_subnet:
     description:
       - The name or id of the subnet for the virtual IP of the load balancer.
         One of I(vip_network), I(vip_subnet), or I(vip_port) must be specified
         for creation.
+    type: str
   vip_port:
     description:
       - The name or id of the load balancer virtual IP port. One of
         I(vip_network), I(vip_subnet), or I(vip_port) must be specified for
         creation.
+    type: str
   vip_address:
     description:
       - IP address of the load balancer virtual IP.
+    type: str
   public_ip_address:
     description:
       - Public IP address associated with the VIP.
+    type: str
   auto_public_ip:
     description:
       - Allocate a public IP address and associate with the VIP automatically.
@@ -55,6 +62,7 @@ options:
   public_network:
     description:
       - The name or ID of a Neutron external network.
+    type: str
   delete_public_ip:
     description:
       - When C(state=absent) and this option is true, any public IP address
@@ -109,6 +117,7 @@ options:
                 description:
                   - The name or ID of the subnet the member service is
                     accessible from.
+    type: list
   wait:
     description:
       - If the module should wait for the load balancer to be created or
@@ -119,6 +128,7 @@ options:
     description:
       - The amount of time the module should wait.
     default: 180
+    type: int
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

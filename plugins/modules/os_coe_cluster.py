@@ -18,49 +18,61 @@ description:
    - Add or Remove COE cluster from the OpenStack Container Infra service.
 options:
    cluster_template_id:
-     description:
-        - The template ID of cluster template.
-     required: true
+      description:
+         - The template ID of cluster template.
+      required: true
+      type: str
    discovery_url:
-       description:
+      description:
          - Url used for cluster node discovery
+      type: str
    docker_volume_size:
       description:
          - The size in GB of the docker volume
+      type: int
    flavor_id:
       description:
          - The flavor of the minion node for this ClusterTemplate
+      type: str
    keypair:
       description:
          - Name of the keypair to use.
+      type: str
    labels:
       description:
          - One or more key/value pairs
+      type: raw
    master_flavor_id:
       description:
          - The flavor of the master node for this ClusterTemplate
+      type: str
    master_count:
       description:
          - The number of master nodes for this cluster
       default: 1
+      type: int
    name:
       description:
          - Name that has to be given to the cluster template
       required: true
+      type: str
    node_count:
       description:
          - The number of nodes for this cluster
       default: 1
+      type: int
    state:
       description:
          - Indicate desired state of the resource.
       choices: [present, absent]
       default: present
+      type: str
    timeout:
       description:
          - Timeout for creating the cluster in minutes. Default to 60 mins
            if not set
       default: 60
+      type: int
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

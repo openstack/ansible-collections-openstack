@@ -21,47 +21,57 @@ description:
    - Add or Remove rule from an existing security group
 options:
    security_group:
-     description:
+      description:
         - Name or ID of the security group
-     required: true
+      required: true
+      type: str
    protocol:
       description:
         - IP protocols ANY TCP UDP ICMP 112 (VRRP) 132 (SCTP)
       choices: ['any', 'tcp', 'udp', 'icmp', '112', '132', None]
+      type: str
    port_range_min:
       description:
         - Starting port
+      type: int
    port_range_max:
       description:
         - Ending port
+      type: int
    remote_ip_prefix:
       description:
         - Source IP address(es) in CIDR notation (exclusive with remote_group)
+      type: str
    remote_group:
       description:
         - Name or ID of the Security group to link (exclusive with
           remote_ip_prefix)
+      type: str
    ethertype:
       description:
         - Must be IPv4 or IPv6, and addresses represented in CIDR must
           match the ingress or egress rules. Not all providers support IPv6.
       choices: ['IPv4', 'IPv6']
       default: IPv4
+      type: str
    direction:
-     description:
+      description:
         - The direction in which the security group rule is applied. Not
           all providers support egress.
-     choices: ['egress', 'ingress']
-     default: ingress
+      choices: ['egress', 'ingress']
+      default: ingress
+      type: str
    state:
-     description:
-       - Should the resource be present or absent.
-     choices: [present, absent]
-     default: present
+      description:
+        - Should the resource be present or absent.
+      choices: [present, absent]
+      default: present
+      type: str
    project:
      description:
         - Unique name or ID of the project.
      required: false
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

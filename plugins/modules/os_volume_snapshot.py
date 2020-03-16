@@ -22,14 +22,17 @@ options:
         - Name of the snapshot
      required: true
      aliases: ['name']
+     type: str
    display_description:
      description:
        - String describing the snapshot
      aliases: ['description']
+     type: str
    volume:
      description:
        - The volume name or id to create/delete the snapshot
      required: True
+     type: str
    force:
      description:
        - Allows or disallows snapshot of a volume to be created when the volume
@@ -41,6 +44,7 @@ options:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

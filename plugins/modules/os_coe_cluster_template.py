@@ -19,57 +19,71 @@ description:
      service.
 options:
    coe:
-     description:
-        - The Container Orchestration Engine for this clustertemplate
-     choices: [kubernetes, swarm, mesos]
+      description:
+         - The Container Orchestration Engine for this clustertemplate
+      choices: [kubernetes, swarm, mesos]
+      type: str
    dns_nameserver:
       description:
          - The DNS nameserver address
       default: '8.8.8.8'
+      type: str
    docker_storage_driver:
       description:
          - Docker storage driver
       choices: [devicemapper, overlay, overlay2]
+      type: str
    docker_volume_size:
       description:
          - The size in GB of the docker volume
+      type: int
    external_network_id:
       description:
          - The external network to attach to the Cluster
+      type: str
    fixed_network:
       description:
          - The fixed network name to attach to the Cluster
+      type: str
    fixed_subnet:
       description:
          - The fixed subnet name to attach to the Cluster
+      type: str
    flavor_id:
       description:
          - The flavor of the minion node for this ClusterTemplate
+      type: str
    floating_ip_enabled:
       description:
          - Indicates whether created clusters should have a floating ip or not
       type: bool
-      default: 'yes'
+      default: true
    keypair_id:
       description:
          - Name or ID of the keypair to use.
+      type: str
    image_id:
       description:
          - Image id the cluster will be based on
+      type: str
    labels:
       description:
          - One or more key/value pairs
+      type: raw
    http_proxy:
       description:
          - Address of a proxy that will receive all HTTP requests and relay them
            The format is a URL including a port number
+      type: str
    https_proxy:
       description:
          - Address of a proxy that will receive all HTTPS requests and relay
            them. The format is a URL including a port number
+      type: str
    master_flavor_id:
       description:
          - The flavor of the master node for this ClusterTemplate
+      type: str
    master_lb_enabled:
       description:
          - Indicates whether created clusters should have a load balancer
@@ -80,14 +94,17 @@ options:
       description:
          - Name that has to be given to the cluster template
       required: true
+      type: str
    network_driver:
       description:
          - The name of the driver used for instantiating container networks
       choices: [flannel, calico, docker]
+      type: str
    no_proxy:
       description:
          - A comma separated list of IPs for which proxies should not be
            used in the cluster
+      type: str
    public:
       description:
          - Indicates whether the ClusterTemplate is public or not
@@ -103,11 +120,13 @@ options:
          - Server type for this ClusterTemplate
       choices: [vm, bm]
       default: vm
+      type: str
    state:
       description:
          - Indicate desired state of the resource.
       choices: [present, absent]
       default: present
+      type: str
    tls_disabled:
       description:
          - Indicates whether the TLS should be disabled
@@ -117,6 +136,7 @@ options:
       description:
          - The name of the driver used for instantiating container volumes
       choices: [cinder, rexray]
+      type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

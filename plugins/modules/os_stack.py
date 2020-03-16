@@ -26,22 +26,28 @@ options:
         - Indicate desired state of the resource
       choices: ['present', 'absent']
       default: present
+      type: str
     name:
       description:
         - Name of the stack that should be created, name could be char and digit, no space
       required: true
+      type: str
     tag:
       description:
         - Tag for the stack that should be created, name could be char and digit, no space
+      type: str
     template:
       description:
         - Path of the template file to use for the stack creation
+      type: str
     environment:
       description:
         - List of environment files that should be used for the stack creation
+      type: list
     parameters:
       description:
         - Dictionary of parameters for the stack creation
+      type: dict
     rollback:
       description:
         - Rollback stack creation
@@ -51,6 +57,7 @@ options:
       description:
         - Maximum number of seconds to wait for the stack creation
       default: 3600
+      type: int
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

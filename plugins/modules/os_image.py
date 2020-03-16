@@ -24,29 +24,37 @@ options:
      description:
         - The name of the image when uploading - or the name/ID of the image if deleting
      required: true
+     type: str
    id:
      description:
         - The ID of the image when uploading an image
+     type: str
    checksum:
      description:
         - The checksum of the image
+     type: str
    disk_format:
      description:
         - The format of the disk that is getting uploaded
      default: qcow2
+     type: str
    container_format:
      description:
         - The format of the container
      default: bare
+     type: str
    owner:
      description:
         - The owner of the image
+     type: str
    min_disk:
      description:
         - The minimum disk space (in GB) required to boot this image
+     type: int
    min_ram:
      description:
         - The minimum ram (in MB) required to boot this image
+     type: int
    is_public:
      description:
         - Whether the image can be accessed publicly. Note that publicizing an image requires admin role by default.
@@ -60,25 +68,31 @@ options:
    filename:
      description:
         - The path to the file which has to be uploaded
+     type: str
    ramdisk:
      description:
         - The name of an existing ramdisk image that will be associated with this image
+     type: str
    kernel:
      description:
         - The name of an existing kernel image that will be associated with this image
+     type: str
    properties:
      description:
         - Additional properties to be associated with this image
      default: {}
+     type: dict
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
    volume:
      description:
        - ID of a volume to create an image from.
        - The volume must be in AVAILABLE state.
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

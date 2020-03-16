@@ -22,21 +22,25 @@ options:
         - Name of the instance to update the metadata
      required: true
      aliases: ['name']
+     type: str
    meta:
      description:
         - 'A list of key value pairs that should be provided as a metadata to
           the instance or a string containing a list of key-value pairs.
           Eg:  meta: "key1=value1,key2=value2"'
      required: true
+     type: dict
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
    availability_zone:
      description:
        - Availability zone in which to create the snapshot.
      required: false
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

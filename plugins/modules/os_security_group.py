@@ -23,18 +23,22 @@ options:
         - Name that has to be given to the security group. This module
           requires that security group names be unique.
      required: true
+     type: str
    description:
      description:
         - Long description of the purpose of the security group
+     type: str
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
    project:
      description:
         - Unique name or ID of the project.
      required: false
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

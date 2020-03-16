@@ -20,29 +20,35 @@ options:
      description:
         - Name that has to be given to the pool
      required: true
+     type: str
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
    loadbalancer:
      description:
         - The name or id of the load balancer that this pool belongs to.
           Either loadbalancer or listener must be specified for pool creation.
+     type: str
    listener:
      description:
         - The name or id of the listener that this pool belongs to.
           Either loadbalancer or listener must be specified for pool creation.
+     type: str
    protocol:
      description:
         - The protocol for the pool.
      choices: [HTTP, HTTPS, PROXY, TCP, UDP]
      default: HTTP
+     type: str
    lb_algorithm:
      description:
         - The load balancing algorithm for the pool.
      choices: [LEAST_CONNECTIONS, ROUND_ROBIN, SOURCE_IP]
      default: ROUND_ROBIN
+     type: str
    wait:
      description:
         - If the module should wait for the pool to be ACTIVE.
@@ -53,6 +59,7 @@ options:
         - The amount of time the module should wait for the pool to get
           into ACTIVE state.
      default: 180
+     type: int
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

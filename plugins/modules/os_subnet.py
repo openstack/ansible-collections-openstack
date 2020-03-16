@@ -23,25 +23,30 @@ options:
         - Indicate desired state of the resource
      choices: ['present', 'absent']
      default: present
+     type: str
    network_name:
      description:
         - Name of the network to which the subnet should be attached
         - Required when I(state) is 'present'
+     type: str
    name:
      description:
        - The name of the subnet that should be created. Although Neutron
          allows for non-unique subnet names, this module enforces subnet
          name uniqueness.
      required: true
+     type: str
    cidr:
      description:
         - The CIDR representation of the subnet that should be assigned to
           the subnet. Required when I(state) is 'present' and a subnetpool
           is not specified.
+     type: str
    ip_version:
      description:
         - The IP version of the subnet 4 or 6
      default: 4
+     type: str
    enable_dhcp:
      description:
         - Whether DHCP should be enabled for this subnet.
@@ -50,6 +55,7 @@ options:
    gateway_ip:
      description:
         - The ip that would be assigned to the gateway for this subnet
+     type: str
    no_gateway_ip:
      description:
         - The gateway IP would not be assigned for this subnet
@@ -58,25 +64,31 @@ options:
    dns_nameservers:
      description:
         - List of DNS nameservers for this subnet.
+     type: list
    allocation_pool_start:
      description:
         - From the subnet pool the starting address from which the IP should
           be allocated.
+     type: str
    allocation_pool_end:
      description:
         - From the subnet pool the last IP that should be assigned to the
           virtual machines.
+     type: str
    host_routes:
      description:
         - A list of host route dictionaries for the subnet.
+     type: list
    ipv6_ra_mode:
      description:
         - IPv6 router advertisement mode
      choices: ['dhcpv6-stateful', 'dhcpv6-stateless', 'slaac']
+     type: str
    ipv6_address_mode:
      description:
         - IPv6 address mode
      choices: ['dhcpv6-stateful', 'dhcpv6-stateless', 'slaac']
+     type: str
    use_default_subnetpool:
      description:
         - Use the default subnetpool for I(ip_version) to obtain a CIDR.
@@ -85,11 +97,13 @@ options:
    project:
      description:
         - Project name or ID containing the subnet (name admin-only)
+     type: str
    extra_specs:
      description:
         - Dictionary with extra key/value pairs passed to the API
      required: false
      default: {}
+     type: dict
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

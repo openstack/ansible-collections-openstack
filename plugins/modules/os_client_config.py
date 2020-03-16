@@ -24,6 +24,7 @@ options:
           information on all configured clouds
      required: false
      default: []
+     type: list
 requirements: [ os-client-config ]
 author: "Monty Taylor (@emonty)"
 '''

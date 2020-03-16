@@ -22,27 +22,34 @@ options:
      description:
         - Zone name
      required: true
+     type: str
    zone_type:
      description:
         - Zone type
      choices: [primary, secondary]
+     type: str
    email:
      description:
         - Email of the zone owner (only applies if zone_type is primary)
+     type: str
    description:
      description:
         - Zone description
+     type: str
    ttl:
      description:
         -  TTL (Time To Live) value in seconds
+     type: int
    masters:
      description:
         - Master nameservers (only applies if zone_type is secondary)
+     type: list
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

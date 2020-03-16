@@ -20,24 +20,29 @@ options:
      description:
         - Name that has to be given to the listener
      required: true
+     type: str
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
    loadbalancer:
      description:
         - The name or id of the load balancer that this listener belongs to.
      required: true
+     type: str
    protocol:
      description:
         - The protocol for the listener.
      choices: [HTTP, HTTPS, TCP, TERMINATED_HTTPS]
      default: HTTP
+     type: str
    protocol_port:
      description:
         - The protocol port number for the listener.
      default: 80
+     type: int
    wait:
      description:
         - If the module should wait for the load balancer to be ACTIVE.
@@ -48,6 +53,7 @@ options:
         - The amount of time the module should wait for the load balancer to get
           into ACTIVE state.
      default: 180
+     type: int
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

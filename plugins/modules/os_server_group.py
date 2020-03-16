@@ -24,10 +24,12 @@ options:
      choices: ['present', 'absent']
      required: false
      default: present
+     type: str
    name:
      description:
         - Server group name.
      required: true
+     type: str
    policies:
      description:
         - A list of one or more policy names to associate with the server
@@ -35,6 +37,7 @@ options:
           valid policy names are anti-affinity, affinity, soft-anti-affinity
           and soft-affinity.
      required: false
+     type: list
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

@@ -21,25 +21,34 @@ options:
      description:
         - Size of volume in GB. This parameter is required when the
           I(state) parameter is 'present'.
+     type: int
    display_name:
      description:
         - Name of volume
      required: true
+     type: str
+     aliases: [name]
    display_description:
      description:
        - String describing the volume
+     type: str
+     aliases: [description]
    volume_type:
      description:
        - Volume type for volume
+     type: str
    image:
      description:
        - Image name or id for boot from volume
+     type: str
    snapshot_id:
      description:
        - Volume snapshot id to create from
+     type: str
    volume:
      description:
        - Volume name or id to create from
+     type: str
    bootable:
      description:
        - Bootable flag for volume.
@@ -50,12 +59,15 @@ options:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
    scheduler_hints:
      description:
        - Scheduler hints passed to volume API in form of dict
+     type: dict
    metadata:
      description:
        - Metadata for the volume
+     type: dict
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

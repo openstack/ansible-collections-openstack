@@ -22,13 +22,16 @@ options:
      description:
         - Network ID or name this port belongs to.
      required: true
+     type: str
    name:
      description:
         - Name that has to be given to the port.
+     type: str
    fixed_ips:
      description:
         - Desired IP and/or subnet for this port.  Subnet is referenced by
           subnet_id and IP is referenced by ip_address.
+     type: list
    admin_state_up:
      description:
         - Sets admin state.
@@ -36,10 +39,12 @@ options:
    mac_address:
      description:
         - MAC address of this port.
+     type: str
    security_groups:
      description:
         - Security group(s) ID(s) or name(s) associated with the port (comma
           separated string or YAML list)
+     type: list
    no_security_groups:
      description:
         - Do not associate a security group with this port.
@@ -53,6 +58,7 @@ options:
                   - ip_address: 10.1.0.12
                     mac_address: ab:cd:ef:12:34:56
                   - ip_address: ..."
+     type: list
    extra_dhcp_opts:
      description:
         - "Extra dhcp options to be assigned to this port. Extra options are
@@ -63,21 +69,26 @@ options:
                     opt_value: value1
                     ip_version: 4
                   - opt_name: ..."
+     type: list
    device_owner:
      description:
         - The ID of the entity that uses this port.
+     type: str
    device_id:
      description:
         - Device ID of device using this port.
+     type: str
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
    vnic_type:
      description:
        - The type of the port that should be created
      choices: [normal, direct, direct-physical, macvtap, baremetal, virtio-forwarder]
+     type: str
    port_security_enabled:
      description:
        - Whether to enable or disable the port security on the network.

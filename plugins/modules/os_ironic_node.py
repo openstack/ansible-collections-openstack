@@ -18,35 +18,44 @@ author: "Monty Taylor (@emonty)"
 description:
     - Deploy to nodes controlled by Ironic.
 options:
+    name:
+      description:
+        - Name of the node to create.
+      type: str
     state:
       description:
-        - Indicates desired state of the resource
-      choices: ['present', 'absent']
+        - Indicates desired state of the resource.
+        - I(state) can be C('present'), C('absent'), C('maintenance') or C('off').
       default: present
+      type: str
     deploy:
       description:
        - Indicates if the resource should be deployed. Allows for deployment
          logic to be disengaged and control of the node power or maintenance
          state to be changed.
-      type: bool
+      type: str
       default: 'yes'
     uuid:
       description:
         - globally unique identifier (UUID) to be given to the resource.
+      type: str
     ironic_url:
       description:
         - If noauth mode is utilized, this is required to be set to the
           endpoint URL for the Ironic API.  Use with "auth" and "auth_type"
           settings set to None.
+      type: str
     config_drive:
       description:
         - A configdrive file or HTTP(S) URL that will be passed along to the
           node.
+      type: raw
     instance_info:
       description:
         - Definition of the instance information which is used to deploy
           the node.  This information is only required when an instance is
           set to present.
+      type: dict
       suboptions:
         image_source:
           description:
@@ -62,18 +71,20 @@ options:
         - A setting to allow power state to be asserted allowing nodes
           that are not yet deployed to be powered on, and nodes that
           are deployed to be powered off.
-      choices: ['present', 'absent']
+        - I(power) can be C('present'), C('absent'), C('maintenance') or C('off').
       default: present
+      type: str
     maintenance:
       description:
         - A setting to allow the direct control if a node is in
           maintenance mode.
-      type: bool
-      default: 'no'
+        - I(maintenance) can be C('yes'), C('no'), C('True'), or C('False').
+      type: str
     maintenance_reason:
       description:
         - A string expression regarding the reason a node is in a
           maintenance mode.
+      type: str
     wait:
       description:
         - A boolean value instructing the module to wait for node
@@ -84,6 +95,8 @@ options:
       description:
         - An integer value representing the number of seconds to
           wait for the node activation or deactivation to complete.
+      default: 1800
+      type: int
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -230,7 +243,7 @@ def main():
         maintenance=dict(required=False),
         maintenance_reason=dict(required=False),
         power=dict(required=False, default='present'),
-        deploy=dict(required=False, default=True),
+        deploy=dict(required=False, default='yes'),
         wait=dict(type='bool', required=False, default=False),
         timeout=dict(required=False, type='int', default=1800),
     )

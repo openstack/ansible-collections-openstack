@@ -24,27 +24,34 @@ options:
      description:
         - Username for the user
      required: true
+     type: str
    password:
      description:
         - Password for the user
+     type: str
    update_password:
      required: false
      choices: ['always', 'on_create']
      description:
         - C(always) will attempt to update password.  C(on_create) will only
           set the password for newly created users.
+     type: str
    email:
      description:
         - Email address for the user
+     type: str
    description:
      description:
         - Description about the user
+     type: str
    default_project:
      description:
         - Project name or ID that the user should be associated with by default
+     type: str
    domain:
      description:
         - Domain to create the user in if the cloud supports domains
+     type: str
    enabled:
      description:
         - Is the user enabled
@@ -55,6 +62,7 @@ options:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

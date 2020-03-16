@@ -22,11 +22,13 @@ options:
      description:
         - Role Name
      required: true
+     type: str
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

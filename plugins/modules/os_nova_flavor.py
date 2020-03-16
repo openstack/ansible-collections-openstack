@@ -24,16 +24,20 @@ options:
           default values for those parameters.
      choices: ['present', 'absent']
      default: present
+     type: str
    name:
      description:
         - Flavor name.
      required: true
+     type: str
    ram:
      description:
         - Amount of memory, in MB.
+     type: int
    vcpus:
      description:
         - Number of virtual CPUs.
+     type: int
    disk:
      description:
         - Size of local disk, in GB.
@@ -43,14 +47,17 @@ options:
      description:
         - Ephemeral space size, in GB.
      default: 0
+     type: int
    swap:
      description:
         - Swap space size, in MB.
      default: 0
+     type: int
    rxtx_factor:
      description:
         - RX/TX factor.
      default: 1.0
+     type: float
    is_public:
      description:
         - Make flavor accessible to the public.
@@ -61,9 +68,11 @@ options:
         - ID for the flavor. This is optional as a unique UUID will be
           assigned if a value is not specified.
      default: "auto"
+     type: str
    extra_specs:
      description:
         - Metadata dictionary
+     type: dict
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

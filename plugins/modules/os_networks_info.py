@@ -23,11 +23,13 @@ options:
      description:
         - Name or ID of the Network
      required: false
+     type: str
    filters:
      description:
         - A dictionary of meta data to use for further filtering.  Elements of
           this dictionary may be additional dictionaries.
      required: false
+     type: dict
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

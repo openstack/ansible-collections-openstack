@@ -20,25 +20,31 @@ options:
      description:
         - Name that has to be given to the member
      required: true
+     type: str
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
    pool:
      description:
         - The name or id of the pool that this member belongs to.
      required: true
+     type: str
    protocol_port:
      description:
         - The protocol port number for the member.
      default: 80
+     type: int
    address:
      description:
         - The IP address of the member.
+     type: str
    subnet_id:
      description:
         - The subnet ID the member service is accessible from.
+     type: str
    wait:
      description:
         - If the module should wait for the load balancer to be ACTIVE.
@@ -49,6 +55,7 @@ options:
         - The amount of time the module should wait for the load balancer to get
           into ACTIVE state.
      default: 180
+     type: int
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

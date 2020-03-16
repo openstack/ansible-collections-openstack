@@ -22,13 +22,16 @@ options:
      description:
         - Name or ID of the user
      required: true
+     type: str
    domain:
      description:
         - Name or ID of the domain containing the user if the cloud supports domains
+     type: str
    filters:
      description:
         - A dictionary of meta data to use for further filtering.  Elements of
           this dictionary may be additional dictionaries.
+     type: dict
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

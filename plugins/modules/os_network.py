@@ -22,6 +22,7 @@ options:
      description:
         - Name to be assigned to the network.
      required: true
+     type: str
    shared:
      description:
         - Whether this network is shared or not.
@@ -42,21 +43,26 @@ options:
         - Indicate desired state of the resource.
      choices: ['present', 'absent']
      default: present
+     type: str
    provider_physical_network:
      description:
         - The physical network where this network object is implemented.
+     type: str
    provider_network_type:
      description:
         - The type of physical network that maps to this network resource.
+     type: str
    provider_segmentation_id:
      description:
         - An isolated segment on the physical network. The I(network_type)
           attribute defines the segmentation model. For example, if the
           I(network_type) value is vlan, this ID is a vlan identifier. If
           the I(network_type) value is gre, this ID is a gre key.
+     type: int
    project:
      description:
         - Project name or ID containing the network (name admin-only)
+     type: str
    port_security_enabled:
      description:
         -  Whether port security is enabled on the network or not.
@@ -74,6 +80,7 @@ options:
        -  The DNS domain value to set. Requires openstacksdk>=0.29.
           Network will use Openstack defaults if this option is
           not provided.
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

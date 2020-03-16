@@ -22,9 +22,11 @@ options:
      description:
         - Name of the service
      required: true
+     type: str
    description:
      description:
         - Description of the service
+     type: str
    enabled:
      description:
         - Is the service enabled
@@ -34,11 +36,13 @@ options:
      description:
         - The type of service
      required: true
+     type: str
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

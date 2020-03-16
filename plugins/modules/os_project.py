@@ -24,13 +24,16 @@ options:
      description:
         - Name for the project
      required: true
+     type: str
    description:
      description:
         - Description for the project
+     type: str
    domain_id:
      description:
         - Domain id to create the project in if the cloud supports domains.
      aliases: ['domain']
+     type: str
    enabled:
      description:
         - Is the project enabled
@@ -41,6 +44,7 @@ options:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

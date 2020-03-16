@@ -24,9 +24,11 @@ options:
      description:
         - Name that has to be given to the instance
      required: true
+     type: str
    description:
      description:
         - Description of the domain
+     type: str
    enabled:
      description:
         - Is the domain enabled
@@ -37,6 +39,7 @@ options:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

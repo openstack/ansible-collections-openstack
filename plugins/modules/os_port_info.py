@@ -21,12 +21,14 @@ options:
     port:
         description:
             - Unique name or ID of a port.
+        type: str
     filters:
         description:
             - A dictionary of meta data to use for further filtering. Elements
               of this dictionary will be matched against the returned port
               dictionaries. Matching is currently limited to strings within
               the port dictionary, or strings within nested dictionaries.
+        type: dict
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

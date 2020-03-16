@@ -23,14 +23,17 @@ options:
         - The name or ID of the instance to which the IP address
           should be assigned.
      required: true
+     type: str
    network:
      description:
         - The name or ID of a neutron external network or a nova pool name.
+     type: str
    floating_ip_address:
      description:
         - A floating IP address to attach or to detach. Required only if I(state)
           is absent. When I(state) is present can be used to specify a IP address
           to attach.
+     type: str
    reuse:
      description:
         - When I(state) is present, and I(floating_ip_address) is not present,
@@ -42,11 +45,13 @@ options:
      description:
         - To which fixed IP of server the floating IP address should be
           attached to.
+     type: str
    nat_destination:
      description:
         - The name or id of a neutron private network that the fixed IP to
           attach floating IP is on
      aliases: ["fixed_network", "internal_network"]
+     type: str
    wait:
      description:
         - When attaching a floating IP address, specify whether to wait for it to appear as attached.
@@ -58,11 +63,13 @@ options:
         - Time to wait for an IP address to appear as attached. See wait.
      required: false
      default: 60
+     type: int
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
    purge:
      description:
         - When I(state) is absent, indicates whether or not to delete the floating

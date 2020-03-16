@@ -23,31 +23,38 @@ options:
         - Indicates desired state of the resource
       choices: ['present', 'absent']
       default: present
+      type: str
     uuid:
       description:
         - globally unique identifier (UUID) to be given to the resource. Will
           be auto-generated if not specified, and name is specified.
         - Definition of a UUID will always take precedence to a name value.
+      type: str
     name:
       description:
         - unique name identifier to be given to the resource.
+      type: str
     driver:
       description:
         - The name of the Ironic Driver to use with this node.
       required: true
+      type: str
     chassis_uuid:
       description:
         - Associate the node with a pre-defined chassis.
+      type: str
     ironic_url:
       description:
         - If noauth mode is utilized, this is required to be set to the
           endpoint URL for the Ironic API.  Use with "auth" and "auth_type"
           settings set to None.
+      type: str
     driver_info:
       description:
         - Information for this server's driver. Will vary based on which
           driver is in use. Any sub-field which is populated will be validated
           during creation.
+      type: dict
       suboptions:
         power:
             description:
@@ -68,9 +75,11 @@ options:
       description:
         - 'A list of network interface cards, eg, " - mac: aa:bb:cc:aa:bb:cc"'
       required: true
+      type: list
     properties:
       description:
         - Definition of the physical characteristics of this server, used for scheduling purposes
+      type: dict
       suboptions:
         cpu_arch:
           description:

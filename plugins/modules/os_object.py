@@ -22,26 +22,31 @@ options:
      description:
         - The name of the container in which to create the object
      required: true
+     type: str
    name:
      description:
         - Name to be give to the object. If omitted, operations will be on
           the entire container
      required: false
+     type: str
    filename:
      description:
         - Path to local file to be uploaded.
      required: false
+     type: str
    container_access:
      description:
         - desired container access level.
      required: false
      choices: ['private', 'public']
      default: private
+     type: str
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

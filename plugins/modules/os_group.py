@@ -21,17 +21,21 @@ options:
      description:
         - Group name
      required: true
+     type: str
    description:
      description:
         - Group description
+     type: str
    domain_id:
      description:
         - Domain id to create the group in if the cloud supports domains.
+     type: str
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

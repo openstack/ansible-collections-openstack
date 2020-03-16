@@ -22,6 +22,7 @@ options:
      description:
         - Name or ID of the image
      required: false
+     type: str
    properties:
      description:
         - Dict of properties of the images used for query

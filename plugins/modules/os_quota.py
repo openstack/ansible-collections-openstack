@@ -22,76 +22,119 @@ options:
         description:
             - Name of the OpenStack Project to manage.
         required: true
+        type: str
     state:
         description:
             - A value of present sets the quota and a value of absent resets the quota to system defaults.
         default: present
+        type: str
     backup_gigabytes:
         description: Maximum size of backups in GB's.
+        type: int
     backups:
         description: Maximum number of backups allowed.
+        type: int
     cores:
         description: Maximum number of CPU's per project.
+        type: int
     fixed_ips:
         description: Number of fixed IP's to allow.
+        type: int
     floating_ips:
         description: Number of floating IP's to allow in Compute.
         aliases: ['compute_floating_ips']
+        type: int
     floatingip:
         description: Number of floating IP's to allow in Network.
         aliases: ['network_floating_ips']
+        type: int
     gigabytes:
         description: Maximum volume storage allowed for project.
-    gigabytes_lvm:
-        description: Maximum size in GB's of individual lvm volumes.
+        type: int
+    gigabytes_types:
+        description:
+            - Per driver volume storage quotas.  Keys should be
+              prefixed with C(gigabytes_) values should be ints.
+        type: dict
     injected_file_size:
         description: Maximum file size in bytes.
+        type: int
     injected_files:
         description: Number of injected files to allow.
+        type: int
     injected_path_size:
         description: Maximum path size.
+        type: int
     instances:
         description: Maximum number of instances allowed.
+        type: int
     key_pairs:
         description: Number of key pairs to allow.
+        type: int
     loadbalancer:
         description: Number of load balancers to allow.
+        type: int
     network:
         description: Number of networks to allow.
+        type: int
     per_volume_gigabytes:
         description: Maximum size in GB's of individual volumes.
+        type: int
     pool:
         description: Number of load balancer pools to allow.
+        type: int
     port:
         description: Number of Network ports to allow, this needs to be greater than the instances limit.
+        type: int
     properties:
         description: Number of properties to allow.
+        type: int
     ram:
         description: Maximum amount of ram in MB to allow.
+        type: int
     rbac_policy:
         description: Number of policies to allow.
+        type: int
     router:
         description: Number of routers to allow.
+        type: int
     security_group_rule:
         description: Number of rules per security group to allow.
+        type: int
     security_group:
         description: Number of security groups to allow.
+        type: int
     server_group_members:
         description: Number of server group members to allow.
+        type: int
     server_groups:
         description: Number of server groups to allow.
+        type: int
     snapshots:
         description: Number of snapshots to allow.
-    snapshots_lvm:
-        description: Number of LVM snapshots to allow.
+        type: int
+    snapshots_types:
+        description:
+            - Per-driver volume snapshot quotas.  Keys should be
+              prefixed with C(snapshots_) values should be ints.
+        type: dict
     subnet:
         description: Number of subnets to allow.
+        type: int
     subnetpool:
         description: Number of subnet pools to allow.
+        type: int
     volumes:
         description: Number of volumes to allow.
-    volumes_lvm:
-        description: Number of LVM volumes to allow.
+        type: int
+    volumes_types:
+        description:
+            - Per-driver volume count quotas.  Keys should be
+              prefixed with C(gigabytes_) values should be ints.
+        type: dict
+    project:
+        description: Unused, kept for compatability
+        type: int
 
 requirements:
     - "python >= 3.6"

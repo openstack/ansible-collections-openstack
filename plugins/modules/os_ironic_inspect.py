@@ -23,20 +23,25 @@ options:
     mac:
       description:
         - unique mac address that is used to attempt to identify the host.
+      type: str
     uuid:
       description:
         - globally unique identifier (UUID) to identify the host.
+      type: str
     name:
       description:
         - unique name identifier to identify the host in Ironic.
+      type: str
     ironic_url:
       description:
         - If noauth mode is utilized, this is required to be set to the endpoint URL for the Ironic API.
           Use with "auth" and "auth_type" settings set to None.
+      type: str
     timeout:
       description:
         - A timeout in seconds to tell the role to wait for the node to complete introspection if wait is set to True.
       default: 1200
+      type: int
 
 requirements:
     - "python >= 3.6"

@@ -32,16 +32,20 @@ options:
     choices: ['present', 'absent']
     required: false
     default: present
+    type: str
   target_project_id:
     description:
       - Project id.
     required: true
+    type: str
   resource_type:
     description:
       - The resource type (eg. nova_flavor, cinder_volume_type).
+    type: str
   resource_name:
     description:
       - The resource name (eg. tiny).
+    type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

@@ -24,10 +24,12 @@ options:
         - Indicate desired state of the resource
      choices: ['present', 'absent']
      default: present
+     type: str
    name:
      description:
         - Name to be give to the router
      required: true
+     type: str
    admin_state_up:
      description:
         - Desired admin state of the created or existing router.
@@ -41,15 +43,18 @@ options:
      description:
         - Unique name or ID of the external gateway network.
         - required I(interfaces) or I(enable_snat) are provided.
+     type: str
    project:
      description:
         - Unique name or ID of the project.
+     type: str
    external_fixed_ips:
      description:
         - The IP address parameters for the external gateway network. Each
           is a dictionary with the subnet name or ID (subnet) and the IP
           address to assign on the subnet (ip). If no IP is specified,
           one is automatically assigned from that subnet.
+     type: list
    interfaces:
      description:
         - List of subnets to attach to the router internal interface. Default
@@ -62,6 +67,7 @@ options:
           User defined portip is often required when a multiple router need
           to be connected to a single subnet for which the default gateway has
           been already used.
+     type: list
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

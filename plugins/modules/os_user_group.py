@@ -20,15 +20,18 @@ options:
      description:
         - Name or id for the user
      required: true
+     type: str
    group:
      description:
         - Name or id for the group.
      required: true
+     type: str
    state:
      description:
        - Should the user be present or absent in the group
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

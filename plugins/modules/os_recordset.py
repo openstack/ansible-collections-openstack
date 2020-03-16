@@ -22,29 +22,36 @@ options:
      description:
         - Zone managing the recordset
      required: true
+     type: str
    name:
      description:
         - Name of the recordset
      required: true
+     type: str
    recordset_type:
      description:
         - Recordset type
      required: true
+     type: str
    records:
      description:
         - List of recordset definitions
      required: true
+     type: list
    description:
      description:
         - Description of the recordset
+     type: str
    ttl:
      description:
         -  TTL (Time To Live) value in seconds
+     type: int
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

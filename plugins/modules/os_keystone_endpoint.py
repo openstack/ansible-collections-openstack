@@ -24,18 +24,22 @@ options:
      description:
         - Name or id of the service.
      required: true
+     type: str
    endpoint_interface:
      description:
         - Interface of the service.
      choices: [admin, public, internal]
      required: true
+     type: str
    url:
      description:
         - URL of the service.
      required: true
+     type: str
    region:
      description:
         - Region that the service belongs to. Note that I(region_name) is used for authentication.
+     type: str
    enabled:
      description:
         - Is the service enabled.
@@ -46,6 +50,7 @@ options:
        - Should the resource be C(present) or C(absent).
      choices: [present, absent]
      default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk >= 0.13.0"

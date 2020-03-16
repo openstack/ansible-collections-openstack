@@ -27,44 +27,53 @@ options:
         - Name that has to be given to the instance. It is also possible to
           specify the ID of the instance instead of its name if I(state) is I(absent).
      required: true
+     type: str
    image:
      description:
         - The name or id of the base image to boot.
      required: true
+     type: str
    image_exclude:
      description:
         - Text to use to filter image names, for the case, such as HP, where
           there are multiple image names matching the common identifying
           portions. image_exclude is a negative match filter - it is text that
           may not exist in the image name. Defaults to "(deprecated)"
+     type: str
    flavor:
      description:
         - The name or id of the flavor in which the new instance has to be
           created. Mutually exclusive with flavor_ram
      default: 1
+     type: str
    flavor_ram:
      description:
         - The minimum amount of ram in MB that the flavor in which the new
           instance has to be created must have. Mutually exclusive with flavor.
      default: 1
+     type: int
    flavor_include:
      description:
         - Text to use to filter flavor names, for the case, such as Rackspace,
           where there are multiple flavors that have the same ram count.
           flavor_include is a positive match filter - it must exist in the
           flavor name.
+     type: str
    key_name:
      description:
         - The key pair name to be used when creating a instance
+     type: str
    security_groups:
      description:
         - Names of the security groups to which the instance should be
           added. This may be a YAML list or a comma separated string.
+     type: list
    network:
      description:
         - Name or ID of a network to attach this instance to. A simpler
           version of the nics parameter, only one of network or nics should
           be supplied.
+     type: str
    nics:
      description:
         - A list of networks to which the instance's interface should
@@ -73,6 +82,7 @@ options:
         - 'Also this accepts a string containing a list of (net/port)-(id/name)
           Eg: nics: "net-id=uuid-1,port-name=myport"
           Only one of network or nics should be supplied.'
+     type: list
      suboptions:
        tag:
          description:
@@ -87,14 +97,17 @@ options:
    floating_ips:
      description:
         - list of valid floating IPs that pre-exist to assign to this node
+     type: list
    floating_ip_pools:
      description:
         - Name of floating IP pool from which to choose a floating IP
+     type: list
    meta:
      description:
         - 'A list of key value pairs that should be provided as a metadata to
           the new instance or a string containing a list of key-value pairs.
           Eg:  meta: "key1=value1,key2=value2"'
+     type: raw
    wait:
      description:
         - If the module should wait for the instance to be created.
@@ -105,6 +118,7 @@ options:
         - The amount of time the module should wait for the instance to get
           into active state.
      default: 180
+     type: int
    config_drive:
      description:
         - Whether to boot the server with config drive enabled
@@ -113,6 +127,8 @@ options:
    userdata:
      description:
         - Opaque blob of data which is made available to the instance
+     type: str
+     aliases: ['user_data']
    boot_from_volume:
      description:
         - Should the instance boot from a persistent volume created based on
@@ -123,11 +139,13 @@ options:
      description:
         - The size of the volume to create in GB if booting from volume based
           on an image.
+     type: int
    boot_volume:
      description:
         - Volume name or id to use as the volume to boot from. Implies
           boot_from_volume. Mutually exclusive with image and boot_from_volume.
      aliases: ['root_volume']
+     type: str
    terminate_volume:
      description:
         - If C(yes), delete volume when deleting instance (if booted from volume)
@@ -137,15 +155,18 @@ options:
      description:
        - A list of preexisting volumes names or ids to attach to the instance
      default: []
+     type: list
    scheduler_hints:
      description:
         - Arbitrary key/value pairs to the scheduler for custom use
      version_added: "2.1"
+     type: dict
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
    delete_fip:
      description:
        - When I(state) is absent and this option is true, any floating IP
@@ -168,6 +189,7 @@ options:
    availability_zone:
      description:
        - Availability zone in which to create the server.
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

@@ -23,14 +23,17 @@ options:
     description:
       - Name that has to be given to the key pair
     required: true
+    type: str
   public_key:
     description:
       - The public key that would be uploaded to nova and injected into VMs
         upon creation.
+    type: str
   public_key_file:
     description:
       - Path to local file containing ssh public key. Mutually exclusive
         with public_key.
+    type: str
   state:
     description:
       - Should the resource be present or absent. If state is replace and
@@ -38,6 +41,7 @@ options:
         with the new content.
     choices: [present, absent, replace]
     default: present
+    type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

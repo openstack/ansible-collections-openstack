@@ -25,6 +25,7 @@ options:
      description:
        - restrict results to servers with names or UUID matching
          this glob expression (e.g., <web*>).
+     type: str
    detailed:
      description:
         - when true, return additional detail about servers at the expense
@@ -35,6 +36,7 @@ options:
      description:
         - restrict results to servers matching a dictionary of
           filters
+     type: dict
    all_projects:
      description:
        - Whether to list servers from all projects or just the current auth

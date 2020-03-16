@@ -29,6 +29,7 @@ options:
    name:
      description:
        - A flavor name. Cannot be used with I(ram) or I(vcpus) or I(ephemeral).
+     type: str
    ram:
      description:
        - "A string used for filtering flavors based on the amount of RAM
@@ -43,24 +44,22 @@ options:
          prefix the amount of RAM with one of these acceptable range values:
          '<', '>', '<=', '>='. These values represent less than, greater than,
          less than or equal to, and greater than or equal to, respectively."
-     type: bool
-     default: 'no'
+     type: str
    vcpus:
      description:
        - A string used for filtering flavors based on the number of virtual
          CPUs desired. Format is the same as the I(ram) parameter.
-     type: bool
-     default: 'no'
+     type: str
    limit:
      description:
        - Limits the number of flavors returned. All matching flavors are
          returned by default.
+     type: int
    ephemeral:
      description:
        - A string used for filtering flavors based on the amount of ephemeral
          storage. Format is the same as the I(ram) parameter
-     type: bool
-     default: 'no'
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

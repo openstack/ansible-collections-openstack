@@ -24,6 +24,7 @@ options:
      description:
         - Name or ID of the instance
      required: true
+     type: str
    wait:
      description:
         - If the module should wait for the instance action to be performed.
@@ -34,6 +35,7 @@ options:
         - The amount of time the module should wait for the instance to perform
           the requested action.
      default: 180
+     type: int
    action:
      description:
        - Perform the given action. The lock and unlock actions always return
@@ -41,9 +43,11 @@ options:
      choices: [stop, start, pause, unpause, lock, unlock, suspend, resume,
                rebuild]
      default: present
+     type: str
    image:
      description:
        - Image the server should be rebuilt with
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

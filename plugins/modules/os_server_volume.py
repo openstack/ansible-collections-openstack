@@ -24,17 +24,21 @@ options:
      choices: [present, absent]
      default: present
      required: false
+     type: str
    server:
      description:
        - Name or ID of server you want to attach a volume to
      required: true
+     type: str
    volume:
      description:
       - Name or id of volume you want to attach to a server
      required: true
+     type: str
    device:
      description:
       - Device you want to attach. Defaults to auto finding a device name.
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
