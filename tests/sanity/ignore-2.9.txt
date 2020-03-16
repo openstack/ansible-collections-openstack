@@ -1,16 +1,10 @@
 plugins/module_utils/openstack.py future-import-boilerplate
 plugins/module_utils/openstack.py metaclass-boilerplate
-plugins/modules/os_flavor_info.py validate-modules:doc-default-does-not-match-spec
 plugins/modules/os_image.py validate-modules:doc-choices-do-not-match-spec
-plugins/modules/os_image.py validate-modules:doc-default-does-not-match-spec
 plugins/modules/os_ironic.py validate-modules:doc-choices-do-not-match-spec
 plugins/modules/os_ironic_node.py validate-modules:doc-choices-do-not-match-spec
-plugins/modules/os_ironic_node.py validate-modules:doc-default-does-not-match-spec
 plugins/modules/os_quota.py validate-modules:doc-choices-do-not-match-spec
 plugins/modules/os_quota.py validate-modules:return-syntax-error
-plugins/modules/os_server.py validate-modules:doc-default-does-not-match-spec
-plugins/modules/os_server_action.py validate-modules:doc-default-does-not-match-spec
-plugins/modules/os_stack.py validate-modules:doc-default-does-not-match-spec
 plugins/modules/os_subnet.py validate-modules:doc-choices-do-not-match-spec
 plugins/doc_fragments/openstack.py future-import-boilerplate
 plugins/doc_fragments/openstack.py metaclass-boilerplate

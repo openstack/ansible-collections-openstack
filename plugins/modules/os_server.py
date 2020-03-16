@@ -38,19 +38,22 @@ options:
         - Text to use to filter image names, for the case, such as HP, where
           there are multiple image names matching the common identifying
           portions. image_exclude is a negative match filter - it is text that
-          may not exist in the image name. Defaults to "(deprecated)"
+          may not exist in the image name.
      type: str
+     default: "(deprecated)"
    flavor:
      description:
         - The name or id of the flavor in which the new instance has to be
-          created. Mutually exclusive with flavor_ram
-     default: 1
+          created.
+        - Exactly one of I(flavor) and I(flavor_ram) must be defined when
+          I(state=present).
      type: str
    flavor_ram:
      description:
         - The minimum amount of ram in MB that the flavor in which the new
-          instance has to be created must have. Mutually exclusive with flavor.
-     default: 1
+          instance has to be created must have.
+        - Exactly one of I(flavor) and I(flavor_ram) must be defined when
+          I(state=present).
      type: int
    flavor_include:
      description:
@@ -68,6 +71,7 @@ options:
         - Names of the security groups to which the instance should be
           added. This may be a YAML list or a comma separated string.
      type: list
+     default: ['default']
    network:
      description:
         - Name or ID of a network to attach this instance to. A simpler
@@ -633,7 +637,7 @@ class ServerModule(OpenStackModule):
         auto_ip=dict(default=True, type='bool', aliases=['auto_floating_ip', 'public_ip']),
         floating_ips=dict(default=None, type='list'),
         floating_ip_pools=dict(default=None, type='list'),
-        volume_size=dict(default=False, type='int'),
+        volume_size=dict(default=None, type='int'),
         boot_from_volume=dict(default=False, type='bool'),
         boot_volume=dict(default=None, aliases=['root_volume']),
         terminate_volume=dict(default=False, type='bool'),

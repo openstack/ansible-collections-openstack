@@ -59,7 +59,7 @@ options:
      description:
         - Whether the image can be accessed publicly. Note that publicizing an image requires admin role by default.
      type: bool
-     default: 'yes'
+     default: false
    protected:
      description:
         - Prevent image from being deleted

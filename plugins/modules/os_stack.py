@@ -52,7 +52,7 @@ options:
       description:
         - Rollback stack creation
       type: bool
-      default: 'yes'
+      default: false
     timeout:
       description:
         - Maximum number of seconds to wait for the stack creation
