@@ -26,7 +26,9 @@ options:
      default: []
      type: list
      elements: str
-requirements: [ os-client-config ]
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 author: "Monty Taylor (@emonty)"
 '''
 
@@ -45,11 +47,11 @@ EXAMPLES = '''
 '''
 
 try:
-    import os_client_config
-    from os_client_config import exceptions
-    HAS_OS_CLIENT_CONFIG = True
+    import openstack.config
+    from openstack import exceptions
+    HAS_OPENSTACKSDK = True
 except ImportError:
-    HAS_OS_CLIENT_CONFIG = False
+    HAS_OPENSTACKSDK = False
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -59,20 +61,20 @@ def main():
         clouds=dict(required=False, type='list', default=[], elements='str'),
     ))
 
-    if not HAS_OS_CLIENT_CONFIG:
-        module.fail_json(msg='os-client-config is required for this module')
+    if not HAS_OPENSTACKSDK:
+        module.fail_json(msg='openstacksdk is required for this module')
 
     p = module.params
 
     try:
-        config = os_client_config.OpenStackConfig()
+        config = openstack.config.OpenStackConfig()
         clouds = []
         for cloud in config.get_all_clouds():
             if not p['clouds'] or cloud.name in p['clouds']:
                 cloud.config['name'] = cloud.name
                 clouds.append(cloud.config)
         module.exit_json(ansible_facts=dict(openstack=dict(clouds=clouds)))
-    except exceptions.OpenStackConfigException as e:
+    except exceptions.ConfigException as e:
         module.fail_json(msg=str(e))
 
 
