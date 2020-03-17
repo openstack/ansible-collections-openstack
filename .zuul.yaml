@@ -1,0 +1,49 @@
+# yamllint disable
+---
+- job:
+    name: ansible-collections-openstack-functional-devstack
+    parent: openstacksdk-functional-devstack
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using master of openstacksdk with latest ansible release
+    vars:
+      zuul_work_dir: src/opendev.org/openstack/ansible-collections-openstack
+      tox_envlist: ansible
+      tox_install_siblings: true
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-releases
+    parent: ansible-collections-openstack-functional-devstack
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using releases of openstacksdk and latest ansible release
+    vars:
+      tox_install_siblings: false
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-ansible-devel
+    parent: ansible-collections-openstack-functional-devstack
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using master of openstacksdk and devel branch of ansible
+    # non-voting because we can't prevent ansible devel from breaking us
+    voting: false
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: devel
+
+- project:
+    check:
+      jobs:
+        - tox-pep8
+        - openstack-tox-linters
+        - ansible-collections-openstack-functional-devstack
+        - ansible-collections-openstack-functional-devstack-releases
+        - ansible-collections-openstack-functional-devstack-ansible-devel
+    gate:
+      jobs:
+        - tox-pep8
+        - openstack-tox-linters
+        - ansible-collections-openstack-functional-devstack
+        - ansible-collections-openstack-functional-devstack-releases
+        - ansible-collections-openstack-functional-devstack-ansible-devel
