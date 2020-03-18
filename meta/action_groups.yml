@@ -16,6 +16,7 @@ os:
 - os_keystone_domain
 - os_keystone_domain_info
 - os_keystone_endpoint
+- os_keystone_mapping
 - os_keystone_role
 - os_keystone_service
 - os_listener

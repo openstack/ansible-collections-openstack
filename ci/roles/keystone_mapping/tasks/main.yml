@@ -1,0 +1,169 @@
+---
+- module_defaults:
+    # meta/action_groups.yml glue seems to be missing
+    # group/os:
+    #   cloud: "{{ cloud }}"
+    openstack.cloud.os_keystone_mapping:
+      cloud: "{{ cloud }}"
+  block:
+    - name: "Ensure mapping doesn't exist to start"
+      openstack.cloud.os_keystone_mapping:
+        state: 'absent'
+        name: '{{ mapping_name }}'
+      register: delete_mapping
+    - assert:
+        that:
+        - delete_mapping is successful
+
+    - name: 'Create mapping - CHECK_MODE'
+      openstack.cloud.os_keystone_mapping:
+        state: 'present'
+        name: '{{ mapping_name }}'
+        rules: '{{ mapping_rules_1 }}'
+      register: create_mapping
+      check_mode: yes
+    - assert:
+        that:
+        - create_mapping is successful
+        - create_mapping is changed
+
+    - name: 'Create mapping'
+      openstack.cloud.os_keystone_mapping:
+        state: 'present'
+        name: '{{ mapping_name }}'
+        rules: '{{ mapping_rules_1 }}'
+      register: create_mapping
+    - assert:
+        that:
+        - create_mapping is successful
+        - create_mapping is changed
+        - '"id" in create_mapping.mapping'
+        - '"name" in create_mapping.mapping'
+        - '"rules" in create_mapping.mapping'
+        - create_mapping.mapping.id == mapping_name
+        - create_mapping.mapping.name == mapping_name
+        - create_mapping.mapping.rules | length == 1
+
+    - name: 'Create mapping (retry - no change) - CHECK_MODE'
+      openstack.cloud.os_keystone_mapping:
+        state: 'present'
+        name: '{{ mapping_name }}'
+        rules: '{{ mapping_rules_1 }}'
+      register: create_mapping
+      check_mode: yes
+    - assert:
+        that:
+        - create_mapping is successful
+        - create_mapping is not changed
+
+    - name: 'Create mapping (retry - no change)'
+      openstack.cloud.os_keystone_mapping:
+        state: 'present'
+        name: '{{ mapping_name }}'
+        rules: '{{ mapping_rules_1 }}'
+      register: create_mapping
+    - assert:
+        that:
+        - create_mapping is successful
+        - create_mapping is not changed
+        - '"id" in create_mapping.mapping'
+        - '"name" in create_mapping.mapping'
+        - '"rules" in create_mapping.mapping'
+        - create_mapping.mapping.id == mapping_name
+        - create_mapping.mapping.name == mapping_name
+        - create_mapping.mapping.rules | length == 1
+
+    - name: 'Update mapping - CHECK_MODE'
+      openstack.cloud.os_keystone_mapping:
+        state: 'present'
+        name: '{{ mapping_name }}'
+        rules: '{{ mapping_rules_2 }}'
+      register: update_mapping
+      check_mode: yes
+    - assert:
+        that:
+        - update_mapping is successful
+        - update_mapping is changed
+
+    - name: 'Update mapping'
+      openstack.cloud.os_keystone_mapping:
+        state: 'present'
+        name: '{{ mapping_name }}'
+        rules: '{{ mapping_rules_2 }}'
+      register: update_mapping
+    - assert:
+        that:
+        - update_mapping is successful
+        - update_mapping is changed
+        - '"id" in update_mapping.mapping'
+        - '"name" in update_mapping.mapping'
+        - '"rules" in update_mapping.mapping'
+        - update_mapping.mapping.id == mapping_name
+        - update_mapping.mapping.name == mapping_name
+        - update_mapping.mapping.rules | length == 1
+
+    - name: 'Update mapping (retry - no change)'
+      openstack.cloud.os_keystone_mapping:
+        state: 'present'
+        name: '{{ mapping_name }}'
+        rules: '{{ mapping_rules_2 }}'
+      register: update_mapping
+    - assert:
+        that:
+        - update_mapping is successful
+        - update_mapping is not changed
+        - '"id" in update_mapping.mapping'
+        - '"name" in update_mapping.mapping'
+        - '"rules" in update_mapping.mapping'
+        - update_mapping.mapping.id == mapping_name
+        - update_mapping.mapping.name == mapping_name
+        - update_mapping.mapping.rules | length == 1
+
+    - name: 'Delete mapping - CHECK_MODE'
+      openstack.cloud.os_keystone_mapping:
+        state: 'absent'
+        name: '{{ mapping_name }}'
+      register: delete_mapping
+      check_mode: yes
+    - assert:
+        that:
+        - delete_mapping is successful
+        - delete_mapping is changed
+
+    - name: 'Delete mapping'
+      openstack.cloud.os_keystone_mapping:
+        state: 'absent'
+        name: '{{ mapping_name }}'
+      register: delete_mapping
+    - assert:
+        that:
+        - delete_mapping is successful
+        - delete_mapping is changed
+
+    - name: 'Delete mapping (retry - no change) - CHECK_MODE'
+      openstack.cloud.os_keystone_mapping:
+        state: 'absent'
+        name: '{{ mapping_name }}'
+      register: delete_mapping
+      check_mode: yes
+    - assert:
+        that:
+        - delete_mapping is successful
+        - delete_mapping is not changed
+
+    - name: 'Delete mapping (retry - no change) '
+      openstack.cloud.os_keystone_mapping:
+        state: 'absent'
+        name: '{{ mapping_name }}'
+      register: delete_mapping
+    - assert:
+        that:
+        - delete_mapping is successful
+        - delete_mapping is not changed
+
+  always:
+    - name: 'Delete mapping'
+      openstack.cloud.os_keystone_mapping:
+         state: 'absent'
+         name: '{{ mapping_name }}'
+      ignore_errors: yes
