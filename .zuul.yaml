@@ -32,6 +32,50 @@
       - name: github.com/ansible/ansible
         override-checkout: devel
 
+- job:
+    name: ansible-collections-openstack-functional-devstack-ansible-2.9
+    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using master of openstacksdk and stable 2.9 branch of ansible
+    # non-voting because we can't prevent ansible devel from breaking us
+    voting: true
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.9
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-train-ansible-devel
+    parent: ansible-collections-openstack-functional-devstack
+    description: |
+      Run openstack collections functional tests against a train devstack
+      using train brach of openstacksdk and devel branch of ansible
+    # non-voting because we can't prevent ansible devel from breaking us
+    voting: false
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: devel
+      - name: openstack/openstacksdk
+        override-branch: train
+      - name: openstack/devstack
+        override-checkout: train
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-train-ansible-2.9
+    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    description: |
+      Run openstack collections functional tests against a train devstack
+      using train brach of openstacksdk and stable 2.9 branch of ansible
+    # non-voting because we can't prevent ansible devel from breaking us
+    voting: true
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.9
+      - name: openstack/openstacksdk
+        override-branch: train
+      - name: openstack/devstack
+        override-checkout: train
+
 - project:
     check:
       jobs:
@@ -40,6 +84,9 @@
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-ansible-devel
+        - ansible-collections-openstack-functional-devstack-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-train-ansible-devel
+        - ansible-collections-openstack-functional-devstack-train-ansible-2.9
     gate:
       jobs:
         - tox-pep8
