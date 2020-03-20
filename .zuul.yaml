@@ -76,6 +76,70 @@
       - name: openstack/devstack
         override-checkout: train
 
+- job:
+    name: ansible-collections-openstack-functional-devstack-stein-ansible-devel
+    parent: ansible-collections-openstack-functional-devstack
+    description: |
+      Run openstack collections functional tests against a stein devstack
+      using stein brach of openstacksdk and devel branch of ansible
+    # non-voting because we can't prevent ansible devel from breaking us
+    voting: false
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: devel
+      - name: openstack/openstacksdk
+        override-branch: stein
+      - name: openstack/devstack
+        override-checkout: stein
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-stein-ansible-2.9
+    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    description: |
+      Run openstack collections functional tests against a stein devstack
+      using stein brach of openstacksdk and stable 2.9 branch of ansible
+    # non-voting because we can't prevent ansible devel from breaking us
+    voting: true
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.9
+      - name: openstack/openstacksdk
+        override-branch: stein
+      - name: openstack/devstack
+        override-checkout: stein
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-rocky-ansible-devel
+    parent: ansible-collections-openstack-functional-devstack
+    description: |
+      Run openstack collections functional tests against a rocky devstack
+      using rocky brach of openstacksdk and devel branch of ansible
+    # non-voting because we can't prevent ansible devel from breaking us
+    voting: false
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: devel
+      - name: openstack/openstacksdk
+        override-branch: rocky
+      - name: openstack/devstack
+        override-checkout: rocky
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-rocky-ansible-2.9
+    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    description: |
+      Run openstack collections functional tests against a rocky devstack
+      using rocky brach of openstacksdk and stable 2.9 branch of ansible
+    # non-voting because we can't prevent ansible devel from breaking us
+    voting: true
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.9
+      - name: openstack/openstacksdk
+        override-branch: rocky
+      - name: openstack/devstack
+        override-checkout: rocky
+
 - project:
     check:
       jobs:
@@ -95,10 +159,23 @@
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-train-ansible-2.9:
             dependencies: *deps_unit_lint
+        - ansible-collections-openstack-functional-devstack-stein-ansible-devel:
+            dependencies: *deps_unit_lint
+        - ansible-collections-openstack-functional-devstack-stein-ansible-2.9:
+            dependencies: *deps_unit_lint
+        - ansible-collections-openstack-functional-devstack-rocky-ansible-devel:
+            dependencies: *deps_unit_lint
+        - ansible-collections-openstack-functional-devstack-rocky-ansible-2.9:
+            dependencies: *deps_unit_lint
+
     gate:
       jobs:
         - tox-pep8
         - openstack-tox-linters
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
-        - ansible-collections-openstack-functional-devstack-ansible-devel
+        - ansible-collections-openstack-functional-devstack-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-train-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-stein-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-rocky-ansible-2.9
+
