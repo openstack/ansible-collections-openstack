@@ -10,6 +10,7 @@
       zuul_work_dir: src/opendev.org/openstack/ansible-collections-openstack
       tox_envlist: ansible
       tox_install_siblings: true
+      fetch_subunit: false
 
 - job:
     name: ansible-collections-openstack-functional-devstack-releases
