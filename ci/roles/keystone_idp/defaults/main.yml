@@ -1,0 +1,13 @@
+idp_name: 'test-idp'
+idp_name_2: 'test-idp-2'
+idp_description: 'My example IDP'
+idp_description_2: 'My example Identity Provider'
+
+domain_name: 'test-domain'
+remote_ids_1:
+- 'https://auth.example.com/auth/realms/ExampleRealm'
+- 'https://auth.stage.example.com/auth/realms/ExampleRealm'
+remote_ids_2:
+- 'https://auth.example.com/auth/realms/ExampleRealm'
+remote_ids_3:
+- 'https://auth.stage.example.com/auth/realms/ExampleRealm'
