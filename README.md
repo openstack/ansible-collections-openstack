@@ -1,4 +1,4 @@
-[![GitHub Actions CI/CD build status — Collection test suite](https://github.com/ansible-collection-migration/openstack.cloud/workflows/Collection%20test%20suite/badge.svg?branch=master)](https://github.com/ansible-collection-migration/openstack.cloud/actions?query=workflow%3A%22Collection%20test%20suite%22)
+[![OpenDev Zuul Builds - Ansible Collection OpenStack](https://zuul-ci.org/gated.svg)](http://zuul.opendev.org/t/openstack/builds?project=openstack%2Fansible-collections-openstack#)
 
 Ansible Collection: openstack.cloud
-=================================================
+===================================
