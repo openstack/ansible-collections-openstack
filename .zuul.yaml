@@ -6,6 +6,8 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk with latest ansible release
+    required-projects:
+      - openstack/ansible-collections-openstack
     vars:
       zuul_work_dir: src/opendev.org/openstack/ansible-collections-openstack
       tox_envlist: ansible
