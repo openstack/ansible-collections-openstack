@@ -18,9 +18,9 @@
     openstack.cloud.os_keystone_federation_protocol:
       cloud: "{{ cloud }}"
       idp_id: "{{ idp_name }}"
-    #openstack.cloud.os_keystone_federation_protocol_info:
-    #  cloud: "{{ cloud }}"
-    #  idp_id: "{{ idp_name }}"
+    openstack.cloud.os_keystone_federation_protocol_info:
+      cloud: "{{ cloud }}"
+      idp_id: "{{ idp_name }}"
   block:
     # ========================================================================
     #   Initial setup
@@ -91,14 +91,14 @@
         - create_protocol is successful
         - create_protocol is changed
 
-    #- name: 'Fetch Protocol info (should be absent)'
-    #  openstack.cloud.os_keystone_federation_protocol_info:
-    #    name: '{{ protocol_name }}'
-    #  register: protocol_info
-    #  ignore_errors: yes
-    #- assert:
-    #    that:
-    #    - protocol_info is failed
+    - name: 'Fetch Protocol info (should be absent)'
+      openstack.cloud.os_keystone_federation_protocol_info:
+        name: '{{ protocol_name }}'
+      register: protocol_info
+      ignore_errors: yes
+    - assert:
+        that:
+        - protocol_info is failed
 
     - name: 'Create protocol'
       openstack.cloud.os_keystone_federation_protocol:
@@ -255,56 +255,56 @@
     # ========================================================================
     #   Basic tests of os_keystone_federation_protocol_info
 
-    #- name: 'Fetch Protocol info (a specific protocol)'
-    #  openstack.cloud.os_keystone_federation_protocol_info:
-    #    name: '{{ protocol_name }}'
-    #  register: protocol_info
-    #- assert:
-    #    that:
-    #    - protocol_info is successful
-    #    - '"protocols" in protocol_info'
-    #    - protocol_info.protocols | length == 1
-    #    - '"id" in protocol'
-    #    - '"name" in protocol'
-    #    - '"idp_id" in protocol'
-    #    - '"mapping_id" in protocol'
-    #    - protocol.id == protocol_name
-    #    - protocol.name == protocol_name
-    #    - protocol.idp_id == idp_name
-    #    - protocol.mapping_id == mapping_name_2
-    #  vars:
-    #    protocol: '{{ protocol_info.protocols[0] }}'
+    - name: 'Fetch Protocol info (a specific protocol)'
+      openstack.cloud.os_keystone_federation_protocol_info:
+        name: '{{ protocol_name }}'
+      register: protocol_info
+    - assert:
+        that:
+        - protocol_info is successful
+        - '"protocols" in protocol_info'
+        - protocol_info.protocols | length == 1
+        - '"id" in protocol'
+        - '"name" in protocol'
+        - '"idp_id" in protocol'
+        - '"mapping_id" in protocol'
+        - protocol.id == protocol_name
+        - protocol.name == protocol_name
+        - protocol.idp_id == idp_name
+        - protocol.mapping_id == mapping_name_2
+      vars:
+        protocol: '{{ protocol_info.protocols[0] }}'
 
-    #- name: 'Fetch Protocol info (all protocols on our test IDP)'
-    #  openstack.cloud.os_keystone_federation_protocol_info: {}
-    #    # idp_id defined in defaults at the start
-    #  register: protocol_info
-    #- assert:
-    #    that:
-    #    - protocol_info is successful
-    #    - '"protocols" in protocol_info'
-    #    # We created the IDP, and we're going to delete it:
-    #    # we should be able to trust what's attached to it
-    #    - protocol_info.protocols | length == 2
-    #    - '"id" in protocol_1'
-    #    - '"name" in protocol_1'
-    #    - '"idp_id" in protocol_1'
-    #    - '"mapping_id" in protocol_1'
-    #    - '"id" in protocol_2'
-    #    - '"name" in protocol_2'
-    #    - '"idp_id" in protocol_2'
-    #    - '"mapping_id" in protocol_2'
-    #    - protocol_name in (protocol_info.protocols | map(attribute='id'))
-    #    - protocol_name in (protocol_info.protocols | map(attribute='id'))
-    #    - protocol_name_2 in (protocol_info.protocols | map(attribute='name'))
-    #    - protocol_name_2 in (protocol_info.protocols | map(attribute='name'))
-    #    - mapping_name_1 in (protocol_info.protocols | map(attribute='mapping_id'))
-    #    - mapping_name_2 in (protocol_info.protocols | map(attribute='mapping_id'))
-    #    - protocol_1.idp_id == idp_name
-    #    - protocol_2.idp_id == idp_name
-    #  vars:
-    #    protocol_1: '{{ protocol_info.protocols[0] }}'
-    #    protocol_2: '{{ protocol_info.protocols[1] }}'
+    - name: 'Fetch Protocol info (all protocols on our test IDP)'
+      openstack.cloud.os_keystone_federation_protocol_info: {}
+        # idp_id defined in defaults at the start
+      register: protocol_info
+    - assert:
+        that:
+        - protocol_info is successful
+        - '"protocols" in protocol_info'
+        # We created the IDP, and we're going to delete it:
+        # we should be able to trust what's attached to it
+        - protocol_info.protocols | length == 2
+        - '"id" in protocol_1'
+        - '"name" in protocol_1'
+        - '"idp_id" in protocol_1'
+        - '"mapping_id" in protocol_1'
+        - '"id" in protocol_2'
+        - '"name" in protocol_2'
+        - '"idp_id" in protocol_2'
+        - '"mapping_id" in protocol_2'
+        - protocol_name in (protocol_info.protocols | map(attribute='id'))
+        - protocol_name in (protocol_info.protocols | map(attribute='id'))
+        - protocol_name_2 in (protocol_info.protocols | map(attribute='name'))
+        - protocol_name_2 in (protocol_info.protocols | map(attribute='name'))
+        - mapping_name_1 in (protocol_info.protocols | map(attribute='mapping_id'))
+        - mapping_name_2 in (protocol_info.protocols | map(attribute='mapping_id'))
+        - protocol_1.idp_id == idp_name
+        - protocol_2.idp_id == idp_name
+      vars:
+        protocol_1: '{{ protocol_info.protocols[0] }}'
+        protocol_2: '{{ protocol_info.protocols[1] }}'
 
     # ========================================================================
     #   Deletion
