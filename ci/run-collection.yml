@@ -18,6 +18,9 @@
     - role: keystone_idp
       tags: keystone_idp
       when: sdk_version is version(0.44, '>=')
+    - role: keystone_federation_protocol
+      tags: keystone_federation_protocol
+      when: sdk_version is version(0.44, '>=')
     - { role: keystone_role, tags: keystone_role }
     - { role: network, tags: network }
     - { role: nova_flavor, tags: nova_flavor }
