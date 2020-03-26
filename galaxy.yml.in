@@ -14,6 +14,12 @@ documentation: https://docs.openstack.org/ansible-collections-openstack
 homepage: https://opendev.org
 issues: https://review.opendev.org/q/project:openstack/ansible-collections-openstack
 build_ignore:
-  - build_artifact/
   - "*.tar.gz"
+  - build_artifact/
+  - ci/
+  - galaxy.yml.in
+  - setup.cfg
+  - test-requirements.txt
+  - tests/
+  - tox.ini
   - zuul.yaml
