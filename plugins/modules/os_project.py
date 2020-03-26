@@ -39,6 +39,12 @@ options:
         - Is the project enabled
      type: bool
      default: 'yes'
+   properties:
+     description:
+        - Additional properties to be associated with this project. Requires
+          openstacksdk>0.45.
+     type: dict
+     default: {}
    state:
      description:
        - Should the resource be present or absent.
@@ -63,6 +69,8 @@ EXAMPLES = '''
     description: demodescription
     domain_id: demoid
     enabled: True
+    properties:
+      internal_alias: demo_project
 
 # Delete a project
 - os_project:
@@ -109,6 +117,13 @@ def _needs_update(module, project):
         if module.params[key] is not None and module.params[key] != project.get(key):
             return True
 
+    properties = module.params['properties']
+    if properties:
+        project_properties = project.get('properties')
+        for k, v in properties.items():
+            if v is not None and v != project_properties[k]:
+                return True
+
     return False
 
 
@@ -137,6 +152,7 @@ def main():
         name=dict(required=True),
         description=dict(required=False, default=None),
         domain_id=dict(required=False, default=None, aliases=['domain']),
+        properties=dict(type='dict', default={}),
         enabled=dict(default=True, type='bool'),
         state=dict(default='present', choices=['absent', 'present'])
     )
@@ -152,9 +168,15 @@ def main():
     description = module.params['description']
     domain = module.params.get('domain_id')
     enabled = module.params['enabled']
+    properties = module.params['properties']
     state = module.params['state']
 
-    sdk, cloud = openstack_cloud_from_module(module)
+    min_version = None
+
+    if properties:
+        min_version = '0.45.1'
+
+    sdk, cloud = openstack_cloud_from_module(module, min_version)
     try:
         if domain:
             try:
@@ -186,11 +208,15 @@ def main():
                     domain_id=domain,
                     enabled=enabled)
                 changed = True
+
+                project = cloud.update_project(
+                    project['id'], description=description,
+                    enabled=enabled, **properties)
             else:
                 if _needs_update(module, project):
                     project = cloud.update_project(
                         project['id'], description=description,
-                        enabled=enabled)
+                        enabled=enabled, **properties)
                     changed = True
                 else:
                     changed = False

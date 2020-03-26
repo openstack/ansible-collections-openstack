@@ -1,0 +1,28 @@
+---
+- name: Create project
+  openstack.cloud.os_project:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_project
+     description: dummy description
+     domain_id: default
+     enabled: True
+  register: project
+
+- debug: var=project
+
+- name: Update project
+  openstack.cloud.os_project:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_project
+     description: new description
+  register: updatedproject
+
+- debug: var=updatedproject
+
+- name: Delete project
+  openstack.cloud.os_project:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_project

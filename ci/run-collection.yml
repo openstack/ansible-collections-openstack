@@ -23,6 +23,10 @@
     - { role: nova_flavor, tags: nova_flavor }
     - { role: object, tags: object }
     - { role: port, tags: port }
+    - { role: project, tags: project }
+    - role: project_properties
+      tags: project_properties
+      when: sdk_version is version("0.45.01", '>')
     - { role: router, tags: router }
     - { role: security_group, tags: security_group }
     - { role: server, tags: server }
