@@ -100,7 +100,12 @@ fi
 tox -ebuild
 ansible-galaxy collection build --force . --output-path ./build_artifact
 ansible-galaxy collection install $(ls build_artifact/openstack-cloud-*) --force
+# Discover openstackSDK version
+SDK_VER=$(python -c "import openstack; print(openstack.version.__version__)")
 pushd ci/
 # run tests
-ANSIBLE_COLLECTIONS_PATHS=${HOME}/.ansible/collections ansible-playbook -vvv ./run-collection.yml -e "cloud=${CLOUD} image=${IMAGE} ${ANSIBLE_VARS}" ${tag_opt}
+ANSIBLE_COLLECTIONS_PATHS=${HOME}/.ansible/collections ansible-playbook \
+    -vvv ./run-collection.yml \
+    -e "sdk_version=${SDK_VER} cloud=${CLOUD} image=${IMAGE} ${ANSIBLE_VARS}" \
+    ${tag_opt}
 popd
