@@ -85,23 +85,22 @@ RETURN = '''
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    openstack_full_argument_spec,
-    openstack_module_kwargs,
-    openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_full_argument_spec
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_module_kwargs
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_cloud_from_module
 
 
 def normalize_mapping(mapping):
     """
-    Normalizes the mapping definitions so that the outputs are consistent with the
-    parameters
+    Normalizes the mapping definitions so that the outputs are consistent with
+    the parameters
 
     - "name" (parameter) == "id" (SDK)
     """
     if mapping is None:
         return None
 
-    _mapping = dict(mapping)
+    _mapping = mapping.to_dict()
     _mapping['name'] = mapping['id']
     return _mapping
 
@@ -198,23 +197,27 @@ def main():
         mapping = cloud.identity.get_mapping(name)
     except sdk.exceptions.ResourceNotFound:
         mapping = None
+    except sdk.exceptions.OpenStackCloudException as ex:
+        module.fail_json(msg='Failed to fetch mapping: {0}'.format(str(ex)))
 
     if state == 'absent':
         if mapping is not None:
             changed = delete_mapping(module, sdk, cloud, mapping)
         module.exit_json(changed=changed)
 
-    if len(module.params.get('rules')) < 1:
-        module.fail_json(msg='At least one rule must be passed')
+    # state == 'present'
+    else:
+        if len(module.params.get('rules')) < 1:
+            module.fail_json(msg='At least one rule must be passed')
 
-    if mapping is None:
-        (changed, mapping) = create_mapping(module, sdk, cloud, name)
-        mapping = normalize_mapping(mapping)
-        module.exit_json(changed=changed, mapping=mapping)
-
-    (changed, new_mapping) = update_mapping(module, sdk, cloud, mapping)
-    new_mapping = normalize_mapping(new_mapping)
-    module.exit_json(mapping=new_mapping, changed=changed)
+        if mapping is None:
+            (changed, mapping) = create_mapping(module, sdk, cloud, name)
+            mapping = normalize_mapping(mapping)
+            module.exit_json(changed=changed, mapping=mapping)
+        else:
+            (changed, new_mapping) = update_mapping(module, sdk, cloud, mapping)
+            new_mapping = normalize_mapping(new_mapping)
+            module.exit_json(mapping=new_mapping, changed=changed)
 
 
 if __name__ == '__main__':
