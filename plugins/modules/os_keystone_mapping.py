@@ -12,7 +12,7 @@ DOCUMENTATION = '''
 module: os_keystone_mapping
 short_description: Manage a federation mapping
 author:
-  - "Mark Chappell <mchappel@redhat.com>"
+  - "Mark Chappell (@tremble) <mchappel@redhat.com>"
 description:
   - Manage a federation mapping.
 options:

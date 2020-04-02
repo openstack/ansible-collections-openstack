@@ -28,6 +28,8 @@
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import abc
+from distutils.version import StrictVersion
+import importlib
 import os
 
 from ansible.module_utils.basic import AnsibleModule
@@ -112,10 +114,8 @@ def openstack_module_kwargs(**kwargs):
 
 
 def openstack_cloud_from_module(module, min_version='0.12.0'):
-    from distutils.version import StrictVersion
     try:
         # Due to the name shadowing we should import other way
-        import importlib
         sdk = importlib.import_module('openstack')
         sdk_version = importlib.import_module('openstack.version')
     except ImportError:
