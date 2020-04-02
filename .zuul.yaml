@@ -41,7 +41,6 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.9 branch of ansible
-    # non-voting because we can't prevent ansible devel from breaking us
     voting: true
     required-projects:
       - name: github.com/ansible/ansible
@@ -69,7 +68,6 @@
     description: |
       Run openstack collections functional tests against a train devstack
       using train brach of openstacksdk and stable 2.9 branch of ansible
-    # non-voting because we can't prevent ansible devel from breaking us
     voting: true
     required-projects:
       - name: github.com/ansible/ansible
@@ -101,7 +99,6 @@
     description: |
       Run openstack collections functional tests against a stein devstack
       using stein brach of openstacksdk and stable 2.9 branch of ansible
-    # non-voting because we can't prevent ansible devel from breaking us
     voting: true
     required-projects:
       - name: github.com/ansible/ansible
@@ -133,7 +130,6 @@
     description: |
       Run openstack collections functional tests against a rocky devstack
       using rocky brach of openstacksdk and stable 2.9 branch of ansible
-    # non-voting because we can't prevent ansible devel from breaking us
     voting: true
     required-projects:
       - name: github.com/ansible/ansible
@@ -143,15 +139,37 @@
       - name: openstack/devstack
         override-checkout: rocky
 
+- job:
+    name: openstack-tox-linters-ansible-devel
+    parent: openstack-tox-linters
+    description: |
+      Run openstack collections linter tests using the devel branch of ansible
+    # non-voting because we can't prevent ansible devel from breaking us
+    voting: false
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: devel
+
+- job:
+    name: openstack-tox-linters-ansible-2.9
+    parent: openstack-tox-linters
+    description: |
+      Run openstack collections linter tests using the 2.9 branch of ansible
+    voting: true
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.9
+
 - project:
     check:
       jobs:
         - tox-pep8
-        - openstack-tox-linters
+        - openstack-tox-linters-ansible-devel
+        - openstack-tox-linters-ansible-2.9
         - ansible-collections-openstack-functional-devstack:
             dependencies: &deps_unit_lint
               - tox-pep8
-              - openstack-tox-linters
+              - openstack-tox-linters-ansible-2.9
         - ansible-collections-openstack-functional-devstack-releases:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-ansible-devel:
