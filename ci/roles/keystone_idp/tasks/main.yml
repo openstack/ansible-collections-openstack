@@ -1,0 +1,801 @@
+---
+# General run of tests
+# - Make change - Check mode
+# - Make change
+# - Retry change (noop) - Check mode
+# - Retry change (noop)
+#
+- module_defaults:
+    # meta/action_groups.yml glue seems to be missing
+    # group/os:
+    #   cloud: "{{ cloud }}"
+    openstack.cloud.os_keystone_domain:
+      cloud: "{{ cloud }}"
+    openstack.cloud.os_keystone_identity_provider:
+      cloud: "{{ cloud }}"
+    #openstack.cloud.os_keystone_identity_provider_info:
+    #  cloud: "{{ cloud }}"
+  block:
+    # ========================================================================
+    #   Initial setup
+    - name: 'Create test domain'
+      openstack.cloud.os_keystone_domain:
+        name: '{{ domain_name }}'
+      register: create_domain
+    - assert:
+        that:
+        - create_domain is successful
+        - '"id" in create_domain'
+    - name: 'Store domain ID as fact'
+      set_fact:
+        domain_id: '{{ create_domain.id }}'
+
+    # We *should* have a blank slate to start with, but we also shouldn't
+    # explode if I(state=absent) and the IDP doesn't exist
+    - name: "Ensure IDP doesn't exist to start"
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'absent'
+        name: '{{ idp_name }}'
+      register: delete_idp
+    - assert:
+        that:
+        - delete_idp is successful
+
+    # ========================================================================
+    #   Creation (simple case)
+
+    - name: 'Create IDP - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        domain_id: '{{ domain_id }}'
+      register: create_idp
+    - assert:
+        that:
+        - create_idp is successful
+        - create_idp is changed
+
+    #- name: 'Fetch identity_provider info (provider should be absent)'
+    #  openstack.cloud.os_keystone_identity_provider_info:
+    #    name: '{{ idp_name }}'
+    #  register: identity_provider_info
+    #  ignore_errors: yes
+    #- assert:
+    #    that:
+    #    - identity_provider_info is failed
+
+    - name: 'Create IDP'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        domain_id: '{{ domain_id }}'
+      register: create_identity_provider
+    - assert:
+        that:
+        - create_identity_provider is successful
+        - create_identity_provider is changed
+        - '"identity_provider" in create_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name
+        - idp.name == idp_name
+        - idp.domain_id == domain_id
+        - not idp.description
+        - idp.enabled == True
+        - idp.is_enabled == True
+        - idp.remote_ids == []
+      vars:
+        idp: '{{ create_identity_provider.identity_provider }}'
+
+    #- name: 'Fetch IDP info - with name'
+    #  openstack.cloud.os_keystone_identity_provider_info:
+    #    name: '{{ idp_name }}'
+    #  register: identity_provider_info
+    #- assert:
+    #    that:
+    #    - identity_provider_info is successful
+    #    - '"identity_providers" in identity_provider_info'
+    #    - idps | length == 1
+    #    - '"id" in idp'
+    #    - '"name" in idp'
+    #    - '"domain_id" in idp'
+    #    - '"description" in idp'
+    #    - '"enabled" in idp'
+    #    - '"is_enabled" in idp'
+    #    - '"remote_ids" in idp'
+    #    - idp.id == idp_name
+    #    - idp.name == idp_name
+    #    - idp.domain_id == domain_id
+    #    - not idp.description
+    #    - idp.enabled == True
+    #    - idp.is_enabled == True
+    #    - idp.remote_ids == []
+    #  vars:
+    #    idps: '{{ identity_provider_info.identity_providers }}'
+    #    idp: '{{ identity_provider_info.identity_providers[0] }}'
+
+    #- name: 'Fetch identity_provider info - without name'
+    #  openstack.cloud.os_keystone_identity_provider_info: {}
+    #  register: identity_provider_info
+    #- assert:
+    #    that:
+    #    - identity_provider_info is successful
+    #    - '"identity_providers" in identity_provider_info'
+    #    # In CI we generally have a clean slate, but this might
+    #    # not be true for everyone...
+    #    - idps | length >= 1
+    #    - '"id" in idp'
+    #    - '"name" in idp'
+    #    - '"domain_id" in idp'
+    #    - '"description" in idp'
+    #    - '"enabled" in idp'
+    #    - '"is_enabled" in idp'
+    #    - '"remote_ids" in idp'
+    #  vars:
+    #    idps: '{{ identity_provider_info.identity_providers }}'
+    #    idp: '{{ identity_provider_info.identity_providers[0] }}'
+
+    - name: 'Create identity_provider (retry - no change) - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        domain_id: '{{ domain_id }}'
+      register: create_identity_provider
+    - assert:
+        that:
+        - create_identity_provider is successful
+        - create_identity_provider is not changed
+
+    - name: 'Create identity_provider (retry - no change)'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        domain_id: '{{ domain_id }}'
+      register: create_identity_provider
+    - assert:
+        that:
+        - create_identity_provider is successful
+        - create_identity_provider is not changed
+        - '"identity_provider" in create_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name
+        - idp.name == idp_name
+        - idp.domain_id == domain_id
+        - not idp.description
+        - idp.enabled == True
+        - idp.is_enabled == True
+        - idp.remote_ids == []
+      vars:
+        idp: '{{ create_identity_provider.identity_provider }}'
+
+    # ========================================================================
+    #   Update (simple cases)
+
+    - name: 'Update IDP set description - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        description: '{{ idp_description }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is changed
+
+    - name: 'Update IDP set description'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        description: '{{ idp_description }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is changed
+        - '"identity_provider" in update_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name
+        - idp.name == idp_name
+        - idp.domain_id == domain_id
+        - idp.description == idp_description
+        - idp.enabled == True
+        - idp.is_enabled == True
+        - idp.remote_ids == []
+      vars:
+        idp: '{{ update_identity_provider.identity_provider }}'
+
+    - name: 'Update IDP set description (retry - no change) - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        description: '{{ idp_description }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is not changed
+
+    - name: 'Update IDP set description (retry - no change)'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        description: '{{ idp_description }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is not changed
+        - '"identity_provider" in update_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name
+        - idp.name == idp_name
+        - idp.domain_id == domain_id
+        - idp.description == idp_description
+        - idp.enabled == True
+        - idp.is_enabled == True
+        - idp.remote_ids == []
+      vars:
+        idp: '{{ update_identity_provider.identity_provider }}'
+
+
+    - name: 'Update IDP set Remote IDs - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        remote_ids: '{{ remote_ids_1 }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is changed
+
+    - name: 'Update IDP set Remote IDs'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        remote_ids: '{{ remote_ids_1 }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is changed
+        - '"identity_provider" in update_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name
+        - idp.name == idp_name
+        - idp.domain_id == domain_id
+        - idp.description == idp_description
+        - idp.enabled == True
+        - idp.is_enabled == True
+        - idp.remote_ids == remote_ids_1
+      vars:
+        idp: '{{ update_identity_provider.identity_provider }}'
+
+    - name: 'Update IDP set Remote IDs (retry - no change) - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        remote_ids: '{{ remote_ids_1 }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is not changed
+
+    - name: 'Update IDP set Remote IDs (retry - no change)'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        remote_ids: '{{ remote_ids_1 }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is not changed
+        - '"identity_provider" in update_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name
+        - idp.name == idp_name
+        - idp.domain_id == domain_id
+        - idp.description == idp_description
+        - idp.enabled == True
+        - idp.is_enabled == True
+        - idp.remote_ids == remote_ids_1
+      vars:
+        idp: '{{ update_identity_provider.identity_provider }}'
+
+
+    - name: 'Update IDP set Disabled - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        enabled: False
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is changed
+
+    - name: 'Update IDP set Disabled'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        enabled: False
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is changed
+        - '"identity_provider" in update_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name
+        - idp.name == idp_name
+        - idp.domain_id == domain_id
+        - idp.description == idp_description
+        - idp.enabled == False
+        - idp.is_enabled == False
+        - idp.remote_ids == remote_ids_1
+      vars:
+        idp: '{{ update_identity_provider.identity_provider }}'
+
+    - name: 'Update IDP set Disabled (retry - no change) - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        enabled: False
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is not changed
+
+    - name: 'Update IDP set Disabled (retry - no change)'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        enabled: False
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is not changed
+        - '"identity_provider" in update_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name
+        - idp.name == idp_name
+        - idp.domain_id == domain_id
+        - idp.description == idp_description
+        - idp.enabled == False
+        - idp.is_enabled == False
+        - idp.remote_ids == remote_ids_1
+      vars:
+        idp: '{{ update_identity_provider.identity_provider }}'
+
+    # If we don't specify anything to change, then nothing should change...
+    - name: 'Minimal call to IDP (no change) - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is not changed
+
+    - name: 'Minimal call to IDP (no change)'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is not changed
+        - '"identity_provider" in update_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name
+        - idp.name == idp_name
+        - idp.domain_id == domain_id
+        - idp.description == idp_description
+        - idp.enabled == False
+        - idp.is_enabled == False
+        - idp.remote_ids == remote_ids_1
+      vars:
+        idp: '{{ update_identity_provider.identity_provider }}'
+
+    # ========================================================================
+    #   Update (mass-update)
+
+    - name: 'Update all updatable IDP parameters - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        description: '{{ idp_description_2 }}'
+        enabled: True
+        remote_ids: '{{ remote_ids_2 }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is changed
+
+    - name: 'Update all updatable IDP parameters'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        description: '{{ idp_description_2 }}'
+        enabled: True
+        remote_ids: '{{ remote_ids_2 }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is changed
+        - '"identity_provider" in update_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name
+        - idp.name == idp_name
+        - idp.domain_id == domain_id
+        - idp.description == idp_description_2
+        - idp.enabled == True
+        - idp.is_enabled == True
+        - idp.remote_ids == remote_ids_2
+      vars:
+        idp: '{{ update_identity_provider.identity_provider }}'
+
+    - name: 'Update all updatable IDP parameters (no change) - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        description: '{{ idp_description_2 }}'
+        enabled: True
+        remote_ids: '{{ remote_ids_2 }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is not changed
+
+    - name: 'Update all updatable IDP parameters (no change)'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name }}'
+        description: '{{ idp_description_2 }}'
+        enabled: True
+        remote_ids: '{{ remote_ids_2 }}'
+      register: update_identity_provider
+    - assert:
+        that:
+        - update_identity_provider is successful
+        - update_identity_provider is not changed
+        - '"identity_provider" in update_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name
+        - idp.name == idp_name
+        - idp.domain_id == domain_id
+        - idp.description == idp_description_2
+        - idp.enabled == True
+        - idp.is_enabled == True
+        - idp.remote_ids == remote_ids_2
+      vars:
+        idp: '{{ update_identity_provider.identity_provider }}'
+
+    # ========================================================================
+    #   Create complex IDP
+
+    - name: 'Create complex IDP - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name_2 }}'
+        domain_id: '{{ domain_id }}'
+        description: '{{ idp_description }}'
+        enabled: False
+        remote_ids: '{{ remote_ids_3 }}'
+      register: create_identity_provider
+    - assert:
+        that:
+        - create_identity_provider is successful
+        - create_identity_provider is changed
+
+    - name: 'Create complex IDP'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name_2 }}'
+        domain_id: '{{ domain_id }}'
+        description: '{{ idp_description }}'
+        enabled: False
+        remote_ids: '{{ remote_ids_3 }}'
+      register: create_identity_provider
+    - assert:
+        that:
+        - create_identity_provider is successful
+        - create_identity_provider is changed
+        - '"identity_provider" in create_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name_2
+        - idp.name == idp_name_2
+        - idp.domain_id == domain_id
+        - idp.description == idp_description
+        - idp.enabled == False
+        - idp.is_enabled == False
+        - idp.remote_ids == remote_ids_3
+      vars:
+        idp: '{{ create_identity_provider.identity_provider }}'
+
+    - name: 'Create complex IDP (retry - no change) - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name_2 }}'
+        domain_id: '{{ domain_id }}'
+        description: '{{ idp_description }}'
+        enabled: False
+        remote_ids: '{{ remote_ids_3 }}'
+      register: create_identity_provider
+    - assert:
+        that:
+        - create_identity_provider is successful
+        - create_identity_provider is not changed
+
+    - name: 'Create complex IDP'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'present'
+        name: '{{ idp_name_2 }}'
+        domain_id: '{{ domain_id }}'
+        description: '{{ idp_description }}'
+        enabled: False
+        remote_ids: '{{ remote_ids_3 }}'
+      register: create_identity_provider
+    - assert:
+        that:
+        - create_identity_provider is successful
+        - create_identity_provider is not changed
+        - '"identity_provider" in create_identity_provider'
+        - '"id" in idp'
+        - '"name" in idp'
+        - '"domain_id" in idp'
+        - '"description" in idp'
+        - '"enabled" in idp'
+        - '"is_enabled" in idp'
+        - '"remote_ids" in idp'
+        - idp.id == idp_name_2
+        - idp.name == idp_name_2
+        - idp.domain_id == domain_id
+        - idp.description == idp_description
+        - idp.enabled == False
+        - idp.is_enabled == False
+        - idp.remote_ids == remote_ids_3
+      vars:
+        idp: '{{ create_identity_provider.identity_provider }}'
+
+    ## Attempt to ensure that if we search we only get the one we expect
+    #- name: 'Fetch Complex IDP info - with name'
+    #  openstack.cloud.os_keystone_identity_provider_info:
+    #    name: '{{ idp_name_2 }}'
+    #  register: identity_provider_info
+    #- assert:
+    #    that:
+    #    - identity_provider_info is successful
+    #    - '"identity_providers" in identity_provider_info'
+    #    - identity_provider_info.identity_providers | length == 1
+    #    - '"id" in idp'
+    #    - '"name" in idp'
+    #    - '"domain_id" in idp'
+    #    - '"description" in idp'
+    #    - '"enabled" in idp'
+    #    - '"is_enabled" in idp'
+    #    - '"remote_ids" in idp'
+    #    - idp.id == idp_name_2
+    #    - idp.name == idp_name_2
+    #    - idp.domain_id == domain_id
+    #    - idp.description == idp_description
+    #    - idp.enabled == False
+    #    - idp.is_enabled == False
+    #    - idp.remote_ids == remote_ids_3
+    #  vars:
+    #    idp: '{{ identity_provider_info.identity_providers[0] }}'
+
+    ## Ensure that if we do search we get both of the results we expect
+    #- name: 'Fetch multiple IDP info - without name'
+    #  openstack.cloud.os_keystone_identity_provider_info: {}
+    #  register: identity_provider_info
+    #- assert:
+    #    that:
+    #    - identity_provider_info is successful
+    #    - '"identity_providers" in identity_provider_info'
+    #    # In CI we generally have a clean slate, but this might
+    #    # not be true for everyone...
+    #    - identity_provider_info.identity_providers | length >= 2
+    #    - '"id" in idp_0'
+    #    - '"name" in idp_0'
+    #    - '"domain_id" in idp_0'
+    #    - '"description" in idp_0'
+    #    - '"enabled" in idp_0'
+    #    - '"is_enabled" in idp_0'
+    #    - '"remote_ids" in idp_0'
+    #    - '"id" in idp_1'
+    #    - '"name" in idp_1'
+    #    - '"domain_id" in idp_1'
+    #    - '"description" in idp_1'
+    #    - '"enabled" in idp_1'
+    #    - '"is_enabled" in idp_1'
+    #    - '"remote_ids" in idp_1'
+    #    # In theory these could be attached to different IDPs but let's keep
+    #    # things simple
+    #    - idp_name in (identity_provider_info.identity_providers | map(attribute='id'))
+    #    - idp_name in (identity_provider_info.identity_providers | map(attribute='name'))
+    #    - idp_name_2 in (identity_provider_info.identity_providers | map(attribute='id'))
+    #    - idp_name_2 in (identity_provider_info.identity_providers | map(attribute='name'))
+    #    - domain_id in (identity_provider_info.identity_providers | map(attribute='domain_id'))
+    #    - idp_description in (identity_provider_info.identity_providers | map(attribute='description'))
+    #    - idp_description_2 in (identity_provider_info.identity_providers | map(attribute='description'))
+    #    - True in (identity_provider_info.identity_providers | map(attribute='enabled'))
+    #    - False in (identity_provider_info.identity_providers | map(attribute='enabled'))
+    #    - True in (identity_provider_info.identity_providers | map(attribute='is_enabled'))
+    #    - False in (identity_provider_info.identity_providers | map(attribute='is_enabled'))
+    #  vars:
+    #    idp_0: '{{ identity_provider_info.identity_providers[0] }}'
+    #    idp_1: '{{ identity_provider_info.identity_providers[1] }}'
+
+    - name: 'Delete identity_provider - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'absent'
+        name: '{{ idp_name }}'
+      register: delete_identity_provider
+    - assert:
+        that:
+        - delete_identity_provider is successful
+        - delete_identity_provider is changed
+
+    - name: 'Delete identity_provider'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'absent'
+        name: '{{ idp_name }}'
+      register: delete_identity_provider
+    - assert:
+        that:
+        - delete_identity_provider is successful
+        - delete_identity_provider is changed
+
+    - name: 'Delete identity_provider (retry - no change) - CHECK_MODE'
+      check_mode: yes
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'absent'
+        name: '{{ idp_name }}'
+      register: delete_identity_provider
+    - assert:
+        that:
+        - delete_identity_provider is successful
+        - delete_identity_provider is not changed
+
+    - name: 'Delete identity_provider (retry - no change) '
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'absent'
+        name: '{{ idp_name }}'
+      register: delete_identity_provider
+    - assert:
+        that:
+        - delete_identity_provider is successful
+        - delete_identity_provider is not changed
+
+    #- name: 'Fetch identity_provider info after deletion'
+    #  openstack.cloud.os_keystone_identity_provider_info:
+    #    name: '{{ idp_name }}'
+    #  register: identity_provider_info
+    #  ignore_errors: True
+    #- assert:
+    #    that:
+    #    - identity_provider_info is failed
+
+    - name: 'Delete second identity_provider'
+      openstack.cloud.os_keystone_identity_provider:
+        state: 'absent'
+        name: '{{ idp_name_2 }}'
+      register: delete_identity_provider
+    - assert:
+        that:
+        - delete_identity_provider is successful
+        - delete_identity_provider is changed
+
+  always:
+    - name: 'Delete idp'
+      openstack.cloud.os_keystone_identity_provider:
+         state: 'absent'
+         name: '{{ idp_name }}'
+      ignore_errors: yes
+
+    - name: 'Delete second identity_provider'
+      openstack.cloud.os_keystone_identity_provider:
+         state: 'absent'
+         name: '{{ idp_name_2 }}'
+      ignore_errors: yes
+
+    - name: 'Delete domain'
+      openstack.cloud.os_keystone_domain:
+         state: 'absent'
+         name: '{{ domain_name }}'
+      ignore_errors: yes
