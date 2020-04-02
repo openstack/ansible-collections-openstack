@@ -5,6 +5,8 @@
     #   cloud: "{{ cloud }}"
     openstack.cloud.os_keystone_mapping:
       cloud: "{{ cloud }}"
+    openstack.cloud.os_keystone_mapping_info:
+      cloud: "{{ cloud }}"
   block:
     - name: "Ensure mapping doesn't exist to start"
       openstack.cloud.os_keystone_mapping:
@@ -27,6 +29,15 @@
         - create_mapping is successful
         - create_mapping is changed
 
+    - name: 'Fetch mapping info (mapping should be absent)'
+      openstack.cloud.os_keystone_mapping_info:
+        name: '{{ mapping_name }}'
+      register: mapping_info
+      ignore_errors: yes
+    - assert:
+        that:
+        - mapping_info is failed
+
     - name: 'Create mapping'
       openstack.cloud.os_keystone_mapping:
         state: 'present'
@@ -43,6 +54,42 @@
         - create_mapping.mapping.id == mapping_name
         - create_mapping.mapping.name == mapping_name
         - create_mapping.mapping.rules | length == 1
+
+    - name: 'Fetch mapping info - with name'
+      openstack.cloud.os_keystone_mapping_info:
+        name: '{{ mapping_name }}'
+      register: mapping_info
+    - assert:
+        that:
+        - mapping_info is successful
+        - '"mappings" in mapping_info'
+        - mapping_info.mappings | length == 1
+        - '"id" in mapping_0'
+        - '"name" in mapping_0'
+        - '"rules" in mapping_0'
+        - mapping_0.id == mapping_name
+        - mapping_0.name == mapping_name
+        - mapping_0.rules | length == 1
+      vars:
+        mapping_0: '{{ mapping_info.mappings[0] }}'
+
+    - name: 'Fetch mapping info - without name'
+      openstack.cloud.os_keystone_mapping_info: {}
+      register: mapping_info
+    - assert:
+        that:
+        - mapping_info is successful
+        - '"mappings" in mapping_info'
+        # In CI we generally have a clean slate, but this might
+        # not be true for everyone...
+        - mapping_info.mappings | length >= 1
+        - '"id" in mapping_0'
+        - '"name" in mapping_0'
+        - '"rules" in mapping_0'
+        - mapping_name in (mapping_info.mappings | map(attribute='id'))
+        - mapping_name in (mapping_info.mappings | map(attribute='name'))
+      vars:
+        mapping_0: '{{ mapping_info.mappings[0] }}'
 
     - name: 'Create mapping (retry - no change) - CHECK_MODE'
       openstack.cloud.os_keystone_mapping:
@@ -119,6 +166,65 @@
         - update_mapping.mapping.name == mapping_name
         - update_mapping.mapping.rules | length == 1
 
+    - name: 'Create second mapping'
+      openstack.cloud.os_keystone_mapping:
+        state: 'present'
+        name: '{{ mapping_name_2 }}'
+        rules: '{{ mapping_rules_1 }}'
+      register: create_mapping
+    - assert:
+        that:
+        - create_mapping is successful
+        - create_mapping is changed
+        - '"id" in create_mapping.mapping'
+        - '"name" in create_mapping.mapping'
+        - '"rules" in create_mapping.mapping'
+        - create_mapping.mapping.id == mapping_name_2
+        - create_mapping.mapping.name == mapping_name_2
+        - create_mapping.mapping.rules | length == 1
+
+    - name: 'Fetch mapping (2) info - with name'
+      openstack.cloud.os_keystone_mapping_info:
+        name: '{{ mapping_name_2 }}'
+      register: mapping_info
+    - assert:
+        that:
+        - mapping_info is successful
+        - '"mappings" in mapping_info'
+        - mapping_info.mappings | length == 1
+        - '"id" in mapping_0'
+        - '"name" in mapping_0'
+        - '"rules" in mapping_0'
+        - mapping_0.id == mapping_name_2
+        - mapping_0.name == mapping_name_2
+        - mapping_0.rules | length == 1
+      vars:
+        mapping_0: '{{ mapping_info.mappings[0] }}'
+
+    - name: 'Fetch mapping info - without name'
+      openstack.cloud.os_keystone_mapping_info: {}
+      register: mapping_info
+    - assert:
+        that:
+        - mapping_info is successful
+        - '"mappings" in mapping_info'
+        # In CI we generally have a clean slate, but this might
+        # not be true for everyone...
+        - mapping_info.mappings | length >= 2
+        - '"id" in mapping_0'
+        - '"name" in mapping_0'
+        - '"rules" in mapping_0'
+        - '"id" in mapping_1'
+        - '"name" in mapping_1'
+        - '"rules" in mapping_1'
+        - mapping_name in (mapping_info.mappings | map(attribute='id'))
+        - mapping_name in (mapping_info.mappings | map(attribute='name'))
+        - mapping_name_2 in (mapping_info.mappings | map(attribute='id'))
+        - mapping_name_2 in (mapping_info.mappings | map(attribute='name'))
+      vars:
+        mapping_0: '{{ mapping_info.mappings[0] }}'
+        mapping_1: '{{ mapping_info.mappings[1] }}'
+
     - name: 'Delete mapping - CHECK_MODE'
       openstack.cloud.os_keystone_mapping:
         state: 'absent'
@@ -161,9 +267,34 @@
         - delete_mapping is successful
         - delete_mapping is not changed
 
+    - name: 'Fetch mapping info after deletion'
+      openstack.cloud.os_keystone_mapping_info:
+        name: '{{ mapping_name }}'
+      register: mapping_info
+      ignore_errors: True
+    - assert:
+        that:
+        - mapping_info is failed
+
+    - name: 'Delete second mapping'
+      openstack.cloud.os_keystone_mapping:
+        state: 'absent'
+        name: '{{ mapping_name_2 }}'
+      register: delete_mapping
+    - assert:
+        that:
+        - delete_mapping is successful
+        - delete_mapping is changed
+
   always:
     - name: 'Delete mapping'
       openstack.cloud.os_keystone_mapping:
          state: 'absent'
          name: '{{ mapping_name }}'
+      ignore_errors: yes
+
+    - name: 'Delete second mapping'
+      openstack.cloud.os_keystone_mapping:
+         state: 'absent'
+         name: '{{ mapping_name_2 }}'
       ignore_errors: yes

@@ -1,4 +1,5 @@
 mapping_name: 'ansible-test-mapping'
+mapping_name_2: 'ansible-test-mapping-2'
 mapping_rules_1:
 - local:
   - group:
