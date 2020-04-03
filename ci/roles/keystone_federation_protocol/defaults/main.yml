@@ -1,0 +1,35 @@
+protocol_name: 'test-protocol'
+protocol_name_2: 'test-protocol-2'
+
+# Minimal IDP definition
+idp_name: 'test-idp'
+idp_remote_ids:
+- 'https://auth.example.com/auth/realms/ExampleRealm'
+
+# Minimal Domain definition
+domain_name: 'test-domain'
+
+# Minimal Mapping definition
+mapping_name_1: 'ansible-test-mapping-1'
+mapping_name_2: 'ansible-test-mapping-2'
+mapping_rules_1:
+- local:
+  - group:
+      domain:
+        name: example_domain
+      name: example-group
+  remote:
+  - type: HTTP_OIDC_GROUPS
+    any_one_of:
+    - group1
+    - group2
+mapping_rules_2:
+- local:
+  - group:
+      domain:
+        name: example_domain
+      name: example_group
+  remote:
+  - type: HTTP_OIDC_GROUPS
+    any_one_of:
+    - group1

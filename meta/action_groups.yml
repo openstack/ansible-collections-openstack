@@ -20,6 +20,7 @@ os:
 - os_keystone_identity_provider_info
 - os_keystone_mapping
 - os_keystone_mapping_info
+- os_keystone_federation_protocol
 - os_keystone_role
 - os_keystone_service
 - os_listener
