@@ -3,10 +3,8 @@
 OpenStack Ansible Modules
 =========================
 
-These are a set of modules for interacting with OpenStack as either an admin
-or an end user. If the module does not begin with ``os_``, it's either deprecated
-or soon to be. This document serves as developer coding guidelines for
-modules intended to be here.
+These are a set of modules for interacting with the OpenStack API as either an admin
+or an end user.
 
 .. contents::
    :local:
@@ -14,15 +12,11 @@ modules intended to be here.
 Naming
 ------
 
-* All module names should start with ``os_``
+* This is a collection named ``openstack.cloud``. There is no need for further namespace prefixing.
 * Name any module that a cloud consumer would expect to use after the logical resource it manages: 
-  ``os_server`` not ``os_nova``. This naming convention acknowledges that the end user does not care 
+  ``server`` not ``nova``. This naming convention acknowledges that the end user does not care
   which service manages the resource - that is a deployment detail. For example cloud consumers may
   not know whether their floating IPs are managed by Nova or Neutron.
-* Name any module that a cloud admin would expect to use with the service and the resource: 
-  ``os_keystone_domain``.
-* If the module is one that a cloud admin and a cloud consumer could both use,
-  the cloud consumer rules apply.
 
 Interface
 ---------
