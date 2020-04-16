@@ -1,0 +1,142 @@
+---
+- name: 'Create project with properties - CHECK_MODE'
+  check_mode: yes
+  openstack.cloud.os_project:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_project
+     description: dummy description
+     domain_id: default
+     enabled: True
+     properties:
+       dummy_key: '{{ dummy_value }}'
+  register: create_project_cm
+- assert:
+    that:
+      - create_project_cm is successful
+      - create_project_cm is changed
+
+- name: 'Create project with properties'
+  openstack.cloud.os_project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    description: dummy description
+    domain_id: default
+    enabled: True
+    properties:
+      dummy_key: '{{ dummy_value }}'
+  register: create_project
+- assert:
+    that:
+    - create_project is successful
+    - create_project is changed
+    - '"project" in create_project'
+    - '"dummy_key" in create_project["project"]'
+    - create_project["project"].dummy_key == dummy_value
+
+- name: 'Create project with properties (retry - no change) - CHECK_MODE'
+  check_mode: yes
+  openstack.cloud.os_project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    description: dummy description
+    domain_id: default
+    enabled: True
+    properties:
+      dummy_key: '{{ dummy_value }}'
+  register: create_project_retry_cm
+- assert:
+    that:
+      - create_project_retry_cm is successful
+      - create_project_retry_cm is not changed
+
+- name: 'Create project with properties (retry - no change)'
+  openstack.cloud.os_project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    description: dummy description
+    domain_id: default
+    enabled: True
+    properties:
+      dummy_key: '{{ dummy_value }}'
+  register: create_project_retry
+- assert:
+    that:
+    - create_project_retry is successful
+    - create_project_retry is not changed
+    - '"project" in create_project_retry'
+    - '"dummy_key" in create_project_retry["project"]'
+    - create_project_retry["project"].dummy_key == dummy_value
+
+- name: 'Update project with properties - CHECK_MODE'
+  check_mode: yes
+  openstack.cloud.os_project:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_project
+     description: new description
+     properties:
+       dummy_key: '{{ dummy_value_updated }}'
+  register: updated_project_cm
+- assert:
+    that:
+      - updated_project_cm is successful
+      - updated_project_cm is changed
+
+- name: 'Update project with properties'
+  openstack.cloud.os_project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    description: new description
+    properties:
+      dummy_key: '{{ dummy_value_updated }}'
+  register: updated_project
+- assert:
+    that:
+    - updated_project is successful
+    - updated_project is changed
+    - '"project" in updated_project'
+    - '"dummy_key" in updated_project["project"]'
+    - updated_project["project"].dummy_key == dummy_value_updated
+
+- name: 'Update project with properties (retry - no change) - CHECK_MODE'
+  check_mode: yes
+  openstack.cloud.os_project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    description: new description
+    properties:
+      dummy_key: '{{ dummy_value_updated }}'
+  register: updated_project_retry_cm
+- assert:
+    that:
+      - updated_project_retry_cm is successful
+      - updated_project_retry_cm is not changed
+
+- name: 'Update project with properties (retry - no change)'
+  openstack.cloud.os_project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    description: new description
+    properties:
+      dummy_key: '{{ dummy_value_updated }}'
+  register: updated_project_retry
+- assert:
+    that:
+    - updated_project_retry is successful
+    - updated_project_retry is not changed
+    - '"project" in updated_project_retry'
+    - '"dummy_key" in updated_project_retry["project"]'
+    - updated_project_retry["project"].dummy_key == dummy_value_updated
+
+- name: Delete project with properties
+  openstack.cloud.os_project:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_project
