@@ -2,6 +2,8 @@ plugins/module_utils/openstack.py future-import-boilerplate
 plugins/module_utils/openstack.py metaclass-boilerplate
 plugins/doc_fragments/openstack.py future-import-boilerplate
 plugins/doc_fragments/openstack.py metaclass-boilerplate
+scripts/inventory/openstack_inventory.py future-import-boilerplate
+scripts/inventory/openstack_inventory.py metaclass-boilerplate
 tests/unit/mock/path.py future-import-boilerplate
 tests/unit/mock/path.py metaclass-boilerplate
 tests/unit/mock/yaml_helper.py future-import-boilerplate
