@@ -1,0 +1,408 @@
+- name: Create server
+  openstack.cloud.server:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ server_name }}"
+     image: "{{ image }}"
+     flavor: "{{ flavor }}"
+     network: "{{ server_network }}"
+     auto_floating_ip: false
+     wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info1
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info1.openstack_servers.0.status == 'ACTIVE'
+
+- name: Stop server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: stop
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info2
+
+- name: Ensure status for server is SHUTOFF
+  assert:
+    that:
+      - info2.openstack_servers.0.status == 'SHUTOFF'
+      - server is changed
+
+- name: Stop server again
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: stop
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info3
+
+- name: Ensure status for server is SHUTOFF
+  assert:
+    that:
+      - info3.openstack_servers.0.status == 'SHUTOFF'
+      - server is not changed
+
+- name: Start server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: start
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info4
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info4.openstack_servers.0.status == 'ACTIVE'
+      - server is changed
+
+- name: Start server again
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: start
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info5
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info5.openstack_servers.0.status == 'ACTIVE'
+      - server is not changed
+
+- name: Pause server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: pause
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info6
+
+- name: Ensure status for server is PAUSED
+  assert:
+    that:
+      - info6.openstack_servers.0.status == 'PAUSED'
+      - server is changed
+
+- name: Pause server again
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: pause
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info7
+
+- name: Ensure status for server is PAUSED
+  assert:
+    that:
+      - info7.openstack_servers.0.status == 'PAUSED'
+      - server is not changed
+
+- name: Unpause server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: unpause
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info8
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info8.openstack_servers.0.status == 'ACTIVE'
+      - server is changed
+
+- name: Unpause server again
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: unpause
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info9
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info9.openstack_servers.0.status == 'ACTIVE'
+      - server is not changed
+
+- name: Lock server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: lock
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info10
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info10.openstack_servers.0.status == 'ACTIVE'
+      # not in all versions 'locked' is supported
+      - info10.openstack_servers.0.locked in (None, True)
+      - server is changed
+
+- name: Lock server again
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: lock
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info11
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info11.openstack_servers.0.status == 'ACTIVE'
+      # not in all versions 'locked' is supported
+      - info11.openstack_servers.0.locked in (None, True)
+      - server is changed  # no support for lock idempotency
+
+- name: Unock server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: unlock
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info12
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info12.openstack_servers.0.status == 'ACTIVE'
+      # not in all versions 'locked' is supported
+      - info12.openstack_servers.0.locked in (None, False)
+      - server is changed
+
+- name: Unlock server again
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: unlock
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info13
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info13.openstack_servers.0.status == 'ACTIVE'
+      - server is changed  # no support for unlock idempotency
+      # not in all versions 'locked' is supported
+      - info13.openstack_servers.0.locked in (None, False)
+
+- name: Suspend server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: suspend
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info14
+
+- name: Ensure status for server is SUSPENDED
+  assert:
+    that:
+      - info14.openstack_servers.0.status == 'SUSPENDED'
+      - server is changed
+
+- name: Suspend server again
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: suspend
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info15
+
+- name: Ensure status for server is SUSPENDED
+  assert:
+    that:
+      - info15.openstack_servers.0.status == 'SUSPENDED'
+      - server is not changed
+
+- name: Resume server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: resume
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info16
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info16.openstack_servers.0.status == 'ACTIVE'
+      - server is changed
+
+- name: Resume server again
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: resume
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info17
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info17.openstack_servers.0.status == 'ACTIVE'
+      - server is not changed
+
+- name: Rebuild server - error
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: rebuild
+    wait: true
+  register: server
+  ignore_errors: true
+
+- name: Ensure server rebuild failed
+  assert:
+    that:
+      - server is failed
+      - "'missing: image' in server.msg "
+
+- name: Rebuild server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    image: "{{ image }}"
+    action: rebuild
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info18
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info18.openstack_servers.0.status in ('ACTIVE', 'REBUILD')
+      - server is changed
+
+- name: Rebuild server with admin password
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    image: "{{ image }}"
+    action: rebuild
+    wait: true
+    admin_password: random
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info19
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info19.openstack_servers.0.status in ('ACTIVE', 'REBUILD')
+      - server is changed

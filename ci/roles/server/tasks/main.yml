@@ -156,3 +156,5 @@
      state: absent
      name: "{{ server_name }}"
      wait: true
+
+- include_tasks: server_actions.yml

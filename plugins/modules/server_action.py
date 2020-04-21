@@ -10,38 +10,43 @@ module: server_action
 short_description: Perform actions on Compute Instances from OpenStack
 author: "Jesse Keating (@omgjlk)"
 description:
-   - Perform server actions on an existing compute instance from OpenStack.
-     This module does not return any data other than changed true/false.
-     When I(action) is 'rebuild', then I(image) parameter is required.
+    - Perform server actions on an existing compute instance from OpenStack.
+        This module does not return any data other than changed true/false.
+        When I(action) is 'rebuild', then I(image) parameter is required.
 options:
-   server:
-     description:
+    server:
+        description:
         - Name or ID of the instance
-     required: true
-     type: str
-   wait:
-     description:
+        required: true
+        type: str
+    wait:
+        description:
         - If the module should wait for the instance action to be performed.
-     type: bool
-     default: 'yes'
-   timeout:
-     description:
+        type: bool
+        default: 'yes'
+    timeout:
+        description:
         - The amount of time the module should wait for the instance to perform
-          the requested action.
-     default: 180
-     type: int
-   action:
-     description:
-       - Perform the given action. The lock and unlock actions always return
-         changed as the servers API does not provide lock status.
-     choices: [stop, start, pause, unpause, lock, unlock, suspend, resume,
-               rebuild]
-     type: str
-     required: true
-   image:
-     description:
-       - Image the server should be rebuilt with
-     type: str
+            the requested action.
+        default: 180
+        type: int
+    action:
+        description:
+        - Perform the given action. The lock and unlock actions always return
+            changed as the servers API does not provide lock status.
+        choices: [stop, start, pause, unpause, lock, unlock, suspend, resume,
+                rebuild]
+        type: str
+        required: true
+    image:
+        description:
+        - Image the server should be rebuilt with
+        type: str
+    admin_password:
+        description:
+        - Admin password for server to rebuild
+        type: str
+
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -63,10 +68,9 @@ EXAMPLES = '''
       timeout: 200
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
+
+
 _action_map = {'stop': 'SHUTOFF',
                'start': 'ACTIVE',
                'pause': 'PAUSED',
@@ -80,160 +84,98 @@ _action_map = {'stop': 'SHUTOFF',
 _admin_actions = ['pause', 'unpause', 'suspend', 'resume', 'lock', 'unlock']
 
 
-def _action_url(server_id):
-    return '/servers/{server_id}/action'.format(server_id=server_id)
+class ServerActionModule(OpenStackModule):
+    deprecated_names = ('os_server_action', 'openstack.cloud.os_server_action')
 
+    argument_spec = dict(
+        server=dict(required=True, type='str'),
+        action=dict(required=True, type='str',
+                    choices=['stop', 'start', 'pause', 'unpause',
+                             'lock', 'unlock', 'suspend', 'resume',
+                             'rebuild']),
+        image=dict(required=False, type='str'),
+        admin_password=dict(required=False, type='str'),
+    )
+    module_kwargs = dict(
+        required_if=[('action', 'rebuild', ['image'])],
+        supports_check_mode=True,
+    )
 
-def _wait(timeout, cloud, server, action, module, sdk):
-    """Wait for the server to reach the desired state for the given action."""
+    def run(self):
+        os_server = self._preliminary_checks()
+        self._execute_server_action(os_server)
+        # for some reason we don't wait for lock and unlock before exit
+        if self.params['action'] not in ('lock', 'unlock'):
+            if self.params['wait']:
+                self._wait(os_server)
+        self.exit_json(changed=True)
 
-    for count in sdk.utils.iterate_timeout(
-            timeout,
-            "Timeout waiting for server to complete %s" % action):
+    def _preliminary_checks(self):
+        # Using Munch object for getting information about a server
+        os_server = self.conn.get_server(self.params['server'])
+        if not os_server:
+            self.fail_json(msg='Could not find server %s' % self.params['server'])
+        # check mode
+        if self.ansible.check_mode:
+            self.exit_json(changed=self.__system_state_change(os_server))
+        # examine special cases
+        # lock, unlock and rebuild don't depend on state, just do it
+        if self.params['action'] not in ('lock', 'unlock', 'rebuild'):
+            if not self.__system_state_change(os_server):
+                self.exit_json(changed=False)
+        return os_server
+
+    def _execute_server_action(self, os_server):
+        if self.params['action'] == 'rebuild':
+            return self._rebuild_server(os_server)
+        action_name = self.params['action'] + "_server"
         try:
-            server = cloud.get_server(server.id)
-        except Exception:
-            continue
+            func_name = getattr(self.conn.compute, action_name)
+        except AttributeError:
+            self.fail_json(
+                msg="Method %s wasn't found in OpenstackSDK compute" % action_name)
+        func_name(os_server)
 
-        if server.status == _action_map[action]:
-            return
+    def _rebuild_server(self, os_server):
+        # rebuild should ensure images exists
+        try:
+            image = self.conn.get_image(self.params['image'])
+        except Exception as e:
+            self.fail_json(
+                msg="Can't find the image %s: %s" % (self.params['image'], e))
+        if not image:
+            self.fail_json(msg="Image %s was not found!" % self.params['image'])
+        # admin_password is required by SDK, but not required by Nova API
+        if self.params['admin_password']:
+            self.conn.compute.rebuild_server(
+                server=os_server,
+                name=os_server['name'],
+                image=image['id'],
+                admin_password=self.params['admin_password']
+            )
+        else:
+            self.conn.compute.post(
+                '/servers/{server_id}/action'.format(
+                    server_id=os_server['id']),
+                json={'rebuild': {'imageRef': image['id']}})
 
-        if server.status == 'ERROR':
-            module.fail_json(msg="Server reached ERROR state while attempting to %s" % action)
+    def _wait(self, os_server):
+        """Wait for the server to reach the desired state for the given action."""
+        # Using Server object for wait_for_server function
+        server = self.conn.compute.find_server(self.params['server'])
+        self.conn.compute.wait_for_server(
+            server,
+            status=_action_map[self.params['action']],
+            wait=self.params['timeout'])
 
-
-def _system_state_change(action, status):
-    """Check if system state would change."""
-    if status == _action_map[action]:
-        return False
-    return True
+    def __system_state_change(self, os_server):
+        """Check if system state would change."""
+        return os_server.status != _action_map[self.params['action']]
 
 
 def main():
-    argument_spec = openstack_full_argument_spec(
-        server=dict(required=True),
-        action=dict(required=True, choices=['stop', 'start', 'pause', 'unpause',
-                                            'lock', 'unlock', 'suspend', 'resume',
-                                            'rebuild']),
-        image=dict(required=False),
-    )
-
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, supports_check_mode=True,
-                           required_if=[('action', 'rebuild', ['image'])],
-                           **module_kwargs)
-
-    action = module.params['action']
-    wait = module.params['wait']
-    timeout = module.params['timeout']
-    image = module.params['image']
-
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        server = cloud.get_server(module.params['server'])
-        if not server:
-            module.fail_json(msg='Could not find server %s' % server)
-        status = server.status
-
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(action, status))
-
-        if action == 'stop':
-            if not _system_state_change(action, status):
-                module.exit_json(changed=False)
-
-            cloud.compute.post(
-                _action_url(server.id),
-                json={'os-stop': None})
-            if wait:
-                _wait(timeout, cloud, server, action, module, sdk)
-            module.exit_json(changed=True)
-
-        if action == 'start':
-            if not _system_state_change(action, status):
-                module.exit_json(changed=False)
-
-            cloud.compute.post(
-                _action_url(server.id),
-                json={'os-start': None})
-            if wait:
-                _wait(timeout, cloud, server, action, module, sdk)
-            module.exit_json(changed=True)
-
-        if action == 'pause':
-            if not _system_state_change(action, status):
-                module.exit_json(changed=False)
-
-            cloud.compute.post(
-                _action_url(server.id),
-                json={'pause': None})
-            if wait:
-                _wait(timeout, cloud, server, action, module, sdk)
-            module.exit_json(changed=True)
-
-        elif action == 'unpause':
-            if not _system_state_change(action, status):
-                module.exit_json(changed=False)
-
-            cloud.compute.post(
-                _action_url(server.id),
-                json={'unpause': None})
-            if wait:
-                _wait(timeout, cloud, server, action, module, sdk)
-            module.exit_json(changed=True)
-
-        elif action == 'lock':
-            # lock doesn't set a state, just do it
-            cloud.compute.post(
-                _action_url(server.id),
-                json={'lock': None})
-            module.exit_json(changed=True)
-
-        elif action == 'unlock':
-            # unlock doesn't set a state, just do it
-            cloud.compute.post(
-                _action_url(server.id),
-                json={'unlock': None})
-            module.exit_json(changed=True)
-
-        elif action == 'suspend':
-            if not _system_state_change(action, status):
-                module.exit_json(changed=False)
-
-            cloud.compute.post(
-                _action_url(server.id),
-                json={'suspend': None})
-            if wait:
-                _wait(timeout, cloud, server, action, module, sdk)
-            module.exit_json(changed=True)
-
-        elif action == 'resume':
-            if not _system_state_change(action, status):
-                module.exit_json(changed=False)
-
-            cloud.compute.post(
-                _action_url(server.id),
-                json={'resume': None})
-            if wait:
-                _wait(timeout, cloud, server, action, module, sdk)
-            module.exit_json(changed=True)
-
-        elif action == 'rebuild':
-            image = cloud.get_image(image)
-
-            if image is None:
-                module.fail_json(msg="Image does not exist")
-
-            # rebuild doesn't set a state, just do it
-            cloud.compute.post(
-                _action_url(server.id),
-                json={'rebuild': {'imageRef': image.id}})
-            if wait:
-                _wait(timeout, cloud, server, action, module, sdk)
-            module.exit_json(changed=True)
-
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+    module = ServerActionModule()
+    module()
 
 
 if __name__ == '__main__':
