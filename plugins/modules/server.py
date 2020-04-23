@@ -469,11 +469,11 @@ def _network_args(module, cloud):
     nics = module.params['nics']
 
     if not isinstance(nics, list):
-        module.fail_json(msg='The \'nics\' parameter must be a list.')
+        module.fail(msg='The \'nics\' parameter must be a list.')
 
     for num, net in enumerate(_parse_nics(nics)):
         if not isinstance(net, dict):
-            module.fail_json(
+            module.fail(
                 msg='Each entry in the \'nics\' parameter must be a dict.')
 
         if net.get('net-id'):
@@ -481,7 +481,7 @@ def _network_args(module, cloud):
         elif net.get('net-name'):
             by_name = cloud.get_network(net['net-name'])
             if not by_name:
-                module.fail_json(
+                module.fail(
                     msg='Could not find network by net-name: %s' %
                     net['net-name'])
             resolved_net = net.copy()
@@ -493,7 +493,7 @@ def _network_args(module, cloud):
         elif net.get('port-name'):
             by_name = cloud.get_port(net['port-name'])
             if not by_name:
-                module.fail_json(
+                module.fail(
                     msg='Could not find port by port-name: %s' %
                     net['port-name'])
             resolved_net = net.copy()
@@ -614,6 +614,7 @@ def _check_security_groups(module, cloud, server):
 
 
 class ServerModule(OpenStackModule):
+    deprecated_names = ('os_server', 'openstack.cloud.os_server')
 
     argument_spec = dict(
         name=dict(required=True),
@@ -658,6 +659,7 @@ class ServerModule(OpenStackModule):
     )
 
     def run(self):
+
         state = self.params['state']
         image = self.params['image']
         boot_volume = self.params['boot_volume']
@@ -666,12 +668,12 @@ class ServerModule(OpenStackModule):
 
         if state == 'present':
             if not (image or boot_volume):
-                self.fail_json(
+                self.fail(
                     msg="Parameter 'image' or 'boot_volume' is required "
                         "if state == 'present'"
                 )
             if not flavor and not flavor_ram:
-                self.fail_json(
+                self.fail(
                     msg="Parameter 'flavor' or 'flavor_ram' is required "
                         "if state == 'present'"
                 )
@@ -685,7 +687,7 @@ class ServerModule(OpenStackModule):
 
     def _exit_hostvars(self, server, changed=True):
         hostvars = self.conn.get_openstack_vars(server)
-        self.exit_json(
+        self.exit(
             changed=changed, server=server, id=server.id, openstack=hostvars)
 
     def _get_server_state(self):
@@ -693,7 +695,7 @@ class ServerModule(OpenStackModule):
         server = self.conn.get_server(self.params['name'])
         if server and state == 'present':
             if server.status not in ('ACTIVE', 'SHUTOFF', 'PAUSED', 'SUSPENDED'):
-                self.fail_json(
+                self.fail(
                     msg="The instance is available but not Active state: " + server.status)
             (ip_changed, server) = _check_ips(self, self.conn, server)
             (sg_changed, server) = _check_security_groups(self, self.conn, server)
@@ -702,7 +704,7 @@ class ServerModule(OpenStackModule):
         if server and state == 'absent':
             return True
         if state == 'absent':
-            self.exit_json(changed=False, result="not present")
+            self.exit(changed=False, result="not present")
         return True
 
     def _create_server(self):
@@ -715,23 +717,23 @@ class ServerModule(OpenStackModule):
             image_id = self.conn.get_image_id(
                 self.params['image'], self.params['image_exclude'])
             if not image_id:
-                self.fail_json(
+                self.fail(
                     msg="Could not find image %s" % self.params['image'])
 
         if flavor:
             flavor_dict = self.conn.get_flavor(flavor)
             if not flavor_dict:
-                self.fail_json(msg="Could not find flavor %s" % flavor)
+                self.fail(msg="Could not find flavor %s" % flavor)
         else:
             flavor_dict = self.conn.get_flavor_by_ram(flavor_ram, flavor_include)
             if not flavor_dict:
-                self.fail_json(msg="Could not find any matching flavor")
+                self.fail(msg="Could not find any matching flavor")
 
         nics = _network_args(self, self.conn)
 
         self.params['meta'] = _parse_meta(self.params['meta'])
 
-        bootkwargs = dict(
+        bootkwargs = self.check_versioned(
             name=self.params['name'],
             image=image_id,
             flavor=flavor_dict['id'],
@@ -788,8 +790,8 @@ class ServerModule(OpenStackModule):
                 timeout=self.params['timeout'],
                 delete_ips=self.params['delete_fip'])
         except Exception as e:
-            self.fail_json(msg="Error in deleting vm: %s" % e.message)
-        self.exit_json(changed=True, result='deleted')
+            self.fail(msg="Error in deleting vm: %s" % e)
+        self.exit(changed=True, result='deleted')
 
 
 def main():

@@ -17,6 +17,12 @@
 - name: Get info about all servers
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
+  register: info
+
+- name: Check info about servers
+  assert:
+    that:
+      info.openstack_servers|length > 0
 
 - name: Delete server with meta as CSV
   openstack.cloud.server:
@@ -24,6 +30,16 @@
      state: absent
      name: "{{ server_name }}"
      wait: true
+
+- name: Get info about all servers
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+  register: info
+
+- name: Check info about no servers
+  assert:
+    that:
+      info.openstack_servers|length == 0
 
 - name: Create server with meta as dict
   openstack.cloud.server:
@@ -46,6 +62,12 @@
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
     server: "{{ server_name }}"
+  register: info
+
+- name: Check info about server name
+  assert:
+    that:
+      info.openstack_servers[0].name == "{{ server_name }}"
 
 - name: Delete server with meta as dict
   openstack.cloud.server:
@@ -74,6 +96,12 @@
     cloud: "{{ cloud }}"
     server: "{{ server_name }}"
     detailed: true
+  register: info
+
+- name: Check info about server image name
+  assert:
+    that:
+      info.openstack_servers[0].image.name == "{{ image }}"
 
 - name: Delete server (FIP from pool/network)
   openstack.cloud.server:
@@ -99,11 +127,28 @@
 
 - debug: var=server
 
+- name: Get info about servers in all projects
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    all_projects: true
+  register: info
+
+- name: Check info about servers in all projects
+  assert:
+    that:
+      info.openstack_servers|length > 0
+
 - name: Get info about one server in all projects
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
     server: "{{ server_name }}"
     all_projects: true
+  register: info
+
+- name: Check info about one server in all projects
+  assert:
+    that:
+      info.openstack_servers|length > 0
 
 - name: Delete server with volume
   openstack.cloud.server:

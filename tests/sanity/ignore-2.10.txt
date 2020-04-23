@@ -5,5 +5,5 @@ plugins/modules/image_info.py pylint:invalid-tagged-version
 plugins/modules/networks_info.py pylint:invalid-tagged-version
 plugins/modules/port_info.py pylint:invalid-tagged-version
 plugins/modules/project_info.py pylint:invalid-tagged-version
-plugins/modules/server_info.py pylint:invalid-tagged-version
+plugins/module_utils/openstack.py pylint:invalid-tagged-version
 plugins/modules/subnets_info.py pylint:invalid-tagged-version
