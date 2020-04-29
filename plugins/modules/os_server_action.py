@@ -233,7 +233,7 @@ def main():
             # rebuild doesn't set a state, just do it
             cloud.compute.post(
                 _action_url(server.id),
-                json={'rebuild': None})
+                json={'rebuild': {'imageRef': image.id}})
             if wait:
                 _wait(timeout, cloud, server, action, module, sdk)
             module.exit_json(changed=True)
