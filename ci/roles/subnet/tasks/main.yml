@@ -41,3 +41,6 @@
     cloud: "{{ cloud }}"
     name: "{{ network_name }}"
     state: absent
+
+- name: Subnet Allocation
+  include_tasks: subnet-allocation.yml

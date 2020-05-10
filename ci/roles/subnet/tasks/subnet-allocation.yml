@@ -1,0 +1,63 @@
+---
+- name: Create network {{ network_name }}
+  openstack.cloud.os_network:
+    cloud: "{{ cloud }}"
+    name: "{{ network_name }}"
+    state: present
+
+- name: Create subnet {{ subnet_name }} on network {{ network_name }}
+  openstack.cloud.os_subnet:
+    cloud: "{{ cloud }}"
+    network_name: "{{ network_name }}"
+    enable_dhcp: "{{ enable_subnet_dhcp }}"
+    name: "{{ subnet_name }}"
+    state: present
+    cidr: 192.168.0.0/24
+    gateway_ip: 192.168.0.1
+    allocation_pool_start: 192.168.0.2
+    allocation_pool_end: 192.168.0.4
+
+- name: Update subnet {{ subnet_name }} allocation pools
+  openstack.cloud.os_subnet:
+    cloud: "{{ cloud }}"
+    network_name: "{{ network_name }}"
+    name: "{{ subnet_name }}"
+    state: present
+    cidr: 192.168.0.0/24
+    allocation_pool_start: 192.168.0.5
+    allocation_pool_end: 192.168.0.8
+
+- name: Get Subnet Info
+  openstack.cloud.os_subnets_info:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_name }}"
+  register: subnet_result
+
+- name: Verify Subnet Allocation Pools Exist
+  assert:
+    that:
+      - subnet_result.openstack_subnets is defined
+      - subnet_result.openstack_subnets | length == 1
+      - subnet_result.openstack_subnets[0].allocation_pools is defined
+      - subnet_result.openstack_subnets[0].allocation_pools | length == 2
+
+- name: Verify Subnet Allocation Pools
+  assert:
+    that:
+      - subnet_result.openstack_subnets[0].allocation_pools | selectattr('start','equalto',item.start) | list | count > 0
+      - subnet_result.openstack_subnets[0].allocation_pools | selectattr('end','equalto',item.end) | list | count > 0
+  loop:
+    - {start: '192.168.0.2', end: '192.168.0.4'}
+    - {start: '192.168.0.5', end: '192.168.0.8'}
+
+- name: Delete subnet {{ subnet_name }}
+  openstack.cloud.os_subnet:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_name }}"
+    state: absent
+
+- name: Delete network {{ network_name }}
+  openstack.cloud.os_network:
+    cloud: "{{ cloud }}"
+    name: "{{ network_name }}"
+    state: absent
