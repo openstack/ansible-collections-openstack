@@ -50,7 +50,7 @@ if sys.version_info >= (3,) and sys.version_info < (3, 4, 4):
         # Retrieve lines from read_data via a generator so that separate calls to
         # readline, read, and readlines are properly interleaved
         sep = b'\n' if isinstance(read_data, bytes) else '\n'
-        data_as_list = [l + sep for l in read_data.split(sep)]
+        data_as_list = [li + sep for li in read_data.split(sep)]
 
         if data_as_list[-1] == sep:
             # If the last line ended in a newline, the list comprehension will have an
