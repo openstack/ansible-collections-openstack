@@ -9,23 +9,23 @@
     # meta/action_groups.yml glue seems to be missing
     # group/os:
     #   cloud: "{{ cloud }}"
-    openstack.cloud.os_keystone_domain:
+    openstack.cloud.identity_domain:
       cloud: "{{ cloud }}"
-    openstack.cloud.os_keystone_identity_provider:
+    openstack.cloud.federation_idp:
       cloud: "{{ cloud }}"
-    openstack.cloud.os_keystone_mapping:
+    openstack.cloud.federation_mapping:
       cloud: "{{ cloud }}"
-    openstack.cloud.os_keystone_federation_protocol:
+    openstack.cloud.keystone_federation_protocol:
       cloud: "{{ cloud }}"
       idp_id: "{{ idp_name }}"
-    openstack.cloud.os_keystone_federation_protocol_info:
+    openstack.cloud.keystone_federation_protocol_info:
       cloud: "{{ cloud }}"
       idp_id: "{{ idp_name }}"
   block:
     # ========================================================================
     #   Initial setup
     - name: 'Create test Domain'
-      openstack.cloud.os_keystone_domain:
+      openstack.cloud.identity_domain:
         name: '{{ domain_name }}'
       register: create_domain
     - assert:
@@ -37,7 +37,7 @@
         domain_id: '{{ create_domain.id }}'
 
     - name: 'Create test Identity Provider'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         domain_id: '{{ domain_id }}'
@@ -47,7 +47,7 @@
         - create_idp is successful
 
     - name: 'Create test mapping (1)'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name_1 }}'
         rules: '{{ mapping_rules_1 }}'
@@ -56,7 +56,7 @@
         that:
         - create_mapping is successful
     - name: 'Create test mapping (2)'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name_2 }}'
         rules: '{{ mapping_rules_2 }}'
@@ -68,7 +68,7 @@
     # We *should* have a blank slate to start with, but we also shouldn't
     # explode if I(state=absent) and the IDP doesn't exist
     - name: "Ensure Protocol doesn't exist to start"
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'absent'
         name: '{{ protocol_name }}'
       register: delete_protocol
@@ -81,7 +81,7 @@
 
     - name: 'Create protocol - CHECK MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'present'
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_1 }}'
@@ -92,7 +92,7 @@
         - create_protocol is changed
 
     - name: 'Fetch Protocol info (should be absent)'
-      openstack.cloud.os_keystone_federation_protocol_info:
+      openstack.cloud.keystone_federation_protocol_info:
         name: '{{ protocol_name }}'
       register: protocol_info
       ignore_errors: yes
@@ -101,7 +101,7 @@
         - protocol_info is failed
 
     - name: 'Create protocol'
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'present'
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_1 }}'
@@ -124,7 +124,7 @@
 
     - name: 'Create protocol (retry - no change) - CHECK MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'present'
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_1 }}'
@@ -135,7 +135,7 @@
         - create_protocol is not changed
 
     - name: 'Create protocol (retry - no change)'
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'present'
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_1 }}'
@@ -161,7 +161,7 @@
 
     - name: 'Update protocol - CHECK MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'present'
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_2 }}'
@@ -172,7 +172,7 @@
         - update_protocol is changed
 
     - name: 'Update protocol'
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'present'
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_2 }}'
@@ -195,7 +195,7 @@
 
     - name: 'Update protocol (retry - no change) - CHECK MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'present'
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_2 }}'
@@ -206,7 +206,7 @@
         - update_protocol is not changed
 
     - name: 'Update protocol (retry - no change)'
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'present'
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_2 }}'
@@ -228,10 +228,10 @@
         protocol: '{{ update_protocol.protocol }}'
 
     # ========================================================================
-    #   Create second protocol to test os_keystone_federation_protocol_info
+    #   Create second protocol to test openstack.cloud.keystone_federation_protocol_info
 
     - name: 'Create protocol (2)'
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'present'
         name: '{{ protocol_name_2 }}'
         mapping_id: '{{ mapping_name_1 }}'
@@ -253,10 +253,10 @@
         protocol: '{{ create_protocol_2.protocol }}'
 
     # ========================================================================
-    #   Basic tests of os_keystone_federation_protocol_info
+    #   Basic tests of openstack.cloud.keystone_federation_protocol_info
 
     - name: 'Fetch Protocol info (a specific protocol)'
-      openstack.cloud.os_keystone_federation_protocol_info:
+      openstack.cloud.keystone_federation_protocol_info:
         name: '{{ protocol_name }}'
       register: protocol_info
     - assert:
@@ -276,7 +276,7 @@
         protocol: '{{ protocol_info.protocols[0] }}'
 
     - name: 'Fetch Protocol info (all protocols on our test IDP)'
-      openstack.cloud.os_keystone_federation_protocol_info: {}
+      openstack.cloud.keystone_federation_protocol_info: {}
         # idp_id defined in defaults at the start
       register: protocol_info
     - assert:
@@ -311,7 +311,7 @@
 
     - name: 'Delete protocol - CHECK MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'absent'
         name: '{{ protocol_name }}'
       register: update_protocol
@@ -321,7 +321,7 @@
         - update_protocol is changed
 
     - name: 'Delete protocol'
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'absent'
         name: '{{ protocol_name }}'
       register: update_protocol
@@ -332,7 +332,7 @@
 
     - name: 'Delete protocol (retry - no change) - CHECK MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'absent'
         name: '{{ protocol_name }}'
       register: update_protocol
@@ -342,7 +342,7 @@
         - update_protocol is not changed
 
     - name: 'Delete protocol (retry - no change)'
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
         state: 'absent'
         name: '{{ protocol_name }}'
       register: update_protocol
@@ -355,39 +355,39 @@
     #   Clean up after ourselves
   always:
     - name: 'Delete protocol'
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
          state: 'absent'
          name: '{{ protocol_name }}'
          idp_id: '{{ idp_name }}'
       ignore_errors: yes
 
     - name: 'Delete protocol (2)'
-      openstack.cloud.os_keystone_federation_protocol:
+      openstack.cloud.keystone_federation_protocol:
          state: 'absent'
          name: '{{ protocol_name_2 }}'
          idp_id: '{{ idp_name }}'
       ignore_errors: yes
 
     - name: 'Delete mapping 1'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
          state: 'absent'
          name: '{{ mapping_name_1 }}'
       ignore_errors: yes
 
     - name: 'Delete mapping 2'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
          state: 'absent'
          name: '{{ mapping_name_2 }}'
       ignore_errors: yes
 
     - name: 'Delete idp'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
          state: 'absent'
          name: '{{ idp_name }}'
       ignore_errors: yes
 
     - name: 'Delete domain'
-      openstack.cloud.os_keystone_domain:
+      openstack.cloud.identity_domain:
          state: 'absent'
          name: '{{ domain_name }}'
       ignore_errors: yes

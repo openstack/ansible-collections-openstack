@@ -3,13 +3,13 @@
     # meta/action_groups.yml glue seems to be missing
     # group/os:
     #   cloud: "{{ cloud }}"
-    openstack.cloud.os_keystone_mapping:
+    openstack.cloud.federation_mapping:
       cloud: "{{ cloud }}"
-    openstack.cloud.os_keystone_mapping_info:
+    openstack.cloud.federation_mapping_info:
       cloud: "{{ cloud }}"
   block:
     - name: "Ensure mapping doesn't exist to start"
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'absent'
         name: '{{ mapping_name }}'
       register: delete_mapping
@@ -18,7 +18,7 @@
         - delete_mapping is successful
 
     - name: 'Create mapping - CHECK_MODE'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_1 }}'
@@ -30,7 +30,7 @@
         - create_mapping is changed
 
     - name: 'Fetch mapping info (mapping should be absent)'
-      openstack.cloud.os_keystone_mapping_info:
+      openstack.cloud.federation_mapping_info:
         name: '{{ mapping_name }}'
       register: mapping_info
       ignore_errors: yes
@@ -39,7 +39,7 @@
         - mapping_info is failed
 
     - name: 'Create mapping'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_1 }}'
@@ -56,7 +56,7 @@
         - create_mapping.mapping.rules | length == 1
 
     - name: 'Fetch mapping info - with name'
-      openstack.cloud.os_keystone_mapping_info:
+      openstack.cloud.federation_mapping_info:
         name: '{{ mapping_name }}'
       register: mapping_info
     - assert:
@@ -74,7 +74,7 @@
         mapping_0: '{{ mapping_info.mappings[0] }}'
 
     - name: 'Fetch mapping info - without name'
-      openstack.cloud.os_keystone_mapping_info: {}
+      openstack.cloud.federation_mapping_info: {}
       register: mapping_info
     - assert:
         that:
@@ -92,7 +92,7 @@
         mapping_0: '{{ mapping_info.mappings[0] }}'
 
     - name: 'Create mapping (retry - no change) - CHECK_MODE'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_1 }}'
@@ -104,7 +104,7 @@
         - create_mapping is not changed
 
     - name: 'Create mapping (retry - no change)'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_1 }}'
@@ -121,7 +121,7 @@
         - create_mapping.mapping.rules | length == 1
 
     - name: 'Update mapping - CHECK_MODE'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_2 }}'
@@ -133,7 +133,7 @@
         - update_mapping is changed
 
     - name: 'Update mapping'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_2 }}'
@@ -150,7 +150,7 @@
         - update_mapping.mapping.rules | length == 1
 
     - name: 'Update mapping (retry - no change)'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_2 }}'
@@ -167,7 +167,7 @@
         - update_mapping.mapping.rules | length == 1
 
     - name: 'Create second mapping'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name_2 }}'
         rules: '{{ mapping_rules_1 }}'
@@ -184,7 +184,7 @@
         - create_mapping.mapping.rules | length == 1
 
     - name: 'Fetch mapping (2) info - with name'
-      openstack.cloud.os_keystone_mapping_info:
+      openstack.cloud.federation_mapping_info:
         name: '{{ mapping_name_2 }}'
       register: mapping_info
     - assert:
@@ -202,7 +202,7 @@
         mapping_0: '{{ mapping_info.mappings[0] }}'
 
     - name: 'Fetch mapping info - without name'
-      openstack.cloud.os_keystone_mapping_info: {}
+      openstack.cloud.federation_mapping_info: {}
       register: mapping_info
     - assert:
         that:
@@ -226,7 +226,7 @@
         mapping_1: '{{ mapping_info.mappings[1] }}'
 
     - name: 'Delete mapping - CHECK_MODE'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'absent'
         name: '{{ mapping_name }}'
       register: delete_mapping
@@ -237,7 +237,7 @@
         - delete_mapping is changed
 
     - name: 'Delete mapping'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'absent'
         name: '{{ mapping_name }}'
       register: delete_mapping
@@ -247,7 +247,7 @@
         - delete_mapping is changed
 
     - name: 'Delete mapping (retry - no change) - CHECK_MODE'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'absent'
         name: '{{ mapping_name }}'
       register: delete_mapping
@@ -258,7 +258,7 @@
         - delete_mapping is not changed
 
     - name: 'Delete mapping (retry - no change) '
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'absent'
         name: '{{ mapping_name }}'
       register: delete_mapping
@@ -268,7 +268,7 @@
         - delete_mapping is not changed
 
     - name: 'Fetch mapping info after deletion'
-      openstack.cloud.os_keystone_mapping_info:
+      openstack.cloud.federation_mapping_info:
         name: '{{ mapping_name }}'
       register: mapping_info
       ignore_errors: True
@@ -277,7 +277,7 @@
         - mapping_info is failed
 
     - name: 'Delete second mapping'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
         state: 'absent'
         name: '{{ mapping_name_2 }}'
       register: delete_mapping
@@ -288,13 +288,13 @@
 
   always:
     - name: 'Delete mapping'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
          state: 'absent'
          name: '{{ mapping_name }}'
       ignore_errors: yes
 
     - name: 'Delete second mapping'
-      openstack.cloud.os_keystone_mapping:
+      openstack.cloud.federation_mapping:
          state: 'absent'
          name: '{{ mapping_name_2 }}'
       ignore_errors: yes

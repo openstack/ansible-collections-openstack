@@ -20,6 +20,16 @@ plugin_routing:
         removal_date: TBD
         warning_text: os_ prefixed module names are deprecated, use openstack.cloud.coe_cluster_template
       redirect: openstack.cloud.coe_cluster_template
+    os_endpoint:
+      deprecation:
+        removal_date: TBD
+        warning_text: os_ prefixed module names are deprecated, use openstack.cloud.catalog_endpoint
+      redirect: openstack.cloud.catalog_endpoint
+    os_flavor:
+      deprecation:
+        removal_date: TBD
+        warning_text: os_ prefixed module names are deprecated, use openstack.cloud.compute_flavor
+      redirect: openstack.cloud.compute_flavor
     os_flavor_info:
       deprecation:
         removal_date: TBD

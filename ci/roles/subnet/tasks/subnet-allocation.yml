@@ -1,12 +1,12 @@
 ---
 - name: Create network {{ network_name }}
-  openstack.cloud.os_network:
+  openstack.cloud.network:
     cloud: "{{ cloud }}"
     name: "{{ network_name }}"
     state: present
 
 - name: Create subnet {{ subnet_name }} on network {{ network_name }}
-  openstack.cloud.os_subnet:
+  openstack.cloud.subnet:
     cloud: "{{ cloud }}"
     network_name: "{{ network_name }}"
     enable_dhcp: "{{ enable_subnet_dhcp }}"
@@ -18,7 +18,7 @@
     allocation_pool_end: 192.168.0.4
 
 - name: Update subnet {{ subnet_name }} allocation pools
-  openstack.cloud.os_subnet:
+  openstack.cloud.subnet:
     cloud: "{{ cloud }}"
     network_name: "{{ network_name }}"
     name: "{{ subnet_name }}"
@@ -28,7 +28,7 @@
     allocation_pool_end: 192.168.0.8
 
 - name: Get Subnet Info
-  openstack.cloud.os_subnets_info:
+  openstack.cloud.subnets_info:
     cloud: "{{ cloud }}"
     name: "{{ subnet_name }}"
   register: subnet_result
@@ -51,13 +51,13 @@
     - {start: '192.168.0.5', end: '192.168.0.8'}
 
 - name: Delete subnet {{ subnet_name }}
-  openstack.cloud.os_subnet:
+  openstack.cloud.subnet:
     cloud: "{{ cloud }}"
     name: "{{ subnet_name }}"
     state: absent
 
 - name: Delete network {{ network_name }}
-  openstack.cloud.os_network:
+  openstack.cloud.network:
     cloud: "{{ cloud }}"
     name: "{{ network_name }}"
     state: absent

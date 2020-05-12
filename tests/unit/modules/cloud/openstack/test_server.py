@@ -5,7 +5,7 @@ import pytest
 import yaml
 
 from ansible.module_utils.six import string_types
-from ansible_collections.openstack.cloud.plugins.modules import os_server
+from ansible_collections.openstack.cloud.plugins.modules import server as os_server
 
 
 class AnsibleFail(Exception):
@@ -18,7 +18,7 @@ class AnsibleExit(Exception):
 
 def params_from_doc(func):
     '''This function extracts the docstring from the specified function,
-    parses it as a YAML document, and returns parameters for the os_server
+    parses it as a YAML document, and returns parameters for the openstack.cloud.server
     module.'''
 
     doc = inspect.getdoc(func)
@@ -32,7 +32,7 @@ def params_from_doc(func):
         task[module] = collections.defaultdict(str,
                                                params)
 
-    return cfg[0]['os_server']
+    return cfg[0]['openstack.cloud.server']
 
 
 class FakeCloud(object):
@@ -89,7 +89,7 @@ class FakeCloud(object):
 
 class TestNetworkArgs(object):
     '''This class exercises the _network_args function of the
-    os_server module.  For each test, we parse the YAML document
+    openstack.cloud.server module.  For each test, we parse the YAML document
     contained in the docstring to retrieve the module parameters for the
     test.'''
 
@@ -100,7 +100,7 @@ class TestNetworkArgs(object):
 
     def test_nics_string_net_id(self):
         '''
-        - os_server:
+        - openstack.cloud.server:
             nics: net-id=1234
         '''
         args = os_server._network_args(self.module, self.cloud)
@@ -108,7 +108,7 @@ class TestNetworkArgs(object):
 
     def test_nics_string_net_id_list(self):
         '''
-        - os_server:
+        - openstack.cloud.server:
             nics: net-id=1234,net-id=4321
         '''
         args = os_server._network_args(self.module, self.cloud)
@@ -117,7 +117,7 @@ class TestNetworkArgs(object):
 
     def test_nics_string_port_id(self):
         '''
-        - os_server:
+        - openstack.cloud.server:
             nics: port-id=1234
         '''
         args = os_server._network_args(self.module, self.cloud)
@@ -125,7 +125,7 @@ class TestNetworkArgs(object):
 
     def test_nics_string_net_name(self):
         '''
-        - os_server:
+        - openstack.cloud.server:
             nics: net-name=network1
         '''
         args = os_server._network_args(self.module, self.cloud)
@@ -133,7 +133,7 @@ class TestNetworkArgs(object):
 
     def test_nics_string_port_name(self):
         '''
-        - os_server:
+        - openstack.cloud.server:
             nics: port-name=port1
         '''
         args = os_server._network_args(self.module, self.cloud)
@@ -141,7 +141,7 @@ class TestNetworkArgs(object):
 
     def test_nics_structured_net_id(self):
         '''
-        - os_server:
+        - openstack.cloud.server:
             nics:
                 - net-id: '1234'
         '''
@@ -150,7 +150,7 @@ class TestNetworkArgs(object):
 
     def test_nics_structured_mixed(self):
         '''
-        - os_server:
+        - openstack.cloud.server:
             nics:
                 - net-id: '1234'
                 - port-name: port1
@@ -179,7 +179,7 @@ class TestCreateServer(object):
 
     def test_create_server(self):
         '''
-        - os_server:
+        - openstack.cloud.server:
             image: cirros
             flavor: m1.tiny
             nics:
@@ -197,7 +197,7 @@ class TestCreateServer(object):
 
     def test_create_server_bad_flavor(self):
         '''
-        - os_server:
+        - openstack.cloud.server:
             image: cirros
             flavor: missing_flavor
             nics:
@@ -211,7 +211,7 @@ class TestCreateServer(object):
 
     def test_create_server_bad_nic(self):
         '''
-        - os_server:
+        - openstack.cloud.server:
             image: cirros
             flavor: m1.tiny
             nics:

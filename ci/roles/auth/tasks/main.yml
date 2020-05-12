@@ -1,6 +1,6 @@
 ---
 - name: Authenticate to the cloud
-  openstack.cloud.os_auth:
+  openstack.cloud.auth:
     cloud={{ cloud }}
 
 - debug: var=service_catalog

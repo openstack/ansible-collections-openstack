@@ -4,14 +4,14 @@
   register: tmp_file
 
 - name: Create container
-  openstack.cloud.os_object:
+  openstack.cloud.object:
      cloud: "{{ cloud }}"
      state: present
      container: ansible_container
      container_access: private
 
 - name: Put object
-  openstack.cloud.os_object:
+  openstack.cloud.object:
      cloud: "{{ cloud }}"
      state: present
      name: ansible_object
@@ -19,14 +19,14 @@
      container: ansible_container
 
 - name: Delete object
-  openstack.cloud.os_object:
+  openstack.cloud.object:
      cloud: "{{ cloud }}"
      state: absent
      name: ansible_object
      container: ansible_container
 
 - name: Delete container
-  openstack.cloud.os_object:
+  openstack.cloud.object:
      cloud: "{{ cloud }}"
      state: absent
      container: ansible_container

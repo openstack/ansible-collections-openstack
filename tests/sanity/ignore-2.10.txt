@@ -8,8 +8,8 @@ tests/unit/mock/path.py future-import-boilerplate
 tests/unit/mock/path.py metaclass-boilerplate
 tests/unit/mock/yaml_helper.py future-import-boilerplate
 tests/unit/mock/yaml_helper.py metaclass-boilerplate
-tests/unit/modules/cloud/openstack/test_os_server.py future-import-boilerplate
-tests/unit/modules/cloud/openstack/test_os_server.py metaclass-boilerplate
+tests/unit/modules/cloud/openstack/test_server.py future-import-boilerplate
+tests/unit/modules/cloud/openstack/test_server.py metaclass-boilerplate
 tests/unit/modules/conftest.py future-import-boilerplate
 tests/unit/modules/conftest.py metaclass-boilerplate
 tests/unit/modules/utils.py future-import-boilerplate

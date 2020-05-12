@@ -1,7 +1,7 @@
 ---
 - name: 'Create project with properties - CHECK_MODE'
   check_mode: yes
-  openstack.cloud.os_project:
+  openstack.cloud.project:
      cloud: "{{ cloud }}"
      state: present
      name: ansible_project
@@ -17,7 +17,7 @@
       - create_project_cm is changed
 
 - name: 'Create project with properties'
-  openstack.cloud.os_project:
+  openstack.cloud.project:
     cloud: "{{ cloud }}"
     state: present
     name: ansible_project
@@ -37,7 +37,7 @@
 
 - name: 'Create project with properties (retry - no change) - CHECK_MODE'
   check_mode: yes
-  openstack.cloud.os_project:
+  openstack.cloud.project:
     cloud: "{{ cloud }}"
     state: present
     name: ansible_project
@@ -53,7 +53,7 @@
       - create_project_retry_cm is not changed
 
 - name: 'Create project with properties (retry - no change)'
-  openstack.cloud.os_project:
+  openstack.cloud.project:
     cloud: "{{ cloud }}"
     state: present
     name: ansible_project
@@ -73,7 +73,7 @@
 
 - name: 'Update project with properties - CHECK_MODE'
   check_mode: yes
-  openstack.cloud.os_project:
+  openstack.cloud.project:
      cloud: "{{ cloud }}"
      state: present
      name: ansible_project
@@ -87,7 +87,7 @@
       - updated_project_cm is changed
 
 - name: 'Update project with properties'
-  openstack.cloud.os_project:
+  openstack.cloud.project:
     cloud: "{{ cloud }}"
     state: present
     name: ansible_project
@@ -105,7 +105,7 @@
 
 - name: 'Update project with properties (retry - no change) - CHECK_MODE'
   check_mode: yes
-  openstack.cloud.os_project:
+  openstack.cloud.project:
     cloud: "{{ cloud }}"
     state: present
     name: ansible_project
@@ -119,7 +119,7 @@
       - updated_project_retry_cm is not changed
 
 - name: 'Update project with properties (retry - no change)'
-  openstack.cloud.os_project:
+  openstack.cloud.project:
     cloud: "{{ cloud }}"
     state: present
     name: ansible_project
@@ -136,7 +136,7 @@
     - updated_project_retry["project"].dummy_key == dummy_value_updated
 
 - name: Delete project with properties
-  openstack.cloud.os_project:
+  openstack.cloud.project:
      cloud: "{{ cloud }}"
      state: absent
      name: ansible_project

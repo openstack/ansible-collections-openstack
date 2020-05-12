@@ -1,12 +1,12 @@
 ---
 - name: Create network {{ network_name }}
-  openstack.cloud.os_network:
+  openstack.cloud.network:
     cloud: "{{ cloud }}"
     name: "{{ network_name }}"
     state: present
 
 - name: Create subnet {{ subnet_name }} on network {{ network_name }}
-  openstack.cloud.os_subnet:
+  openstack.cloud.subnet:
     cloud: "{{ cloud }}"
     network_name: "{{ network_name }}"
     name: "{{ subnet_name }}"
@@ -21,7 +21,7 @@
     allocation_pool_end: 192.168.0.254
 
 - name: Update subnet
-  openstack.cloud.os_subnet:
+  openstack.cloud.subnet:
     cloud: "{{ cloud }}"
     network_name: "{{ network_name }}"
     name: "{{ subnet_name }}"
@@ -31,13 +31,13 @@
     cidr: 192.168.0.0/24
 
 - name: Delete subnet {{ subnet_name }}
-  openstack.cloud.os_subnet:
+  openstack.cloud.subnet:
     cloud: "{{ cloud }}"
     name: "{{ subnet_name }}"
     state: absent
 
 - name: Delete network {{ network_name }}
-  openstack.cloud.os_network:
+  openstack.cloud.network:
     cloud: "{{ cloud }}"
     name: "{{ network_name }}"
     state: absent

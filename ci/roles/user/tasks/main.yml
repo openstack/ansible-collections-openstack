@@ -1,6 +1,6 @@
 ---
 - name: Create user
-  openstack.cloud.os_user:
+  openstack.cloud.identity_user:
      cloud: "{{ cloud }}"
      state: present
      name: ansible_user
@@ -13,7 +13,7 @@
 - debug: var=user
 
 - name: Update user
-  openstack.cloud.os_user:
+  openstack.cloud.identity_user:
      cloud: "{{ cloud }}"
      state: present
      name: ansible_user
@@ -24,7 +24,7 @@
 - debug: var=updateduser
 
 - name: Delete user
-  openstack.cloud.os_user:
+  openstack.cloud.identity_user:
      cloud: "{{ cloud }}"
      state: absent
      name: ansible_user

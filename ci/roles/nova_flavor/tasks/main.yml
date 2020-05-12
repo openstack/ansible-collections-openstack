@@ -1,6 +1,6 @@
 ---
 - name: Create public flavor
-  openstack.cloud.os_nova_flavor:
+  openstack.cloud.compute_flavor:
      cloud: "{{ cloud }}"
      state: present
      name: ansible_public_flavor
@@ -13,13 +13,13 @@
      flavorid: 12345
 
 - name: Delete public flavor
-  openstack.cloud.os_nova_flavor:
+  openstack.cloud.compute_flavor:
      cloud: "{{ cloud }}"
      state: absent
      name: ansible_public_flavor
 
 - name: Create private flavor
-  openstack.cloud.os_nova_flavor:
+  openstack.cloud.compute_flavor:
      cloud: "{{ cloud }}"
      state: present
      name: ansible_private_flavor
@@ -32,13 +32,13 @@
      flavorid: 12345
 
 - name: Delete private flavor
-  openstack.cloud.os_nova_flavor:
+  openstack.cloud.compute_flavor:
      cloud: "{{ cloud }}"
      state: absent
      name: ansible_private_flavor
 
 - name: Create flavor (defaults)
-  openstack.cloud.os_nova_flavor:
+  openstack.cloud.compute_flavor:
      cloud: "{{ cloud }}"
      state: present
      name: ansible_defaults_flavor
@@ -47,7 +47,7 @@
      disk: 10
 
 - name: Delete flavor (defaults)
-  openstack.cloud.os_nova_flavor:
+  openstack.cloud.compute_flavor:
      cloud: "{{ cloud }}"
      state: absent
      name: ansible_defaults_flavor

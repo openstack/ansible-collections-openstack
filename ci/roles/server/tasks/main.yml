@@ -1,6 +1,6 @@
 ---
 - name: Create server with meta as CSV
-  openstack.cloud.os_server:
+  openstack.cloud.server:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ server_name }}"
@@ -15,14 +15,14 @@
 - debug: var=server
 
 - name: Delete server with meta as CSV
-  openstack.cloud.os_server:
+  openstack.cloud.server:
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ server_name }}"
      wait: true
 
 - name: Create server with meta as dict
-  openstack.cloud.os_server:
+  openstack.cloud.server:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ server_name }}"
@@ -39,14 +39,14 @@
 - debug: var=server
 
 - name: Delete server with meta as dict
-  openstack.cloud.os_server:
+  openstack.cloud.server:
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ server_name }}"
      wait: true
 
 - name: Create server (FIP from pool/network)
-  openstack.cloud.os_server:
+  openstack.cloud.server:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ server_name }}"
@@ -61,14 +61,14 @@
 - debug: var=server
 
 - name: Delete server (FIP from pool/network)
-  openstack.cloud.os_server:
+  openstack.cloud.server:
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ server_name }}"
      wait: true
 
 - name: Create server from volume
-  openstack.cloud.os_server:
+  openstack.cloud.server:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ server_name }}"
@@ -85,7 +85,7 @@
 - debug: var=server
 
 - name: Delete server with volume
-  openstack.cloud.os_server:
+  openstack.cloud.server:
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ server_name }}"

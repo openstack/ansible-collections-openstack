@@ -9,17 +9,17 @@
     # meta/action_groups.yml glue seems to be missing
     # group/os:
     #   cloud: "{{ cloud }}"
-    openstack.cloud.os_keystone_domain:
+    openstack.cloud.identity_domain:
       cloud: "{{ cloud }}"
-    openstack.cloud.os_keystone_identity_provider:
+    openstack.cloud.federation_idp:
       cloud: "{{ cloud }}"
-    openstack.cloud.os_keystone_identity_provider_info:
+    openstack.cloud.federation_idp_info:
       cloud: "{{ cloud }}"
   block:
     # ========================================================================
     #   Initial setup
     - name: 'Create test domain'
-      openstack.cloud.os_keystone_domain:
+      openstack.cloud.identity_domain:
         name: '{{ domain_name }}'
       register: create_domain
     - assert:
@@ -33,7 +33,7 @@
     # We *should* have a blank slate to start with, but we also shouldn't
     # explode if I(state=absent) and the IDP doesn't exist
     - name: "Ensure IDP doesn't exist to start"
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'absent'
         name: '{{ idp_name }}'
       register: delete_idp
@@ -46,7 +46,7 @@
 
     - name: 'Create IDP - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         domain_id: '{{ domain_id }}'
@@ -57,7 +57,7 @@
         - create_idp is changed
 
     - name: 'Fetch identity_provider info (provider should be absent)'
-      openstack.cloud.os_keystone_identity_provider_info:
+      openstack.cloud.federation_idp_info:
         name: '{{ idp_name }}'
       register: identity_provider_info
       ignore_errors: yes
@@ -66,7 +66,7 @@
         - identity_provider_info is failed
 
     - name: 'Create IDP'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         domain_id: '{{ domain_id }}'
@@ -94,7 +94,7 @@
         idp: '{{ create_identity_provider.identity_provider }}'
 
     - name: 'Fetch IDP info - with name'
-      openstack.cloud.os_keystone_identity_provider_info:
+      openstack.cloud.federation_idp_info:
         name: '{{ idp_name }}'
       register: identity_provider_info
     - assert:
@@ -121,7 +121,7 @@
         idp: '{{ identity_provider_info.identity_providers[0] }}'
 
     - name: 'Fetch identity_provider info - without name'
-      openstack.cloud.os_keystone_identity_provider_info: {}
+      openstack.cloud.federation_idp_info: {}
       register: identity_provider_info
     - assert:
         that:
@@ -143,7 +143,7 @@
 
     - name: 'Create identity_provider (retry - no change) - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         domain_id: '{{ domain_id }}'
@@ -154,7 +154,7 @@
         - create_identity_provider is not changed
 
     - name: 'Create identity_provider (retry - no change)'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         domain_id: '{{ domain_id }}'
@@ -186,7 +186,7 @@
 
     - name: 'Update IDP set description - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         description: '{{ idp_description }}'
@@ -197,7 +197,7 @@
         - update_identity_provider is changed
 
     - name: 'Update IDP set description'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         description: '{{ idp_description }}'
@@ -226,7 +226,7 @@
 
     - name: 'Update IDP set description (retry - no change) - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         description: '{{ idp_description }}'
@@ -237,7 +237,7 @@
         - update_identity_provider is not changed
 
     - name: 'Update IDP set description (retry - no change)'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         description: '{{ idp_description }}'
@@ -267,7 +267,7 @@
 
     - name: 'Update IDP set Remote IDs - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         remote_ids: '{{ remote_ids_1 }}'
@@ -278,7 +278,7 @@
         - update_identity_provider is changed
 
     - name: 'Update IDP set Remote IDs'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         remote_ids: '{{ remote_ids_1 }}'
@@ -307,7 +307,7 @@
 
     - name: 'Update IDP set Remote IDs (retry - no change) - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         remote_ids: '{{ remote_ids_1 }}'
@@ -318,7 +318,7 @@
         - update_identity_provider is not changed
 
     - name: 'Update IDP set Remote IDs (retry - no change)'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         remote_ids: '{{ remote_ids_1 }}'
@@ -348,7 +348,7 @@
 
     - name: 'Update IDP set Disabled - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         enabled: False
@@ -359,7 +359,7 @@
         - update_identity_provider is changed
 
     - name: 'Update IDP set Disabled'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         enabled: False
@@ -388,7 +388,7 @@
 
     - name: 'Update IDP set Disabled (retry - no change) - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         enabled: False
@@ -399,7 +399,7 @@
         - update_identity_provider is not changed
 
     - name: 'Update IDP set Disabled (retry - no change)'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         enabled: False
@@ -429,7 +429,7 @@
     # If we don't specify anything to change, then nothing should change...
     - name: 'Minimal call to IDP (no change) - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
       register: update_identity_provider
@@ -439,7 +439,7 @@
         - update_identity_provider is not changed
 
     - name: 'Minimal call to IDP (no change)'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
       register: update_identity_provider
@@ -470,7 +470,7 @@
 
     - name: 'Update all updatable IDP parameters - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         description: '{{ idp_description_2 }}'
@@ -483,7 +483,7 @@
         - update_identity_provider is changed
 
     - name: 'Update all updatable IDP parameters'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         description: '{{ idp_description_2 }}'
@@ -514,7 +514,7 @@
 
     - name: 'Update all updatable IDP parameters (no change) - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         description: '{{ idp_description_2 }}'
@@ -527,7 +527,7 @@
         - update_identity_provider is not changed
 
     - name: 'Update all updatable IDP parameters (no change)'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
         description: '{{ idp_description_2 }}'
@@ -561,7 +561,7 @@
 
     - name: 'Create complex IDP - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name_2 }}'
         domain_id: '{{ domain_id }}'
@@ -575,7 +575,7 @@
         - create_identity_provider is changed
 
     - name: 'Create complex IDP'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name_2 }}'
         domain_id: '{{ domain_id }}'
@@ -607,7 +607,7 @@
 
     - name: 'Create complex IDP (retry - no change) - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name_2 }}'
         domain_id: '{{ domain_id }}'
@@ -621,7 +621,7 @@
         - create_identity_provider is not changed
 
     - name: 'Create complex IDP'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name_2 }}'
         domain_id: '{{ domain_id }}'
@@ -653,7 +653,7 @@
 
     # Attempt to ensure that if we search we only get the one we expect
     - name: 'Fetch Complex IDP info - with name'
-      openstack.cloud.os_keystone_identity_provider_info:
+      openstack.cloud.federation_idp_info:
         name: '{{ idp_name_2 }}'
       register: identity_provider_info
     - assert:
@@ -680,7 +680,7 @@
 
     # Ensure that if we do search we get both of the results we expect
     - name: 'Fetch multiple IDP info - without name'
-      openstack.cloud.os_keystone_identity_provider_info: {}
+      openstack.cloud.federation_idp_info: {}
       register: identity_provider_info
     - assert:
         that:
@@ -722,7 +722,7 @@
 
     - name: 'Delete identity_provider - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'absent'
         name: '{{ idp_name }}'
       register: delete_identity_provider
@@ -732,7 +732,7 @@
         - delete_identity_provider is changed
 
     - name: 'Delete identity_provider'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'absent'
         name: '{{ idp_name }}'
       register: delete_identity_provider
@@ -743,7 +743,7 @@
 
     - name: 'Delete identity_provider (retry - no change) - CHECK_MODE'
       check_mode: yes
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'absent'
         name: '{{ idp_name }}'
       register: delete_identity_provider
@@ -753,7 +753,7 @@
         - delete_identity_provider is not changed
 
     - name: 'Delete identity_provider (retry - no change) '
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'absent'
         name: '{{ idp_name }}'
       register: delete_identity_provider
@@ -763,7 +763,7 @@
         - delete_identity_provider is not changed
 
     - name: 'Fetch identity_provider info after deletion'
-      openstack.cloud.os_keystone_identity_provider_info:
+      openstack.cloud.federation_idp_info:
         name: '{{ idp_name }}'
       register: identity_provider_info
       ignore_errors: True
@@ -772,7 +772,7 @@
         - identity_provider_info is failed
 
     - name: 'Delete second identity_provider'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
         state: 'absent'
         name: '{{ idp_name_2 }}'
       register: delete_identity_provider
@@ -783,19 +783,19 @@
 
   always:
     - name: 'Delete idp'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
          state: 'absent'
          name: '{{ idp_name }}'
       ignore_errors: yes
 
     - name: 'Delete second identity_provider'
-      openstack.cloud.os_keystone_identity_provider:
+      openstack.cloud.federation_idp:
          state: 'absent'
          name: '{{ idp_name_2 }}'
       ignore_errors: yes
 
     - name: 'Delete domain'
-      openstack.cloud.os_keystone_domain:
+      openstack.cloud.identity_domain:
          state: 'absent'
          name: '{{ domain_name }}'
       ignore_errors: yes

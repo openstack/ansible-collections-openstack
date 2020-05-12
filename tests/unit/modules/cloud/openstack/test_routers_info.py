@@ -3,7 +3,7 @@ import munch
 
 from mock import patch
 
-from ansible_collections.openstack.cloud.plugins.modules import os_routers_info
+from ansible_collections.openstack.cloud.plugins.modules import routers_info
 from ansible_collections.openstack.cloud.tests.unit.modules.utils import set_module_args, ModuleTestCase, AnsibleExitJson
 
 
@@ -164,18 +164,18 @@ class FakeCloud(object):
 
 class TestRoutersInfo(ModuleTestCase):
     '''This class calls the main function of the
-    os_routers_info module.
+    openstack.cloud.routers_info module.
     '''
     def setUp(self):
         super(TestRoutersInfo, self).setUp()
-        self.module = os_routers_info
+        self.module = routers_info
 
     def module_main(self, exit_exc):
         with self.assertRaises(exit_exc) as exc:
             self.module.main()
         return exc.exception.args[0]
 
-    @patch('ansible_collections.openstack.cloud.plugins.modules.os_routers_info.openstack_cloud_from_module', side_effect=openstack_cloud_from_module)
+    @patch('ansible_collections.openstack.cloud.plugins.modules.routers_info.openstack_cloud_from_module', side_effect=openstack_cloud_from_module)
     def test_main_with_router_interface(self, *args):
 
         set_module_args({'name': 'router1'})
@@ -186,7 +186,7 @@ class TestRoutersInfo(ModuleTestCase):
         self.assertEqual(result.get('openstack_routers')[0].get('interfaces_info')[0].get('ip_address'), '192.168.1.254')
         self.assertEqual(result.get('openstack_routers')[0].get('interfaces_info')[0].get('subnet_id'), '0624c75f-0574-41b5-a8d1-92e6e3a9e51d')
 
-    @patch('ansible_collections.openstack.cloud.plugins.modules.os_routers_info.openstack_cloud_from_module', side_effect=openstack_cloud_from_module)
+    @patch('ansible_collections.openstack.cloud.plugins.modules.routers_info.openstack_cloud_from_module', side_effect=openstack_cloud_from_module)
     def test_main_with_router_gateway(self, *args):
 
         set_module_args({'name': 'router2'})
@@ -194,7 +194,7 @@ class TestRoutersInfo(ModuleTestCase):
         self.assertIs(type(result.get('openstack_routers')[0].get('interfaces_info')), list)
         self.assertEqual(len(result.get('openstack_routers')[0].get('interfaces_info')), 0)
 
-    @patch('ansible_collections.openstack.cloud.plugins.modules.os_routers_info.openstack_cloud_from_module', side_effect=openstack_cloud_from_module)
+    @patch('ansible_collections.openstack.cloud.plugins.modules.routers_info.openstack_cloud_from_module', side_effect=openstack_cloud_from_module)
     def test_main_with_router_interface_and_router_gateway(self, *args):
 
         set_module_args({'name': 'router3'})

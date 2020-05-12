@@ -1,6 +1,6 @@
 ---
 - name: Create user
-  openstack.cloud.os_user:
+  openstack.cloud.identity_user:
      cloud: "{{ cloud }}"
      state: present
      name: ansible_user
@@ -11,21 +11,21 @@
   register: user
 
 - name: Assign user to nonadmins group
-  openstack.cloud.os_user_group:
+  openstack.cloud.group_assignment:
      cloud: "{{ cloud }}"
      state: present
      user: ansible_user
      group: nonadmins
 
 - name: Remove user from nonadmins group
-  openstack.cloud.os_user_group:
+  openstack.cloud.group_assignment:
      cloud: "{{ cloud }}"
      state: absent
      user: ansible_user
      group: nonadmins
 
 - name: Delete user
-  openstack.cloud.os_user:
+  openstack.cloud.identity_user:
      cloud: "{{ cloud }}"
      state: absent
      name: ansible_user

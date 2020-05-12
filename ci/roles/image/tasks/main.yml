@@ -7,7 +7,7 @@
   shell: truncate -s 1048576 {{ tmp_file.stdout }}
 
 - name: Create raw image (defaults)
-  openstack.cloud.os_image:
+  openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ image_name }}"
@@ -18,13 +18,13 @@
 - debug: var=image
 
 - name: Delete raw image (defaults)
-  openstack.cloud.os_image:
+  openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ image_name }}"
 
 - name: Create raw image (complex)
-  openstack.cloud.os_image:
+  openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ image_name }}"
@@ -43,7 +43,7 @@
 - debug: var=image
 
 - name: Delete raw image (complex)
-  openstack.cloud.os_image:
+  openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ image_name }}"
