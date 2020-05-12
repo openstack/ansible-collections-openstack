@@ -1,0 +1,81 @@
+##### PLEASE READ BEFORE #####
+
+# Module format and documentation
+# https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_documenting.html#module-format-and-documentation
+
+
+module_name: server_manage
+author_name: 'Happy Ansible User'
+author_mail: dontwriteme@example.com
+module_short_description: "Doing something very useful"
+module_long_description: "Here is the place to release your inner writer"
+check_mode_support: True  # good practice to support check_mode:
+# https://docs.ansible.com/ansible/latest/user_guide/playbooks_checkmode.html#check-mode-dry-run
+
+module_returns_example:
+  image:
+    description: Image inspection results for the image that was pulled, pushed, or built.
+    returned: always  # or 'success' in case of success only
+    type: dict
+    sample:
+      Image Name: Sample Image
+      Image ID: e6471d00796a13de8142c15d7ad3a44f
+      Nested:
+        images list:
+          - data 1
+          - image 1234
+        boolean_1: True
+
+options:
+  optional_string:
+    description:
+      - This variable is set for having string argument, for example 'action'
+    type: str
+    required: true
+    default: "my_lovely_action"
+    choices:
+      - allowed_option1
+      - allowed_option1
+  optional_boolean:
+    description:
+      - This variable is set for having a boolean argument, for example whether
+        to wait for resource creation or not
+    type: bool
+    required: false # may be omitted if false
+    # and no default because not required
+  optional_integer:
+    description:
+      - This variable is set for having a integer argument, for example how many
+        seconds to wait for the resource to come alive
+    required: true
+    default: 60
+    type: int
+    aliases: # sometimes we allow to pass the same option with different name
+      - old_optional_integer_name
+      - different_option_name
+  optional_list:
+    description:
+      - This variable is set for having a list argument, for example files need
+        to create with the resource
+    type: list
+    elements: str  # type of elements of the list, can be dict, str, int, list
+  optional_dictionary:
+    description:
+      - This variable is set for having a dictionary argument, for example to
+        set environment variables or to pass more complex data to SDK
+    required: true
+    default: {}
+    type: dict
+    suboptions:
+      suboption_1:
+        description:
+          - suboption_1 description, what it does
+        type: str
+        aliases:
+          - suboption_1_another_name
+      suboption_2:
+        description:
+          - suboption_2 description, what it does
+        type: list
+        elements: str
+        default: []
