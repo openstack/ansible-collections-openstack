@@ -185,26 +185,44 @@
             dependencies: &deps_unit_lint
               - tox-pep8
               - openstack-tox-linters-ansible-2.9
+            irrelevant-files: &ignore_files
+              - changelogs/.*
+              - COPYING
+              - docs/.*
+              - README.md
+              - tools/run-ansible-sanity.sh
+              - tests/sanity/.*
+
         - ansible-collections-openstack-functional-devstack-releases:
             dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-ansible-devel:
             dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-ansible-2.9:
             dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-train-ansible-devel:
             dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-train-ansible-2.9:
             dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-stein-ansible-devel:
             dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-stein-ansible-2.9:
             dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-rocky-ansible-devel:
             dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-rocky-ansible-2.9:
             dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.9:
             dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
 
 
     gate:
@@ -217,4 +235,5 @@
         - ansible-collections-openstack-functional-devstack-train-ansible-2.9
         - ansible-collections-openstack-functional-devstack-stein-ansible-2.9
         - ansible-collections-openstack-functional-devstack-rocky-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-queens-ansible-2.9
 

@@ -21,6 +21,9 @@ trap "rm -rf ${ANSIBLE_COLLECTIONS_PATH}" err exit
 
 rm -rf "${ANSIBLE_COLLECTIONS_PATH}"
 mkdir -p ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud
-cp -a ${TOXDIR}/{plugins,meta,galaxy.yml} ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud
+cp -a ${TOXDIR}/{plugins,meta,scripts,tests,docs} ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud
 cd ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud/
-ansible-test sanity --skip-test metaclass-boilerplate --skip-test future-import-boilerplate
+ansible-test sanity -v \
+    --skip-test metaclass-boilerplate \
+    --skip-test future-import-boilerplate \
+    plugins/ docs/ meta/ scripts/ tests/
