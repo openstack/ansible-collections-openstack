@@ -2,3 +2,5 @@
 
 Ansible Collection: openstack.cloud
 ===================================
+
+For information on contributing, please see https://opendev.org/openstack/ansible-collections-openstack/src/branch/master/CONTRIBUTING.rst
