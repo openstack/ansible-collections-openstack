@@ -34,7 +34,7 @@ overrides = dict(
 
 old_list = []
 new_list = []
-module_routing = dict()
+module_runtime = dict()
 mapping = dict()
 os.system('git checkout HEAD^1 meta/action_groups.yml plugins ci')
 groups = yaml.safe_load(open('meta/action_groups.yml', 'r'))
@@ -44,7 +44,7 @@ for module in list(overrides.keys()) + groups['os']:
     new_name = overrides.get(module, module.replace('os_', ''))
     new_list.append(new_name)
     mapping[module] = new_name
-    module_routing[module] = dict(
+    module_runtime[module] = dict(
         deprecation=dict(
             removal_date='TBD',
             warning_text=(
@@ -60,9 +60,9 @@ groups['openstack'] = sorted(new_list)
 
 yaml.dump(groups, open('meta/action_groups.yml', 'w'))
 
-routing = dict(plugin_routing=dict(modules=module_routing))
+runtime = dict(plugin_runtime=dict(modules=module_runtime))
 
-yaml.dump(routing, open('meta/routing.yml', 'w'))
+yaml.dump(runtime, open('meta/runtime.yml', 'w'))
 
 
 def replace_content(content):
