@@ -4,7 +4,6 @@ readme: README.md
 authors: Openstack
 description: Openstack Ansible modules
 license: GPL-3.0-or-later
-license_file: COPYING
 tags:
   - cloud
   - openstack
