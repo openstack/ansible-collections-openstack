@@ -14,13 +14,16 @@ homepage: https://opendev.org
 issues: https://review.opendev.org/q/project:openstack/ansible-collections-openstack
 build_ignore:
   - "*.tar.gz"
-  - build_artifact/*
-  - ci/*
+  - build_artifact
+  - ci
   - galaxy.yml.in
   - setup.cfg
   - test-requirements.txt
-  - tests/*
-  - tools/*
+  - tests
+  - tools
   - tox.ini
+  - .gitignore
+  - .gitreview
   - .zuul.yaml
   - .pytest_cache
+  - importer_result.json
