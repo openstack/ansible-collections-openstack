@@ -95,7 +95,8 @@ class ServerInfoModule(OpenStackModule):
 
 
 def main():
-    ServerInfoModule()
+    module = ServerInfoModule()
+    module()
 
 
 if __name__ == '__main__':

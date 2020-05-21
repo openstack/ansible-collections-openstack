@@ -14,6 +14,10 @@
 
 - debug: var=server
 
+- name: Get info about all servers
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+
 - name: Delete server with meta as CSV
   openstack.cloud.server:
      cloud: "{{ cloud }}"
@@ -38,6 +42,11 @@
 
 - debug: var=server
 
+- name: Get info about one server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+
 - name: Delete server with meta as dict
   openstack.cloud.server:
      cloud: "{{ cloud }}"
@@ -59,6 +68,12 @@
   register: server
 
 - debug: var=server
+
+- name: Get detailed info about one server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    detailed: true
 
 - name: Delete server (FIP from pool/network)
   openstack.cloud.server:
@@ -83,6 +98,12 @@
   register: server
 
 - debug: var=server
+
+- name: Get info about one server in all projects
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    all_projects: true
 
 - name: Delete server with volume
   openstack.cloud.server:
