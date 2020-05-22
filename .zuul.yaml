@@ -47,6 +47,16 @@
         override-checkout: stable-2.9
 
 - job:
+    name: ansible-collections-openstack-functional-devstack-ansible-2.9-pip
+    parent: ansible-collections-openstack-functional-devstack-ansible-2.9
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using master of openstacksdk and stable 2.9 branch of ansible.
+      Ansible collection is built using PIP
+    vars:
+      tox_envlist: ansible-pip
+
+- job:
     name: ansible-collections-openstack-functional-devstack-train-ansible-devel
     parent: ansible-collections-openstack-functional-devstack
     description: |
@@ -223,6 +233,9 @@
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.9:
+            dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
+        - ansible-collections-openstack-functional-devstack-ansible-2.9-pip:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
 
