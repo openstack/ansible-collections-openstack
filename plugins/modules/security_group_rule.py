@@ -335,7 +335,7 @@ def main():
         else:
             project_id = cloud.current_project_id
 
-        if project_id:
+        if project_id and not remote_group:
             filters = {'tenant_id': project_id}
         else:
             filters = None
