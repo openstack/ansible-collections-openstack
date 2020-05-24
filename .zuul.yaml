@@ -189,9 +189,11 @@
               - changelogs/.*
               - COPYING
               - docs/.*
-              - README.md
+              - .*\.md
+              - .*\.rst
               - tools/run-ansible-sanity.sh
               - tests/sanity/.*
+              - contrib/.*
 
         - ansible-collections-openstack-functional-devstack-releases:
             dependencies: *deps_unit_lint
