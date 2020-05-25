@@ -79,7 +79,7 @@ extends_documentation_fragment:
 '''
 
 EXAMPLES = '''
-# Assign a floating IP to the fist interface of `cattle001` from an exiting
+# Assign a floating IP to the first interface of `cattle001` from an existing
 # external network or nova pool. A new floating IP from the first available
 # external network is allocated to the project.
 - openstack.cloud.floating_ip:
