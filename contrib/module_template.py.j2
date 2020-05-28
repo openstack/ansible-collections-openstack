@@ -1,0 +1,149 @@
+#!/usr/bin/python
+# coding: utf-8 -*-
+
+# Copyright (c) 2020, {{ author_name }} <{{ author_mail }}>
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+DOCUMENTATION = '''
+---
+module: {{ module_name }}
+short_description: {{ module_short_description }}
+author: {{ author_name }} <{{ author_mail }}>
+description:
+  - {{ module_long_description }}
+options:
+  {{ options|to_nice_yaml(indent=2,sort_keys=false)|indent(width=2)|trim }}
+
+requirements:
+  - "python >= 3.6"
+  - "openstacksdk"
+
+extends_documentation_fragment:
+  - openstack.cloud.openstack
+'''
+
+RETURN = '''
+{{ module_returns_example|to_nice_yaml(indent=2,sort_keys=false) }}
+'''
+
+EXAMPLES = '''
+# What modules does for example
+- {{ module_name }}:
+    action: pause
+    auth:
+      auth_url: https://identity.example.com
+      username: admin
+      password: admin
+      project_name: admin
+    server: vm1
+    timeout: 200
+'''
+
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
+
+
+class {{ module_name.split("_")|map("capitalize")|list|join("") }}Module(OpenStackModule):
+
+    argument_spec = dict(
+{% for k, v in options.items() %}
+{{ k | indent( width=8, indentfirst=True) }}=dict(type={{ v.type }}
+{%- if 'required' in v %}, required={{ v.required }}{% endif %}
+{%- if 'elements' in v %}, elements={{ v.elements }}{% endif %}
+{%- if 'default' in v %}, default={% if v.type == 'str' %}"{{ v.default }}"{% else %}{{ v.default }}{% endif %}{% endif %}
+{%- if 'aliases' in v %}, aliases={{ v.aliases }}{% endif %}
+{%- if 'choices' in v %}, choices={{ v.choices }}{% endif %}),
+{% endfor %}
+    ),
+
+    # Optional arguments requirements
+    module_kwargs = dict(
+        required_if=[
+            ['action', 'rebuild', ['image']],  # if need to rebuild image (only), the 'image' is required
+            ["state", "present", ["username", "user_roles"]],  # for creating user 'user_roles' is required
+            ["state", "absent", ["username"]],  # for state 'absent' only username is required
+        ],
+        required_by=dict(  # for weather and population 'city' is required to set
+            weather=('city'),
+            population=('city'),
+        ),
+        mutually_exclusive=[
+            ['use_cloud1', 'use_cloud2']  # can't run on both, choose only one to set
+        ],
+        required_together=[
+            ['remove_image', 'image_name']  # if need to remove image, must to specify which one
+        ],
+        required_one_of_args=[["password", "password_hash"]],  # one of these args must be set
+        supports_check_mode={{ check_mode_support }},  # good practice is to support check_mode
+    )
+
+    # you main funciton is here
+    def run(self):
+        # do any arguments check if needed
+        data = self.preliminary_checks()
+        # check if we need to run or the resource is in desired state already
+        must_run = self.check_mode_test()
+        # if the resource is good
+        if not must_run:
+            # updated returned results if need
+            self.results.update({"returning_data": some_data})
+            # returning {changed: False, ...} because we didn't change resource
+            self.exit_json(self.results)
+        # do something if must to run the module
+        self.execute()
+
+    def preliminary_checks(self):
+        # you checks before running like arguments and options checks, etc
+        return data
+
+    def check_mode_test(self):
+        # check the idempotency - does module should do anything or
+        # it's already in the desired state?
+        return must_run
+
+    def execute(self):
+        # doing here what should be done, using OpenstackSDK
+        # for example actions for resource:
+        # self.params['action'] = "rebuild"
+        action_name = self.params['action'] + "_resource"  # action_name='rebuild_resource'
+        try:
+            # find a method "rebuild_resource" in openstack SDK compute:
+            func_name = getattr(self.conn.compute, action_name)
+            # found self.conn.compute.rebuild_resource
+        except AttributeError:
+            self.fail_json(
+                msg="Method %s wasn't found in OpenstackSDK compute" % action_name)
+        summary = func_name(data)  # summary = self.conn.compute.rebuild_resource(data)
+        self.results.update({"returning_data": summary})
+        # that's it, exiting, results will be returned from module automatically
+
+    # another option for states
+    def execute_with_action_map(self):
+        actions_map = {
+            'start': self._start_resource,
+            'stop': self._stop_resource,
+            'restart': self._restart_resource,
+            'absent': self._absent_resource,
+        }
+        summary = actions_map(self.params['action'])()  # summary = self.start_resource()
+        self.results.update({"changed": True, "data2return": summary})
+
+    def _start_resource(self, some_other_data):
+        pass
+
+    def _stop_resource(self, some_other_data):
+        pass
+
+    def _restart_resource(self, some_other_data):
+        pass
+
+    def _absent_resource(self, some_other_data):
+        pass
+
+
+def main():
+    module = {{ module_name.split("_")|map("capitalize")|list|join("") }}Module()
+    module()
+
+
+if __name__ == '__main__':
+    main()
