@@ -96,7 +96,7 @@ if sys.version_info >= (3,) and sys.version_info < (3, 4, 4):
 
         global file_spec
         if file_spec is None:
-            import _io  # pylint: disable=import-outside-toplevel
+            import _io  # noqa
             file_spec = list(set(dir(_io.TextIOWrapper)).union(set(dir(_io.BytesIO))))
 
         if mock is None:

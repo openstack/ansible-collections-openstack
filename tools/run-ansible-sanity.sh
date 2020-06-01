@@ -24,6 +24,7 @@ mkdir -p ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud
 cp -a ${TOXDIR}/{plugins,meta,scripts,tests,docs} ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud
 cd ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud/
 ansible-test sanity -v \
+    --venv \
     --skip-test metaclass-boilerplate \
     --skip-test future-import-boilerplate \
     plugins/ docs/ meta/ scripts/ tests/

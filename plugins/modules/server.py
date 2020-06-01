@@ -11,7 +11,6 @@ DOCUMENTATION = '''
 ---
 module: server
 short_description: Create/Delete Compute Instances from OpenStack
-version_added: "2.0"
 author: "Monty Taylor (@emonty)"
 description:
    - Create or Remove compute instances from OpenStack.
@@ -162,7 +161,6 @@ options:
    scheduler_hints:
      description:
         - Arbitrary key/value pairs to the scheduler for custom use
-     version_added: "2.1"
      type: dict
    state:
      description:
@@ -176,7 +174,6 @@ options:
          associated with the instance will be deleted along with the instance.
      type: bool
      default: 'no'
-     version_added: "2.2"
    reuse_ips:
      description:
        - When I(auto_ip) is true and this option is true, the I(auto_ip) code
@@ -188,7 +185,6 @@ options:
          the server is deleted using I(delete_fip).
      type: bool
      default: 'yes'
-     version_added: "2.2"
    availability_zone:
      description:
        - Availability zone in which to create the server.

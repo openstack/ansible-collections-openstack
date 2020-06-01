@@ -7,7 +7,6 @@ DOCUMENTATION = '''
 ---
 module: routers_info
 short_description: Retrieve information about one or more OpenStack routers.
-version_added: "2.10"
 author: "Bram Verschueren (@bverschueren)"
 description:
     - Retrieve information about one or more routers from OpenStack.
