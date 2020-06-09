@@ -9,6 +9,29 @@ The collection includes the Openstack modules and plugins supported by Openstack
 
 ## Installation and Usage
 
+### Installing dependencies
+
+For using Openstack Cloud collection firstly need to install `ansible` and `openstacksdk` Python modules on Ansible controller.
+For example with pip:
+
+```bash
+pip install ansible openstacksdk
+```
+
+OpenStackSDK has to be available to Ansible and to the Python interpreter on the host, where Ansible executes the module (target host).
+Please note, that under some circumstances Ansible might invoke not standard Python interpreter on the target host.
+
+---
+
+#### NOTE
+
+OpenstackSDK is better to be the last stable version. It should NOT be installed on Openstack nodes,
+but rather on operators host (aka "Ansible controller"). OpenstackSDK from last version supports
+operations on all Openstack cloud versions. Therefore OpenstackSDK module version doesn't have to match
+Openstack cloud version usually.
+
+---
+
 ### Installing the Collection from Ansible Galaxy
 
 Before using the Openstack Cloud collection, you need to install the collection with the `ansible-galaxy` CLI:
