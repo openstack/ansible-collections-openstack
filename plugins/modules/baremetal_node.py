@@ -118,10 +118,11 @@ options:
         - As of Kilo, by default, passwords are always masked to API
           requests, which means the logic as a result always attempts to
           re-assert the password field.
-        - C(skip_update_of_driver_password) is deprecated alias and will be removed in 2.14.
+        - C(skip_update_of_driver_password) is deprecated alias and will be removed in openstack.cloud 2.0.0.
       type: bool
       default: 'no'
-      aliases: [ skip_update_of_driver_password ]
+      aliases:
+        - skip_update_of_driver_password
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -237,7 +238,7 @@ def main():
             required=False,
             type='bool',
             aliases=['skip_update_of_driver_password'],
-            deprecated_aliases=[dict(name='skip_update_of_driver_password', version='2.14')]
+            deprecated_aliases=[dict(name='skip_update_of_driver_password', version='2.0.0')]
         ),
         state=dict(required=False, default='present', choices=['present', 'absent'])
     )
