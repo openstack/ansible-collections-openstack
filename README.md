@@ -20,6 +20,7 @@ pip install ansible openstacksdk
 
 OpenStackSDK has to be available to Ansible and to the Python interpreter on the host, where Ansible executes the module (target host).
 Please note, that under some circumstances Ansible might invoke not standard Python interpreter on the target host.
+Using Python verison 3 is highly recommended for OpenstackSDK and strongly required from OpenstackSDK version 0.39.0.
 
 ---
 
