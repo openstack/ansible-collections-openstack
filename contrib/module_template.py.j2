@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: {{ module_name }}
 short_description: {{ module_short_description }}
-author: {{ author_name }} <{{ author_mail }}>
+author: Openstack Ansible SIG https://wiki.openstack.org/wiki/Ansible_SIG (@openstack)
 description:
   - {{ module_long_description }}
 options:
@@ -46,7 +46,7 @@ class {{ module_name.split("_")|map("capitalize")|list|join("") }}Module(OpenSta
 
     argument_spec = dict(
 {% for k, v in options.items() %}
-{{ k | indent( width=8, indentfirst=True) }}=dict(type={{ v.type }}
+{{ k | indent( width=8, indentfirst=True) }}=dict(type='{{ v.type }}'
 {%- if 'required' in v %}, required={{ v.required }}{% endif %}
 {%- if 'elements' in v %}, elements={{ v.elements }}{% endif %}
 {%- if 'default' in v %}, default={% if v.type == 'str' %}"{{ v.default }}"{% else %}{{ v.default }}{% endif %}{% endif %}
