@@ -9,3 +9,4 @@ yamllint
 rstcheck
 ruamel.yaml
 galaxy-importer
+tox

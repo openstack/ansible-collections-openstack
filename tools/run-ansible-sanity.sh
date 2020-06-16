@@ -25,6 +25,7 @@ cp -a ${TOXDIR}/{plugins,meta,scripts,tests,docs} ${ANSIBLE_COLLECTIONS_PATH}/an
 cd ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud/
 ansible-test sanity -v \
     --venv \
+    --python 3.6 \
     --skip-test metaclass-boilerplate \
     --skip-test future-import-boilerplate \
     plugins/ docs/ meta/ scripts/ tests/
