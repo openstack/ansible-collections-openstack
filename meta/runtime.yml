@@ -88,6 +88,7 @@ action_groups:
     - subnet
     - subnets_info
     - volume
+    - volume_info
     - volume_snapshot
   os:
     - auth
@@ -178,6 +179,7 @@ action_groups:
     - subnet
     - subnets_info
     - volume
+    - volume_info
     - volume_snapshot
     - os_auth
     - os_client_config
