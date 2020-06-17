@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: router
 short_description: Create or delete routers from OpenStack
-author: "David Shrewsbury (@Shrews)"
+author: OpenStack Ansible SIG
 description:
    - Create or Delete routers from OpenStack. Although Neutron allows
      routers to share the same name, this module enforces name uniqueness

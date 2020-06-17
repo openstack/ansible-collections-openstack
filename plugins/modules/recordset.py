@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: recordset
 short_description: Manage OpenStack DNS recordsets
-author: "Ricardo Carrillo Cruz (@rcarrillocruz)"
+author: OpenStack Ansible SIG
 description:
     - Manage OpenStack DNS recordsets. Recordsets can be created, deleted or
       updated. Only the I(records), I(description), and I(ttl) values

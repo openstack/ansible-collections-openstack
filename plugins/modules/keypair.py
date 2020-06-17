@@ -9,7 +9,7 @@ DOCUMENTATION = '''
 ---
 module: keypair
 short_description: Add/Delete a keypair from OpenStack
-author: "Benno Joy (@bennojoy)"
+author: OpenStack Ansible SIG
 description:
   - Add or Remove key pair from OpenStack
 options:

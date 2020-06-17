@@ -7,9 +7,7 @@ DOCUMENTATION = '''
 ---
 module: endpoint
 short_description: Manage OpenStack Identity service endpoints
-author:
-    - Mohammed Naser (@mnaser)
-    - Alberto Murillo (@albertomurillo)
+author: OpenStack Ansible SIG
 description:
     - Create, update, or delete OpenStack Identity service endpoints. If a
       service with the same combination of I(service), I(interface) and I(region)

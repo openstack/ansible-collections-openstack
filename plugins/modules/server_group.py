@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: server_group
 short_description: Manage OpenStack server groups
-author: "Lingxian Kong (@kong)"
+author: OpenStack Ansible SIG
 description:
    - Add or remove server groups from OpenStack.
 options:

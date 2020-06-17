@@ -8,9 +8,7 @@ DOCUMENTATION = '''
 ---
 module: security_group_rule
 short_description: Add/Delete rule from an existing security group
-author:
-   - "Benno Joy (@bennojoy)"
-   - "Jeffrey van Pelt (@Thulium-Drake)"
+author: OpenStack Ansible SIG
 description:
    - Add or Remove rule from an existing security group
 options:

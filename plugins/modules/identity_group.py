@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: identity_group
 short_description: Manage OpenStack Identity Groups
-author: "Monty Taylor (@emonty), David Shrewsbury (@Shrews)"
+author: OpenStack Ansible SIG
 description:
     - Manage OpenStack Identity Groups. Groups can be created, deleted or
       updated. Only the I(description) value can be updated.

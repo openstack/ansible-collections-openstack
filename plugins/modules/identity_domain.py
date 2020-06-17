@@ -6,9 +6,7 @@ DOCUMENTATION = '''
 ---
 module: identity_domain
 short_description: Manage OpenStack Identity Domains
-author:
-    - Monty Taylor (@emonty)
-    - Haneef Ali (@haneefs)
+author: OpenStack Ansible SIG
 description:
     - Create, update, or delete OpenStack Identity domains. If a domain
       with the supplied name already exists, it will be updated with the

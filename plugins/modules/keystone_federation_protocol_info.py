@@ -6,8 +6,7 @@ DOCUMENTATION = '''
 ---
 module: keystone_federation_protocol_info
 short_description: get information about federation Protocols
-author:
-  - "Mark Chappell (@tremble) <mchappel@redhat.com>"
+author: OpenStack Ansible SIG
 description:
   - Get information about federation Protocols.
 options:

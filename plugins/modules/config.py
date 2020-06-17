@@ -23,7 +23,7 @@ options:
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 '''
 
 EXAMPLES = '''

@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: quota
 short_description: Manage OpenStack Quotas
-author: "Michael Gale (@mgale) <gale.michael@gmail.com>"
+author: OpenStack Ansible SIG
 description:
     - Manage OpenStack Quotas. Quotas can be created,
       updated or deleted using this module. A quota will be updated

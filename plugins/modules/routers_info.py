@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: routers_info
 short_description: Retrieve information about one or more OpenStack routers.
-author: "Bram Verschueren (@bverschueren)"
+author: OpenStack Ansible SIG
 description:
     - Retrieve information about one or more routers from OpenStack.
 options:

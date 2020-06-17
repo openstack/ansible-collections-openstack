@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: coe_cluster
 short_description: Add/Remove COE cluster from OpenStack Cloud
-author: "Feilong Wang (@flwang)"
+author: OpenStack Ansible SIG
 description:
    - Add or Remove COE cluster from the OpenStack Container Infra service.
 options:

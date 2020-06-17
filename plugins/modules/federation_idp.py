@@ -6,8 +6,7 @@ DOCUMENTATION = '''
 ---
 module: federation_idp
 short_description: manage a federation Identity Provider
-author:
-  - "Mark Chappell (@tremble) <mchappel@redhat.com>"
+author: OpenStack Ansible SIG
 description:
   - Manage a federation Identity Provider.
 options:

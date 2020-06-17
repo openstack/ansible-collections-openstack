@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: identity_group_info
 short_description: Retrieve info about one or more OpenStack groups
-author: "Phillipe Smith (@phsmith)"
+author: OpenStack Ansible SIG
 description:
     - Retrieve info about a one or more OpenStack groups.
 options:

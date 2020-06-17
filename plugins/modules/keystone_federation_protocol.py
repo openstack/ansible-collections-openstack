@@ -6,8 +6,7 @@ DOCUMENTATION = '''
 ---
 module: keystone_federation_protocol
 short_description: manage a federation Protocol
-author:
-  - "Mark Chappell (@tremble) <mchappel@redhat.com>"
+author: OpenStack Ansible SIG
 description:
   - Manage a federation Protocol.
 options:

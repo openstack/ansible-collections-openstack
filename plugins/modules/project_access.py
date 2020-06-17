@@ -17,7 +17,7 @@ DOCUMENTATION = '''
 ---
 module: project_access
 short_description: Manage OpenStack compute flavors access
-author: "Roberto Polli (@ioggstream)"
+author: OpenStack Ansible SIG
 description:
     - Add or remove flavor, volume_type or other resources access
       from OpenStack.

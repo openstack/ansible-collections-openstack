@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: port
 short_description: Add/Update/Delete ports from an OpenStack cloud.
-author: "Davide Agnello (@dagnello)"
+author: OpenStack Ansible SIG
 description:
    - Add, Update or Remove ports from an OpenStack cloud. A I(state) of
      'present' will ensure the port is created or updated if required.

@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: server_metadata
 short_description: Add/Update/Delete Metadata in Compute Instances from OpenStack
-author: "Mario Santos (@ruizink)"
+author: OpenStack Ansible SIG
 description:
    - Add, Update or Remove metadata in compute instances from OpenStack.
 options:

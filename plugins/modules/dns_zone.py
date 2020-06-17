@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: dns_zone
 short_description: Manage OpenStack DNS zones
-author: "Ricardo Carrillo Cruz (@rcarrillocruz)"
+author: OpenStack Ansible SIG
 description:
     - Manage OpenStack DNS zones. Zones can be created, deleted or
       updated. Only the I(email), I(description), I(ttl) and I(masters) values

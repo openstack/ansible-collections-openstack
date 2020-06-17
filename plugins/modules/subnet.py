@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: subnet
 short_description: Add/Remove subnet to an OpenStack network
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
    - Add or Remove a subnet to an OpenStack network
 options:

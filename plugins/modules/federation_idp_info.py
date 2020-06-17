@@ -7,8 +7,7 @@ DOCUMENTATION = '''
 module: federation_idp_info
 short_description: Get the information about the available federation identity
                    providers
-author:
-  - "Mark Chappell (@tremble) <mchappel@redhat.com>"
+author: OpenStack Ansible SIG
 description:
   - Fetch a federation identity provider.
 options:

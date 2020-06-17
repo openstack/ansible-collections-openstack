@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: security_group
 short_description: Add/Delete security groups from an OpenStack cloud.
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
    - Add or Remove security groups from an OpenStack cloud.
 options:

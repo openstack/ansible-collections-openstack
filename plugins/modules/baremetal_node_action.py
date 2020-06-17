@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: baremetal_node_action
 short_description: Activate/Deactivate Bare Metal Resources from OpenStack
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
     - Deploy to nodes controlled by Ironic.
 options:

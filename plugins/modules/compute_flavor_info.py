@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: compute_flavor_info
 short_description: Retrieve information about one or more flavors
-author: "David Shrewsbury (@Shrews)"
+author: OpenStack Ansible SIG
 description:
     - Retrieve information about available OpenStack instance flavors. By default,
       information about ALL flavors are retrieved. Filters can be applied to get

@@ -6,7 +6,7 @@
 DOCUMENTATION = '''
 module: image_info
 short_description: Retrieve information about an image within OpenStack.
-author: "Davide Agnello (@dagnello)"
+author: OpenStack Ansible SIG
 description:
     - Retrieve information about a image image from OpenStack.
     - This module was called C(openstack.cloud.image_facts) before Ansible 2.9, returning C(ansible_facts).

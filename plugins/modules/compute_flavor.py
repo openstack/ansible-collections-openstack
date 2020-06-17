@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: compute_flavor
 short_description: Manage OpenStack compute flavors
-author: "David Shrewsbury (@Shrews)"
+author: OpenStack Ansible SIG
 description:
    - Add or remove flavors from OpenStack.
 options:

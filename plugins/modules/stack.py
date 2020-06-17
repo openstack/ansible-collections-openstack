@@ -9,9 +9,7 @@ DOCUMENTATION = '''
 ---
 module: stack
 short_description: Add/Remove Heat Stack
-author:
-  - "Mathieu Bultel (@matbu)"
-  - "Steve Baker (@steveb)"
+author: OpenStack Ansible SIG
 description:
    - Add or Remove a Stack to an OpenStack Heat
 options:
