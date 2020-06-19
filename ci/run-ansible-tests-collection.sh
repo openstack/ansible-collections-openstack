@@ -54,6 +54,16 @@ fi
 shift $((OPTIND-1))
 TAGS=$( echo "$*" | tr ' ' , )
 
+# Install collections before dealing with Ansible virtual environments
+if [[ -z "$PIP_INSTALL" ]]; then
+    tox -ebuild
+    ansible-galaxy collection install $(ls build_artifact/openstack-cloud-*) --force
+    TEST_COLLECTIONS_PATHS=${HOME}/.ansible/collections:$ANSIBLE_COLLECTIONS_PATHS
+else
+    pip freeze | grep ansible-collections-openstack
+    TEST_COLLECTIONS_PATHS=$VIRTUAL_ENV/share/ansible/collections:$ANSIBLE_COLLECTIONS_PATHS
+fi
+
 # We need to source the current tox environment so that Ansible will
 # be setup for the correct python environment.
 source $ENVDIR/bin/activate
@@ -96,15 +106,6 @@ then
   exit 1
 fi
 
-# install collections
-if [[ -z "$PIP_INSTALL" ]]; then
-    tox -ebuild
-    ansible-galaxy collection install $(ls build_artifact/openstack-cloud-*) --force
-    TEST_COLLECTIONS_PATHS=${HOME}/.ansible/collections:$ANSIBLE_COLLECTIONS_PATHS
-else
-    pip freeze | grep ansible-collections-openstack
-    TEST_COLLECTIONS_PATHS=$VIRTUAL_ENV/share/ansible/collections:$ANSIBLE_COLLECTIONS_PATHS
-fi
 # Discover openstackSDK version
 SDK_VER=$(python -c "import openstack; print(openstack.version.__version__)")
 pushd ci/

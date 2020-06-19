@@ -23,6 +23,8 @@ rm -rf "${ANSIBLE_COLLECTIONS_PATH}"
 mkdir -p ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud
 cp -a ${TOXDIR}/{plugins,meta,scripts,tests,docs} ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud
 cd ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud/
+echo "Running ansible-test with version:"
+ansible --version
 ansible-test sanity -v \
     --venv \
     --python 3.6 \

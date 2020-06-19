@@ -10,7 +10,7 @@
       - openstack/ansible-collections-openstack
     vars:
       zuul_work_dir: src/opendev.org/openstack/ansible-collections-openstack
-      tox_envlist: ansible
+      tox_envlist: ansible-2.9
       tox_install_siblings: true
       fetch_subunit: false
 
@@ -21,7 +21,32 @@
       Run openstack collections functional tests against a master devstack
       using releases of openstacksdk and latest ansible release
     vars:
+      tox_envlist: ansible-2.9
       tox_install_siblings: false
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-ansible-2.10
+    parent: ansible-collections-openstack-functional-devstack
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using master of openstacksdk and stable 2.10 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.10
+    vars:
+      tox_envlist: ansible
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-ansible-2.9
+    parent: ansible-collections-openstack-functional-devstack
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using master of openstacksdk and stable 2.10 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.9
+    vars:
+      tox_envlist: ansible-2.9
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
@@ -29,48 +54,41 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and devel branch of ansible
-    # non-voting because we can't prevent ansible devel from breaking us
     voting: false
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: devel
+    vars:
+      tox_envlist: ansible
 
+# Pip installation job
 - job:
-    name: ansible-collections-openstack-functional-devstack-ansible-2.9
-    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    name: ansible-collections-openstack-functional-devstack-ansible-pip
+    parent: ansible-collections-openstack-functional-devstack
     description: |
       Run openstack collections functional tests against a master devstack
-      using master of openstacksdk and stable 2.9 branch of ansible
+      using master of openstacksdk with latest ansible release.
+      Ansible collection is built using PIP.
+    vars:
+      tox_envlist: ansible-pip
+
+# Stable branches
+- job:
+    name: ansible-collections-openstack-functional-devstack-ussuri-ansible-2.9
+    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    description: |
+      Run openstack collections functional tests against a ussuri devstack
+      using ussuri brach of openstacksdk and stable 2.9 branch of ansible
     voting: true
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
-
-- job:
-    name: ansible-collections-openstack-functional-devstack-ansible-2.9-pip
-    parent: ansible-collections-openstack-functional-devstack-ansible-2.9
-    description: |
-      Run openstack collections functional tests against a master devstack
-      using master of openstacksdk and stable 2.9 branch of ansible.
-      Ansible collection is built using PIP
-    vars:
-      tox_envlist: ansible-pip
-
-- job:
-    name: ansible-collections-openstack-functional-devstack-train-ansible-devel
-    parent: ansible-collections-openstack-functional-devstack
-    description: |
-      Run openstack collections functional tests against a train devstack
-      using train brach of openstacksdk and devel branch of ansible
-    # non-voting because we can't prevent ansible devel from breaking us
-    voting: false
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: devel
       - name: openstack/openstacksdk
-        override-branch: train
+        override-branch: ussuri
       - name: openstack/devstack
-        override-checkout: train
+        override-checkout: ussuri
+    vars:
+      tox_envlist: ansible-2.9
 
 - job:
     name: ansible-collections-openstack-functional-devstack-train-ansible-2.9
@@ -86,22 +104,8 @@
         override-branch: train
       - name: openstack/devstack
         override-checkout: train
-
-- job:
-    name: ansible-collections-openstack-functional-devstack-stein-ansible-devel
-    parent: ansible-collections-openstack-functional-devstack
-    description: |
-      Run openstack collections functional tests against a stein devstack
-      using stein brach of openstacksdk and devel branch of ansible
-    # non-voting because we can't prevent ansible devel from breaking us
-    voting: false
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: devel
-      - name: openstack/openstacksdk
-        override-branch: stein
-      - name: openstack/devstack
-        override-checkout: stein
+    vars:
+      tox_envlist: ansible-2.9
 
 - job:
     name: ansible-collections-openstack-functional-devstack-stein-ansible-2.9
@@ -117,22 +121,8 @@
         override-branch: stein
       - name: openstack/devstack
         override-checkout: stein
-
-- job:
-    name: ansible-collections-openstack-functional-devstack-rocky-ansible-devel
-    parent: ansible-collections-openstack-functional-devstack
-    description: |
-      Run openstack collections functional tests against a rocky devstack
-      using rocky brach of openstacksdk and devel branch of ansible
-    # non-voting because we can't prevent ansible devel from breaking us
-    voting: false
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: devel
-      - name: openstack/openstacksdk
-        override-branch: rocky
-      - name: openstack/devstack
-        override-checkout: rocky
+    vars:
+      tox_envlist: ansible-2.9
 
 - job:
     name: ansible-collections-openstack-functional-devstack-rocky-ansible-2.9
@@ -148,6 +138,8 @@
         override-branch: rocky
       - name: openstack/devstack
         override-checkout: rocky
+    vars:
+      tox_envlist: ansible-2.9
 
 - job:
     name: ansible-collections-openstack-functional-devstack-queens-ansible-2.9
@@ -163,7 +155,10 @@
         override-branch: master
       - name: openstack/devstack
         override-checkout: queens
+    vars:
+      tox_envlist: ansible-2.9
 
+# Linters
 - job:
     name: openstack-tox-linters-ansible-devel
     parent: openstack-tox-linters
@@ -176,6 +171,16 @@
         override-checkout: devel
 
 - job:
+    name: openstack-tox-linters-ansible-2.10
+    parent: openstack-tox-linters
+    description: |
+      Run openstack collections linter tests using the 2.9 branch of ansible
+    voting: true
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.10
+
+- job:
     name: openstack-tox-linters-ansible-2.9
     parent: openstack-tox-linters
     description: |
@@ -184,12 +189,15 @@
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
+    vars:
+      tox_envlist: linters-2.9
 
 - project:
     check:
       jobs:
         - tox-pep8
         - openstack-tox-linters-ansible-devel
+        - openstack-tox-linters-ansible-2.10
         - openstack-tox-linters-ansible-2.9
         - ansible-collections-openstack-functional-devstack:
             dependencies: &deps_unit_lint
@@ -205,28 +213,31 @@
               - tests/sanity/.*
               - contrib/.*
 
-        - ansible-collections-openstack-functional-devstack-releases:
+        - ansible-collections-openstack-functional-devstack:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
-        - ansible-collections-openstack-functional-devstack-ansible-devel:
+        - ansible-collections-openstack-functional-devstack-releases:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-ansible-2.9:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
-        - ansible-collections-openstack-functional-devstack-train-ansible-devel:
+        - ansible-collections-openstack-functional-devstack-ansible-2.10:
+            dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
+        - ansible-collections-openstack-functional-devstack-ansible-devel:
+            dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
+        - ansible-collections-openstack-functional-devstack-ansible-pip:
+            dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
+        - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.9:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-train-ansible-2.9:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
-        - ansible-collections-openstack-functional-devstack-stein-ansible-devel:
-            dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-stein-ansible-2.9:
-            dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
-        - ansible-collections-openstack-functional-devstack-rocky-ansible-devel:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-rocky-ansible-2.9:
@@ -235,20 +246,19 @@
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.9:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
-        - ansible-collections-openstack-functional-devstack-ansible-2.9-pip:
-            dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
-
 
     gate:
       jobs:
         - tox-pep8
+        - openstack-tox-linters-ansible-2.10
         - openstack-tox-linters-ansible-2.9
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-ansible-2.10
+        - ansible-collections-openstack-functional-devstack-ansible-pip
+        - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.9
         - ansible-collections-openstack-functional-devstack-train-ansible-2.9
         - ansible-collections-openstack-functional-devstack-stein-ansible-2.9
         - ansible-collections-openstack-functional-devstack-rocky-ansible-2.9
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.9
-
