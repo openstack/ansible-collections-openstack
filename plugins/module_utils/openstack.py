@@ -389,6 +389,14 @@ class OpenStackModule:
             if results and isinstance(results, dict):
                 self.ansible.exit_json(**results)
         except self.sdk.exceptions.OpenStackCloudException as e:
-            self.ansible.fail_json(msg=str(e), extra_data=e.extra_data)
+            params = {
+                'msg': str(e),
+                'extra_data': {
+                    'data': e.extra_data,
+                    'details': e.details,
+                    'response': e.response.text
+                }
+            }
+            self.ansible.fail_json(**params)
         # if we got to this place, modules didn't exit
         self.ansible.exit_json(**self.results)
