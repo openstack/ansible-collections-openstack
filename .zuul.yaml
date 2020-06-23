@@ -41,7 +41,7 @@
     parent: ansible-collections-openstack-functional-devstack
     description: |
       Run openstack collections functional tests against a master devstack
-      using master of openstacksdk and stable 2.10 branch of ansible
+      using master of openstacksdk and stable 2.9 branch of ansible
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
@@ -174,7 +174,7 @@
     name: openstack-tox-linters-ansible-2.10
     parent: openstack-tox-linters
     description: |
-      Run openstack collections linter tests using the 2.9 branch of ansible
+      Run openstack collections linter tests using the 2.10 branch of ansible
     voting: true
     required-projects:
       - name: github.com/ansible/ansible
