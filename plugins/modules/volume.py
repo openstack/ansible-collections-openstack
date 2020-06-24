@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: volume
 short_description: Create/Delete Cinder Volumes
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
    - Create or Remove cinder block storage volumes
 options:

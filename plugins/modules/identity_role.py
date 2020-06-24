@@ -6,9 +6,7 @@ DOCUMENTATION = '''
 ---
 module: identity_role
 short_description: Manage OpenStack Identity Roles
-author:
-  - Monty Taylor (@emonty)
-  - David Shrewsbury (@Shrews)
+author: OpenStack Ansible SIG
 description:
     - Manage OpenStack Identity Roles.
 options:

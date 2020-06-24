@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: group_assignment
 short_description: Associate OpenStack Identity users and groups
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
     - Add and remove users from groups
 options:

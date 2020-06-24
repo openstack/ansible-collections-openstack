@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: project
 short_description: Manage OpenStack Projects
-author: "Alberto Gireud (@agireud)"
+author: OpenStack Ansible SIG
 description:
     - Manage OpenStack Projects. Projects can be created,
       updated or deleted using this module. A project will be updated

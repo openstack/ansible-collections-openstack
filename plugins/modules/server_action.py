@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: server_action
 short_description: Perform actions on Compute Instances from OpenStack
-author: "Jesse Keating (@omgjlk)"
+author: OpenStack Ansible SIG
 description:
     - Perform server actions on an existing compute instance from OpenStack.
         This module does not return any data other than changed true/false.

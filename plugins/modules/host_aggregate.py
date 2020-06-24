@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: host_aggregate
 short_description: Manage OpenStack host aggregates
-author: "Jakub Jursa (@kuboj)"
+author: OpenStack Ansible SIG
 description:
     - Create, update, or delete OpenStack host aggregates. If a aggregate
       with the supplied name already exists, it will be updated with the

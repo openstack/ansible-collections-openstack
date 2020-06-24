@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: catalog_service
 short_description: Manage OpenStack Identity services
-author: "Sam Yaple (@SamYaple)"
+author: OpenStack Ansible SIG
 description:
     - Create, update, or delete OpenStack Identity service. If a service
       with the supplied name already exists, it will be updated with the

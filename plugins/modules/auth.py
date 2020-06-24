@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: auth
 short_description: Retrieve an auth token
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
     - Retrieve an auth token from an OpenStack Cloud
 requirements:

@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: server_info
 short_description: Retrieve information about one or more compute instances
-author: Monty (@emonty)
+author: OpenStack Ansible SIG
 description:
     - Retrieve information about server instances from OpenStack.
     - This module was called C(os_server_facts) before Ansible 2.9, returning C(ansible_facts).

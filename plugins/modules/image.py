@@ -11,7 +11,7 @@ DOCUMENTATION = '''
 ---
 module: image
 short_description: Add/Delete images from OpenStack Cloud
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
    - Add or Remove images from the OpenStack Image Repository
 options:

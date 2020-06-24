@@ -6,8 +6,7 @@ DOCUMENTATION = '''
 ---
 module: federation_mapping
 short_description: Manage a federation mapping
-author:
-  - "Mark Chappell (@tremble) <mchappel@redhat.com>"
+author: OpenStack Ansible SIG
 description:
   - Manage a federation mapping.
 options:

@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: coe_cluster_template
 short_description: Add/Remove COE cluster template from OpenStack Cloud
-author: "Feilong Wang (@flwang)"
+author: OpenStack Ansible SIG
 description:
    - Add or Remove COE cluster template from the OpenStack Container Infra
      service.

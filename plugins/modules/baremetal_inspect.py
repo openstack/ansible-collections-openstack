@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: baremetal_inspect
 short_description: Explicitly triggers baremetal node introspection in ironic.
-author: "Julia Kreger (@juliakreger)"
+author: OpenStack Ansible SIG
 description:
     - Requests Ironic to set a node into inspect state in order to collect metadata regarding the node.
       This command may be out of band or in-band depending on the ironic driver configuration.

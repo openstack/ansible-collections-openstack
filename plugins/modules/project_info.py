@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: project_info
 short_description: Retrieve information about one or more OpenStack projects
-author: "Ricardo Carrillo Cruz (@rcarrillocruz)"
+author: OpenStack Ansible SIG
 description:
     - Retrieve information about a one or more OpenStack projects
     - This module was called C(openstack.cloud.project_facts) before Ansible 2.9, returning C(ansible_facts).

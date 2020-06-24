@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: role_assignment
 short_description: Associate OpenStack Identity users and roles
-author: "Monty Taylor (@emonty), David Shrewsbury (@Shrews)"
+author: OpenStack Ansible SIG
 description:
     - Grant and revoke roles in either project or domain context for
       OpenStack Identity Users.

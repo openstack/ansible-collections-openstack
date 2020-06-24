@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: loadbalancer
 short_description: Add/Delete load balancer from OpenStack Cloud
-author: "Lingxian Kong (@lingxiankong)"
+author: OpenStack Ansible SIG
 description:
   - Add or Remove load balancer from the OpenStack load-balancer
     service(Octavia). Load balancer update is not supported for now.

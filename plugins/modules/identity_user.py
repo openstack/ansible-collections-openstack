@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: identity_user
 short_description: Manage OpenStack Identity Users
-author: David Shrewsbury (@Shrews)
+author: OpenStack Ansible SIG
 description:
     - Manage OpenStack Identity users. Users can be created,
       updated or deleted using this module. A user will be updated

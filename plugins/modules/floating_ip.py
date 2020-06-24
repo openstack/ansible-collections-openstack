@@ -6,7 +6,7 @@
 DOCUMENTATION = '''
 ---
 module: floating_ip
-author: Davide Guerri (@dguerri) <davide.guerri@hp.com>
+author: OpenStack Ansible SIG
 short_description: Add/Remove floating IP from an instance
 description:
    - Add or Remove a floating IP to an instance.

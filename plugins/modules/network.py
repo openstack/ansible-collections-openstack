@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: network
 short_description: Creates/removes networks from OpenStack
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
    - Add or remove network from OpenStack.
 options:

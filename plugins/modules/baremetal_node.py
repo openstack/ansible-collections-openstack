@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: baremetal_node
 short_description: Create/Delete Bare Metal Resources from OpenStack
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
     - Create or Remove Ironic nodes from OpenStack.
 options:

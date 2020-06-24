@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: lb_listener
 short_description: Add/Delete a listener for a load balancer from OpenStack Cloud
-author: "Lingxian Kong (@lingxiankong)"
+author: OpenStack Ansible SIG
 description:
    - Add or Remove a listener for a load balancer from the OpenStack load-balancer service.
 options:

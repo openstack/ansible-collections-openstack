@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: volume_snapshot
 short_description: Create/Delete Cinder Volume Snapshots
-author: "Mario Santos (@ruizink)"
+author: OpenStack Ansible SIG
 description:
    - Create or Delete cinder block storage volume snapshots
 options:

@@ -11,7 +11,7 @@ DOCUMENTATION = '''
 ---
 module: server
 short_description: Create/Delete Compute Instances from OpenStack
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
    - Create or Remove compute instances from OpenStack.
 options:

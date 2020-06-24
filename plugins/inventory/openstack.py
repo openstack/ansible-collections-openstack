@@ -10,9 +10,7 @@ DOCUMENTATION = '''
 ---
 name: openstack
 plugin_type: inventory
-author:
-    - "Marco Vito Moscaritolo <marco@agavee.com>"
-    - "Jesse Keating <jesse.keating@rackspace.com>"
+author: OpenStack Ansible SIG
 short_description: OpenStack inventory source
 requirements:
     - "openstacksdk >= 0.28"

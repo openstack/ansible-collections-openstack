@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: object
 short_description: Create or Delete objects and containers from OpenStack
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
    - Create or Delete objects and containers from OpenStack
 options:

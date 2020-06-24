@@ -6,8 +6,7 @@ DOCUMENTATION = '''
 ---
 module: federation_mapping_info
 short_description: Get the information about the available federation mappings
-author:
-  - "Mark Chappell (@tremble) <mchappel@redhat.com>"
+author: OpenStack Ansible SIG
 description:
   - Fetch a federation mapping.
 options:

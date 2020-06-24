@@ -7,7 +7,7 @@ DOCUMENTATION = '''
 ---
 module: subnets_info
 short_description: Retrieve information about one or more OpenStack subnets.
-author: "Davide Agnello (@dagnello)"
+author: OpenStack Ansible SIG
 description:
     - Retrieve information about one or more subnets from OpenStack.
     - This module was called C(openstack.cloud.subnets_facts) before Ansible 2.9, returning C(ansible_facts).

@@ -8,7 +8,7 @@ DOCUMENTATION = '''
 ---
 module: server_volume
 short_description: Attach/Detach Volumes from OpenStack VM's
-author: "Monty Taylor (@emonty)"
+author: OpenStack Ansible SIG
 description:
    - Attach or Detach volumes from OpenStack VM's
 options:

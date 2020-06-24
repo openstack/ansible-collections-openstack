@@ -6,7 +6,7 @@ DOCUMENTATION = '''
 ---
 module: identity_user_info
 short_description: Retrieve information about one or more OpenStack users
-author: "Ricardo Carrillo Cruz (@rcarrillocruz)"
+author: OpenStack Ansible SIG
 description:
     - Retrieve information about a one or more OpenStack users
     - This module was called C(openstack.cloud.identity_user_facts) before Ansible 2.9, returning C(ansible_facts).
