@@ -179,10 +179,8 @@ security_group_id:
   returned: state == present
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
+    OpenStackModule)
 
 
 def _ports_match(protocol, module_min, module_max, rule_min, rule_max):
@@ -244,51 +242,10 @@ def _ports_match(protocol, module_min, module_max, rule_min, rule_max):
     return module_min == rule_min and module_max == rule_max
 
 
-def _find_matching_rule(module, secgroup, remotegroup):
-    """
-    Find a rule in the group that matches the module parameters.
-    :returns: The matching rule dict, or None if no matches.
-    """
-    protocol = module.params['protocol']
-    remote_ip_prefix = module.params['remote_ip_prefix']
-    ethertype = module.params['ethertype']
-    direction = module.params['direction']
-    remote_group_id = remotegroup['id']
+class SecurityGroupRuleModule(OpenStackModule):
+    deprecated_names = ('os_security_group_rule', 'openstack.cloud.os_security_group_rule')
 
-    for rule in secgroup['security_group_rules']:
-        if (
-            protocol == rule['protocol']
-            and remote_ip_prefix == rule['remote_ip_prefix']
-            and ethertype == rule['ethertype']
-            and direction == rule['direction']
-            and remote_group_id == rule['remote_group_id']
-            and _ports_match(
-                protocol,
-                module.params['port_range_min'],
-                module.params['port_range_max'],
-                rule['port_range_min'],
-                rule['port_range_max'])
-        ):
-            return rule
-    return None
-
-
-def _system_state_change(module, secgroup, remotegroup):
-    state = module.params['state']
-    if secgroup:
-        rule_exists = _find_matching_rule(module, secgroup, remotegroup)
-    else:
-        return False
-
-    if state == 'present' and not rule_exists:
-        return True
-    if state == 'absent' and rule_exists:
-        return True
-    return False
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+    argument_spec = dict(
         security_group=dict(required=True),
         # NOTE(Shrews): None is an acceptable protocol value for
         # Neutron, but Nova will balk at this.
@@ -307,85 +264,122 @@ def main():
         project=dict(default=None),
     )
 
-    module_kwargs = openstack_module_kwargs(
+    module_kwargs = dict(
         mutually_exclusive=[
             ['remote_ip_prefix', 'remote_group'],
         ]
     )
 
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    def _find_matching_rule(self, secgroup, remotegroup):
+        """
+        Find a rule in the group that matches the module parameters.
+        :returns: The matching rule dict, or None if no matches.
+        """
+        protocol = self.params['protocol']
+        remote_ip_prefix = self.params['remote_ip_prefix']
+        ethertype = self.params['ethertype']
+        direction = self.params['direction']
+        remote_group_id = remotegroup['id']
 
-    state = module.params['state']
-    security_group = module.params['security_group']
-    remote_group = module.params['remote_group']
-    project = module.params['project']
-    changed = False
+        for rule in secgroup['security_group_rules']:
+            if (
+                protocol == rule['protocol']
+                and remote_ip_prefix == rule['remote_ip_prefix']
+                and ethertype == rule['ethertype']
+                and direction == rule['direction']
+                and remote_group_id == rule['remote_group_id']
+                and _ports_match(
+                    protocol,
+                    self.params['port_range_min'],
+                    self.params['port_range_max'],
+                    rule['port_range_min'],
+                    rule['port_range_max'])
+            ):
+                return rule
+        return None
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+    def _system_state_change(self, secgroup, remotegroup):
+        state = self.params['state']
+        if secgroup:
+            rule_exists = self._find_matching_rule(secgroup, remotegroup)
+        else:
+            return False
+
+        if state == 'present' and not rule_exists:
+            return True
+        if state == 'absent' and rule_exists:
+            return True
+        return False
+
+    def run(self):
+
+        state = self.params['state']
+        security_group = self.params['security_group']
+        remote_group = self.params['remote_group']
+        project = self.params['project']
+        changed = False
+
         if project is not None:
-            proj = cloud.get_project(project)
+            proj = self.conn.get_project(project)
             if proj is None:
-                module.fail_json(msg='Project %s could not be found' % project)
+                self.fail_json(msg='Project %s could not be found' % project)
             project_id = proj['id']
         else:
-            project_id = cloud.current_project_id
+            project_id = self.conn.current_project_id
 
         if project_id and not remote_group:
             filters = {'tenant_id': project_id}
         else:
             filters = None
 
-        secgroup = cloud.get_security_group(security_group, filters=filters)
+        secgroup = self.conn.get_security_group(security_group, filters=filters)
 
         if remote_group:
-            remotegroup = cloud.get_security_group(remote_group,
-                                                   filters=filters)
+            remotegroup = self.conn.get_security_group(remote_group, filters=filters)
         else:
             remotegroup = {'id': None}
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(module, secgroup, remotegroup))
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(secgroup, remotegroup))
 
         if state == 'present':
-            if module.params['protocol'] == 'any':
-                module.params['protocol'] = None
+            if self.params['protocol'] == 'any':
+                self.params['protocol'] = None
 
             if not secgroup:
-                module.fail_json(msg='Could not find security group %s' %
-                                 security_group)
+                self.fail_json(msg='Could not find security group %s' % security_group)
 
-            rule = _find_matching_rule(module, secgroup, remotegroup)
+            rule = self._find_matching_rule(secgroup, remotegroup)
             if not rule:
                 kwargs = {}
                 if project_id:
                     kwargs['project_id'] = project_id
-                rule = cloud.create_security_group_rule(
+                rule = self.conn.create_security_group_rule(
                     secgroup['id'],
-                    port_range_min=module.params['port_range_min'],
-                    port_range_max=module.params['port_range_max'],
-                    protocol=module.params['protocol'],
-                    remote_ip_prefix=module.params['remote_ip_prefix'],
+                    port_range_min=self.params['port_range_min'],
+                    port_range_max=self.params['port_range_max'],
+                    protocol=self.params['protocol'],
+                    remote_ip_prefix=self.params['remote_ip_prefix'],
                     remote_group_id=remotegroup['id'],
-                    direction=module.params['direction'],
-                    ethertype=module.params['ethertype'],
+                    direction=self.params['direction'],
+                    ethertype=self.params['ethertype'],
                     **kwargs
                 )
                 changed = True
-            module.exit_json(changed=changed, rule=rule, id=rule['id'])
+            self.exit_json(changed=changed, rule=rule, id=rule['id'])
 
         if state == 'absent' and secgroup:
-            rule = _find_matching_rule(module, secgroup, remotegroup)
+            rule = self._find_matching_rule(secgroup, remotegroup)
             if rule:
-                cloud.delete_security_group_rule(rule['id'])
+                self.conn.delete_security_group_rule(rule['id'])
                 changed = True
 
-        module.exit_json(changed=changed)
+        self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = SecurityGroupRuleModule()
+    module()
 
 
 if __name__ == '__main__':
