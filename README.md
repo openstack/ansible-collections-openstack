@@ -89,7 +89,7 @@ For information on contributing, please see [CONTRIBUTING](https://opendev.org/o
 
 There are many ways in which you can participate in the project, for example:
 
-- Submit bugs and feature requests, and help us verify them
+- Submit [bugs and feature requests](https://storyboard.openstack.org/#!/project/openstack/ansible-collections-openstack), and help us verify them
 - Submit and review source code changes in [Openstack Gerrit](https://review.opendev.org/#/q/project:openstack/ansible-collections-openstack)
 - Add new modules for Openstack Cloud
 
