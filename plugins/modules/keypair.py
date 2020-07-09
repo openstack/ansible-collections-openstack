@@ -79,23 +79,14 @@ private_key:
     type: str
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
+    OpenStackModule)
 
 
-def _system_state_change(module, keypair):
-    state = module.params['state']
-    if state == 'present' and not keypair:
-        return True
-    if state == 'absent' and keypair:
-        return True
-    return False
+class KeyPairModule(OpenStackModule):
+    deprecated_names = ('os_keypair', 'openstack.cloud.os_keypair')
 
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+    argument_spec = dict(
         name=dict(required=True),
         public_key=dict(default=None),
         public_key_file=dict(default=None),
@@ -103,58 +94,62 @@ def main():
                    choices=['absent', 'present', 'replace']),
     )
 
-    module_kwargs = openstack_module_kwargs(
+    module_kwargs = dict(
         mutually_exclusive=[['public_key', 'public_key_file']])
 
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    def _system_state_change(self, keypair):
+        state = self.params['state']
+        if state == 'present' and not keypair:
+            return True
+        if state == 'absent' and keypair:
+            return True
+        return False
 
-    state = module.params['state']
-    name = module.params['name']
-    public_key = module.params['public_key']
+    def run(self):
 
-    if module.params['public_key_file']:
-        with open(module.params['public_key_file']) as public_key_fh:
-            public_key = public_key_fh.read().rstrip()
+        state = self.params['state']
+        name = self.params['name']
+        public_key = self.params['public_key']
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        keypair = cloud.get_keypair(name)
+        if self.params['public_key_file']:
+            with open(self.params['public_key_file']) as public_key_fh:
+                public_key = public_key_fh.read().rstrip()
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(module, keypair))
+        keypair = self.conn.get_keypair(name)
+
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(keypair))
 
         if state in ('present', 'replace'):
             if keypair and keypair['name'] == name:
                 if public_key and (public_key != keypair['public_key']):
                     if state == 'present':
-                        module.fail_json(
+                        self.fail_json(
                             msg="Key name %s present but key hash not the same"
                                 " as offered. Delete key first." % name
                         )
                     else:
-                        cloud.delete_keypair(name)
-                        keypair = cloud.create_keypair(name, public_key)
+                        self.conn.delete_keypair(name)
+                        keypair = self.conn.create_keypair(name, public_key)
                         changed = True
                 else:
                     changed = False
             else:
-                keypair = cloud.create_keypair(name, public_key)
+                keypair = self.conn.create_keypair(name, public_key)
                 changed = True
 
-            module.exit_json(changed=changed,
-                             key=keypair,
-                             id=keypair['id'])
+            self.exit_json(changed=changed, key=keypair, id=keypair['id'])
 
         elif state == 'absent':
             if keypair:
-                cloud.delete_keypair(name)
-                module.exit_json(changed=True)
-            module.exit_json(changed=False)
+                self.conn.delete_keypair(name)
+                self.exit_json(changed=True)
+            self.exit_json(changed=False)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = KeyPairModule()
+    module()
 
 
 if __name__ == '__main__':
