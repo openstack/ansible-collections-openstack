@@ -116,9 +116,14 @@ all_projects: yes
 
 import collections
 import sys
+import logging
 
 from ansible.errors import AnsibleParserError
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable, Cacheable
+from ansible.utils.display import Display
+
+display = Display()
+os_logger = logging.getLogger("openstack")
 
 try:
     # Due to the name shadowing we should import other way
@@ -126,8 +131,10 @@ try:
     sdk = importlib.import_module('openstack')
     sdk_inventory = importlib.import_module('openstack.cloud.inventory')
     client_config = importlib.import_module('openstack.config.loader')
+    sdk_exceptions = importlib.import_module("openstack.exceptions")
     HAS_SDK = True
 except ImportError:
+    display.vvvv("Couldn't import Openstack SDK modules")
     HAS_SDK = False
 
 
@@ -156,11 +163,14 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             msg = "openstacksdk is required for the OpenStack inventory plugin. OpenStack inventory sources will be skipped."
 
         if msg:
+            display.vvvv(msg)
             raise AnsibleParserError(msg)
 
-        # The user has pointed us at a clouds.yaml file. Use defaults for
-        # everything.
         if 'clouds' in self._config_data:
+            self.display.vvvv(
+                "Found clouds config file instead of plugin config. "
+                "Using default configuration."
+            )
             self._config_data = {}
 
         # update cache if the user has caching enabled and the cache is being refreshed
@@ -171,13 +181,16 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             cache = self.get_option('cache')
         source_data = None
         if cache:
+            self.display.vvvv("Reading inventory data from cache: %s" % cache_key)
             try:
                 source_data = self._cache[cache_key]
             except KeyError:
                 # cache expired or doesn't exist yet
+                display.vvvv("Inventory data cache not found")
                 cache_needs_update = True
 
         if not source_data:
+            self.display.vvvv("Getting hosts from Openstack clouds")
             clouds_yaml_path = self._config_data.get('clouds_yaml_path')
             if clouds_yaml_path:
                 config_files = (
@@ -190,11 +203,16 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             # Redict logging to stderr so it does not mix with output
             # particular ansible-inventory JSON output
             # TODO(mordred) Integrate openstack's logging with ansible's logging
-            sdk.enable_logging(stream=sys.stderr)
+            if self.display.verbosity > 3:
+                sdk.enable_logging(debug=True, stream=sys.stderr)
+            else:
+                sdk.enable_logging(stream=sys.stderr)
 
             cloud_inventory = sdk_inventory.OpenStackInventory(
                 config_files=config_files,
                 private=self._config_data.get('private', False))
+            self.display.vvvv("Found %d cloud(s) in Openstack" %
+                              len(cloud_inventory.clouds))
             only_clouds = self._config_data.get('only_clouds', [])
             if only_clouds and not isinstance(only_clouds, list):
                 raise ValueError(
@@ -203,20 +221,31 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             if only_clouds:
                 new_clouds = []
                 for cloud in cloud_inventory.clouds:
+                    self.display.vvvv("Looking at cloud : %s" % cloud.name)
                     if cloud.name in only_clouds:
+                        self.display.vvvv("Selecting cloud : %s" % cloud.name)
                         new_clouds.append(cloud)
                 cloud_inventory.clouds = new_clouds
+
+            self.display.vvvv("Selected %d cloud(s)" %
+                              len(cloud_inventory.clouds))
 
             expand_hostvars = self._config_data.get('expand_hostvars', False)
             fail_on_errors = self._config_data.get('fail_on_errors', False)
             all_projects = self._config_data.get('all_projects', False)
 
-            source_data = cloud_inventory.list_hosts(
-                expand=expand_hostvars, fail_on_cloud_config=fail_on_errors,
-                all_projects=all_projects)
-
-            if cache_needs_update:
-                self._cache[cache_key] = source_data
+            source_data = []
+            try:
+                source_data = cloud_inventory.list_hosts(
+                    expand=expand_hostvars, fail_on_cloud_config=fail_on_errors,
+                    all_projects=all_projects)
+            except Exception as e:
+                self.display.warning("Couldn't list Openstack hosts. "
+                                     "See logs for details")
+                os_logger.error(e.message)
+            finally:
+                if cache_needs_update:
+                    self._cache[cache_key] = source_data
 
         self._populate_from_source(source_data)
 
@@ -342,5 +371,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                 for suffix in ('yaml', 'yml'):
                     maybe = '{fn}.{suffix}'.format(fn=fn, suffix=suffix)
                     if path.endswith(maybe):
+                        self.display.vvvv("Valid plugin config file found")
                         return True
         return False
