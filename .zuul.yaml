@@ -158,6 +158,41 @@
     vars:
       tox_envlist: ansible-2.9
 
+- job:
+    name: ansible-collections-openstack-functional-devstack-queens-ansible-2.10
+    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    description: |
+      Run openstack collections functional tests against a queens devstack
+      using master brach of openstacksdk and stable 2.10 branch of ansible
+    voting: true
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.10
+      - name: openstack/openstacksdk
+        override-branch: master
+      - name: openstack/devstack
+        override-checkout: queens
+    vars:
+      tox_envlist: ansible
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-queens-ansible-devel
+    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    description: |
+      Run openstack collections functional tests against a queens devstack
+      using master brach of openstacksdk and devel branch of ansible
+    voting: true
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: devel
+      - name: openstack/openstacksdk
+        override-branch: master
+      - name: openstack/devstack
+        override-checkout: queens
+    vars:
+      tox_envlist: ansible
+
+
 # Linters
 - job:
     name: openstack-tox-linters-ansible-devel
@@ -262,3 +297,22 @@
         - ansible-collections-openstack-functional-devstack-stein-ansible-2.9
         - ansible-collections-openstack-functional-devstack-rocky-ansible-2.9
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.9
+
+    periodic:
+      jobs:
+        - openstack-tox-linters-ansible-devel
+        - openstack-tox-linters-ansible-2.10
+        - openstack-tox-linters-ansible-2.9
+        - ansible-collections-openstack-functional-devstack
+        - ansible-collections-openstack-functional-devstack-releases
+        - ansible-collections-openstack-functional-devstack-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-ansible-2.10
+        - ansible-collections-openstack-functional-devstack-ansible-devel
+        - ansible-collections-openstack-functional-devstack-ansible-pip
+        - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-train-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-stein-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-rocky-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-queens-ansible-2.9
+        - ansible-collections-openstack-functional-devstack-queens-ansible-2.10
+        - ansible-collections-openstack-functional-devstack-queens-ansible-devel
