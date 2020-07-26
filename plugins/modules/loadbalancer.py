@@ -14,7 +14,7 @@ description:
 options:
   name:
     description:
-      - Name that has to be given to the load balancer
+      - The name of the load balancer.
     required: true
     type: str
   state:
@@ -22,6 +22,10 @@ options:
       - Should the resource be present or absent.
     choices: [present, absent]
     default: present
+    type: str
+  flavor:
+    description:
+      - The flavor of the load balancer.
     type: str
   vip_network:
     description:
@@ -327,6 +331,7 @@ def _wait_for_lb(module, cloud, lb, status, failures, interval=5):
 def main():
     argument_spec = openstack_full_argument_spec(
         name=dict(required=True),
+        flavor=dict(required=False),
         state=dict(default='present', choices=['absent', 'present']),
         vip_network=dict(required=False),
         vip_subnet=dict(required=False),
@@ -342,6 +347,7 @@ def main():
     module = AnsibleModule(argument_spec, **module_kwargs)
     sdk, cloud = openstack_cloud_from_module(module)
 
+    flavor = module.params['flavor']
     vip_network = module.params['vip_network']
     vip_subnet = module.params['vip_subnet']
     vip_port = module.params['vip_port']
@@ -354,6 +360,7 @@ def main():
     vip_network_id = None
     vip_subnet_id = None
     vip_port_id = None
+    flavor_id = None
 
     try:
         changed = False
@@ -367,6 +374,14 @@ def main():
                         msg="One of vip_network, vip_subnet, or vip_port must "
                             "be specified for load balancer creation"
                     )
+
+                if flavor:
+                    _flavor = cloud.load_balancer.find_flavor(flavor)
+                    if not _flavor:
+                        module.fail_json(
+                            msg='flavor %s not found' % flavor
+                        )
+                    flavor_id = _flavor.id
 
                 if vip_network:
                     network = cloud.get_network(vip_network)
@@ -392,6 +407,7 @@ def main():
 
                 lb = cloud.load_balancer.create_load_balancer(
                     name=module.params['name'],
+                    flavor_id=flavor_id,
                     vip_network_id=vip_network_id,
                     vip_subnet_id=vip_subnet_id,
                     vip_port_id=vip_port_id,
