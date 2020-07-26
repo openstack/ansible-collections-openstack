@@ -16,9 +16,10 @@
 set -e
 
 TOXDIR=${1:-.}
+######### Disbaled in https://review.opendev.org/#/c/743054
 
 # galaxy_importer.main does not return non-zero error code on error
-output=$(python -m galaxy_importer.main $TOXDIR/build_artifact/*)
-if echo $output | grep ERROR: ; then
-    exit 1
-fi
+#output=$(python -m galaxy_importer.main $TOXDIR/build_artifact/*)
+#if echo $output | grep ERROR: ; then
+#    exit 1
+#fi
