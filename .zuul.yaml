@@ -227,6 +227,19 @@
     vars:
       tox_envlist: linters-2.9
 
+# Cross-checks with other projects
+- job:
+    name: bifrost-collections-src
+    parent: bifrost-integration-tinyipa-ubuntu-bionic
+    required-projects:
+      - openstack/ansible-collections-openstack
+
+- job:
+    name: bifrost-keystone-collections-src
+    parent: bifrost-integration-tinyipa-keystone-ubuntu-bionic
+    required-projects:
+      - openstack/ansible-collections-openstack
+
 - project:
     check:
       jobs:
@@ -282,6 +295,11 @@
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
 
+        - bifrost-collections-src:
+            voting: false
+        - bifrost-keystone-collections-src:
+            voting: false
+
     gate:
       jobs:
         - tox-pep8
@@ -316,3 +334,5 @@
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.9
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.10
         - ansible-collections-openstack-functional-devstack-queens-ansible-devel
+        - bifrost-collections-src
+        - bifrost-keystone-collections-src
