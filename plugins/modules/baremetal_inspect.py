@@ -102,15 +102,21 @@ def main():
     module = AnsibleModule(argument_spec, **module_kwargs)
 
     if (
-        module.params['auth_type'] in [None, 'None']
+        module.params['auth_type'] in [None, 'None', 'none']
         and module.params['ironic_url'] is None
+        and not module.params['cloud']
+        and not (module.params['auth']
+                 and module.params['auth'].get('endpoint'))
     ):
         module.fail_json(msg="Authentication appears to be disabled, "
-                             "Please define an ironic_url parameter")
+                             "Please define either ironic_url, or cloud, "
+                             "or auth.endpoint")
 
     if (
         module.params['ironic_url']
-        and module.params['auth_type'] in [None, 'None']
+        and module.params['auth_type'] in [None, 'None', 'none']
+        and not (module.params['auth']
+                 and module.params['auth'].get('endpoint'))
     ):
         module.params['auth'] = dict(
             endpoint=module.params['ironic_url']
