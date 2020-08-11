@@ -392,9 +392,10 @@ class OpenStackModule:
             params = {
                 'msg': str(e),
                 'extra_data': {
-                    'data': e.extra_data,
-                    'details': e.details,
-                    'response': e.response.text
+                    'data': getattr(e, 'extra_data', 'None'),
+                    'details': getattr(e, 'details', 'None'),
+                    'response': getattr(getattr(e, 'response', ''),
+                                        'text', 'None')
                 }
             }
             self.ansible.fail_json(**params)
