@@ -1,0 +1,72 @@
+releases:
+  1.1.0:
+    release_date: '2020-08-17'
+    changes:
+      release_summary: Starting redesign modules and bugfixes.
+      minor_changes:
+        - Added changelog.
+        - A basic module subclass was introduced and a few modules moved to inherit from it.
+        - Added pip installation option for collection.
+        - Added template for generation of artibtrary module.
+        - Added more useful information from exception
+        - inventory_openstack - Add openstack logger and Ansible display utility
+        - loadbalancer - Add support for setting the Flavor when creating a load balancer
+        - baremetal modules - Do not require ironic_url if cloud or auth.endpoint is provided
+      deprecated_features:
+        - foo - The bar option has been deprecated. Use the username option instead.
+        - send_request - The quic option has been deprecated. Use the protocol option instead.
+      bugfixes:
+        - security_group_rule - Don't pass tenant_id for remote group
+        - Fix non existing attribuites in SDK exception
+    modules:
+      - name: volume_info
+        description: Retrieve information about Openstack volumes.
+        namespace: ''
+  1.0.1:
+    release_date: '2020-05-22'
+    changes:
+      release_summary: Bugfix for server_info
+      bugfixes:
+        - server_info - Fix broken server_info module and add tests
+  1.0.0:
+    release_date: '2020-05-19'
+    changes:
+      release_summary: Initial release of collection.
+      minor_changes:
+        - Renaming all modules and removing "os" prefix from names.
+        - server_action - pass imageRef to rebuild
+        - subnet - Updated allocation pool checks
+        - project - Add properties for os_project
+        - config - Update os_client_config to use openstacksdk
+        - host_aggregate - Add support for not 'purging' missing hosts
+        - baremetal_node_action - Support json type for the ironic_node config_drive parameter
+      bugfixes:
+        - federation_mapping - Fixup some minor nits found in followup reviews
+        - coe_cluster - Retrive id/uuid correctly
+        - baremetal_node - Correct parameter name
+        - network - Bump minimum openstacksdk version when using os_network/dns_domain
+        - inventory_openstack - Fix constructed compose
+        - role_assignment - Fix os_user_role for groups in multidomain context
+        - role_assignment - Fix os_user_role issue to grant a role in a domain
+    modules:
+      - name: keystone_federation_protocol_info
+        description: Add support for getting information about Keystone federation Protocols
+        namespace: ''
+      - name: keystone_federation_protocol
+        description: Add support for Keystone federation Protocols
+        namespace: ''
+      - name: federation_idp_info
+        description: Add support for fetching the information about federation IDPs
+        namespace: ''
+      - name: federation_idp
+        description: Add support for Keystone Identity Providers
+        namespace: ''
+      - name: federation_mapping_info
+        description: Add support for fetching the information about Keystone mappings
+        namespace: ''
+      - name: federation_mapping
+        description: Add support for Keystone mappings
+        namespace: ''
+      - name: routers_info
+        description: Retrieve information about one or more OpenStack routers.
+        namespace: ''

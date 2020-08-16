@@ -1,2 +1,0 @@
-minor_changes:
-- Moved Openstack inventory script from Ansible community.general to openstack collection.
