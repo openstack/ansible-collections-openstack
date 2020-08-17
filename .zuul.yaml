@@ -297,8 +297,12 @@
 
         - bifrost-collections-src:
             voting: false
+            dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
         - bifrost-keystone-collections-src:
             voting: false
+            dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
 
     gate:
       jobs:
