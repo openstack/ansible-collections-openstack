@@ -75,10 +75,14 @@ EXAMPLES = '''
     name: "testnode1"
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.ironic import (
+    IronicModule,
+    ironic_argument_spec,
+)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
+    openstack_module_kwargs,
+    openstack_cloud_from_module
+)
 
 
 def _choose_id_value(module):
@@ -90,37 +94,14 @@ def _choose_id_value(module):
 
 
 def main():
-    argument_spec = openstack_full_argument_spec(
-        auth_type=dict(required=False),
+    argument_spec = ironic_argument_spec(
         uuid=dict(required=False),
         name=dict(required=False),
         mac=dict(required=False),
-        ironic_url=dict(required=False),
         timeout=dict(default=1200, type='int', required=False),
     )
     module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
-
-    if (
-        module.params['auth_type'] in [None, 'None', 'none']
-        and module.params['ironic_url'] is None
-        and not module.params['cloud']
-        and not (module.params['auth']
-                 and module.params['auth'].get('endpoint'))
-    ):
-        module.fail_json(msg="Authentication appears to be disabled, "
-                             "Please define either ironic_url, or cloud, "
-                             "or auth.endpoint")
-
-    if (
-        module.params['ironic_url']
-        and module.params['auth_type'] in [None, 'None', 'none']
-        and not (module.params['auth']
-                 and module.params['auth'].get('endpoint'))
-    ):
-        module.params['auth'] = dict(
-            endpoint=module.params['ironic_url']
-        )
+    module = IronicModule(argument_spec, **module_kwargs)
 
     sdk, cloud = openstack_cloud_from_module(module)
     try:

@@ -164,10 +164,15 @@ try:
 except ImportError:
     HAS_JSONPATCH = False
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+
+from ansible_collections.openstack.cloud.plugins.module_utils.ironic import (
+    IronicModule,
+    ironic_argument_spec,
+)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
+    openstack_module_kwargs,
+    openstack_cloud_from_module
+)
 
 
 def _parse_properties(module):
@@ -225,14 +230,13 @@ def _exit_node_not_updated(module, server):
 
 
 def main():
-    argument_spec = openstack_full_argument_spec(
+    argument_spec = ironic_argument_spec(
         uuid=dict(required=False),
         name=dict(required=False),
         driver=dict(required=False),
         driver_info=dict(type='dict', required=True),
         nics=dict(type='list', required=True, elements="dict"),
         properties=dict(type='dict', default={}),
-        ironic_url=dict(required=False),
         chassis_uuid=dict(required=False),
         skip_update_of_masked_password=dict(
             required=False,
@@ -243,30 +247,10 @@ def main():
         state=dict(required=False, default='present', choices=['present', 'absent'])
     )
     module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
+    module = IronicModule(argument_spec, **module_kwargs)
 
     if not HAS_JSONPATCH:
         module.fail_json(msg='jsonpatch is required for this module')
-    if (
-        module.params['auth_type'] in [None, 'None', 'none']
-        and module.params['ironic_url'] is None
-        and not module.params['cloud']
-        and not (module.params['auth']
-                 and module.params['auth'].get('endpoint'))
-    ):
-        module.fail_json(msg="Authentication appears to be disabled, "
-                             "Please define either ironic_url, or cloud, "
-                             "or auth.endpoint")
-
-    if (
-        module.params['ironic_url']
-        and module.params['auth_type'] in [None, 'None', 'none']
-        and not (module.params['auth']
-                 and module.params['auth'].get('endpoint'))
-    ):
-        module.params['auth'] = dict(
-            endpoint=module.params['ironic_url']
-        )
 
     node_id = _choose_id_value(module)
 

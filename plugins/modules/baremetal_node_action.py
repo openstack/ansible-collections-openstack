@@ -132,10 +132,15 @@ EXAMPLES = '''
     delegate_to: localhost
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+
+from ansible_collections.openstack.cloud.plugins.module_utils.ironic import (
+    IronicModule,
+    ironic_argument_spec,
+)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
+    openstack_module_kwargs,
+    openstack_cloud_from_module
+)
 
 
 def _choose_id_value(module):
@@ -227,12 +232,11 @@ def _check_set_power_state(module, cloud, node):
 
 
 def main():
-    argument_spec = openstack_full_argument_spec(
+    argument_spec = ironic_argument_spec(
         uuid=dict(required=False),
         name=dict(required=False),
         instance_info=dict(type='dict', required=False),
         config_drive=dict(type='raw', required=False),
-        ironic_url=dict(required=False),
         state=dict(required=False, default='present'),
         maintenance=dict(required=False),
         maintenance_reason=dict(required=False),
@@ -242,28 +246,7 @@ def main():
         timeout=dict(required=False, type='int', default=1800),
     )
     module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
-
-    if (
-        module.params['auth_type'] in [None, 'None', 'none']
-        and module.params['ironic_url'] is None
-        and not module.params['cloud']
-        and not (module.params['auth']
-                 and module.params['auth'].get('endpoint'))
-    ):
-        module.fail_json(msg="Authentication appears to be disabled, "
-                             "Please define either ironic_url, or cloud, "
-                             "or auth.endpoint")
-
-    if (
-        module.params['ironic_url']
-        and module.params['auth_type'] in [None, 'None', 'none']
-        and not (module.params['auth']
-                 and module.params['auth'].get('endpoint'))
-    ):
-        module.params['auth'] = dict(
-            endpoint=module.params['ironic_url']
-        )
+    module = IronicModule(argument_spec, **module_kwargs)
 
     if (
         module.params['config_drive']
