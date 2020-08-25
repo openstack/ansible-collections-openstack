@@ -418,3 +418,103 @@
     that:
       - info19.openstack_servers.0.status in ('ACTIVE', 'REBUILD')
       - server is changed
+
+- name: Shelve server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: shelve
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info20
+
+- name: Ensure status for server is SHELVED or SHELVED_OFFLOADED
+  assert:
+    that:
+      - info20.openstack_servers.0.status in ['SHELVED', 'SHELVED_OFFLOADED']
+      - server is changed
+
+- name: Shelve offload server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: shelve_offload
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info21
+
+- name: Ensure status for server is SHELVED_OFFLOADED
+  # no change if server has been offloaded automatically after first shelve command
+  assert:
+    that:
+      - info21.openstack_servers.0.status == 'SHELVED_OFFLOADED'
+
+- name: Shelve offload server again
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: shelve_offload
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info22
+
+- name: Ensure status for server is SHELVED_OFFLOADED
+  assert:
+    that:
+      - info22.openstack_servers.0.status == 'SHELVED_OFFLOADED'
+      - server is not changed
+
+- name: Unshelve server
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: unshelve
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info23
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info23.openstack_servers.0.status == 'ACTIVE'
+      - server is changed
+
+- name: Unshelve server again
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+    action: unshelve
+    wait: true
+  register: server
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info24
+
+- name: Ensure status for server is ACTIVE
+  assert:
+    that:
+      - info24.openstack_servers.0.status == 'ACTIVE'
+      - server is not changed
