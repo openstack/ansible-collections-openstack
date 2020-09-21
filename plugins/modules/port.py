@@ -290,7 +290,7 @@ def _needs_update(module, port, cloud):
             return True
 
     for key in compare_list_dict:
-        if not module.params[key]:
+        if module.params[key]:
             if not port[key]:
                 return True
 
