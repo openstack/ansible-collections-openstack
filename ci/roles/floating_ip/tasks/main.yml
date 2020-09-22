@@ -1,0 +1,466 @@
+---
+# Prepare environment
+- name: Gather information about public network
+  openstack.cloud.networks_info:
+    cloud: "{{ cloud }}"
+    name: public
+  register: public_network
+
+- name: Assert that public network exists
+  assert:
+    that: public_network.openstack_networks|length == 1
+
+- name: Create external network
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_external
+     external: true
+
+- name: Create external subnet
+  openstack.cloud.subnet:
+     cloud: "{{ cloud }}"
+     state: present
+     network_name: ansible_external
+     name: ansible_external_subnet
+     cidr: 10.6.6.0/24
+
+- name: Create external port 1
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_external_port1
+     network: ansible_external
+     fixed_ips:
+       - ip_address: 10.6.6.50
+
+- name: Create external port 2
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_external_port2
+     network: ansible_external
+     fixed_ips:
+       - ip_address: 10.6.6.51
+
+- name: Create internal network
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_internal
+     external: false
+
+- name: Create internal subnet
+  openstack.cloud.subnet:
+     cloud: "{{ cloud }}"
+     state: present
+     network_name: ansible_internal
+     name: ansible_internal_subnet
+     cidr: 10.7.7.0/24
+
+- name: Create internal port 1
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_internal_port1
+     network: ansible_internal
+     fixed_ips:
+       - ip_address: 10.7.7.100
+
+- name: Create internal port 2
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_internal_port2
+     network: ansible_internal
+     fixed_ips:
+       - ip_address: 10.7.7.101
+
+- name: Create internal port 3
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_internal_port3
+     network: ansible_internal
+     fixed_ips:
+       - ip_address: 10.7.7.102
+
+- name: Create router 1
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_router1
+     network: ansible_external
+     external_fixed_ips:
+        - subnet: ansible_external_subnet
+          ip: 10.6.6.10
+     interfaces:
+         - net: ansible_internal
+           subnet: ansible_internal_subnet
+           portip: 10.7.7.1
+
+# Router 2 is required for the simplest, first test that assigns a new floating IP to server
+# from first available external network or nova pool which is DevStack's public network
+- name: Create router 2
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_router2
+     network: public
+     interfaces:
+         - net: ansible_internal
+           subnet: ansible_internal_subnet
+           portip: 10.7.7.10
+
+- name: Get all floating ips
+  openstack.cloud.floating_ip_info:
+     cloud: "{{ cloud }}"
+  register: fips
+
+- name: Check if public network has any floating ips
+  set_fact:
+     public_network_had_fips: "{{ fips.floating_ips|
+                                  selectattr('floating_network_id', '==', public_network.openstack_networks.0.id)|
+                                  list|length > 0 }}"
+
+# TODO: Replace with appropriate Ansible module once available
+- name: Create a floating ip on public network (required for simplest, first floating ip test)
+  command: openstack --os-cloud={{ cloud }} floating ip create public
+  when: not public_network_had_fips
+
+# TODO: Replace with appropriate Ansible module once available
+- name: Create floating ip 1 on external network
+  command: >
+    openstack --os-cloud={{ cloud }} floating ip create
+        --subnet ansible_external_subnet
+        --floating-ip-address 10.6.6.150
+        ansible_external
+  when: fips.floating_ips|length == 0 or
+        "10.6.6.150" not in fips.floating_ips|map(attribute="floating_ip_address")|list
+
+- name: Create server with one nic
+  openstack.cloud.server:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_server1
+     image: "{{ image }}"
+     flavor: m1.tiny
+     nics:
+         # one nic only else simple, first floating ip test does not work
+         - port-name: ansible_internal_port1
+     auto_ip: false
+     wait: true
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: ansible_server1
+  register: info
+
+- name: Assert one internal port and no floating ips on server 1
+  # If this assertion fails because server has an public ipv4 address (public_v4) then make sure
+  # that no floating ip on public network is associated with "10.7.7.100" before running this role
+  assert:
+    that:
+      - info.openstack_servers|length == 1
+      - info.openstack_servers.0.public_v4|length == 0
+      - info.openstack_servers.0.public_v6|length == 0
+      - info.openstack_servers.0.addresses.ansible_internal|length == 1
+      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="addr")|sort|list == ["10.7.7.100"]
+
+- name: Create server with two nics
+  openstack.cloud.server:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_server2
+     image: "{{ image }}"
+     flavor: m1.tiny
+     nics:
+         - port-name: ansible_internal_port2
+         - port-name: ansible_internal_port3
+     auto_ip: false
+     wait: true
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: ansible_server2
+  register: info
+
+- name: Assert two internal ports and no floating ips on server 2
+  assert:
+    that:
+      - info.openstack_servers|length == 1
+      - info.openstack_servers.0.public_v4|length == 0
+      - info.openstack_servers.0.public_v6|length == 0
+      - info.openstack_servers.0.addresses.ansible_internal|length == 2
+      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="addr")|sort|list ==
+        ["10.7.7.101", "10.7.7.102"]
+
+# Tests
+- name: Assign new floating IP to server from first available external network or nova pool
+  openstack.cloud.floating_ip:
+     cloud: "{{ cloud }}"
+     state: present
+     server: ansible_server1
+     wait: true
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: ansible_server1
+  register: info
+
+- name: Assert one internal port and one floating ip on server 1
+  assert:
+    that:
+      - info.openstack_servers.0.addresses.ansible_internal|length == 2
+      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="OS-EXT-IPS:type")|sort|list ==
+        ["fixed", "floating"]
+
+- name: Detach floating IP from server
+  openstack.cloud.floating_ip:
+     cloud: "{{ cloud }}"
+     state: absent
+     server: ansible_server1
+     network: public
+     floating_ip_address: "{{ (info.openstack_servers.0.addresses.ansible_internal|
+                               selectattr('OS-EXT-IPS:type', '==', 'floating')|map(attribute='addr')|list)[0] }}"
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: ansible_server1
+  register: info
+  # When detaching a floating ip from an instance there might be a delay until openstack.cloud.server_info
+  # does not list it any more in info.openstack_servers.0.addresses.ansible_internal, so retry if necessary.
+  retries: 10
+  delay: 3
+  until: info.openstack_servers.0.addresses.ansible_internal|length == 1
+
+- name: Assert one internal port on server 1
+  assert:
+    that:
+      - info.openstack_servers.0.addresses.ansible_internal|length == 1
+      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="addr")|list == ["10.7.7.100"]
+
+- name: Assign floating IP to server
+  openstack.cloud.floating_ip:
+     cloud: "{{ cloud }}"
+     state: present
+     reuse: yes
+     server: ansible_server2
+     network: public
+     fixed_address: 10.7.7.101
+     wait: true
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: ansible_server2
+  register: info
+
+- name: Assert two internal ports and one floating ip on server 2
+  assert:
+    that:
+      - info.openstack_servers.0.addresses.ansible_internal|length == 3
+      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="OS-EXT-IPS:type")|sort|list ==
+        ["fixed", "fixed", "floating"]
+
+- name: Assign a second, specific floating IP to server
+  openstack.cloud.floating_ip:
+     cloud: "{{ cloud }}"
+     state: present
+     reuse: yes
+     server: ansible_server2
+     network: ansible_external
+     fixed_address: 10.7.7.102
+     floating_ip_address: "10.6.6.150"
+
+# We cannot wait for second floating ip to be attached because OpenStackSDK checks only for first floating ip
+# Ref.: https://github.com/openstack/openstacksdk/blob/e0372b72af8c5f471fc17e53434d7a814ca958bd/openstack/cloud/_floating_ip.py#L733
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: ansible_server2
+  register: info
+  # retry because we cannot wait for second floating ip
+  retries: 10
+  delay: 3
+  until: info.openstack_servers.0.addresses.ansible_internal|length == 4
+
+- name: Assert two internal ports and two floating ips on server 2
+  assert:
+    that:
+      - info.openstack_servers.0.addresses.ansible_internal|length == 4
+      - ("10.6.6.150" in info.openstack_servers.0.addresses.ansible_internal|map(attribute="addr")|sort|list)
+
+- name: Detach second floating IP from server
+  openstack.cloud.floating_ip:
+     cloud: "{{ cloud }}"
+     state: absent
+     server: ansible_server2
+     network: ansible_external
+     floating_ip_address: "10.6.6.150"
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: ansible_server2
+  register: info
+  # When detaching a floating ip from an instance there might be a delay until openstack.cloud.server_info
+  # does not list it any more in info.openstack_servers.0.addresses.ansible_internal, so retry if necessary.
+  retries: 10
+  delay: 3
+  until: info.openstack_servers.0.addresses.ansible_internal|length == 3
+
+- name: Assert two internal ports and one floating ip on server 2
+  assert:
+    that:
+      - info.openstack_servers.0.addresses.ansible_internal|length == 3
+
+- name: Detach remaining floating IP from server
+  openstack.cloud.floating_ip:
+     cloud: "{{ cloud }}"
+     state: absent
+     server: ansible_server2
+     network: public
+     floating_ip_address: "{{ (info.openstack_servers.0.addresses.ansible_internal|
+                               selectattr('OS-EXT-IPS:type', '==', 'floating')|map(attribute='addr')|list)[0] }}"
+
+- name: Get info about server
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: ansible_server2
+  register: info
+  # When detaching a floating ip from an instance there might be a delay until openstack.cloud.server_info
+  # does not list it any more in info.openstack_servers.0.addresses.ansible_internal, so retry if necessary.
+  retries: 10
+  delay: 3
+  until: info.openstack_servers.0.addresses.ansible_internal|length == 2
+
+- name: Assert two internal ports on server 2
+  assert:
+    that:
+      - info.openstack_servers.0.addresses.ansible_internal|length == 2
+      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="addr")|list == ["10.7.7.101", "10.7.7.102"]
+
+# Clean environment
+- name: Delete server with two nics
+  openstack.cloud.server:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_server2
+     wait: true
+
+- name: Delete server with one nic
+  openstack.cloud.server:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_server1
+     wait: true
+
+- name: Get all floating ips
+  openstack.cloud.floating_ip_info:
+     cloud: "{{ cloud }}"
+  register: fips
+
+# TODO: Replace with appropriate Ansible module once available
+- name: Delete floating ip on public network if we created it
+  when: not public_network_had_fips
+  command: >
+    openstack --os-cloud={{ cloud }} floating ip delete
+        {{ fips.floating_ips|selectattr('floating_network_id', '==', public_network.openstack_networks.0.id)|
+           map(attribute="floating_ip_address")|list|join(' ') }}
+
+# TODO: Replace with appropriate Ansible module once available
+- name: Delete floating ip 1
+  command: openstack --os-cloud={{ cloud }} floating ip delete 10.6.6.150
+  when: fips.floating_ips|length > 0 and "10.6.6.150" in fips.floating_ips|map(attribute="floating_ip_address")|list
+
+- name: Get remaining floating ips on external network
+  openstack.cloud.floating_ip_info:
+     cloud: "{{ cloud }}"
+     floating_network: ansible_external
+  register: fips
+
+# TODO: Replace with appropriate Ansible module once available
+# The first, simple floating ip test might have allocated a floating ip on the external network.
+# This floating ip must be removed before external network can be deleted.
+- name: Delete remaining floating ips on external network
+  when: fips.floating_ips|length > 0
+  command: >
+    openstack --os-cloud={{ cloud }} floating ip delete
+        {{ fips.floating_ips|map(attribute="floating_ip_address")|list|join(' ') }}
+
+# Remove routers after floating ips have been detached and disassociated else removal fails with
+#  Error detaching interface from router ***: Client Error for url: ***,
+#  Router interface for subnet *** on router *** cannot be deleted, 
+#  as it is required by one or more floating IPs.
+
+- name: Delete router 2
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_router2
+
+- name: Delete router 1
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_router1
+
+- name: Delete internal port 3
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_internal_port3
+
+- name: Delete internal port 2
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_internal_port2
+
+- name: Delete internal port 1
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_internal_port1
+
+- name: Delete internal subnet
+  openstack.cloud.subnet:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_internal_subnet
+
+- name: Delete internal network
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_internal
+
+- name: Delete external port 2
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_external_port2
+
+- name: Delete external port 1
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_external_port1
+
+- name: Delete external subnet
+  openstack.cloud.subnet:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_external_subnet
+
+- name: Delete external network
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_external

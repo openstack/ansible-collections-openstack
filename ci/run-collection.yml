@@ -50,3 +50,4 @@
       when: sdk_version is version("0.53.0", '>=')
     - role: loadbalancer
       tags: loadbalancer
+    - { role: floating_ip, tags: floating_ip }
