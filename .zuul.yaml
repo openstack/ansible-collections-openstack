@@ -197,6 +197,7 @@
 - job:
     name: openstack-tox-linters-ansible-devel
     parent: openstack-tox-linters
+    nodeset: ubuntu-bionic
     description: |
       Run openstack collections linter tests using the devel branch of ansible
     # non-voting because we can't prevent ansible devel from breaking us
@@ -208,6 +209,7 @@
 - job:
     name: openstack-tox-linters-ansible-2.10
     parent: openstack-tox-linters
+    nodeset: ubuntu-bionic
     description: |
       Run openstack collections linter tests using the 2.10 branch of ansible
     voting: true
@@ -218,6 +220,7 @@
 - job:
     name: openstack-tox-linters-ansible-2.9
     parent: openstack-tox-linters
+    nodeset: ubuntu-bionic
     description: |
       Run openstack collections linter tests using the 2.9 branch of ansible
     voting: true
