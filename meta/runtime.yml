@@ -92,6 +92,7 @@ action_groups:
     - volume_backup_info
     - volume_info
     - volume_snapshot
+    - volume_snapshot_info
   os:
     - auth
     - baremetal_inspect
@@ -185,6 +186,7 @@ action_groups:
     - volume_backup_info
     - volume_info
     - volume_snapshot
+    - volume_snapshot_info
     - os_auth
     - os_client_config
     - os_client_config

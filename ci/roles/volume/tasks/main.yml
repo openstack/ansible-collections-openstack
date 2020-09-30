@@ -8,6 +8,20 @@
      display_description: Test volume
   register: vol
 
+- name: Create volume snapshot
+  openstack.cloud.volume_snapshot:
+    cloud: "{{ cloud }}"
+    state: present
+    display_name: ansible_volume_snapshot
+    volume: ansible_volume
+  register: vol_snap
+
+- name: Get snapshot info
+  openstack.cloud.volume_snapshot_info:
+    cloud: "{{ cloud }}"
+    name: ansible_volume_snapshot
+  register: snap_info
+
 - name: Create volume backup
   openstack.cloud.volume_backup:
     cloud: "{{ cloud }}"
@@ -28,10 +42,19 @@
 
 - debug: var=backup_info
 
+- debug: var=snap_info
+
 - name: Delete volume backup
   openstack.cloud.volume_backup:
     cloud: "{{ cloud }}"
     display_name: ansible_volume_backup
+    state: absent
+
+- name: Delete volume snapshot
+  openstack.cloud.volume_snapshot:
+    cloud: "{{ cloud }}"
+    display_name: ansible_volume_snapshot
+    volume: ansible_volume
     state: absent
 
 - name: Delete volume
