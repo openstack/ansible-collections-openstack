@@ -16,9 +16,17 @@
     volume: ansible_volume
   register: vol_backup
 
+- name: Get backup info
+  openstack.cloud.volume_backup_info:
+    cloud: "{{ cloud }}"
+    name: ansible_volume_backup
+  register: backup_info
+
 - debug: var=vol
 
 - debug: var=vol_backup
+
+- debug: var=backup_info
 
 - name: Delete volume backup
   openstack.cloud.volume_backup:
