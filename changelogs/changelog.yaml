@@ -1,20 +1,32 @@
 releases:
+  1.2.0:
+    release_date: '2020-10-13'
+    changes:
+      release_summary: New volume backup modules.
+      minor_changes:
+        - lb_health_monitor - Make it possible to create a health monitor to a pool
+    modules:
+      - name: volume_snapshot_info module
+        description: Retrieve information about Openstack volume snapshots.
+        namespace: ''
+      - name: volume_backup_info module
+        description: Retrieve information about Openstack volume backups.
+        namespace: ''
+      - name: volume_backup module
+        description: Add/Delete Openstack volumes backup.
+        namespace: ''
   1.1.0:
     release_date: '2020-08-17'
     changes:
       release_summary: Starting redesign modules and bugfixes.
       minor_changes:
-        - Added changelog.
         - A basic module subclass was introduced and a few modules moved to inherit from it.
         - Added pip installation option for collection.
         - Added template for generation of artibtrary module.
-        - Added more useful information from exception
+        - Add more useful information from exception
         - inventory_openstack - Add openstack logger and Ansible display utility
         - loadbalancer - Add support for setting the Flavor when creating a load balancer
         - baremetal modules - Do not require ironic_url if cloud or auth.endpoint is provided
-      deprecated_features:
-        - foo - The bar option has been deprecated. Use the username option instead.
-        - send_request - The quic option has been deprecated. Use the protocol option instead.
       bugfixes:
         - security_group_rule - Don't pass tenant_id for remote group
         - Fix non existing attribuites in SDK exception

@@ -5,6 +5,26 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.2.0
+======
+
+Release Summary
+---------------
+
+New volume backup modules.
+
+Minor Changes
+-------------
+
+- lb_health_monitor - Make it possible to create a health monitor to a pool
+
+New Modules
+-----------
+
+- openstack.cloud.volume_backup module - Add/Delete Openstack volumes backup.
+- openstack.cloud.volume_backup_info module - Retrieve information about Openstack volume backups.
+- openstack.cloud.volume_snapshot_info module - Retrieve information about Openstack volume snapshots.
+
 v1.1.0
 ======
 
@@ -23,12 +43,6 @@ Minor Changes
 - baremetal modules - Do not require ironic_url if cloud or auth.endpoint is provided
 - inventory_openstack - Add openstack logger and Ansible display utility
 - loadbalancer - Add support for setting the Flavor when creating a load balancer
-
-Deprecated Features
--------------------
-
-- foo - The bar option has been deprecated. Use the username option instead.
-- send_request - The quic option has been deprecated. Use the protocol option instead.
 
 Bugfixes
 --------
