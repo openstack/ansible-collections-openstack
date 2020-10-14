@@ -233,13 +233,13 @@
 # Cross-checks with other projects
 - job:
     name: bifrost-collections-src
-    parent: bifrost-integration-tinyipa-ubuntu-bionic
+    parent: bifrost-integration-tinyipa-ubuntu-focal
     required-projects:
       - openstack/ansible-collections-openstack
 
 - job:
     name: bifrost-keystone-collections-src
-    parent: bifrost-integration-tinyipa-keystone-ubuntu-bionic
+    parent: bifrost-integration-tinyipa-keystone-ubuntu-focal
     required-projects:
       - openstack/ansible-collections-openstack
 
