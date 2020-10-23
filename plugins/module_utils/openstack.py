@@ -67,6 +67,8 @@ OVERRIDES = {'os_client_config': 'config',
 
 CUSTOM_VAR_PARAMS = ['min_ver', 'max_ver']
 
+MINIMUM_SDK_VERSION = '0.12.0'
+
 
 def openstack_argument_spec():
     # DEPRECATED: This argument spec is only used for the deprecated old
@@ -150,7 +152,7 @@ def openstack_module_kwargs(**kwargs):
 
 
 # for compatibility with old versions
-def openstack_cloud_from_module(module, min_version='0.12.0'):
+def openstack_cloud_from_module(module, min_version=None):
     try:
         # Due to the name shadowing we should import other way
         sdk = importlib.import_module('openstack')
@@ -159,9 +161,10 @@ def openstack_cloud_from_module(module, min_version='0.12.0'):
         module.fail_json(msg='openstacksdk is required for this module')
 
     if min_version:
-        min_version = max(StrictVersion('0.12.0'), StrictVersion(min_version))
+        min_version = max(StrictVersion(MINIMUM_SDK_VERSION),
+                          StrictVersion(min_version))
     else:
-        min_version = StrictVersion('0.12.0')
+        min_version = StrictVersion(MINIMUM_SDK_VERSION)
 
     if StrictVersion(sdk_version.__version__) < min_version:
         module.fail_json(
@@ -240,6 +243,7 @@ class OpenStackModule:
     deprecated_names = ()
     argument_spec = {}
     module_kwargs = {}
+    module_min_sdk_version = None
 
     def __init__(self):
         """Initialize Openstack base class.
@@ -299,6 +303,19 @@ class OpenStackModule:
             self.sdk_version = sdk_version_lib.__version__
         except ImportError:
             self.fail_json(msg='openstacksdk is required for this module')
+
+        # Fail if the available SDK version doesn't meet the minimum version
+        # requirements
+        if self.module_min_sdk_version:
+            min_version = max(StrictVersion(MINIMUM_SDK_VERSION),
+                              StrictVersion(self.module_min_sdk_version))
+        else:
+            min_version = StrictVersion(MINIMUM_SDK_VERSION)
+        if StrictVersion(self.sdk_version) < min_version:
+            self.fail(
+                msg="To utilize this module, the installed version of "
+                "the openstacksdk library MUST be >={min_version}.".format(
+                    min_version=min_version))
 
         # Fail if there are set unsupported for this version parameters
         # New parameters should NOT use 'default' but rely on SDK defaults
