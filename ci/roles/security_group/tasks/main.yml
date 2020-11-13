@@ -105,11 +105,24 @@
   openstack.cloud.security_group_rule_info:
      cloud: "{{ cloud }}"
   when: sdk_version is version("0.32", '>=')
+  register: test_sec_rules
+
+- name: Check - List all available rules of all security groups in a project
+  assert:
+    that:
+      - test_sec_rules.security_group_rules | length > 0
+  when: sdk_version is version("0.32", '>=')
 
 - name: List all available rules of a specific security group
   openstack.cloud.security_group_rule_info:
      cloud: "{{ cloud }}"
      security_group: "{{ secgroup_name }}"
+  register: test_sec_rule1
+
+- name: Check - List all available rules of a specific security group
+  assert:
+    that:
+      - test_sec_rule1.security_group_rules | length > 0
 
 - name: List all available rules with filters
   openstack.cloud.security_group_rule_info:
@@ -120,6 +133,38 @@
      port_range_max: 80
      remote_ip_prefix: 0.0.0.0/0
   when: sdk_version is version("0.32", '>=')
+  register: test_sec_rule
+
+- name: Check - List all available rules with filters
+  assert:
+    that:
+      - test_sec_rule.security_group_rules | length == 1
+  when: sdk_version is version("0.32", '>=')
+
+- name: List all security groups of a project
+  openstack.cloud.security_group_info:
+     cloud: "{{ cloud }}"
+  register: test_sec_groups
+
+- name: Check - List all security groups of a project
+  assert:
+    that:
+      - test_sec_groups.security_groups | length > 0
+
+- name: Filter security group by name
+  openstack.cloud.security_group_info:
+     cloud: "{{ cloud }}"
+     name: "{{ secgroup_name }}"
+  register: test_sec_group
+
+- name: Check - List all security groups of a project
+  assert:
+    that:
+      - test_sec_group.security_groups | length  == 1
+      - test_sec_group.security_groups[0]['name'] == secgroup_name
+  # This fails on Stein only
+  when: sdk_version is version("0.36.5", '>=')
+
 
 - name: Delete empty ICMP rule
   openstack.cloud.security_group_rule:
