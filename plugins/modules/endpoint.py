@@ -156,7 +156,10 @@ def main():
     try:
 
         service = cloud.get_service(service_name_or_id)
-        if service is None:
+        if service is None and state == 'absent':
+            module.exit_json(changed=False)
+
+        elif service is None and state == 'present':
             module.fail_json(msg='Service %s does not exist' % service_name_or_id)
 
         filters = dict(service_id=service.id, interface=interface)
