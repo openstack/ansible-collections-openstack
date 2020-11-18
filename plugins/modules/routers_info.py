@@ -144,25 +144,28 @@ openstack_routers:
             type: list
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_full_argument_spec, openstack_cloud_from_module
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def main():
+class RouterInfoModule(OpenStackModule):
 
-    argument_spec = openstack_full_argument_spec(
+    argument_spec = dict(
         name=dict(required=False, default=None),
         filters=dict(required=False, type='dict', default=None)
     )
-    module = AnsibleModule(argument_spec)
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        routers = cloud.search_routers(module.params['name'],
-                                       module.params['filters'])
+    def run(self):
+
+        kwargs = self.check_versioned(
+            filters=self.params['filters']
+        )
+        if self.params['name']:
+            kwargs['name_or_id'] = self.params['name']
+        routers = self.conn.search_routers(**kwargs)
+
         for router in routers:
             interfaces_info = []
-            for port in cloud.list_router_interfaces(router):
+            for port in self.conn.list_router_interfaces(router):
                 if port.device_owner != "network:router_gateway":
                     for ip_spec in port.fixed_ips:
                         int_info = {
@@ -173,10 +176,12 @@ def main():
                     interfaces_info.append(int_info)
             router['interfaces_info'] = interfaces_info
 
-        module.exit_json(changed=False, openstack_routers=routers)
+        self.exit(changed=False, openstack_routers=routers)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = RouterInfoModule()
+    module()
 
 
 if __name__ == '__main__':
