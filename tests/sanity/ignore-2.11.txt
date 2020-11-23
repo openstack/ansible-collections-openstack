@@ -2,7 +2,6 @@ plugins/modules/compute_flavor_info.py pylint:ansible-deprecated-no-collection-n
 plugins/modules/identity_domain_info.py pylint:ansible-deprecated-no-collection-name
 plugins/modules/identity_user_info.py pylint:ansible-deprecated-no-collection-name
 plugins/modules/image_info.py pylint:ansible-deprecated-no-collection-name
-plugins/modules/networks_info.py pylint:ansible-deprecated-no-collection-name
 plugins/modules/port_info.py pylint:ansible-deprecated-no-collection-name
 plugins/modules/project_info.py pylint:ansible-deprecated-no-collection-name
 plugins/modules/subnets_info.py pylint:ansible-deprecated-no-collection-name

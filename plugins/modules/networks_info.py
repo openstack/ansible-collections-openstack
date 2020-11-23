@@ -113,37 +113,33 @@ openstack_networks:
             type: bool
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    openstack_full_argument_spec,
-    openstack_cloud_from_module,
-)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def main():
+class NetworkInfoModule(OpenStackModule):
 
-    argument_spec = openstack_full_argument_spec(
+    deprecated_names = ('networks_facts', 'openstack.cloud.networks_facts')
+
+    argument_spec = dict(
         name=dict(required=False, default=None),
         filters=dict(required=False, type='dict', default=None)
     )
-    module = AnsibleModule(argument_spec)
-    is_old_facts = module._name == 'openstack.cloud.networks_facts'
-    if is_old_facts:
-        module.deprecate("The 'openstack.cloud.networks_facts' module has been renamed to 'openstack.cloud.networks_info', "
-                         "and the renamed one no longer returns ansible_facts", version='2.13')
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        networks = cloud.search_networks(module.params['name'],
-                                         module.params['filters'])
-        if is_old_facts:
-            module.exit_json(changed=False, ansible_facts=dict(
-                openstack_networks=networks))
-        else:
-            module.exit_json(changed=False, openstack_networks=networks)
+    def run(self):
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+        kwargs = self.check_versioned(
+            filters=self.params['filters']
+        )
+        if self.params['name']:
+            kwargs['name_or_id'] = self.params['name']
+        networks = self.conn.search_networks(**kwargs)
+
+        self.exit(changed=False, openstack_networks=networks)
+
+
+def main():
+    module = NetworkInfoModule()
+    module()
 
 
 if __name__ == '__main__':
