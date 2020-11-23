@@ -129,34 +129,32 @@ openstack_subnets:
             elements: dict
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_full_argument_spec, openstack_cloud_from_module
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def main():
+class SubnetInfoModule(OpenStackModule):
 
-    argument_spec = openstack_full_argument_spec(
+    deprecated_names = ('subnets_facts', 'openstack.cloud.subnets_facts')
+
+    argument_spec = dict(
         name=dict(required=False, default=None, aliases=['subnet']),
         filters=dict(required=False, type='dict', default=None)
     )
-    module = AnsibleModule(argument_spec)
-    is_old_facts = module._name == 'openstack.cloud.subnets_facts'
-    if is_old_facts:
-        module.deprecate("The 'openstack.cloud.subnets_facts' module has been renamed to 'openstack.cloud.subnets_info', "
-                         "and the renamed one no longer returns ansible_facts", version='2.13')
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        subnets = cloud.search_subnets(module.params['name'],
-                                       module.params['filters'])
-        if is_old_facts:
-            module.exit_json(changed=False, ansible_facts=dict(
-                openstack_subnets=subnets))
-        else:
-            module.exit_json(changed=False, openstack_subnets=subnets)
+    def run(self):
+        kwargs = self.check_versioned(
+            filters=self.params['filters']
+        )
+        if self.params['name']:
+            kwargs['name_or_id'] = self.params['name']
+        subnets = self.conn.search_subnets(**kwargs)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+        self.exit(changed=False, openstack_subnets=subnets)
+
+
+def main():
+    module = SubnetInfoModule()
+    module()
 
 
 if __name__ == '__main__':
