@@ -149,6 +149,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class RouterInfoModule(OpenStackModule):
 
+    deprecated_names = ('os_routers_info', 'openstack.cloud.os_routers_info')
+
     argument_spec = dict(
         name=dict(required=False, default=None),
         filters=dict(required=False, type='dict', default=None)
