@@ -1,11 +1,1 @@
-openstacksdk
-ansible-base
-pycodestyle
-flake8
-pylint
-voluptuous
-yamllint
-rstcheck
-ruamel.yaml
-#galaxy-importer  # see https://review.opendev.org/#/c/743054
-tox
+test-requirements-2.10.txt
