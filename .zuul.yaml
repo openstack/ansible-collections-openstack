@@ -75,6 +75,24 @@
 
 # Stable branches
 - job:
+    name: ansible-collections-openstack-functional-devstack-victoria-ansible-2.10
+    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    description: |
+      Run openstack collections functional tests against a victoria devstack
+      using victoria brach of openstacksdk and stable 2.10 branch of ansible
+    voting: true
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.10
+      - name: openstack/openstacksdk
+        override-branch: victoria
+      - name: openstack/devstack
+        override-checkout: victoria
+    vars:
+      tox_envlist: ansible
+
+
+- job:
     name: ansible-collections-openstack-functional-devstack-ussuri-ansible-2.10
     parent: ansible-collections-openstack-functional-devstack-ansible-devel
     description: |
@@ -266,6 +284,9 @@
         - ansible-collections-openstack-functional-devstack-ansible-pip:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
+        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.10:
+            dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.10:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
@@ -301,6 +322,7 @@
         - ansible-collections-openstack-functional-devstack-ansible-2.9
         - ansible-collections-openstack-functional-devstack-ansible-2.10
         - ansible-collections-openstack-functional-devstack-ansible-pip
+        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.10
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.10
         - ansible-collections-openstack-functional-devstack-train-ansible-2.10
         - ansible-collections-openstack-functional-devstack-stein-ansible-2.10
@@ -318,6 +340,7 @@
         - ansible-collections-openstack-functional-devstack-ansible-2.10
         - ansible-collections-openstack-functional-devstack-ansible-devel
         - ansible-collections-openstack-functional-devstack-ansible-pip
+        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.10
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.10
         - ansible-collections-openstack-functional-devstack-train-ansible-2.10
         - ansible-collections-openstack-functional-devstack-stein-ansible-2.10
