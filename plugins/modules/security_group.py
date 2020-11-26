@@ -64,70 +64,61 @@ EXAMPLES = '''
     project: myproj
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _needs_update(module, secgroup):
-    """Check for differences in the updatable values.
+class SecurityGroupModule(OpenStackModule):
 
-    NOTE: We don't currently allow name updates.
-    """
-    if secgroup['description'] != module.params['description']:
-        return True
-    return False
-
-
-def _system_state_change(module, secgroup):
-    state = module.params['state']
-    if state == 'present':
-        if not secgroup:
-            return True
-        return _needs_update(module, secgroup)
-    if state == 'absent' and secgroup:
-        return True
-    return False
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+    argument_spec = dict(
         name=dict(required=True),
         description=dict(default=''),
         state=dict(default='present', choices=['absent', 'present']),
         project=dict(default=None),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    def _needs_update(self, secgroup):
+        """Check for differences in the updatable values.
 
-    name = module.params['name']
-    state = module.params['state']
-    description = module.params['description']
-    project = module.params['project']
+        NOTE: We don't currently allow name updates.
+        """
+        if secgroup['description'] != self.params['description']:
+            return True
+        return False
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+    def _system_state_change(self, secgroup):
+        state = self.params['state']
+        if state == 'present':
+            if not secgroup:
+                return True
+            return self._needs_update(secgroup)
+        if state == 'absent' and secgroup:
+            return True
+        return False
+
+    def run(self):
+
+        name = self.params['name']
+        state = self.params['state']
+        description = self.params['description']
+        project = self.params['project']
+
         if project is not None:
-            proj = cloud.get_project(project)
+            proj = self.conn.get_project(project)
             if proj is None:
-                module.fail_json(msg='Project %s could not be found' % project)
+                self.fail_json(msg='Project %s could not be found' % project)
             project_id = proj['id']
         else:
-            project_id = cloud.current_project_id
+            project_id = self.conn.current_project_id
 
         if project_id:
             filters = {'tenant_id': project_id}
         else:
             filters = None
 
-        secgroup = cloud.get_security_group(name, filters=filters)
+        secgroup = self.conn.get_security_group(name, filters=filters)
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(module, secgroup))
+        if self.ansible.check_mode:
+            self.exit(changed=self._system_state_change(secgroup))
 
         changed = False
         if state == 'present':
@@ -135,26 +126,28 @@ def main():
                 kwargs = {}
                 if project_id:
                     kwargs['project_id'] = project_id
-                secgroup = cloud.create_security_group(name, description,
-                                                       **kwargs)
+                secgroup = self.conn.create_security_group(name, description,
+                                                           **kwargs)
                 changed = True
             else:
-                if _needs_update(module, secgroup):
-                    secgroup = cloud.update_security_group(
+                if self._needs_update(secgroup):
+                    secgroup = self.conn.update_security_group(
                         secgroup['id'], description=description)
                     changed = True
-            module.exit_json(
+            self.exit(
                 changed=changed, id=secgroup['id'], secgroup=secgroup)
 
         if state == 'absent':
             if secgroup:
-                cloud.delete_security_group(secgroup['id'])
+                self.conn.delete_security_group(secgroup['id'])
                 changed = True
-            module.exit_json(changed=changed)
-
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+            self.exit(changed=changed)
 
 
-if __name__ == "__main__":
+def main():
+    module = SecurityGroupModule()
+    module()
+
+
+if __name__ == '__main__':
     main()
