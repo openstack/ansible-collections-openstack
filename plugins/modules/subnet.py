@@ -207,7 +207,7 @@ def _needs_update(subnet, module, cloud, filters=None):
         return True
     if not subnet['allocation_pools'] and pool_start and pool_end:
         return True
-    if subnet['allocation_pools'] and curr_pool not in subnet['allocation_pools']:
+    if subnet['allocation_pools'] != [curr_pool]:
         return True
     if gateway_ip and subnet['gateway_ip'] != gateway_ip:
         return True
@@ -346,16 +346,14 @@ def main():
                 changed = True
             else:
                 if _needs_update(subnet, module, cloud, filters):
-                    if subnet['allocation_pools'] and pool is not None:
-                        pool = pool + subnet['allocation_pools']
-                    cloud.update_subnet(subnet['id'],
-                                        subnet_name=subnet_name,
-                                        enable_dhcp=enable_dhcp,
-                                        gateway_ip=gateway_ip,
-                                        disable_gateway_ip=no_gateway_ip,
-                                        dns_nameservers=dns,
-                                        allocation_pools=pool,
-                                        host_routes=host_routes)
+                    subnet = cloud.update_subnet(subnet['id'],
+                                                 subnet_name=subnet_name,
+                                                 enable_dhcp=enable_dhcp,
+                                                 gateway_ip=gateway_ip,
+                                                 disable_gateway_ip=no_gateway_ip,
+                                                 dns_nameservers=dns,
+                                                 allocation_pools=pool,
+                                                 host_routes=host_routes)
                     changed = True
                 else:
                     changed = False
