@@ -121,19 +121,20 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class VolumeInfoModule(OpenStackModule):
 
     argument_spec = dict(
-        details=dict(type='bool', default=False),
-        all_projects=dict(type='bool', default=False),
+        details=dict(type='bool', required=False),
+        all_projects=dict(type='bool', required=False, min_ver='0.19'),
         name=dict(type='str', required=False),
         status=dict(type='str', required=False),
     )
 
     def run(self):
-        result = self.conn.block_storage.volumes(
+        kwargs = self.check_versioned(
             details=self.params['details'],
             name=self.params['name'],
             all_projects=self.params['all_projects'],
             status=self.params['status'],
         )
+        result = self.conn.block_storage.volumes(**kwargs)
         result = list(result)
         self.results.update({'volumes': result})
 
