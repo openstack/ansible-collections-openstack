@@ -62,3 +62,6 @@
      cloud: "{{ cloud }}"
      state: absent
      display_name: ansible_volume
+
+- include_tasks: volume_info.yml
+
