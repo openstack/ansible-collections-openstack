@@ -83,6 +83,12 @@ options:
         description:
           - The protocol port number for the listener.
         default: 80
+      allowed_cidrs:
+        description:
+          - A list of IPv4, IPv6 or mix of both CIDRs to be allowed access to the listener. The default is all allowed.
+            When a list of CIDRs is provided, the default switches to deny all.
+            Ignored on unsupported Octavia versions (less than 2.12)
+        default: []
       pool:
         description:
           - The pool attached to the listener.
@@ -285,51 +291,47 @@ EXAMPLES = '''
 '''
 
 import time
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _wait_for_lb(module, cloud, lb, status, failures, interval=5):
-    """Wait for load balancer to be in a particular provisioning status."""
-    timeout = module.params['timeout']
+class LoadBalancerModule(OpenStackModule):
 
-    total_sleep = 0
-    if failures is None:
-        failures = []
+    def _wait_for_lb(self, lb, status, failures, interval=5):
+        """Wait for load balancer to be in a particular provisioning status."""
+        timeout = self.params['timeout']
 
-    while total_sleep < timeout:
-        lb = cloud.load_balancer.find_load_balancer(lb.id)
+        total_sleep = 0
+        if failures is None:
+            failures = []
 
-        if lb:
-            if lb.provisioning_status == status:
-                return None
-            if lb.provisioning_status in failures:
-                module.fail_json(
-                    msg="Load Balancer %s transitioned to failure state %s" %
-                        (lb.id, lb.provisioning_status)
-                )
-        else:
-            if status == "DELETED":
-                return None
+        while total_sleep < timeout:
+            lb = self.conn.load_balancer.find_load_balancer(lb.id)
+
+            if lb:
+                if lb.provisioning_status == status:
+                    return None
+                if lb.provisioning_status in failures:
+                    self.fail_json(
+                        msg="Load Balancer %s transitioned to failure state %s" %
+                            (lb.id, lb.provisioning_status)
+                    )
             else:
-                module.fail_json(
-                    msg="Load Balancer %s transitioned to DELETED" % lb.id
-                )
+                if status == "DELETED":
+                    return None
+                else:
+                    self.fail_json(
+                        msg="Load Balancer %s transitioned to DELETED" % lb.id
+                    )
 
-        time.sleep(interval)
-        total_sleep += interval
+            time.sleep(interval)
+            total_sleep += interval
 
-    module.fail_json(
-        msg="Timeout waiting for Load Balancer %s to transition to %s" %
-            (lb.id, status)
-    )
+        self.fail_json(
+            msg="Timeout waiting for Load Balancer %s to transition to %s" %
+                (lb.id, status)
+        )
 
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+    argument_spec = dict(
         name=dict(required=True),
         flavor=dict(required=False),
         state=dict(default='present', choices=['absent', 'present']),
@@ -343,162 +345,185 @@ def main():
         public_network=dict(required=False),
         delete_public_ip=dict(required=False, default=False, type='bool'),
     )
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
-    sdk, cloud = openstack_cloud_from_module(module)
+    module_kwargs = dict(supports_check_mode=True)
 
-    flavor = module.params['flavor']
-    vip_network = module.params['vip_network']
-    vip_subnet = module.params['vip_subnet']
-    vip_port = module.params['vip_port']
-    listeners = module.params['listeners']
-    public_vip_address = module.params['public_ip_address']
-    allocate_fip = module.params['auto_public_ip']
-    delete_fip = module.params['delete_public_ip']
-    public_network = module.params['public_network']
+    def run(self):
+        flavor = self.params['flavor']
+        vip_network = self.params['vip_network']
+        vip_subnet = self.params['vip_subnet']
+        vip_port = self.params['vip_port']
+        listeners = self.params['listeners']
+        public_vip_address = self.params['public_ip_address']
+        allocate_fip = self.params['auto_public_ip']
+        delete_fip = self.params['delete_public_ip']
+        public_network = self.params['public_network']
 
-    vip_network_id = None
-    vip_subnet_id = None
-    vip_port_id = None
-    flavor_id = None
+        vip_network_id = None
+        vip_subnet_id = None
+        vip_port_id = None
+        flavor_id = None
 
-    try:
-        changed = False
-        lb = cloud.load_balancer.find_load_balancer(
-            name_or_id=module.params['name'])
+        try:
+            max_microversion = 1
+            max_majorversion = 2
+            changed = False
+            lb = self.conn.load_balancer.find_load_balancer(
+                name_or_id=self.params['name'])
 
-        if module.params['state'] == 'present':
-            if not lb:
-                if not (vip_network or vip_subnet or vip_port):
-                    module.fail_json(
-                        msg="One of vip_network, vip_subnet, or vip_port must "
-                            "be specified for load balancer creation"
-                    )
+            if self.params['state'] == 'present':
+                if lb and self.ansible.check_mode:
+                    self.exit_json(changed=False)
+                if lb:
+                    self.exit_json(changed=False)
+                ver_data = self.conn.load_balancer.get_all_version_data()
+                region = list(ver_data.keys())[0]
+                interface_type = list(ver_data[region].keys())[0]
+                versions = ver_data[region][interface_type]['load-balancer']
+                for ver in versions:
+                    if ver['status'] == 'CURRENT':
+                        curversion = ver['version'].split(".")
+                        max_majorversion = int(curversion[0])
+                        max_microversion = int(curversion[1])
 
-                if flavor:
-                    _flavor = cloud.load_balancer.find_flavor(flavor)
-                    if not _flavor:
-                        module.fail_json(
-                            msg='flavor %s not found' % flavor
+                if not lb:
+                    if self.ansible.check_mode:
+                        self.exit_json(changed=True)
+
+                    if not (vip_network or vip_subnet or vip_port):
+                        self.fail_json(
+                            msg="One of vip_network, vip_subnet, or vip_port must "
+                                "be specified for load balancer creation"
                         )
-                    flavor_id = _flavor.id
 
-                if vip_network:
-                    network = cloud.get_network(vip_network)
-                    if not network:
-                        module.fail_json(
-                            msg='network %s is not found' % vip_network
-                        )
-                    vip_network_id = network.id
-                if vip_subnet:
-                    subnet = cloud.get_subnet(vip_subnet)
-                    if not subnet:
-                        module.fail_json(
-                            msg='subnet %s is not found' % vip_subnet
-                        )
-                    vip_subnet_id = subnet.id
-                if vip_port:
-                    port = cloud.get_port(vip_port)
-                    if not port:
-                        module.fail_json(
-                            msg='port %s is not found' % vip_port
-                        )
-                    vip_port_id = port.id
+                    if flavor:
+                        _flavor = self.conn.load_balancer.find_flavor(flavor)
+                        if not _flavor:
+                            self.fail_json(
+                                msg='flavor %s not found' % flavor
+                            )
+                        flavor_id = _flavor.id
 
-                lb = cloud.load_balancer.create_load_balancer(
-                    name=module.params['name'],
-                    flavor_id=flavor_id,
-                    vip_network_id=vip_network_id,
-                    vip_subnet_id=vip_subnet_id,
-                    vip_port_id=vip_port_id,
-                    vip_address=module.params['vip_address'],
-                )
-                changed = True
+                    if vip_network:
+                        network = self.conn.get_network(vip_network)
+                        if not network:
+                            self.fail_json(
+                                msg='network %s is not found' % vip_network
+                            )
+                        vip_network_id = network.id
+                    if vip_subnet:
+                        subnet = self.conn.get_subnet(vip_subnet)
+                        if not subnet:
+                            self.fail_json(
+                                msg='subnet %s is not found' % vip_subnet
+                            )
+                        vip_subnet_id = subnet.id
+                    if vip_port:
+                        port = self.conn.get_port(vip_port)
 
-            if not listeners and not module.params['wait']:
-                module.exit_json(
-                    changed=changed,
-                    loadbalancer=lb.to_dict(),
-                    id=lb.id
-                )
+                        if not port:
+                            self.fail_json(
+                                msg='port %s is not found' % vip_port
+                            )
+                        vip_port_id = port.id
+                    lbargs = {"name": self.params['name'],
+                              "vip_network_id": vip_network_id,
+                              "vip_subnet_id": vip_subnet_id,
+                              "vip_port_id": vip_port_id,
+                              "vip_address": self.params['vip_address']
+                              }
+                    if flavor_id is not None:
+                        lbargs["flavor_id"] = flavor_id
 
-            _wait_for_lb(module, cloud, lb, "ACTIVE", ["ERROR"])
+                    lb = self.conn.load_balancer.create_load_balancer(**lbargs)
 
-            for listener_def in listeners:
-                listener_name = listener_def.get("name")
-                pool_def = listener_def.get("pool")
-
-                if not listener_name:
-                    module.fail_json(msg='listener name is required')
-
-                listener = cloud.load_balancer.find_listener(
-                    name_or_id=listener_name
-                )
-
-                if not listener:
-                    _wait_for_lb(module, cloud, lb, "ACTIVE", ["ERROR"])
-
-                    protocol = listener_def.get("protocol", "HTTP")
-                    protocol_port = listener_def.get("protocol_port", 80)
-
-                    listener = cloud.load_balancer.create_listener(
-                        name=listener_name,
-                        loadbalancer_id=lb.id,
-                        protocol=protocol,
-                        protocol_port=protocol_port,
-                    )
                     changed = True
 
-                # Ensure pool in the listener.
-                if pool_def:
-                    pool_name = pool_def.get("name")
-                    members = pool_def.get('members', [])
+                if not listeners and not self.params['wait']:
+                    self.exit_json(
+                        changed=changed,
+                        loadbalancer=lb.to_dict(),
+                        id=lb.id
+                    )
 
-                    if not pool_name:
-                        module.fail_json(msg='pool name is required')
+                self._wait_for_lb(lb, "ACTIVE", ["ERROR"])
 
-                    pool = cloud.load_balancer.find_pool(name_or_id=pool_name)
+                for listener_def in listeners:
+                    listener_name = listener_def.get("name")
+                    pool_def = listener_def.get("pool")
 
-                    if not pool:
-                        _wait_for_lb(module, cloud, lb, "ACTIVE", ["ERROR"])
+                    if not listener_name:
+                        self.fail_json(msg='listener name is required')
 
-                        protocol = pool_def.get("protocol", "HTTP")
-                        lb_algorithm = pool_def.get("lb_algorithm",
-                                                    "ROUND_ROBIN")
+                    listener = self.conn.load_balancer.find_listener(
+                        name_or_id=listener_name
+                    )
 
-                        pool = cloud.load_balancer.create_pool(
-                            name=pool_name,
-                            listener_id=listener.id,
-                            protocol=protocol,
-                            lb_algorithm=lb_algorithm
-                        )
+                    if not listener:
+                        self._wait_for_lb(lb, "ACTIVE", ["ERROR"])
+
+                        protocol = listener_def.get("protocol", "HTTP")
+                        protocol_port = listener_def.get("protocol_port", 80)
+                        allowed_cidrs = listener_def.get("allowed_cidrs", [])
+                        listenerargs = {"name": listener_name,
+                                        "loadbalancer_id": lb.id,
+                                        "protocol": protocol,
+                                        "protocol_port": protocol_port
+                                        }
+                        if max_microversion >= 12 and max_majorversion >= 2:
+                            listenerargs['allowed_cidrs'] = allowed_cidrs
+                        listener = self.conn.load_balancer.create_listener(**listenerargs)
                         changed = True
 
+                # Ensure pool in the listener.
+                    if pool_def:
+                        pool_name = pool_def.get("name")
+                        members = pool_def.get('members', [])
+
+                        if not pool_name:
+                            self.fail_json(msg='pool name is required')
+
+                        pool = self.conn.load_balancer.find_pool(name_or_id=pool_name)
+
+                        if not pool:
+                            self._wait_for_lb(lb, "ACTIVE", ["ERROR"])
+
+                            protocol = pool_def.get("protocol", "HTTP")
+                            lb_algorithm = pool_def.get("lb_algorithm",
+                                                        "ROUND_ROBIN")
+
+                            pool = self.conn.load_balancer.create_pool(
+                                name=pool_name,
+                                listener_id=listener.id,
+                                protocol=protocol,
+                                lb_algorithm=lb_algorithm
+                            )
+                            changed = True
+
                     # Ensure members in the pool
-                    for member_def in members:
-                        member_name = member_def.get("name")
-                        if not member_name:
-                            module.fail_json(msg='member name is required')
+                        for member_def in members:
+                            member_name = member_def.get("name")
+                            if not member_name:
+                                self.fail_json(msg='member name is required')
 
-                        member = cloud.load_balancer.find_member(member_name,
-                                                                 pool.id)
+                            member = self.conn.load_balancer.find_member(member_name,
+                                                                         pool.id
+                                                                         )
 
-                        if not member:
-                            _wait_for_lb(module, cloud, lb, "ACTIVE",
-                                         ["ERROR"])
+                            if not member:
+                                self._wait_for_lb(lb, "ACTIVE", ["ERROR"])
 
                             address = member_def.get("address")
                             if not address:
-                                module.fail_json(
+                                self.fail_json(
                                     msg='member address for member %s is '
                                         'required' % member_name
                                 )
 
                             subnet_id = member_def.get("subnet")
                             if subnet_id:
-                                subnet = cloud.get_subnet(subnet_id)
+                                subnet = self.conn.get_subnet(subnet_id)
                                 if not subnet:
-                                    module.fail_json(
+                                    self.fail_json(
                                         msg='subnet %s for member %s is not '
                                             'found' % (subnet_id, member_name)
                                     )
@@ -506,7 +531,7 @@ def main():
 
                             protocol_port = member_def.get("protocol_port", 80)
 
-                            member = cloud.load_balancer.create_member(
+                            member = self.conn.load_balancer.create_member(
                                 pool,
                                 name=member_name,
                                 address=address,
@@ -515,110 +540,120 @@ def main():
                             )
                             changed = True
 
-            # Associate public ip to the load balancer VIP. If
-            # public_vip_address is provided, use that IP, otherwise, either
-            # find an available public ip or create a new one.
-            fip = None
-            orig_public_ip = None
-            new_public_ip = None
-            if public_vip_address or allocate_fip:
-                ips = cloud.network.ips(
-                    port_id=lb.vip_port_id,
-                    fixed_ip_address=lb.vip_address
-                )
-                ips = list(ips)
-                if ips:
-                    orig_public_ip = ips[0]
-                    new_public_ip = orig_public_ip.floating_ip_address
-
-            if public_vip_address and public_vip_address != orig_public_ip:
-                fip = cloud.network.find_ip(public_vip_address)
-                if not fip:
-                    module.fail_json(
-                        msg='Public IP %s is unavailable' % public_vip_address
-                    )
-
-                # Release origin public ip first
-                cloud.network.update_ip(
-                    orig_public_ip,
-                    fixed_ip_address=None,
-                    port_id=None
-                )
-
-                # Associate new public ip
-                cloud.network.update_ip(
-                    fip,
-                    fixed_ip_address=lb.vip_address,
-                    port_id=lb.vip_port_id
-                )
-
-                new_public_ip = public_vip_address
-                changed = True
-            elif allocate_fip and not orig_public_ip:
-                fip = cloud.network.find_available_ip()
-                if not fip:
-                    if not public_network:
-                        module.fail_json(msg="Public network is not provided")
-
-                    pub_net = cloud.network.find_network(public_network)
-                    if not pub_net:
-                        module.fail_json(
-                            msg='Public network %s not found' %
-                                public_network
-                        )
-                    fip = cloud.network.create_ip(
-                        floating_network_id=pub_net.id
-                    )
-
-                cloud.network.update_ip(
-                    fip,
-                    fixed_ip_address=lb.vip_address,
-                    port_id=lb.vip_port_id
-                )
-
-                new_public_ip = fip.floating_ip_address
-                changed = True
-
-            # Include public_vip_address in the result.
-            lb = cloud.load_balancer.find_load_balancer(name_or_id=lb.id)
-            lb_dict = lb.to_dict()
-            lb_dict.update({"public_vip_address": new_public_ip})
-
-            module.exit_json(
-                changed=changed,
-                loadbalancer=lb_dict,
-                id=lb.id
-            )
-        elif module.params['state'] == 'absent':
-            changed = False
-            public_vip_address = None
-
-            if lb:
-                if delete_fip:
-                    ips = cloud.network.ips(
+                # Associate public ip to the load balancer VIP. If
+                # public_vip_address is provided, use that IP, otherwise, either
+                # find an available public ip or create a new one.
+                fip = None
+                orig_public_ip = None
+                new_public_ip = None
+                if public_vip_address or allocate_fip:
+                    ips = self.conn.network.ips(
                         port_id=lb.vip_port_id,
                         fixed_ip_address=lb.vip_address
                     )
                     ips = list(ips)
                     if ips:
-                        public_vip_address = ips[0]
+                        orig_public_ip = ips[0]
+                        new_public_ip = orig_public_ip.floating_ip_address
 
-                # Deleting load balancer with `cascade=False` does not make
-                # sense because the deletion will always fail if there are
-                # sub-resources.
-                cloud.load_balancer.delete_load_balancer(lb, cascade=True)
-                changed = True
+                if public_vip_address and public_vip_address != orig_public_ip:
+                    fip = self.conn.network.find_ip(public_vip_address)
 
-                if module.params['wait']:
-                    _wait_for_lb(module, cloud, lb, "DELETED", ["ERROR"])
+                    if not fip:
+                        self.fail_json(
+                            msg='Public IP %s is unavailable' % public_vip_address
+                        )
 
-            if delete_fip and public_vip_address:
-                cloud.network.delete_ip(public_vip_address)
-                changed = True
+                    # Release origin public ip first
+                    self.conn.network.update_ip(
+                        orig_public_ip,
+                        fixed_ip_address=None,
+                        port_id=None
+                    )
 
-            module.exit_json(changed=changed)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+                    # Associate new public ip
+                    self.conn.network.update_ip(
+                        fip,
+                        fixed_ip_address=lb.vip_address,
+                        port_id=lb.vip_port_id
+                    )
+
+                    new_public_ip = public_vip_address
+                    changed = True
+                elif allocate_fip and not orig_public_ip:
+                    fip = self.conn.network.find_available_ip()
+                    if not fip:
+                        if not public_network:
+                            self.fail_json(msg="Public network is not provided")
+
+                        pub_net = self.conn.network.find_network(public_network)
+                        if not pub_net:
+                            self.fail_json(
+                                msg='Public network %s not found' %
+                                    public_network
+                            )
+                        fip = self.conn.network.create_ip(
+                            floating_network_id=pub_net.id
+                        )
+
+                    self.conn.network.update_ip(
+                        fip,
+                        fixed_ip_address=lb.vip_address,
+                        port_id=lb.vip_port_id
+                    )
+
+                    new_public_ip = fip.floating_ip_address
+                    changed = True
+
+                # Include public_vip_address in the result.
+                lb = self.conn.load_balancer.find_load_balancer(name_or_id=lb.id)
+                lb_dict = lb.to_dict()
+                lb_dict.update({"public_vip_address": new_public_ip})
+
+                self.exit_json(
+                    changed=changed,
+                    loadbalancer=lb_dict,
+                    id=lb.id
+                )
+            elif self.params['state'] == 'absent':
+                changed = False
+                public_vip_address = None
+
+                if lb:
+                    if self.ansible.check_mode:
+                        self.exit_json(changed=True)
+                    if delete_fip:
+                        ips = self.conn.network.ips(
+                            port_id=lb.vip_port_id,
+                            fixed_ip_address=lb.vip_address
+                        )
+                        ips = list(ips)
+                        if ips:
+                            public_vip_address = ips[0]
+
+                    # Deleting load balancer with `cascade=False` does not make
+                    # sense because the deletion will always fail if there are
+                    # sub-resources.
+                    self.conn.load_balancer.delete_load_balancer(lb, cascade=True)
+                    changed = True
+
+                    if self.params['wait']:
+                        self._wait_for_lb(lb, "DELETED", ["ERROR"])
+
+                    if delete_fip and public_vip_address:
+                        self.conn.network.delete_ip(public_vip_address)
+                        changed = True
+                elif self.ansible.check_mode:
+                    self.exit_json(changed=False)
+
+                self.exit_json(changed=changed)
+        except Exception as e:
+            self.fail_json(msg=str(e))
+
+
+def main():
+    module = LoadBalancerModule()
+    module()
 
 
 if __name__ == "__main__":
