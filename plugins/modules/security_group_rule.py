@@ -213,21 +213,20 @@ def _ports_match(protocol, module_min, module_max, rule_min, rule_max):
     if protocol == 'any':
         return True
 
-    # Check if the user is supplying -1 or None values for full TPC/UDP port range.
+    # Check if the user is supplying -1, 1 to 65535 or None values for full TPC/UDP port range.
     if protocol in ['tcp', 'udp'] or protocol is None:
-        if module_min and module_max and int(module_min) == int(module_max) == -1:
-            module_min = None
-            module_max = None
-
         if (
-            (module_min is None and module_max is None)
-            and (
-                rule_min and int(rule_min) == 1
-                and rule_max and int(rule_max) == 65535
-            )
+            not module_min and not module_max
+            or (int(module_min) in [-1, 1]
+                and int(module_max) in [-1, 65535])
         ):
-            # (None, None) == (1, 65535)
-            return True
+            if (
+                not rule_min and not rule_max
+                or (int(rule_min) in [-1, 1]
+                    and int(rule_max) in [-1, 65535])
+            ):
+                # (None, None) == (1, 65535) == (-1, -1)
+                return True
 
     # Sanity check to make sure we don't have type comparison issues.
     if module_min:
