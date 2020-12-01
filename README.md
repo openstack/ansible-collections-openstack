@@ -66,7 +66,7 @@ To use a module from Openstack Cloud collection, please reference the full names
         volume_size: 75
 ```
 
-Or you can add full namepsace and collecton name in the `collections` element:
+Or you can add full namespace and collecton name in the `collections` element:
 
 ```yaml
 ---
