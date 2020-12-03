@@ -464,48 +464,6 @@ def _parse_nics(nics):
             yield net
 
 
-def _network_args(module, cloud):
-    args = []
-    nics = module.params['nics']
-
-    if not isinstance(nics, list):
-        module.fail(msg='The \'nics\' parameter must be a list.')
-
-    for num, net in enumerate(_parse_nics(nics)):
-        if not isinstance(net, dict):
-            module.fail(
-                msg='Each entry in the \'nics\' parameter must be a dict.')
-
-        if net.get('net-id'):
-            args.append(net)
-        elif net.get('net-name'):
-            by_name = cloud.get_network(net['net-name'])
-            if not by_name:
-                module.fail(
-                    msg='Could not find network by net-name: %s' %
-                    net['net-name'])
-            resolved_net = net.copy()
-            del resolved_net['net-name']
-            resolved_net['net-id'] = by_name['id']
-            args.append(resolved_net)
-        elif net.get('port-id'):
-            args.append(net)
-        elif net.get('port-name'):
-            by_name = cloud.get_port(net['port-name'])
-            if not by_name:
-                module.fail(
-                    msg='Could not find port by port-name: %s' %
-                    net['port-name'])
-            resolved_net = net.copy()
-            del resolved_net['port-name']
-            resolved_net['port-id'] = by_name['id']
-            args.append(resolved_net)
-
-        if 'tag' in net:
-            args[num]['tag'] = net['tag']
-    return args
-
-
 def _parse_meta(meta):
     if isinstance(meta, str):
         metas = {}
@@ -516,101 +474,6 @@ def _parse_meta(meta):
     if not meta:
         return {}
     return meta
-
-
-def _detach_ip_list(cloud, server, extra_ips):
-    for ip in extra_ips:
-        ip_id = cloud.get_floating_ip(
-            id=None, filters={'floating_ip_address': ip})
-        cloud.detach_ip_from_server(
-            server_id=server.id, floating_ip_id=ip_id)
-
-
-def _check_ips(module, cloud, server):
-    changed = False
-
-    auto_ip = module.params['auto_ip']
-    floating_ips = module.params['floating_ips']
-    floating_ip_pools = module.params['floating_ip_pools']
-
-    if floating_ip_pools or floating_ips:
-        ips = openstack_find_nova_addresses(server.addresses, 'floating')
-        if not ips:
-            # If we're configured to have a floating but we don't have one,
-            # let's add one
-            server = cloud.add_ips_to_server(
-                server,
-                auto_ip=auto_ip,
-                ips=floating_ips,
-                ip_pool=floating_ip_pools,
-                wait=module.params['wait'],
-                timeout=module.params['timeout'],
-            )
-            changed = True
-        elif floating_ips:
-            # we were configured to have specific ips, let's make sure we have
-            # those
-            missing_ips = []
-            for ip in floating_ips:
-                if ip not in ips:
-                    missing_ips.append(ip)
-            if missing_ips:
-                server = cloud.add_ip_list(server, missing_ips,
-                                           wait=module.params['wait'],
-                                           timeout=module.params['timeout'])
-                changed = True
-            extra_ips = []
-            for ip in ips:
-                if ip not in floating_ips:
-                    extra_ips.append(ip)
-            if extra_ips:
-                _detach_ip_list(cloud, server, extra_ips)
-                changed = True
-    elif auto_ip:
-        if server['interface_ip']:
-            changed = False
-        else:
-            # We're configured for auto_ip but we're not showing an
-            # interface_ip. Maybe someone deleted an IP out from under us.
-            server = cloud.add_ips_to_server(
-                server,
-                auto_ip=auto_ip,
-                ips=floating_ips,
-                ip_pool=floating_ip_pools,
-                wait=module.params['wait'],
-                timeout=module.params['timeout'],
-            )
-            changed = True
-    return (changed, server)
-
-
-def _check_security_groups(module, cloud, server):
-    changed = False
-
-    # server security groups were added to shade in 1.19. Until then this
-    # module simply ignored trying to update security groups and only set them
-    # on newly created hosts.
-    if not (
-        hasattr(cloud, 'add_server_security_groups')
-        and hasattr(cloud, 'remove_server_security_groups')
-    ):
-        return changed, server
-
-    module_security_groups = set(module.params['security_groups'])
-    server_security_groups = set(sg['name'] for sg in server.security_groups)
-
-    add_sgs = module_security_groups - server_security_groups
-    remove_sgs = server_security_groups - module_security_groups
-
-    if add_sgs:
-        cloud.add_server_security_groups(server, list(add_sgs))
-        changed = True
-
-    if remove_sgs:
-        cloud.remove_server_security_groups(server, list(remove_sgs))
-        changed = True
-
-    return (changed, server)
 
 
 class ServerModule(OpenStackModule):
@@ -697,8 +560,8 @@ class ServerModule(OpenStackModule):
             if server.status not in ('ACTIVE', 'SHUTOFF', 'PAUSED', 'SUSPENDED'):
                 self.fail(
                     msg="The instance is available but not Active state: " + server.status)
-            (ip_changed, server) = _check_ips(self, self.conn, server)
-            (sg_changed, server) = _check_security_groups(self, self.conn, server)
+            (ip_changed, server) = self._check_ips(server)
+            (sg_changed, server) = self._check_security_groups(server)
             (server_changed, server) = self._update_server(server)
             self._exit_hostvars(server, ip_changed or sg_changed or server_changed)
         if server and state == 'absent':
@@ -729,7 +592,7 @@ class ServerModule(OpenStackModule):
             if not flavor_dict:
                 self.fail(msg="Could not find any matching flavor")
 
-        nics = _network_args(self, self.conn)
+        nics = self._network_args()
 
         self.params['meta'] = _parse_meta(self.params['meta'])
 
@@ -768,7 +631,7 @@ class ServerModule(OpenStackModule):
 
         self.params['meta'] = _parse_meta(self.params['meta'])
 
-        # cloud.set_server_metadata only updates the key=value pairs, it doesn't
+        # self.conn.set_server_metadata only updates the key=value pairs, it doesn't
         # touch existing ones
         update_meta = {}
         for (k, v) in self.params['meta'].items():
@@ -792,6 +655,139 @@ class ServerModule(OpenStackModule):
         except Exception as e:
             self.fail(msg="Error in deleting vm: %s" % e)
         self.exit(changed=True, result='deleted')
+
+    def _network_args(self):
+        args = []
+        nics = self.params['nics']
+
+        if not isinstance(nics, list):
+            self.fail(msg='The \'nics\' parameter must be a list.')
+
+        for num, net in enumerate(_parse_nics(nics)):
+            if not isinstance(net, dict):
+                self.fail(
+                    msg='Each entry in the \'nics\' parameter must be a dict.')
+
+            if net.get('net-id'):
+                args.append(net)
+            elif net.get('net-name'):
+                by_name = self.conn.get_network(net['net-name'])
+                if not by_name:
+                    self.fail(
+                        msg='Could not find network by net-name: %s' %
+                        net['net-name'])
+                resolved_net = net.copy()
+                del resolved_net['net-name']
+                resolved_net['net-id'] = by_name['id']
+                args.append(resolved_net)
+            elif net.get('port-id'):
+                args.append(net)
+            elif net.get('port-name'):
+                by_name = self.conn.get_port(net['port-name'])
+                if not by_name:
+                    self.fail(
+                        msg='Could not find port by port-name: %s' %
+                        net['port-name'])
+                resolved_net = net.copy()
+                del resolved_net['port-name']
+                resolved_net['port-id'] = by_name['id']
+                args.append(resolved_net)
+
+            if 'tag' in net:
+                args[num]['tag'] = net['tag']
+        return args
+
+    def _detach_ip_list(self, server, extra_ips):
+        for ip in extra_ips:
+            ip_id = self.conn.get_floating_ip(
+                id=None, filters={'floating_ip_address': ip})
+            self.conn.detach_ip_from_server(
+                server_id=server.id, floating_ip_id=ip_id)
+
+    def _check_ips(self, server):
+        changed = False
+
+        auto_ip = self.params['auto_ip']
+        floating_ips = self.params['floating_ips']
+        floating_ip_pools = self.params['floating_ip_pools']
+
+        if floating_ip_pools or floating_ips:
+            ips = openstack_find_nova_addresses(server.addresses, 'floating')
+            if not ips:
+                # If we're configured to have a floating but we don't have one,
+                # let's add one
+                server = self.conn.add_ips_to_server(
+                    server,
+                    auto_ip=auto_ip,
+                    ips=floating_ips,
+                    ip_pool=floating_ip_pools,
+                    wait=self.params['wait'],
+                    timeout=self.params['timeout'],
+                )
+                changed = True
+            elif floating_ips:
+                # we were configured to have specific ips, let's make sure we have
+                # those
+                missing_ips = []
+                for ip in floating_ips:
+                    if ip not in ips:
+                        missing_ips.append(ip)
+                if missing_ips:
+                    server = self.conn.add_ip_list(server, missing_ips,
+                                                   wait=self.params['wait'],
+                                                   timeout=self.params['timeout'])
+                    changed = True
+                extra_ips = []
+                for ip in ips:
+                    if ip not in floating_ips:
+                        extra_ips.append(ip)
+                if extra_ips:
+                    self._detach_ip_list(server, extra_ips)
+                    changed = True
+        elif auto_ip:
+            if server['interface_ip']:
+                changed = False
+            else:
+                # We're configured for auto_ip but we're not showing an
+                # interface_ip. Maybe someone deleted an IP out from under us.
+                server = self.conn.add_ips_to_server(
+                    server,
+                    auto_ip=auto_ip,
+                    ips=floating_ips,
+                    ip_pool=floating_ip_pools,
+                    wait=self.params['wait'],
+                    timeout=self.params['timeout'],
+                )
+                changed = True
+        return (changed, server)
+
+    def _check_security_groups(self, server):
+        changed = False
+
+        # server security groups were added to shade in 1.19. Until then this
+        # module simply ignored trying to update security groups and only set them
+        # on newly created hosts.
+        if not (
+            hasattr(self.conn, 'add_server_security_groups')
+            and hasattr(self.conn, 'remove_server_security_groups')
+        ):
+            return changed, server
+
+        module_security_groups = set(self.params['security_groups'])
+        server_security_groups = set(sg['name'] for sg in server.security_groups)
+
+        add_sgs = module_security_groups - server_security_groups
+        remove_sgs = server_security_groups - module_security_groups
+
+        if add_sgs:
+            self.conn.add_server_security_groups(server, list(add_sgs))
+            changed = True
+
+        if remove_sgs:
+            self.conn.remove_server_security_groups(server, list(remove_sgs))
+            changed = True
+
+        return (changed, server)
 
 
 def main():
