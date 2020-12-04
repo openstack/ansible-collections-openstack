@@ -101,6 +101,26 @@
      remote_ip_prefix: 0.0.0.0/0
      direction: egress
 
+- name: List all available rules of all security groups in a project
+  openstack.cloud.security_group_rule_info:
+     cloud: "{{ cloud }}"
+  when: sdk_version is version("0.32", '>=')
+
+- name: List all available rules of a specific security group
+  openstack.cloud.security_group_rule_info:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+
+- name: List all available rules with filters
+  openstack.cloud.security_group_rule_info:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     protocol: tcp
+     port_range_min: 80
+     port_range_max: 80
+     remote_ip_prefix: 0.0.0.0/0
+  when: sdk_version is version("0.32", '>=')
+
 - name: Delete empty ICMP rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"

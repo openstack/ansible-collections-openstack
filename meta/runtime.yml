@@ -78,6 +78,7 @@ action_groups:
     - routers_info
     - security_group
     - security_group_rule
+    - security_group_rule_info
     - server
     - server_action
     - server_group
@@ -172,6 +173,7 @@ action_groups:
     - routers_info
     - security_group
     - security_group_rule
+    - security_group_rule_info
     - server
     - server_action
     - server_group
