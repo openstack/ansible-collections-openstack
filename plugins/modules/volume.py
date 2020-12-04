@@ -99,161 +99,162 @@ volume:
   type: dict
   sample: {'...'}
 '''
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _needs_update(module, volume):
-    '''
-    check for differences in updatable values, at the moment
-    openstacksdk only supports extending the volume size, this
-    may change in the future.
-    :returns: bool
-    '''
-    compare_simple = ['size']
+class VolumeModule(OpenStackModule):
 
-    for k in compare_simple:
-        if module.params[k] is not None and module.params[k] != volume.get(k):
-            return True
-
-    return False
-
-
-def _modify_volume(module, cloud):
-    '''
-    modify volume, the only modification to an existing volume
-    available at the moment is extending the size, this is
-    limited by the openstacksdk and may change whenever the
-    functionality is extended.
-    '''
-    volume = cloud.get_volume(module.params['display_name'])
-    diff = {'before': volume, 'after': ''}
-    size = module.params['size']
-
-    if size < volume.get('size'):
-        module.fail_json(
-            msg='Cannot shrink volumes, size: {0} < {1}'.format(size, volume.get('size'))
-        )
-
-    if not _needs_update(module, volume):
-        diff['after'] = volume
-        module.exit_json(changed=False, id=volume['id'], volume=volume, diff=diff)
-
-    if module.check_mode:
-        diff['after'] = volume
-        module.exit_json(changed=True, id=volume['id'], volume=volume, diff=diff)
-
-    cloud.volume.extend_volume(
-        volume.id,
-        size
-    )
-    diff['after'] = cloud.get_volume(module.params['display_name'])
-    module.exit_json(changed=True, id=volume['id'], volume=volume, diff=diff)
-
-
-def _present_volume(module, cloud):
-    if cloud.volume_exists(module.params['display_name']):
-        v = cloud.get_volume(module.params['display_name'])
-        if not _needs_update(module, v):
-            module.exit_json(changed=False, id=v['id'], volume=v)
-        _modify_volume(module, cloud)
-
-    diff = {'before': '', 'after': ''}
-
-    volume_args = dict(
-        size=module.params['size'],
-        volume_type=module.params['volume_type'],
-        display_name=module.params['display_name'],
-        display_description=module.params['display_description'],
-        snapshot_id=module.params['snapshot_id'],
-        bootable=module.params['bootable'],
-        availability_zone=module.params['availability_zone'],
-    )
-    if module.params['image']:
-        image_id = cloud.get_image_id(module.params['image'])
-        volume_args['imageRef'] = image_id
-
-    if module.params['volume']:
-        volume_id = cloud.get_volume_id(module.params['volume'])
-        if not volume_id:
-            module.fail_json(msg="Failed to find volume '%s'" % module.params['volume'])
-        volume_args['source_volid'] = volume_id
-
-    if module.params['scheduler_hints']:
-        volume_args['scheduler_hints'] = module.params['scheduler_hints']
-
-    if module.params['metadata']:
-        volume_args['metadata'] = module.params['metadata']
-
-    if module.check_mode:
-        diff['after'] = volume_args
-        module.exit_json(changed=True, id=None, volume=volume_args, diff=diff)
-
-    volume = cloud.create_volume(
-        wait=module.params['wait'], timeout=module.params['timeout'],
-        **volume_args)
-    diff['after'] = volume
-    module.exit_json(changed=True, id=volume['id'], volume=volume, diff=diff)
-
-
-def _absent_volume(module, cloud, sdk):
-    changed = False
-    diff = {'before': '', 'after': ''}
-
-    if cloud.volume_exists(module.params['display_name']):
-        volume = cloud.get_volume(module.params['display_name'])
-        diff['before'] = volume
-
-        if module.check_mode:
-            module.exit_json(changed=True, diff=diff)
-
-        try:
-            changed = cloud.delete_volume(name_or_id=module.params['display_name'],
-                                          wait=module.params['wait'],
-                                          timeout=module.params['timeout'])
-        except sdk.exceptions.ResourceTimeout:
-            diff['after'] = volume
-            module.exit_json(changed=changed, diff=diff)
-
-    module.exit_json(changed=changed, diff=diff)
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
-        size=dict(default=None, type='int'),
-        volume_type=dict(default=None),
-        display_name=dict(required=True, aliases=['name']),
-        display_description=dict(default=None, aliases=['description']),
-        image=dict(default=None),
-        snapshot_id=dict(default=None),
-        volume=dict(default=None),
-        state=dict(default='present', choices=['absent', 'present']),
-        scheduler_hints=dict(default=None, type='dict'),
-        metadata=dict(default=None, type='dict'),
+    argument_spec = dict(
+        size=dict(type='int'),
+        volume_type=dict(type='str'),
+        display_name=dict(required=True, aliases=['name'], type='str'),
+        display_description=dict(aliases=['description'], type='str'),
+        image=dict(type='str'),
+        snapshot_id=dict(type='str'),
+        volume=dict(type='str'),
+        state=dict(default='present', choices=['absent', 'present'], type='str'),
+        scheduler_hints=dict(type='dict'),
+        metadata=dict(type='dict'),
         bootable=dict(type='bool', default=False)
     )
-    module_kwargs = openstack_module_kwargs(
+
+    module_kwargs = dict(
         mutually_exclusive=[
             ['image', 'snapshot_id', 'volume'],
         ],
+        required_if=[
+            ['state', 'present', ['size']],
+        ],
     )
-    module = AnsibleModule(argument_spec=argument_spec, supports_check_mode=True, **module_kwargs)
 
-    state = module.params['state']
+    def _needs_update(self, volume):
+        '''
+        check for differences in updatable values, at the moment
+        openstacksdk only supports extending the volume size, this
+        may change in the future.
+        :returns: bool
+        '''
+        compare_simple = ['size']
 
-    if state == 'present' and not module.params['size']:
-        module.fail_json(msg="Size is required when state is 'present'")
+        for k in compare_simple:
+            if self.params[k] is not None and self.params[k] != volume.get(k):
+                return True
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+        return False
+
+    def _modify_volume(self, volume):
+        '''
+        modify volume, the only modification to an existing volume
+        available at the moment is extending the size, this is
+        limited by the openstacksdk and may change whenever the
+        functionality is extended.
+        '''
+        volume = self.conn.get_volume(self.params['display_name'])
+        diff = {'before': volume, 'after': ''}
+        size = self.params['size']
+
+        if size < volume.get('size'):
+            self.fail_json(
+                msg='Cannot shrink volumes, size: {0} < {1}'.format(size, volume.get('size'))
+            )
+
+        if not self._needs_update(volume):
+            diff['after'] = volume
+            self.exit_json(changed=False, id=volume['id'], volume=volume, diff=diff)
+
+        if self.ansible.check_mode:
+            diff['after'] = volume
+            self.exit_json(changed=True, id=volume['id'], volume=volume, diff=diff)
+
+        self.conn.volume.extend_volume(
+            volume.id,
+            size
+        )
+        diff['after'] = self.conn.get_volume(self.params['display_name'])
+        self.exit_json(changed=True, id=volume['id'], volume=volume, diff=diff)
+
+    def _present_volume(self):
+
+        diff = {'before': '', 'after': ''}
+
+        volume_args = dict(
+            size=self.params['size'],
+            volume_type=self.params['volume_type'],
+            display_name=self.params['display_name'],
+            display_description=self.params['display_description'],
+            snapshot_id=self.params['snapshot_id'],
+            bootable=self.params['bootable'],
+            availability_zone=self.params['availability_zone'],
+        )
+        if self.params['image']:
+            image_id = self.conn.get_image_id(self.params['image'])
+            volume_args['imageRef'] = image_id
+
+        if self.params['volume']:
+            volume_id = self.conn.get_volume_id(self.params['volume'])
+            if not volume_id:
+                self.fail_json(msg="Failed to find volume '%s'" % self.params['volume'])
+            volume_args['source_volid'] = volume_id
+
+        if self.params['scheduler_hints']:
+            volume_args['scheduler_hints'] = self.params['scheduler_hints']
+
+        if self.params['metadata']:
+            volume_args['metadata'] = self.params['metadata']
+
+        if self.ansible.check_mode:
+            diff['after'] = volume_args
+            self.exit_json(changed=True, id=None, volume=volume_args, diff=diff)
+
+        volume = self.conn.create_volume(
+            wait=self.params['wait'], timeout=self.params['timeout'],
+            **volume_args)
+        diff['after'] = volume
+        self.exit_json(changed=True, id=volume['id'], volume=volume, diff=diff)
+
+    def _absent_volume(self, volume):
+        changed = False
+        diff = {'before': '', 'after': ''}
+
+        if self.conn.volume_exists(self.params['display_name']):
+            volume = self.conn.get_volume(self.params['display_name'])
+            diff['before'] = volume
+
+            if self.ansible.check_mode:
+                self.exit_json(changed=True, diff=diff)
+
+            try:
+                changed = self.conn.delete_volume(name_or_id=self.params['display_name'],
+                                                  wait=self.params['wait'],
+                                                  timeout=self.params['timeout'])
+            except self.sdk.exceptions.ResourceTimeout:
+                diff['after'] = volume
+                self.exit_json(changed=changed, diff=diff)
+
+        self.exit_json(changed=changed, diff=diff)
+
+    def run(self):
+
+        state = self.params['state']
+        if self.conn.volume_exists(self.params['display_name']):
+            volume = self.conn.get_volume(self.params['display_name'])
+        else:
+            volume = None
+
         if state == 'present':
-            _present_volume(module, cloud)
+            if not volume:
+                self._present_volume()
+            elif self._needs_update(volume):
+                self._modify_volume(volume)
+            else:
+                self.exit_json(changed=False, id=volume['id'], volume=volume)
         if state == 'absent':
-            _absent_volume(module, cloud, sdk)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+            self._absent_volume(volume)
+
+
+def main():
+    module = VolumeModule()
+    module()
 
 
 if __name__ == '__main__':
