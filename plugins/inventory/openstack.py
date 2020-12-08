@@ -98,6 +98,10 @@ options:
         description: Add hosts to group based on Jinja2 conditionals.
         type: dictionary
         default: {}
+    legacy_groups:
+        description: Automatically create groups from host variables.
+        type: bool
+        default: true
 
 extends_documentation_fragment:
 - inventory_cache
@@ -361,8 +365,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             openstack=server)
         self.inventory.add_host(current_host)
 
-        for group in self._get_groups_from_server(server, namegroup=namegroup):
-            groups[group].append(current_host)
+        if self.get_option('legacy_groups'):
+            for group in self._get_groups_from_server(server, namegroup=namegroup):
+                groups[group].append(current_host)
 
     def verify_file(self, path):
 
