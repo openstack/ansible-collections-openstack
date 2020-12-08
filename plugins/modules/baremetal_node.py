@@ -120,7 +120,6 @@ options:
           re-assert the password field.
         - C(skip_update_of_driver_password) is deprecated alias and will be removed in openstack.cloud 2.0.0.
       type: bool
-      default: 'no'
       aliases:
         - skip_update_of_driver_password
 requirements:

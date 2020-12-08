@@ -16,12 +16,10 @@ options:
     description:
     - Whether to provide additional information about volumes
     type: bool
-    default: false
   all_projects:
     description:
     - Whether return the volumes in all projects
     type: bool
-    default: false
   name:
     description:
     - Name of the volume as a string.
