@@ -85,6 +85,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 
 class VolumeSnapshotInfoModule(OpenStackModule):
+    module_min_sdk_version = '0.49.0'
+
     argument_spec = dict(
         details=dict(default=True, type='bool'),
         name=dict(required=False, type='str'),

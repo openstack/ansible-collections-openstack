@@ -73,7 +73,7 @@
     vars:
       tox_envlist: ansible-pip
 
-# Stable branches
+# Stable branches tests
 - job:
     name: ansible-collections-openstack-functional-devstack-victoria-ansible-2.10
     parent: ansible-collections-openstack-functional-devstack-ansible-devel
@@ -81,13 +81,12 @@
       Run openstack collections functional tests against a victoria devstack
       using victoria brach of openstacksdk and stable 2.10 branch of ansible
     voting: true
+    override-checkout: stable/victoria
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.10
       - name: openstack/openstacksdk
-        override-branch: victoria
-      - name: openstack/devstack
-        override-checkout: victoria
+        override-checkout: stable/victoria
     vars:
       tox_envlist: ansible
 
@@ -99,13 +98,14 @@
       Run openstack collections functional tests against a ussuri devstack
       using ussuri brach of openstacksdk and stable 2.10 branch of ansible
     voting: true
+    override-checkout: stable/ussuri
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.10
       - name: openstack/openstacksdk
-        override-branch: ussuri
-      - name: openstack/devstack
-        override-checkout: ussuri
+        override-checkout: stable/ussuri
+      - name: openstack/os-client-config
+        override-checkout: stable/ussuri
     vars:
       tox_envlist: ansible
 
@@ -115,14 +115,15 @@
     description: |
       Run openstack collections functional tests against a train devstack
       using train brach of openstacksdk and stable 2.10 branch of ansible
-    voting: true
+    voting: false
+    override-checkout: stable/train
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.10
       - name: openstack/openstacksdk
-        override-branch: train
-      - name: openstack/devstack
-        override-checkout: train
+        override-checkout: stable/train
+      - name: openstack/os-client-config
+        override-checkout: stable/train
     vars:
       tox_envlist: ansible
 
@@ -133,13 +134,14 @@
       Run openstack collections functional tests against a stein devstack
       using stein brach of openstacksdk and stable 2.10 branch of ansible
     voting: true
+    override-checkout: stable/stein
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.10
       - name: openstack/openstacksdk
-        override-branch: stein
-      - name: openstack/devstack
-        override-checkout: stein
+        override-checkout: stable/stein
+      - name: openstack/os-client-config
+        override-checkout: stable/stein
     vars:
       tox_envlist: ansible
 
@@ -150,13 +152,17 @@
       Run openstack collections functional tests against a rocky devstack
       using rocky brach of openstacksdk and stable 2.10 branch of ansible
     voting: true
+    override-checkout: stable/rocky
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.10
       - name: openstack/openstacksdk
-        override-branch: rocky
-      - name: openstack/devstack
-        override-checkout: rocky
+        override-checkout: stable/rocky
+      - name: openstack/os-client-config
+        override-checkout: stable/rocky
+      - name: openstack/shade
+        override-checkout: stable/rocky
+
     vars:
       tox_envlist: ansible
 
@@ -167,13 +173,13 @@
       Run openstack collections functional tests against a queens devstack
       using master branch of openstacksdk and stable 2.10 branch of ansible
     voting: true
+    override-checkout: stable/queens
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.10
       - name: openstack/openstacksdk
-        override-branch: master
-      - name: openstack/devstack
-        override-checkout: queens
+        # Run queens with highest possible py2 version of SDK
+        override-checkout: stable/train
     vars:
       tox_envlist: ansible
 
@@ -184,13 +190,13 @@
       Run openstack collections functional tests against a queens devstack
       using master branch of openstacksdk and devel branch of ansible
     voting: false
+    override-checkout: stable/queens
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: devel
       - name: openstack/openstacksdk
-        override-branch: master
-      - name: openstack/devstack
-        override-checkout: queens
+        # Run queens with highest possible py2 version of SDK
+        override-checkout: stable/train
     vars:
       tox_envlist: ansible-2.11
 
@@ -324,7 +330,7 @@
         - ansible-collections-openstack-functional-devstack-ansible-pip
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.10
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.10
-        - ansible-collections-openstack-functional-devstack-train-ansible-2.10
+        # - ansible-collections-openstack-functional-devstack-train-ansible-2.10
         - ansible-collections-openstack-functional-devstack-stein-ansible-2.10
         - ansible-collections-openstack-functional-devstack-rocky-ansible-2.10
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.10

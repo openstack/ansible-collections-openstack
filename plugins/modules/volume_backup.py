@@ -98,6 +98,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 
 class VolumeBackupModule(OpenStackModule):
+    module_min_sdk_version = '0.49.0'
+
     argument_spec = dict(
         display_name=dict(required=True, aliases=['name'], type='str'),
         display_description=dict(required=False, aliases=['description'],
