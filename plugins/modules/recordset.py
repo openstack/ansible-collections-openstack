@@ -19,13 +19,14 @@ options:
      type: str
    name:
      description:
-        - Name of the recordset
+        - Name of the recordset. It must be ended with name of dns zone.
      required: true
      type: str
    recordset_type:
      description:
         - Recordset type
         - Required when I(state=present).
+     choices: ['a', 'aaaa', 'mx', 'cname', 'txt', 'ns', 'srv', 'ptr', 'caa']
      type: str
    records:
      description:
@@ -61,8 +62,8 @@ EXAMPLES = '''
     cloud: mycloud
     state: present
     zone: example.net.
-    name: www
-    recordset_type: primary
+    name: www.example.net.
+    recordset_type: "a"
     records: ['10.1.1.1']
     description: test recordset
     ttl: 3600
@@ -72,7 +73,7 @@ EXAMPLES = '''
     cloud: mycloud
     state: present
     zone: example.net.
-    name: www
+    name: www.example.net.
     ttl: 7200
 
 # Delete recordset named "www.example.net."
@@ -80,7 +81,7 @@ EXAMPLES = '''
     cloud: mycloud
     state: absent
     zone: example.net.
-    name: www
+    name: www.example.net.
 '''
 
 RETURN = '''
@@ -125,7 +126,7 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
                                                                                 openstack_cloud_from_module)
 
 
-def _system_state_change(state, records, description, ttl, zone, recordset):
+def _system_state_change(state, records, description, ttl, recordset):
     if state == 'present':
         if recordset is None:
             return True
@@ -144,10 +145,10 @@ def main():
     argument_spec = openstack_full_argument_spec(
         zone=dict(required=True),
         name=dict(required=True),
-        recordset_type=dict(required=False),
+        recordset_type=dict(required=False, choices=['a', 'aaaa', 'mx', 'cname', 'txt', 'ns', 'srv', 'ptr', 'caa']),
         records=dict(required=False, type='list', elements='str'),
         description=dict(required=False, default=None),
-        ttl=dict(required=False, default=None, type='int'),
+        ttl=dict(required=False, type='int'),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
@@ -159,76 +160,77 @@ def main():
                            supports_check_mode=True,
                            **module_kwargs)
 
+    module.module_min_sdk_version = '0.28.0'
     zone = module.params.get('zone')
     name = module.params.get('name')
     state = module.params.get('state')
 
     sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        recordset_type = module.params.get('recordset_type')
-        recordset_filter = {'type': recordset_type}
+    recordsets = cloud.search_recordsets(zone, name_or_id=name)
 
-        recordsets = cloud.search_recordsets(zone, name_or_id=name, filters=recordset_filter)
+    if recordsets:
+        recordset = recordsets[0]
+        try:
+            recordset_id = recordset['id']
+        except KeyError as e:
+            module.fail_json(msg=str(e))
+    else:
+        # recordsets is filtered by type and should never be more than 1 return
+        recordset = None
 
-        if len(recordsets) == 1:
-            recordset = recordsets[0]
-            try:
-                recordset_id = recordset['id']
-            except KeyError as e:
-                module.fail_json(msg=str(e))
+    if state == 'present':
+        recordset_type = module.params.get('recordset_type').upper()
+        records = module.params.get('records')
+        description = module.params.get('description')
+        ttl = module.params.get('ttl')
+
+        kwargs = {}
+        if description:
+            kwargs['description'] = description
+        kwargs['records'] = records
+
+        if module.check_mode:
+            module.exit_json(changed=_system_state_change(state,
+                                                          records, description,
+                                                          ttl, recordset))
+
+        if recordset is None:
+            if ttl:
+                kwargs['ttl'] = ttl
+            else:
+                kwargs['ttl'] = 300
+
+            recordset = cloud.create_recordset(
+                zone=zone, name=name, recordset_type=recordset_type,
+                **kwargs)
+            changed = True
         else:
-            # recordsets is filtered by type and should never be more than 1 return
-            recordset = None
 
-        if state == 'present':
-            records = module.params.get('records')
-            description = module.params.get('description')
-            ttl = module.params.get('ttl')
+            if ttl:
+                kwargs['ttl'] = ttl
 
-            if module.check_mode:
-                module.exit_json(changed=_system_state_change(state,
-                                                              records, description,
-                                                              ttl, zone,
-                                                              recordset))
+            pre_update_recordset = recordset
+            changed = _system_state_change(state, records,
+                                           description, ttl,
+                                           pre_update_recordset)
+            if changed:
+                recordset = cloud.update_recordset(
+                    zone=zone, name_or_id=recordset_id, **kwargs)
 
-            if recordset is None:
-                recordset = cloud.create_recordset(
-                    zone=zone, name=name, recordset_type=recordset_type,
-                    records=records, description=description, ttl=ttl)
-                changed = True
-            else:
-                if records is None:
-                    records = []
+        module.exit_json(changed=changed, recordset=recordset)
 
-                pre_update_recordset = recordset
-                changed = _system_state_change(state, records,
-                                               description, ttl,
-                                               zone, pre_update_recordset)
-                if changed:
-                    zone = cloud.update_recordset(
-                        zone, recordset_id,
-                        records=records,
-                        description=description,
-                        ttl=ttl)
+    elif state == 'absent':
+        if module.check_mode:
+            module.exit_json(changed=_system_state_change(state,
+                                                          None, None,
+                                                          None, recordset))
 
-            module.exit_json(changed=changed, recordset=recordset)
-
-        elif state == 'absent':
-            if module.check_mode:
-                module.exit_json(changed=_system_state_change(state,
-                                                              None, None,
-                                                              None,
-                                                              None, recordset))
-
-            if recordset is None:
-                changed = False
-            else:
-                cloud.delete_recordset(zone, recordset_id)
-                changed = True
-            module.exit_json(changed=changed)
-
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+        if recordset is None:
+            changed = False
+        else:
+            cloud.delete_recordset(zone, recordset_id)
+            changed = True
+        module.exit_json(changed=changed)
 
 
 if __name__ == '__main__':

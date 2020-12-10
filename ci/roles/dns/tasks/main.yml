@@ -1,0 +1,79 @@
+---
+- name: Create dns zone
+  openstack.cloud.dns_zone:
+    cloud: "{{ cloud }}"
+    name: "{{ dns_zone_name }}"
+    zone_type: "primary"
+    email: test@example.net
+  register: dns_zone
+
+- debug: var=dns_zone
+
+- name: Update dns zone
+  openstack.cloud.dns_zone:
+    cloud: "{{ cloud }}"
+    name: "{{ dns_zone.zone.name }}"
+    description: "New descirption"
+  register: updated_dns_zone
+
+- debug: var=updated_dns_zone
+
+- name: Create a recordset
+  openstack.cloud.recordset:
+    cloud: "{{ cloud }}"
+    zone: "{{ updated_dns_zone.zone.name }}"
+    name: "{{ recordset_name }}"
+    recordset_type: "a"
+    records: "{{ records }}"
+  register: recordset
+
+- name: Verify recordset info
+  assert:
+    that:
+      - recordset["recordset"].name == recordset_name
+      - recordset["recordset"].zone_name ==  dns_zone.zone.name
+      - recordset["recordset"].records == records
+
+- name: Update a recordset
+  openstack.cloud.recordset:
+    cloud: "{{ cloud }}"
+    zone: "{{ updated_dns_zone.zone.name }}"
+    name: "{{ recordset_name }}"
+    recordset_type: "a"
+    records: "{{ updated_records }}"
+    description: "new test recordset"
+  register: updated_recordset
+
+- name: Verify recordset info
+  assert:
+    that:
+      - updated_recordset["recordset"].zone_name == dns_zone.zone.name
+      - updated_recordset["recordset"].name == recordset_name
+      - updated_recordset["recordset"].records == updated_records
+
+- name: Delete recordset
+  openstack.cloud.recordset:
+    cloud: "{{ cloud }}"
+    zone: "{{ updated_dns_zone.zone.name }}"
+    name: "{{ recordset.recordset.name }}"
+    state: absent
+  register: deleted_recordset
+
+- name: Verify recordset deletion
+  assert:
+    that:
+    - deleted_recordset is successful
+    - deleted_recordset is changed
+
+- name: Delete dns zone
+  openstack.cloud.dns_zone:
+    cloud: "{{ cloud }}"
+    name: "{{ updated_dns_zone.zone.name }}"
+    state: absent
+  register: deleted_dns_zone
+
+- name: Verify dns zone
+  assert:
+    that:
+    - deleted_dns_zone is successful
+    - deleted_dns_zone is changed

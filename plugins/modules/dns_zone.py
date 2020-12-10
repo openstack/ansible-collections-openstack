@@ -173,11 +173,23 @@ class DnsZoneModule(OpenStackModule):
         zone = self.conn.get_zone(name)
 
         if state == 'present':
+
             zone_type = self.params['zone_type']
             email = self.params['email']
             description = self.params['description']
             ttl = self.params['ttl']
             masters = self.params['masters']
+
+            kwargs = {}
+
+            if email:
+                kwargs['email'] = email
+            if description:
+                kwargs['description'] = description
+            if ttl:
+                kwargs['ttl'] = ttl
+            if masters:
+                kwargs['masters'] = masters
 
             if self.ansible.check_mode:
                 self.exit_json(changed=self._system_state_change(state, email,
@@ -186,8 +198,7 @@ class DnsZoneModule(OpenStackModule):
 
             if zone is None:
                 zone = self.conn.create_zone(
-                    name=name, zone_type=zone_type, email=email,
-                    description=description, ttl=ttl, masters=masters)
+                    name=name, zone_type=zone_type, **kwargs)
                 changed = True
             else:
                 if masters is None:
@@ -199,9 +210,7 @@ class DnsZoneModule(OpenStackModule):
                                                     masters, pre_update_zone)
                 if changed:
                     zone = self.conn.update_zone(
-                        name, email=email,
-                        description=description,
-                        ttl=ttl, masters=masters)
+                        name, **kwargs)
 
             if wait:
                 self._wait(timeout, zone, state)
