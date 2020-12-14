@@ -43,6 +43,63 @@ options:
           endpoint URL for the Ironic API.  Use with "auth" and "auth_type"
           settings set to None.
       type: str
+    resource_class:
+      description:
+        - The specific resource type to which this node belongs.
+      type: str
+    bios_interface:
+      description:
+        - The bios interface for this node, e.g. "no-bios".
+      type: str
+    boot_interface:
+      description:
+        - The boot interface for this node, e.g. "pxe".
+      type: str
+    console_interface:
+      description:
+        - The console interface for this node, e.g. "no-console".
+      type: str
+    deploy_interface:
+      description:
+        - The deploy interface for this node, e.g. "iscsi".
+      type: str
+    inspect_interface:
+      description:
+        - The interface used for node inspection, e.g. "no-inspect".
+      type: str
+    management_interface:
+      description:
+        - The interface for out-of-band management of this node, e.g.
+          "ipmitool".
+      type: str
+    network_interface:
+      description:
+        - The network interface provider to use when describing
+          connections for this node.
+      type: str
+    power_interface:
+      description:
+        - The interface used to manage power actions on this node, e.g.
+          "ipmitool".
+      type: str
+    raid_interface:
+      description:
+        - Interface used for configuring raid on this node.
+      type: str
+    rescue_interface:
+      description:
+        - Interface used for node rescue, e.g. "no-rescue".
+      type: str
+    storage_interface:
+      description:
+        - Interface used for attaching and detaching volumes on this node, e.g.
+          "cinder".
+      type: str
+    vendor_interface:
+      description:
+        - Interface for all vendor-specific actions on this node, e.g.
+          "no-vendor".
+      type: str
     driver_info:
       description:
         - Information for this server's driver. Will vary based on which
@@ -234,6 +291,19 @@ def main():
         uuid=dict(required=False),
         name=dict(required=False),
         driver=dict(required=False),
+        resource_class=dict(required=False),
+        bios_interface=dict(required=False),
+        boot_interface=dict(required=False),
+        console_interface=dict(required=False),
+        deploy_interface=dict(required=False),
+        inspect_interface=dict(required=False),
+        management_interface=dict(required=False),
+        network_interface=dict(required=False),
+        power_interface=dict(required=False),
+        raid_interface=dict(required=False),
+        rescue_interface=dict(required=False),
+        storage_interface=dict(required=False),
+        vendor_interface=dict(required=False),
         driver_info=dict(type='dict', required=True),
         nics=dict(type='list', required=True, elements="dict"),
         properties=dict(type='dict', default={}),
@@ -270,6 +340,22 @@ def main():
                 driver_info=driver_info,
                 name=module.params['name'],
             )
+            optional_field_names = ('resource_class',
+                                    'bios_interface',
+                                    'boot_interface',
+                                    'console_interface',
+                                    'deploy_interface',
+                                    'inspect_interface',
+                                    'management_interface',
+                                    'network_interface',
+                                    'power_interface',
+                                    'raid_interface',
+                                    'rescue_interface',
+                                    'storage_interface',
+                                    'vendor_interface')
+            for i in optional_field_names:
+                if module.params[i]:
+                    kwargs[i] = module.params[i]
 
             if module.params['chassis_uuid']:
                 kwargs['chassis_uuid'] = module.params['chassis_uuid']
