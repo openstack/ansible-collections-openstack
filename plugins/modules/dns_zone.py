@@ -114,87 +114,78 @@ zone:
             sample: []
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _system_state_change(state, email, description, ttl, masters, zone):
-    if state == 'present':
-        if not zone:
-            return True
-        if email is not None and zone.email != email:
-            return True
-        if description is not None and zone.description != description:
-            return True
-        if ttl is not None and zone.ttl != ttl:
-            return True
-        if masters is not None and zone.masters != masters:
-            return True
-    if state == 'absent' and zone:
-        return True
-    return False
+class DnsZoneModule(OpenStackModule):
 
-
-def _wait(timeout, cloud, zone, state, module, sdk):
-    """Wait for a zone to reach the desired state for the given state."""
-
-    for count in sdk.utils.iterate_timeout(
-            timeout,
-            "Timeout waiting for zone to be %s" % state):
-
-        if (state == 'absent' and zone is None) or (state == 'present' and zone and zone.status == 'ACTIVE'):
-            return
-
-        try:
-            zone = cloud.get_zone(zone.id)
-        except Exception:
-            continue
-
-        if zone and zone.status == 'ERROR':
-            module.fail_json(msg="Zone reached ERROR state while waiting for it to be %s" % state)
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
-        name=dict(required=True),
-        zone_type=dict(required=False, choices=['primary', 'secondary']),
-        email=dict(required=False, default=None),
-        description=dict(required=False, default=None),
-        ttl=dict(required=False, default=None, type='int'),
-        masters=dict(required=False, default=None, type='list', elements='str'),
-        state=dict(default='present', choices=['absent', 'present']),
+    argument_spec = dict(
+        name=dict(required=True, type='str'),
+        zone_type=dict(required=False, choices=['primary', 'secondary'], type='str'),
+        email=dict(required=False, type='str'),
+        description=dict(required=False, type='str'),
+        ttl=dict(required=False, type='int'),
+        masters=dict(required=False, type='list', elements='str'),
+        state=dict(default='present', choices=['absent', 'present'], type='str'),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    def _system_state_change(self, state, email, description, ttl, masters, zone):
+        if state == 'present':
+            if not zone:
+                return True
+            if email is not None and zone.email != email:
+                return True
+            if description is not None and zone.description != description:
+                return True
+            if ttl is not None and zone.ttl != ttl:
+                return True
+            if masters is not None and zone.masters != masters:
+                return True
+        if state == 'absent' and zone:
+            return True
+        return False
 
-    name = module.params.get('name')
-    state = module.params.get('state')
-    wait = module.params.get('wait')
-    timeout = module.params.get('timeout')
+    def _wait(self, timeout, zone, state):
+        """Wait for a zone to reach the desired state for the given state."""
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        zone = cloud.get_zone(name)
+        for count in self.sdk.utils.iterate_timeout(
+                timeout,
+                "Timeout waiting for zone to be %s" % state):
+
+            if (state == 'absent' and zone is None) or (state == 'present' and zone and zone.status == 'ACTIVE'):
+                return
+
+            try:
+                zone = self.conn.get_zone(zone.id)
+            except Exception:
+                continue
+
+            if zone and zone.status == 'ERROR':
+                self.fail_json(msg="Zone reached ERROR state while waiting for it to be %s" % state)
+
+    def run(self):
+
+        name = self.params['name']
+        state = self.params['state']
+        wait = self.params['wait']
+        timeout = self.params['timeout']
+
+        zone = self.conn.get_zone(name)
 
         if state == 'present':
-            zone_type = module.params.get('zone_type')
-            email = module.params.get('email')
-            description = module.params.get('description')
-            ttl = module.params.get('ttl')
-            masters = module.params.get('masters')
+            zone_type = self.params['zone_type']
+            email = self.params['email']
+            description = self.params['description']
+            ttl = self.params['ttl']
+            masters = self.params['masters']
 
-            if module.check_mode:
-                module.exit_json(changed=_system_state_change(state, email,
-                                                              description, ttl,
-                                                              masters, zone))
+            if self.ansible.check_mode:
+                self.exit_json(changed=self._system_state_change(state, email,
+                                                                 description, ttl,
+                                                                 masters, zone))
 
             if zone is None:
-                zone = cloud.create_zone(
+                zone = self.conn.create_zone(
                     name=name, zone_type=zone_type, email=email,
                     description=description, ttl=ttl, masters=masters)
                 changed = True
@@ -203,39 +194,41 @@ def main():
                     masters = []
 
                 pre_update_zone = zone
-                changed = _system_state_change(state, email,
-                                               description, ttl,
-                                               masters, pre_update_zone)
+                changed = self._system_state_change(state, email,
+                                                    description, ttl,
+                                                    masters, pre_update_zone)
                 if changed:
-                    zone = cloud.update_zone(
+                    zone = self.conn.update_zone(
                         name, email=email,
                         description=description,
                         ttl=ttl, masters=masters)
 
             if wait:
-                _wait(timeout, cloud, zone, state, module, sdk)
+                self._wait(timeout, zone, state)
 
-            module.exit_json(changed=changed, zone=zone)
+            self.exit_json(changed=changed, zone=zone)
 
         elif state == 'absent':
-            if module.check_mode:
-                module.exit_json(changed=_system_state_change(state, None,
-                                                              None, None,
-                                                              None, zone))
+            if self.ansible.check_mode:
+                self.exit_json(changed=self._system_state_change(state, None,
+                                                                 None, None,
+                                                                 None, zone))
 
             if zone is None:
                 changed = False
             else:
-                cloud.delete_zone(name)
+                self.conn.delete_zone(name)
                 changed = True
 
             if wait:
-                _wait(timeout, cloud, zone, state, module, sdk)
+                self._wait(timeout, zone, state)
 
-            module.exit_json(changed=changed)
+            self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = DnsZoneModule()
+    module()
 
 
 if __name__ == '__main__':
