@@ -8,11 +8,16 @@
       using master of openstacksdk with latest ansible release
     required-projects:
       - openstack/ansible-collections-openstack
+      - openstack/designate
     vars:
       zuul_work_dir: src/opendev.org/openstack/ansible-collections-openstack
       tox_envlist: ansible
       tox_install_siblings: true
       fetch_subunit: false
+      devstack_plugins:
+        designate: https://opendev.org/openstack/designate
+      devstack_services:
+        designate: true
 
 - job:
     name: ansible-collections-openstack-functional-devstack-releases
