@@ -63,12 +63,13 @@ options:
            Network will use OpenStack defaults if this option is
            not utilised. Requires openstacksdk>=0.18.
      type: bool
-   mtu:
+   mtu_size:
      description:
        -  The maximum transmission unit (MTU) value to address fragmentation.
           Network will use OpenStack defaults if this option is
           not provided. Requires openstacksdk>=0.18.
      type: int
+     aliases: ['mtu']
    dns_domain:
      description:
        -  The DNS domain value to set. Requires openstacksdk>=0.29.
@@ -156,14 +157,12 @@ network:
             sample: 101
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def main():
-    argument_spec = openstack_full_argument_spec(
+class NetworkModule(OpenStackModule):
+
+    argument_spec = dict(
         name=dict(required=True),
         shared=dict(default=False, type='bool'),
         admin_state_up=dict(default=True, type='bool'),
@@ -173,51 +172,38 @@ def main():
         provider_segmentation_id=dict(required=False, type='int'),
         state=dict(default='present', choices=['absent', 'present']),
         project=dict(default=None),
-        port_security_enabled=dict(type='bool'),
-        mtu=dict(required=False, type='int'),
-        dns_domain=dict(required=False)
+        port_security_enabled=dict(type='bool', min_ver='0.18.0'),
+        mtu_size=dict(required=False, type='int', min_ver='0.18.0', aliases=['mtu']),
+        dns_domain=dict(required=False, min_ver='0.29.0')
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
+    def run(self):
 
-    state = module.params['state']
-    name = module.params['name']
-    shared = module.params['shared']
-    admin_state_up = module.params['admin_state_up']
-    external = module.params['external']
-    provider_physical_network = module.params['provider_physical_network']
-    provider_network_type = module.params['provider_network_type']
-    provider_segmentation_id = module.params['provider_segmentation_id']
-    project = module.params['project']
+        state = self.params['state']
+        name = self.params['name']
+        shared = self.params['shared']
+        admin_state_up = self.params['admin_state_up']
+        external = self.params['external']
+        provider_physical_network = self.params['provider_physical_network']
+        provider_network_type = self.params['provider_network_type']
+        provider_segmentation_id = self.params['provider_segmentation_id']
+        project = self.params['project']
 
-    net_create_kwargs = {}
-    min_version = None
+        kwargs = self.check_versioned(
+            mtu_size=self.params['mtu_size'], port_security_enabled=self.params['port_security_enabled'],
+            dns_domain=self.params['dns_domain']
+        )
 
-    if module.params['mtu'] is not None:
-        min_version = '0.18.0'
-        net_create_kwargs['mtu_size'] = module.params['mtu']
-
-    if module.params['port_security_enabled'] is not None:
-        min_version = '0.18.0'
-        net_create_kwargs['port_security_enabled'] = module.params['port_security_enabled']
-
-    if module.params['dns_domain'] is not None:
-        min_version = '0.29.0'
-        net_create_kwargs['dns_domain'] = module.params['dns_domain']
-
-    sdk, cloud = openstack_cloud_from_module(module, min_version)
-    try:
         if project is not None:
-            proj = cloud.get_project(project)
+            proj = self.conn.get_project(project)
             if proj is None:
-                module.fail_json(msg='Project %s could not be found' % project)
+                self.fail_json(msg='Project %s could not be found' % project)
             project_id = proj['id']
             filters = {'tenant_id': project_id}
         else:
             project_id = None
             filters = None
-        net = cloud.get_network(name, filters=filters)
+        net = self.conn.get_network(name, filters=filters)
 
         if state == 'present':
             if not net:
@@ -230,28 +216,30 @@ def main():
                     provider['segmentation_id'] = provider_segmentation_id
 
                 if project_id is not None:
-                    net = cloud.create_network(name, shared, admin_state_up,
-                                               external, provider, project_id,
-                                               **net_create_kwargs)
+                    net = self.conn.create_network(name, shared, admin_state_up,
+                                                   external, provider, project_id,
+                                                   **kwargs)
                 else:
-                    net = cloud.create_network(name, shared, admin_state_up,
-                                               external, provider,
-                                               **net_create_kwargs)
+                    net = self.conn.create_network(name, shared, admin_state_up,
+                                                   external, provider,
+                                                   **kwargs)
                 changed = True
             else:
                 changed = False
-            module.exit_json(changed=changed, network=net, id=net['id'])
+            self.exit(changed=changed, network=net, id=net['id'])
 
         elif state == 'absent':
             if not net:
-                module.exit_json(changed=False)
+                self.exit(changed=False)
             else:
-                cloud.delete_network(name)
-                module.exit_json(changed=True)
-
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+                self.conn.delete_network(name)
+                self.exit(changed=True)
 
 
-if __name__ == "__main__":
+def main():
+    module = NetworkModule()
+    module()
+
+
+if __name__ == '__main__':
     main()
