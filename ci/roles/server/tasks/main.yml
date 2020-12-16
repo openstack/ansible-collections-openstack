@@ -124,6 +124,33 @@
      terminate_volume: true
      wait: true
   register: server
+  tags:
+    - object
+
+- debug: var=server
+  tags:
+    - object
+
+- name: Delete server with volume
+  openstack.cloud.server:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ server_name }}"
+     wait: true
+  tags:
+    - object
+
+- name: Create a minimal server
+  openstack.cloud.server:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ server_name }}"
+     image: "{{ image }}"
+     flavor: "{{ flavor }}"
+     network: "{{ server_network }}"
+     auto_floating_ip: false
+     wait: true
+  register: server
 
 - debug: var=server
 
@@ -150,7 +177,7 @@
     that:
       info.openstack_servers|length > 0
 
-- name: Delete server with volume
+- name: Delete minimal server
   openstack.cloud.server:
      cloud: "{{ cloud }}"
      state: absent
