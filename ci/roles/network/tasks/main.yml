@@ -1,5 +1,5 @@
 ---
-- name: Create network
+- name: Create network - generic
   openstack.cloud.network:
      cloud: "{{ cloud }}"
      name: "{{ network_name }}"
@@ -7,7 +7,7 @@
      shared: "{{ network_shared }}"
      external: "{{ network_external }}"
 
-- name: Gather networks info
+- name: Gather networks info - generic
   openstack.cloud.networks_info:
      cloud: "{{ cloud }}"
      name: "{{ network_name }}"
@@ -15,15 +15,63 @@
        shared: "{{ network_shared|string|capitalize }}"
   register: result
 
-- name: Verify networks info
+- name: Verify networks info - generic
   assert:
     that:
-      - "result.openstack_networks.0.name ==  network_name"
-      - "(result.openstack_networks.0.shared|lower) == (network_shared|lower)"
-      - "result.openstack_networks[0]['router:external'] == {{ network_external }}"
+      - result.openstack_networks.0.name == network_name
+      - (result.openstack_networks.0.shared|lower) == (network_shared|lower)
+      - result.openstack_networks[0]['router:external'] == {{ network_external }}
 
-- name: Delete network
+- name: Create network - with new SDK params
   openstack.cloud.network:
      cloud: "{{ cloud }}"
-     name: "{{ network_name }}"
+     name: "{{ network_name_newparams }}"
+     state: present
+     shared: "{{ network_shared }}"
+     external: "{{ network_external }}"
+     mtu: "{{ mtu }}"
+     port_security_enabled: "{{ port_security_enabled }}"
+  register: result_create_nw_with_new_params
+  ignore_errors: yes
+
+- name: Check errors below min sdk version - with new SDK params
+  assert:
+    that:
+      - result_create_nw_with_new_params.failed
+      - '"the installed version of the openstacksdk library MUST be >=0.18.0." in result_create_nw_with_new_params.msg'
+  when: sdk_version is version('0.18', '<')
+
+- name: Gather networks info - with new SDK params
+  openstack.cloud.networks_info:
+     cloud: "{{ cloud }}"
+     name: "{{ network_name_newparams }}"
+  register: result_newparams
+  when: sdk_version is version('0.18', '>=')
+
+- name: Verify networks info - with new SDK params
+  assert:
+    that:
+      - result_newparams.openstack_networks.0.name == network_name_newparams
+      - result_newparams.openstack_networks.0.mtu == mtu
+      - result_newparams.openstack_networks.0.port_security_enabled == port_security_enabled
+  when: sdk_version is version('0.18', '>=')
+
+- name: Delete network - generic and with new SDK params
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     name: "{{ item }}"
      state: absent
+  with_items:
+      - "{{ network_name }}"
+      - "{{ network_name_newparams }}"
+
+- name: Gather networks info - deleted
+  openstack.cloud.networks_info:
+     cloud: "{{ cloud }}"
+     name: "{{ network_name }}"
+  register: result_nonet
+
+- name: Verify networks info - deleted
+  assert:
+    that:
+      - result_nonet.openstack_networks == []
