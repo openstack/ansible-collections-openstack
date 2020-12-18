@@ -153,90 +153,12 @@ EXAMPLES = '''
     ipv6_address_mode: dhcpv6-stateless
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _can_update(subnet, module, cloud, filters=None):
-    """Check for differences in non-updatable values"""
-    network_name = module.params['network_name']
-    ip_version = int(module.params['ip_version'])
-    ipv6_ra_mode = module.params['ipv6_ra_mode']
-    ipv6_a_mode = module.params['ipv6_address_mode']
-
-    if network_name:
-        network = cloud.get_network(network_name, filters)
-        if network:
-            netid = network['id']
-        else:
-            module.fail_json(msg='No network found for %s' % network_name)
-        if netid != subnet['network_id']:
-            module.fail_json(msg='Cannot update network_name in existing \
-                                      subnet')
-    if ip_version and subnet['ip_version'] != ip_version:
-        module.fail_json(msg='Cannot update ip_version in existing subnet')
-    if ipv6_ra_mode and subnet.get('ipv6_ra_mode', None) != ipv6_ra_mode:
-        module.fail_json(msg='Cannot update ipv6_ra_mode in existing subnet')
-    if ipv6_a_mode and subnet.get('ipv6_address_mode', None) != ipv6_a_mode:
-        module.fail_json(msg='Cannot update ipv6_address_mode in existing \
-                              subnet')
-
-
-def _needs_update(subnet, module, cloud, filters=None):
-    """Check for differences in the updatable values."""
-
-    # First check if we are trying to update something we're not allowed to
-    _can_update(subnet, module, cloud, filters)
-
-    # now check for the things we are allowed to update
-    enable_dhcp = module.params['enable_dhcp']
-    subnet_name = module.params['name']
-    pool_start = module.params['allocation_pool_start']
-    pool_end = module.params['allocation_pool_end']
-    gateway_ip = module.params['gateway_ip']
-    no_gateway_ip = module.params['no_gateway_ip']
-    dns = module.params['dns_nameservers']
-    host_routes = module.params['host_routes']
-    curr_pool = dict(start=pool_start, end=pool_end)
-
-    if subnet['enable_dhcp'] != enable_dhcp:
-        return True
-    if subnet_name and subnet['name'] != subnet_name:
-        return True
-    if not subnet['allocation_pools'] and pool_start and pool_end:
-        return True
-    if subnet['allocation_pools'] != [curr_pool]:
-        return True
-    if gateway_ip and subnet['gateway_ip'] != gateway_ip:
-        return True
-    if dns and sorted(subnet['dns_nameservers']) != sorted(dns):
-        return True
-    if host_routes:
-        curr_hr = sorted(subnet['host_routes'], key=lambda t: t.keys())
-        new_hr = sorted(host_routes, key=lambda t: t.keys())
-        if curr_hr != new_hr:
-            return True
-    if no_gateway_ip and subnet['gateway_ip']:
-        return True
-    return False
-
-
-def _system_state_change(module, subnet, cloud, filters=None):
-    state = module.params['state']
-    if state == 'present':
-        if not subnet:
-            return True
-        return _needs_update(subnet, module, cloud, filters)
-    if state == 'absent' and subnet:
-        return True
-    return False
-
-
-def main():
+class SubnetModule(OpenStackModule):
     ipv6_mode_choices = ['dhcpv6-stateful', 'dhcpv6-stateless', 'slaac']
-    argument_spec = openstack_full_argument_spec(
+    argument_spec = dict(
         name=dict(type='str', required=True),
         network_name=dict(type='str'),
         cidr=dict(type='str'),
@@ -256,69 +178,136 @@ def main():
         project=dict(type='str'),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           required_together=[
-                               ['allocation_pool_end', 'allocation_pool_start'],
-                           ],
-                           **module_kwargs)
+    module_kwargs = dict(
+        supports_check_mode=True,
+        required_together=[['allocation_pool_end', 'allocation_pool_start']]
+    )
 
-    state = module.params['state']
-    network_name = module.params['network_name']
-    cidr = module.params['cidr']
-    ip_version = module.params['ip_version']
-    enable_dhcp = module.params['enable_dhcp']
-    subnet_name = module.params['name']
-    gateway_ip = module.params['gateway_ip']
-    no_gateway_ip = module.params['no_gateway_ip']
-    dns = module.params['dns_nameservers']
-    pool_start = module.params['allocation_pool_start']
-    pool_end = module.params['allocation_pool_end']
-    host_routes = module.params['host_routes']
-    ipv6_ra_mode = module.params['ipv6_ra_mode']
-    ipv6_a_mode = module.params['ipv6_address_mode']
-    use_default_subnetpool = module.params['use_default_subnetpool']
-    project = module.params.pop('project')
-    extra_specs = module.params['extra_specs']
+    def _can_update(self, subnet, filters=None):
+        """Check for differences in non-updatable values"""
+        network_name = self.params['network_name']
+        ip_version = int(self.params['ip_version'])
+        ipv6_ra_mode = self.params['ipv6_ra_mode']
+        ipv6_a_mode = self.params['ipv6_address_mode']
 
-    # Check for required parameters when state == 'present'
-    if state == 'present':
-        if not module.params['network_name']:
-            module.fail_json(msg='network_name required with present state')
-        if (
-            not module.params['cidr']
-            and not use_default_subnetpool
-            and not extra_specs.get('subnetpool_id', False)
-        ):
-            module.fail_json(msg='cidr or use_default_subnetpool or '
-                                 'subnetpool_id required with present state')
+        if network_name:
+            network = self.conn.get_network(network_name, filters)
+            if network:
+                netid = network['id']
+                if netid != subnet['network_id']:
+                    self.fail_json(msg='Cannot update network_name in existing subnet')
+            else:
+                self.fail_json(msg='No network found for %s' % network_name)
 
-    if pool_start and pool_end:
-        pool = [dict(start=pool_start, end=pool_end)]
-    else:
-        pool = None
+        if ip_version and subnet['ip_version'] != ip_version:
+            self.fail_json(msg='Cannot update ip_version in existing subnet')
+        if ipv6_ra_mode and subnet.get('ipv6_ra_mode', None) != ipv6_ra_mode:
+            self.fail_json(msg='Cannot update ipv6_ra_mode in existing subnet')
+        if ipv6_a_mode and subnet.get('ipv6_address_mode', None) != ipv6_a_mode:
+            self.fail_json(msg='Cannot update ipv6_address_mode in existing subnet')
 
-    if no_gateway_ip and gateway_ip:
-        module.fail_json(msg='no_gateway_ip is not allowed with gateway_ip')
+    def _needs_update(self, subnet, filters=None):
+        """Check for differences in the updatable values."""
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+        # First check if we are trying to update something we're not allowed to
+        self._can_update(subnet, filters)
+
+        # now check for the things we are allowed to update
+        enable_dhcp = self.params['enable_dhcp']
+        subnet_name = self.params['name']
+        pool_start = self.params['allocation_pool_start']
+        pool_end = self.params['allocation_pool_end']
+        gateway_ip = self.params['gateway_ip']
+        no_gateway_ip = self.params['no_gateway_ip']
+        dns = self.params['dns_nameservers']
+        host_routes = self.params['host_routes']
+        curr_pool = dict(start=pool_start, end=pool_end)
+
+        if subnet['enable_dhcp'] != enable_dhcp:
+            return True
+        if subnet_name and subnet['name'] != subnet_name:
+            return True
+        if not subnet['allocation_pools'] and pool_start and pool_end:
+            return True
+        if subnet['allocation_pools'] != [curr_pool]:
+            return True
+        if gateway_ip and subnet['gateway_ip'] != gateway_ip:
+            return True
+        if dns and sorted(subnet['dns_nameservers']) != sorted(dns):
+            return True
+        if host_routes:
+            curr_hr = sorted(subnet['host_routes'], key=lambda t: t.keys())
+            new_hr = sorted(host_routes, key=lambda t: t.keys())
+            if curr_hr != new_hr:
+                return True
+        if no_gateway_ip and subnet['gateway_ip']:
+            return True
+        return False
+
+    def _system_state_change(self, subnet, filters=None):
+        state = self.params['state']
+        if state == 'present':
+            if not subnet:
+                return True
+            return self._needs_update(subnet, filters)
+        if state == 'absent' and subnet:
+            return True
+        return False
+
+    def run(self):
+
+        state = self.params['state']
+        network_name = self.params['network_name']
+        cidr = self.params['cidr']
+        ip_version = self.params['ip_version']
+        enable_dhcp = self.params['enable_dhcp']
+        subnet_name = self.params['name']
+        gateway_ip = self.params['gateway_ip']
+        no_gateway_ip = self.params['no_gateway_ip']
+        dns = self.params['dns_nameservers']
+        pool_start = self.params['allocation_pool_start']
+        pool_end = self.params['allocation_pool_end']
+        host_routes = self.params['host_routes']
+        ipv6_ra_mode = self.params['ipv6_ra_mode']
+        ipv6_a_mode = self.params['ipv6_address_mode']
+        use_default_subnetpool = self.params['use_default_subnetpool']
+        project = self.params.pop('project')
+        extra_specs = self.params['extra_specs']
+
+        # Check for required parameters when state == 'present'
+        if state == 'present':
+            if not self.params['network_name']:
+                self.fail(msg='network_name required with present state')
+            if (
+                not self.params['cidr']
+                and not use_default_subnetpool
+                and not extra_specs.get('subnetpool_id', False)
+            ):
+                self.fail(msg='cidr or use_default_subnetpool or '
+                          'subnetpool_id required with present state')
+
+        if pool_start and pool_end:
+            pool = [dict(start=pool_start, end=pool_end)]
+        else:
+            pool = None
+
+        if no_gateway_ip and gateway_ip:
+            self.fail_json(msg='no_gateway_ip is not allowed with gateway_ip')
+
         if project is not None:
-            proj = cloud.get_project(project)
+            proj = self.conn.get_project(project)
             if proj is None:
-                module.fail_json(msg='Project %s could not be found' % project)
+                self.fail_json(msg='Project %s could not be found' % project)
             project_id = proj['id']
             filters = {'tenant_id': project_id}
         else:
             project_id = None
             filters = None
 
-        subnet = cloud.get_subnet(subnet_name, filters=filters)
+        subnet = self.conn.get_subnet(subnet_name, filters=filters)
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(module, subnet,
-                                                          cloud, filters))
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(subnet, filters))
 
         if state == 'present':
             if not subnet:
@@ -342,35 +331,37 @@ def main():
                 if use_default_subnetpool:
                     kwargs['use_default_subnetpool'] = use_default_subnetpool
                 kwargs = dict(kwargs, **extra_specs)
-                subnet = cloud.create_subnet(network_name, **kwargs)
+                subnet = self.conn.create_subnet(network_name, **kwargs)
                 changed = True
             else:
-                if _needs_update(subnet, module, cloud, filters):
-                    subnet = cloud.update_subnet(subnet['id'],
-                                                 subnet_name=subnet_name,
-                                                 enable_dhcp=enable_dhcp,
-                                                 gateway_ip=gateway_ip,
-                                                 disable_gateway_ip=no_gateway_ip,
-                                                 dns_nameservers=dns,
-                                                 allocation_pools=pool,
-                                                 host_routes=host_routes)
+                if self._needs_update(subnet, filters):
+                    subnet = self.conn.update_subnet(subnet['id'],
+                                                     subnet_name=subnet_name,
+                                                     enable_dhcp=enable_dhcp,
+                                                     gateway_ip=gateway_ip,
+                                                     disable_gateway_ip=no_gateway_ip,
+                                                     dns_nameservers=dns,
+                                                     allocation_pools=pool,
+                                                     host_routes=host_routes)
                     changed = True
                 else:
                     changed = False
-            module.exit_json(changed=changed,
-                             subnet=subnet,
-                             id=subnet['id'])
+            self.exit_json(changed=changed,
+                           subnet=subnet,
+                           id=subnet['id'])
 
         elif state == 'absent':
             if not subnet:
                 changed = False
             else:
                 changed = True
-                cloud.delete_subnet(subnet_name)
-            module.exit_json(changed=changed)
+                self.conn.delete_subnet(subnet_name)
+            self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = SubnetModule()
+    module()
 
 
 if __name__ == '__main__':
