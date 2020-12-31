@@ -3,5 +3,5 @@ network_name_newparams: newparams_network
 network_shared: false
 network_external: false
 dns_domain: example.opendev.org
-mtu: 1350
+mtu: 1250
 port_security_enabled: false
