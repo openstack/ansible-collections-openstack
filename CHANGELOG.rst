@@ -5,6 +5,40 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.2.1
+======
+
+Release Summary
+---------------
+
+Porting modules to new OpenstackModule class and fixes.
+
+Minor Changes
+-------------
+
+- dns_zone - Migrating dns_zone from AnsibleModule to OpenStackModule
+- dns_zone, recordset - Enable update for recordset and add tests for dns and recordset module
+- endpoint - Do not fail when endpoint state is absent
+- ironic - Refactor ironic authentication into a new module_utils module
+- loadbalancer - Refactor loadbalancer module
+- network - Migrating network from AnsibleModule to OpenStackModule
+- networks_info - Migrating networks_info from AnsibleModule to OpenStackModule
+- openstack - Add galaxy.yml to support install from git
+- openstack - Fix docs-args mismatch in modules
+- openstack - OpenStackModule Support defining a minimum version of the SDK
+- router - Migrating routers from AnsibleModule to OpenStackModule
+- routers_info - Added deprecated_names for router_info module
+- routers_info - Migrating routers_info from AnsibleModule to OpenStackModule
+- security_group.py - Migrating security_group from AnsibleModule to OpenStackModule
+- security_group_rule - Refactor TCP/UDP port check
+- server.py - Improve "server" module with OpenstackModule class
+- server_volume - Migrating server_volume from AnsibleModule to OpenStackModule
+- subnet - Fix subnets update and idempotency
+- subnet - Migrating subnet module from AnsibleModule to OpenStackModule
+- subnets_info - Migrating subnets_info from AnsibleModule to OpenStackModule
+- volume.py - Migrating volume from AnsibleModule to OpenStackModule
+- volume_info - Fix volume_info arguments for SDK 0.19
+
 v1.2.0
 ======
 
