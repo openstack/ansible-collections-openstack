@@ -5,6 +5,29 @@
      state: present
      name: "{{ role_name }}"
 
+- name: List keystone roles
+  openstack.cloud.identity_role_info:
+     cloud: "{{ cloud }}"
+  register: roles
+
+- name: Check roles
+  assert:
+    that:
+      - roles.openstack_roles | length > 0
+      - "'{{ role_name }}' in (roles.openstack_roles | map(attribute='name') | list)"
+
+- name: List keystone roles by name
+  openstack.cloud.identity_role_info:
+     cloud: "{{ cloud }}"
+     name: "{{ role_name}}"
+  register: roles1
+
+- name: Check roles
+  assert:
+    that:
+      - roles1.openstack_roles | length == 1
+      - roles1.openstack_roles[0]['name'] == role_name
+
 - name: Delete keystone role
   openstack.cloud.identity_role:
      cloud: "{{ cloud }}"
