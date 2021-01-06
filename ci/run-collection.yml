@@ -39,3 +39,6 @@
     - { role: user_group, tags: user_group }
     - { role: user_role, tags: user_role }
     - { role: volume, tags: volume }
+    - role: orchestration
+      tags: orchestrate
+      when: sdk_version is version("0.53.0", '>=')
