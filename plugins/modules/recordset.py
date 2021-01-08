@@ -74,6 +74,8 @@ EXAMPLES = '''
     state: present
     zone: example.net.
     name: www.example.net.
+    recordset_type: "a"
+    records: ['10.1.1.1']
     ttl: 7200
 
 # Delete recordset named "www.example.net."
