@@ -174,17 +174,24 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
 )
 
 
+_PROPERTIES = {
+    'cpu_arch': 'cpu_arch',
+    'cpus': 'cpus',
+    'ram': 'memory_mb',
+    'disk_size': 'local_gb',
+    'capabilities': 'capabilities',
+    'root_device': 'root_device',
+}
+
+
 def _parse_properties(module):
+    """Convert ansible properties into native ironic values.
+
+    Also filter out any properties that are not set.
+    """
     p = module.params['properties']
-    props = dict(
-        cpu_arch=p.get('cpu_arch') if p.get('cpu_arch') else 'x86_64',
-        cpus=p.get('cpus') if p.get('cpus') else 1,
-        memory_mb=p.get('ram') if p.get('ram') else 1,
-        local_gb=p.get('disk_size') if p.get('disk_size') else 1,
-        capabilities=p.get('capabilities') if p.get('capabilities') else '',
-        root_device=p.get('root_device') if p.get('root_device') else '',
-    )
-    return props
+    return {to_key: p[from_key] for (from_key, to_key) in _PROPERTIES.items()
+            if p.get(from_key) is not None}
 
 
 def _parse_driver_info(sdk, module):
