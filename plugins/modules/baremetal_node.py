@@ -47,25 +47,10 @@ options:
       description:
         - Information for this server's driver. Will vary based on which
           driver is in use. Any sub-field which is populated will be validated
-          during creation.
+          during creation. For compatibility reasons sub-fields `power`,
+          `deploy`, `management` and `console` are flattened.
       required: true
       type: dict
-      suboptions:
-        power:
-            description:
-                - Information necessary to turn this server on / off.
-                  This often includes such things as IPMI username, password, and IP address.
-            required: true
-        deploy:
-            description:
-                - Information necessary to deploy this server directly, without using Nova. THIS IS NOT RECOMMENDED.
-        console:
-            description:
-                - Information necessary to connect to this server's serial console.  Not all drivers support this.
-        management:
-            description:
-                - Information necessary to interact with this server's management interface. May be shared by power_info in some cases.
-            required: true
     nics:
       description:
         - 'A list of network interface cards, eg, " - mac: aa:bb:cc:aa:bb:cc"'
@@ -149,10 +134,9 @@ EXAMPLES = '''
       - mac: "aa:bb:cc:aa:bb:cc"
       - mac: "dd:ee:ff:dd:ee:ff"
     driver_info:
-      power:
-        ipmi_address: "1.2.3.4"
-        ipmi_username: "admin"
-        ipmi_password: "adminpass"
+      ipmi_address: "1.2.3.4"
+      ipmi_username: "admin"
+      ipmi_password: "adminpass"
     chassis_uuid: "00000000-0000-0000-0000-000000000001"
 
 '''
@@ -188,17 +172,13 @@ def _parse_properties(module):
 
 
 def _parse_driver_info(sdk, module):
-    p = module.params['driver_info']
-    info = p.get('power')
-    if not info:
-        raise sdk.exceptions.OpenStackCloudException(
-            "driver_info['power'] is required")
-    if p.get('console'):
-        info.update(p.get('console'))
-    if p.get('management'):
-        info.update(p.get('management'))
-    if p.get('deploy'):
-        info.update(p.get('deploy'))
+    info = module.params['driver_info'].copy()
+    for deprecated in ('power', 'console', 'management', 'deploy'):
+        if deprecated in info:
+            info.update(info.pop(deprecated))
+            module.deprecate("Suboption %s of the driver_info parameter of "
+                             "'openstack.cloud.baremetal_node' is deprecated"
+                             % deprecated, version='2.0.0')
     return info
 
 
