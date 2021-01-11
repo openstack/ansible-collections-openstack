@@ -15,6 +15,30 @@
      name: shade_subnet1
      cidr: 10.7.7.0/24
 
+- name: Create subnet2
+  openstack.cloud.subnet:
+     cloud: "{{ cloud }}"
+     state: present
+     network_name: "{{ network_name }}"
+     name: shade_subnet2
+     cidr: 10.8.8.0/24
+
+- name: Create subnet3
+  openstack.cloud.subnet:
+     cloud: "{{ cloud }}"
+     state: present
+     network_name: "{{ network_name }}"
+     name: shade_subnet3
+     cidr: 10.9.9.0/24
+
+- name: Create subnet4
+  openstack.cloud.subnet:
+     cloud: "{{ cloud }}"
+     state: present
+     network_name: "{{ network_name }}"
+     name: shade_subnet4
+     cidr: 10.10.10.0/24
+
 - name: Create router
   openstack.cloud.router:
      cloud: "{{ cloud }}"
@@ -28,6 +52,19 @@
      name: "{{ router_name }}"
      interfaces:
          - shade_subnet1
+
+- name: Update router (add interface) again
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - shade_subnet1
+  register: result
+
+- name: Assert idempotent module
+  assert:
+    that: result is not changed
 
 - name: Gather routers info
   openstack.cloud.routers_info:
@@ -43,6 +80,93 @@
       - "result.openstack_routers.0.name == router_name"
       - (result.openstack_routers.0.interfaces_info|length) == 1
 
+- name: Update router (change interfaces)
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - net: '{{ network_name }}'
+           subnet: shade_subnet2
+           portip: 10.8.8.1
+         - net: '{{ network_name }}'
+           subnet: shade_subnet3
+         - shade_subnet4
+
+- name: Update router (change interfaces) again
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - net: '{{ network_name }}'
+           subnet: shade_subnet2
+           portip: 10.8.8.1
+         - net: '{{ network_name }}'
+           subnet: shade_subnet3
+         - shade_subnet4
+  register: result
+
+- name: Assert idempotent module
+  assert:
+    that: result is not changed
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+     filters:
+       admin_state_up: true
+  register: result
+
+- name: Verify routers info
+  assert:
+    that:
+      - "result.openstack_routers.0.name == router_name"
+      - (result.openstack_routers.0.interfaces_info|length) == 3
+      - result.openstack_routers.0.interfaces_info|map(attribute='ip_address')|sort|list ==
+        ['10.10.10.1', '10.8.8.1', '10.9.9.1']
+
+- name: Update router (remove interface)
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - net: '{{ network_name }}'
+           subnet: shade_subnet1
+           portip: 10.7.7.1
+
+- name: Update router (remove interface) again
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - net: '{{ network_name }}'
+           subnet: shade_subnet1
+           portip: 10.7.7.1
+  register: result
+
+- name: Assert idempotent module
+  assert:
+    that: result is not changed
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+     filters:
+       admin_state_up: true
+  register: result
+
+- name: Verify routers info
+  assert:
+    that:
+      - "result.openstack_routers.0.name == router_name"
+      - (result.openstack_routers.0.interfaces_info|length) == 1
+      - result.openstack_routers.0.interfaces_info.0.ip_address == '10.7.7.1'
+
 # Admin operation
 - name: Create external network
   openstack.cloud.network:
@@ -53,12 +177,12 @@
   when:
     - network_external
 
-- name: Create subnet2
+- name: Create subnet5
   openstack.cloud.subnet:
      cloud: "{{ cloud }}"
      state: present
      network_name: "{{ external_network_name }}"
-     name: shade_subnet2
+     name: shade_subnet5
      cidr: 10.6.6.0/24
   when:
     - network_external
@@ -88,6 +212,142 @@
       - "result.openstack_routers.0.name == router_name"
       - (result.openstack_routers.0.interfaces_info|length) == 1
 
+- name: Update router (change external fixed ips)
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - shade_subnet1
+     network: "{{ external_network_name }}"
+     external_fixed_ips:
+        - subnet: shade_subnet5
+          ip: 10.6.6.100
+  when:
+    - network_external
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+     filters:
+       admin_state_up: true
+  register: result
+
+- name: Verify routers info
+  assert:
+    that:
+      - "result.openstack_routers.0.name == router_name"
+      - (result.openstack_routers.0.external_gateway_info.external_fixed_ips|length) == 1
+      - result.openstack_routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.100"
+  when:
+    - network_external
+
+- name: Update router (add external fixed ips)
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - shade_subnet1
+     network: "{{ external_network_name }}"
+     external_fixed_ips:
+        - subnet: shade_subnet5
+          ip: 10.6.6.100
+        - subnet: shade_subnet5
+          ip: 10.6.6.101
+  when:
+    - network_external
+
+- name: Update router (add external fixed ips) again
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - shade_subnet1
+     network: "{{ external_network_name }}"
+     external_fixed_ips:
+        - subnet: shade_subnet5
+          ip: 10.6.6.100
+        - subnet: shade_subnet5
+          ip: 10.6.6.101
+  when:
+    - network_external
+  register: result
+
+- name: Assert idempotent module
+  assert:
+    that: result is not changed
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+     filters:
+       admin_state_up: true
+  register: result
+
+- name: Verify routers info
+  assert:
+    that:
+      - "result.openstack_routers.0.name == router_name"
+      - (result.openstack_routers.0.external_gateway_info.external_fixed_ips|length) == 2
+      - result.openstack_routers.0.external_gateway_info.external_fixed_ips|map(attribute='ip_address')|sort|list ==
+        ["10.6.6.100", "10.6.6.101"]
+  when:
+    - network_external
+
+- name: Update router (remove external fixed ips)
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - shade_subnet1
+     network: "{{ external_network_name }}"
+     external_fixed_ips:
+        - subnet: shade_subnet5
+          ip: 10.6.6.101
+  when:
+    - network_external
+
+- name: Update router (remove external fixed ips) again
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - shade_subnet1
+     network: "{{ external_network_name }}"
+     external_fixed_ips:
+        - subnet: shade_subnet5
+          ip: 10.6.6.101
+  when:
+    - network_external
+  register: result
+
+- name: Assert idempotent module
+  assert:
+    that: result is not changed
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+     filters:
+       admin_state_up: true
+  register: result
+
+- name: Verify routers info
+  assert:
+    that:
+      - "result.openstack_routers.0.name == router_name"
+      - (result.openstack_routers.0.external_gateway_info.external_fixed_ips|length) == 1
+      - result.openstack_routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.101"
+  when:
+    - network_external
+
 - name: Delete router
   openstack.cloud.router:
      cloud: "{{ cloud }}"
@@ -105,6 +365,24 @@
      cloud: "{{ cloud }}"
      state: absent
      name: shade_subnet2
+
+- name: Delete subnet3
+  openstack.cloud.subnet:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: shade_subnet3
+
+- name: Delete subnet4
+  openstack.cloud.subnet:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: shade_subnet4
+
+- name: Delete subnet5
+  openstack.cloud.subnet:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: shade_subnet5
   when:
     - network_external
 

@@ -211,13 +211,7 @@ router:
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
-
-
-ROUTER_INTERFACE_OWNERS = set([
-    'network:router_interface',
-    'network:router_interface_distributed',
-    'network:ha_router_replicated_interface'
-])
+import itertools
 
 
 class RouterModule(OpenStackModule):
@@ -232,14 +226,17 @@ class RouterModule(OpenStackModule):
         project=dict(default=None)
     )
 
-    def _router_internal_interfaces(self, router):
-        for port in self.conn.list_router_interfaces(router, 'internal'):
-            if port['device_owner'] in ROUTER_INTERFACE_OWNERS:
-                yield port
+    def _get_subnet_ids_from_ports(self, ports):
+        return [fixed_ip['subnet_id'] for fixed_ip in
+                itertools.chain.from_iterable(port['fixed_ips'] for port in ports if 'fixed_ips' in port)]
 
-    def _needs_update(self, router, network, internal_subnet_ids, internal_port_ids, filters=None):
-        """Decide if the given router needs an update.
-        """
+    def _needs_update(self, router, net,
+                      missing_port_ids,
+                      requested_subnet_ids,
+                      existing_subnet_ids,
+                      router_ifs_cfg,
+                      filters=None):
+        """Decide if the given router needs an update."""
         if router['admin_state_up'] != self.params['admin_state_up']:
             return True
         if router['external_gateway_info']:
@@ -247,68 +244,76 @@ class RouterModule(OpenStackModule):
             if self.params['enable_snat'] is not None:
                 if router['external_gateway_info'].get('enable_snat', True) != self.params['enable_snat']:
                     return True
-        if network:
+        if net:
             if not router['external_gateway_info']:
                 return True
-            elif router['external_gateway_info']['network_id'] != network['id']:
+            elif router['external_gateway_info']['network_id'] != net['id']:
                 return True
 
-        # check external interfaces
-        if self.params['external_fixed_ips']:
-            for new_iface in self.params['external_fixed_ips']:
-                subnet = self.conn.get_subnet(new_iface['subnet'], filters)
-                exists = False
+        # check if external_fixed_ip has to be added
+        for external_fixed_ip in router_ifs_cfg['external_fixed_ips']:
+            exists = False
 
-                # compare the requested interface with existing, looking for an existing match
-                for existing_iface in router['external_gateway_info']['external_fixed_ips']:
-                    if existing_iface['subnet_id'] == subnet['id']:
-                        if 'ip' in new_iface:
-                            if existing_iface['ip_address'] == new_iface['ip']:
+            # compare the requested interface with existing, looking for an existing match
+            for existing_if in router['external_gateway_info']['external_fixed_ips']:
+                if existing_if['subnet_id'] == external_fixed_ip['subnet_id']:
+                    if 'ip' in external_fixed_ip:
+                        if existing_if['ip_address'] == external_fixed_ip['ip']:
+                            # both subnet id and ip address match
+                            exists = True
+                            break
+                    else:
+                        # only the subnet was given, so ip doesn't matter
+                        exists = True
+                        break
+
+            # this interface isn't present on the existing router
+            if not exists:
+                return True
+
+        # check if external_fixed_ip has to be removed
+        if router_ifs_cfg['external_fixed_ips']:
+            for external_fixed_ip in router['external_gateway_info']['external_fixed_ips']:
+                obsolete = True
+
+                # compare the existing interface with requested, looking for an requested match
+                for requested_if in router_ifs_cfg['external_fixed_ips']:
+                    if external_fixed_ip['subnet_id'] == requested_if['subnet_id']:
+                        if 'ip' in requested_if:
+                            if external_fixed_ip['ip_address'] == requested_if['ip']:
                                 # both subnet id and ip address match
-                                exists = True
+                                obsolete = False
                                 break
                         else:
                             # only the subnet was given, so ip doesn't matter
-                            exists = True
+                            obsolete = False
                             break
 
                 # this interface isn't present on the existing router
-                if not exists:
+                if obsolete:
                     return True
-
-        # check internal interfaces
-        if self.params['interfaces']:
-            existing_subnet_ids = []
-            for port in self._router_internal_interfaces(router):
-                if 'fixed_ips' in port:
-                    for fixed_ip in port['fixed_ips']:
-                        existing_subnet_ids.append(fixed_ip['subnet_id'])
-
-            for iface in self.params['interfaces']:
-                if isinstance(iface, dict):
-                    for p_id in internal_port_ids:
-                        p = self.conn.get_port(name_or_id=p_id)
-                        if 'fixed_ips' in p:
-                            for fip in p['fixed_ips']:
-                                internal_subnet_ids.append(fip['subnet_id'])
-
-            if set(internal_subnet_ids) != set(existing_subnet_ids):
+        else:
+            # no external fixed ips requested
+            if router['external_gateway_info'] \
+               and router['external_gateway_info']['external_fixed_ips'] \
+               and len(router['external_gateway_info']['external_fixed_ips']) > 1:
+                # but router has several external fixed ips
                 return True
 
-        return False
-
-    def _system_state_change(self, router, network, internal_ids, internal_portids, filters=None):
-        """Check if the system state would be changed."""
-        state = self.params['state']
-        if state == 'absent' and router:
+        # check if internal port has to be added
+        if router_ifs_cfg['internal_ports_missing']:
             return True
-        if state == 'present':
-            if not router:
-                return True
-            return self._needs_update(router, network, internal_ids, internal_portids, filters)
+
+        if missing_port_ids:
+            return True
+
+        # check if internal subnet has to be added or removed
+        if set(requested_subnet_ids) != set(existing_subnet_ids):
+            return True
+
         return False
 
-    def _build_kwargs(self, router, network):
+    def _build_kwargs(self, router, net):
         kwargs = {
             'admin_state_up': self.params['admin_state_up'],
         }
@@ -318,8 +323,8 @@ class RouterModule(OpenStackModule):
         else:
             kwargs['name'] = self.params['name']
 
-        if network:
-            kwargs['ext_gateway_net_id'] = network['id']
+        if net:
+            kwargs['ext_gateway_net_id'] = net['id']
             # can't send enable_snat unless we have a network
             if self.params.get('enable_snat') is not None:
                 kwargs['enable_snat'] = self.params['enable_snat']
@@ -332,56 +337,83 @@ class RouterModule(OpenStackModule):
                 if 'ip' in iface:
                     d['ip_address'] = iface['ip']
                 kwargs['ext_fixed_ips'].append(d)
+        else:
+            # no external fixed ips requested
+            if router \
+               and router['external_gateway_info'] \
+               and router['external_gateway_info']['external_fixed_ips'] \
+               and len(router['external_gateway_info']['external_fixed_ips']) > 1:
+                # but router has several external fixed ips
+                # keep first external fixed ip only
+                fip = router['external_gateway_info']['external_fixed_ips'][0]
+                kwargs['ext_fixed_ips'] = [fip]
 
         return kwargs
 
-    def _validate_subnets(self, filters=None):
-        external_subnet_ids = []
-        internal_subnet_ids = []
-        internal_port_ids = []
-        existing_port_ips = []
+    def _build_router_interface_config(self, filters=None):
+        external_fixed_ips = []
+        internal_subnets = []
+        internal_ports = []
+        internal_ports_missing = []
+
+        # Build external interface configuration
         if self.params['external_fixed_ips']:
             for iface in self.params['external_fixed_ips']:
-                subnet = self.conn.get_subnet(iface['subnet'])
+                subnet = self.conn.get_subnet(iface['subnet'], filters)
                 if not subnet:
-                    self.fail_json(msg='subnet %s not found' % iface['subnet'])
-                external_subnet_ids.append(subnet['id'])
+                    self.fail(msg='subnet %s not found' % iface['subnet'])
+                new_external_fixed_ip = {'subnet_name': subnet.name, 'subnet_id': subnet.id}
+                if 'ip' in iface:
+                    new_external_fixed_ip['ip'] = iface['ip']
+                external_fixed_ips.append(new_external_fixed_ip)
 
+        # Build internal interface configuration
         if self.params['interfaces']:
+            internal_ips = []
             for iface in self.params['interfaces']:
                 if isinstance(iface, str):
                     subnet = self.conn.get_subnet(iface, filters)
                     if not subnet:
                         self.fail(msg='subnet %s not found' % iface)
-                    internal_subnet_ids.append(subnet['id'])
+                    internal_subnets.append(subnet)
+
                 elif isinstance(iface, dict):
                     subnet = self.conn.get_subnet(iface['subnet'], filters)
                     if not subnet:
                         self.fail(msg='subnet %s not found' % iface['subnet'])
+
                     net = self.conn.get_network(iface['net'])
                     if not net:
                         self.fail(msg='net %s not found' % iface['net'])
+
                     if "portip" not in iface:
-                        internal_subnet_ids.append(subnet['id'])
+                        # portip not set, add any ip from subnet
+                        internal_subnets.append(subnet)
                     elif not iface['portip']:
-                        self.fail(msg='put an ip in portip or  remove it from list to assign default port to router')
+                        # portip is set but has invalid value
+                        self.fail(msg='put an ip in portip or remove it from list to assign default port to router')
                     else:
+                        # portip has valid value
+                        # look for ports whose fixed_ips.ip_address matchs portip
                         for existing_port in self.conn.list_ports(filters={'network_id': net.id}):
                             for fixed_ip in existing_port['fixed_ips']:
                                 if iface['portip'] == fixed_ip['ip_address']:
-                                    internal_port_ids.append(existing_port.id)
-                                    existing_port_ips.append(fixed_ip['ip_address'])
-                        if iface['portip'] not in existing_port_ips:
-                            p = self.conn.create_port(network_id=net.id, fixed_ips=[
-                                {
-                                    'ip_address': iface['portip'],
-                                    'subnet_id': subnet.id
-                                }
-                            ])
-                            if p:
-                                internal_port_ids.append(p.id)
+                                    # portip exists in net already
+                                    internal_ports.append(existing_port)
+                                    internal_ips.append(fixed_ip['ip_address'])
+                        if iface['portip'] not in internal_ips:
+                            # no port with portip exists hence create a new port
+                            internal_ports_missing.append({
+                                'network_id': net.id,
+                                'fixed_ips': [{'ip_address': iface['portip'], 'subnet_id': subnet.id}]
+                            })
 
-        return external_subnet_ids, internal_subnet_ids, internal_port_ids
+        return {
+            'external_fixed_ips': external_fixed_ips,
+            'internal_subnets': internal_subnets,
+            'internal_ports': internal_ports,
+            'internal_ports_missing': internal_ports_missing
+        }
 
     def run(self):
 
@@ -391,7 +423,7 @@ class RouterModule(OpenStackModule):
         project = self.params['project']
 
         if self.params['external_fixed_ips'] and not network:
-            self.fail_json(msg='network is required when supplying external_fixed_ips')
+            self.fail(msg='network is required when supplying external_fixed_ips')
 
         if project is not None:
             proj = self.conn.get_project(project)
@@ -412,67 +444,125 @@ class RouterModule(OpenStackModule):
 
         # Validate and cache the subnet IDs so we can avoid duplicate checks
         # and expensive API calls.
-        external_ids, subnet_internal_ids, internal_portids = self._validate_subnets(filters)
+        router_ifs_cfg = self._build_router_interface_config(filters)
+        requested_subnet_ids = [subnet.id for subnet in router_ifs_cfg['internal_subnets']] + \
+            self._get_subnet_ids_from_ports(router_ifs_cfg['internal_ports'])
+        requested_port_ids = [i['id'] for i in router_ifs_cfg['internal_ports']]
+
+        if router:
+            router_ifs_internal = self.conn.list_router_interfaces(router, 'internal')
+            existing_subnet_ids = self._get_subnet_ids_from_ports(router_ifs_internal)
+            obsolete_subnet_ids = set(existing_subnet_ids) - set(requested_subnet_ids)
+            existing_port_ids = [i['id'] for i in router_ifs_internal]
+
+        else:
+            router_ifs_internal = []
+            existing_subnet_ids = []
+            obsolete_subnet_ids = []
+            existing_port_ids = []
+
+        missing_port_ids = set(requested_port_ids) - set(existing_port_ids)
+
         if self.ansible.check_mode:
-            self.exit_json(
-                changed=self._system_state_change(router, net, subnet_internal_ids, internal_portids, filters)
-            )
+            # Check if the system state would be changed
+            if state == 'absent' and router:
+                changed = True
+            elif state == 'absent' and not router:
+                changed = False
+            elif state == 'present' and not router:
+                changed = True
+            else:  # if state == 'present' and router
+                changed = self._needs_update(router, net,
+                                             missing_port_ids,
+                                             requested_subnet_ids,
+                                             existing_subnet_ids,
+                                             router_ifs_cfg,
+                                             filters)
+            self.exit_json(changed=changed)
 
         if state == 'present':
             changed = False
 
             if not router:
+                changed = True
+
                 kwargs = self._build_kwargs(router, net)
                 if project_id:
                     kwargs['project_id'] = project_id
                 router = self.conn.create_router(**kwargs)
-                for int_s_id in subnet_internal_ids:
-                    self.conn.add_router_interface(router, subnet_id=int_s_id)
-                # add interface by port id as well
-                for int_p_id in internal_portids:
-                    self.conn.add_router_interface(router, port_id=int_p_id)
-                changed = True
+
+                # add interface by subnet id, because user did not specify a port id
+                for subnet in router_ifs_cfg['internal_subnets']:
+                    self.conn.add_router_interface(router, subnet_id=subnet.id)
+
+                # add interface by port id if user did specify a valid port id
+                for port in router_ifs_cfg['internal_ports']:
+                    self.conn.add_router_interface(router, port_id=port.id)
+
+                # add port and interface if user did specify an ip address but port is missing yet
+                for missing_internal_port in router_ifs_cfg['internal_ports_missing']:
+                    p = self.conn.create_port(**missing_internal_port)
+                    if p:
+                        self.conn.add_router_interface(router, port_id=p.id)
+
             else:
-                if self._needs_update(router, net, subnet_internal_ids, internal_portids, filters):
+                if self._needs_update(router, net,
+                                      missing_port_ids,
+                                      requested_subnet_ids,
+                                      existing_subnet_ids,
+                                      router_ifs_cfg,
+                                      filters):
+                    changed = True
                     kwargs = self._build_kwargs(router, net)
                     updated_router = self.conn.update_router(**kwargs)
 
-                    # Protect against update_router() not actually
-                    # updating the router.
+                    # Protect against update_router() not actually updating the router.
                     if not updated_router:
                         changed = False
-
-                    # On a router update, if any internal interfaces were supplied,
-                    # just detach all existing internal interfaces and attach the new.
-                    if internal_portids or subnet_internal_ids:
+                    else:
                         router = updated_router
-                        ports = self._router_internal_interfaces(router)
-                        for port in ports:
-                            self.conn.remove_router_interface(router, port_id=port['id'])
-                    if internal_portids:
-                        external_ids, subnet_internal_ids, internal_portids = self._validate_subnets(filters)
-                        for int_p_id in internal_portids:
-                            self.conn.add_router_interface(router, port_id=int_p_id)
-                        changed = True
-                    if subnet_internal_ids:
-                        for s_id in subnet_internal_ids:
-                            self.conn.add_router_interface(router, subnet_id=s_id)
+
+                    # delete internal subnets i.e. ports
+                    if obsolete_subnet_ids:
+                        for port in router_ifs_internal:
+                            if 'fixed_ips' in port:
+                                for fip in port['fixed_ips']:
+                                    if fip['subnet_id'] in obsolete_subnet_ids:
+                                        self.conn.remove_router_interface(router, port_id=port['id'])
+                                        changed = True
+
+                    # add new internal interface by subnet id, because user did not specify a port id
+                    for subnet in router_ifs_cfg['internal_subnets']:
+                        if subnet.id not in existing_subnet_ids:
+                            self.conn.add_router_interface(router, subnet_id=subnet.id)
+                            changed = True
+
+                    # add new internal interface by port id if user did specify a valid port id
+                    for port_id in missing_port_ids:
+                        self.conn.add_router_interface(router, port_id=port_id)
                         changed = True
 
-            self.exit(changed=changed, router=router, id=router['id'])
+                    # add new port and new internal interface if user did specify an ip address but port is missing yet
+                    for missing_internal_port in router_ifs_cfg['internal_ports_missing']:
+                        p = self.conn.create_port(**missing_internal_port)
+                        if p:
+                            self.conn.add_router_interface(router, port_id=p.id)
+                            changed = True
+
+            self.exit_json(changed=changed, router=router)
 
         elif state == 'absent':
             if not router:
-                self.exit(changed=False)
+                self.exit_json(changed=False)
             else:
-                # We need to detach all internal interfaces on a router before
-                # we will be allowed to delete it.
-                ports = self._router_internal_interfaces(router)
-                router_id = router['id']
-                for port in ports:
+                # We need to detach all internal interfaces on a router
+                # before we will be allowed to delete it. Deletion can
+                # still fail if e.g. floating ips are attached to the
+                # router.
+                for port in router_ifs_internal:
                     self.conn.remove_router_interface(router, port_id=port['id'])
-                self.conn.delete_router(router_id)
-                self.exit_json(changed=True)
+                self.conn.delete_router(router['id'])
+                self.exit_json(changed=True, router=router)
 
 
 def main():
