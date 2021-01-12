@@ -35,7 +35,7 @@ options:
         - Perform the given action. The lock and unlock actions always return
             changed as the servers API does not provide lock status.
         choices: [stop, start, pause, unpause, lock, unlock, suspend, resume,
-                rebuild]
+                rebuild, shelve, shelve_offload, unshelve]
         type: str
         required: true
     image:
@@ -70,18 +70,43 @@ EXAMPLES = '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
+# If I(action) is set to C(shelve) then according to OpenStack's Compute API, the shelved
+# server is in one of two possible states:
+#
+#  SHELVED:           The server is in shelved state. Depends on the shelve offload time,
+#                     the server will be automatically shelved off loaded.
+#  SHELVED_OFFLOADED: The shelved server is offloaded (removed from the compute host) and
+#                     it needs unshelved action to be used again.
+#
+# But wait_for_server can only wait for a single server state. If a shelved server is offloaded
+# immediately, then a exceptions.ResourceTimeout will be raised if I(action) is set to C(shelve).
+# This is likely to happen because shelved_offload_time in Nova's config is set to 0 by default.
+# This also applies if you boot the server from volumes.
+#
+# Calling C(shelve_offload) instead of C(shelve) will also fail most likely because the default
+# policy does not allow C(shelve_offload) for non-admin users while C(shelve) is allowed for
+# admin users and server owners.
+#
+# As we cannot retrieve shelved_offload_time from Nova's config, we fall back to waiting for
+# one state and if that fails then we fetch the server's state and match it against the other
+# valid states from _action_map.
+#
+# Ref.: https://docs.openstack.org/api-guide/compute/server_concepts.html
 
-_action_map = {'stop': 'SHUTOFF',
-               'start': 'ACTIVE',
-               'pause': 'PAUSED',
-               'unpause': 'ACTIVE',
-               'lock': 'ACTIVE',  # API doesn't show lock/unlock status
-               'unlock': 'ACTIVE',
-               'suspend': 'SUSPENDED',
-               'resume': 'ACTIVE',
-               'rebuild': 'ACTIVE'}
+_action_map = {'stop': ['SHUTOFF'],
+               'start': ['ACTIVE'],
+               'pause': ['PAUSED'],
+               'unpause': ['ACTIVE'],
+               'lock': ['ACTIVE'],  # API doesn't show lock/unlock status
+               'unlock': ['ACTIVE'],
+               'suspend': ['SUSPENDED'],
+               'resume': ['ACTIVE'],
+               'rebuild': ['ACTIVE'],
+               'shelve': ['SHELVED_OFFLOADED', 'SHELVED'],
+               'shelve_offload': ['SHELVED_OFFLOADED'],
+               'unshelve': ['ACTIVE']}
 
-_admin_actions = ['pause', 'unpause', 'suspend', 'resume', 'lock', 'unlock']
+_admin_actions = ['pause', 'unpause', 'suspend', 'resume', 'lock', 'unlock', 'shelve_offload']
 
 
 class ServerActionModule(OpenStackModule):
@@ -92,7 +117,7 @@ class ServerActionModule(OpenStackModule):
         action=dict(required=True, type='str',
                     choices=['stop', 'start', 'pause', 'unpause',
                              'lock', 'unlock', 'suspend', 'resume',
-                             'rebuild']),
+                             'rebuild', 'shelve', 'shelve_offload', 'unshelve']),
         image=dict(required=False, type='str'),
         admin_password=dict(required=False, type='str'),
     )
@@ -128,6 +153,9 @@ class ServerActionModule(OpenStackModule):
     def _execute_server_action(self, os_server):
         if self.params['action'] == 'rebuild':
             return self._rebuild_server(os_server)
+        if self.params['action'] == 'shelve_offload':
+            # shelve_offload is not supported in OpenstackSDK
+            return self._action(os_server, json={'shelveOffload': None})
         action_name = self.params['action'] + "_server"
         try:
             func_name = getattr(self.conn.compute, action_name)
@@ -154,23 +182,38 @@ class ServerActionModule(OpenStackModule):
                 admin_password=self.params['admin_password']
             )
         else:
-            self.conn.compute.post(
-                '/servers/{server_id}/action'.format(
-                    server_id=os_server['id']),
-                json={'rebuild': {'imageRef': image['id']}})
+            self._action(os_server, json={'rebuild': {'imageRef': image['id']}})
+
+    def _action(self, os_server, json):
+        response = self.conn.compute.post(
+            '/servers/{server_id}/action'.format(server_id=os_server['id']),
+            json=json)
+        self.sdk.exceptions.raise_from_response(response)
+        return response
 
     def _wait(self, os_server):
         """Wait for the server to reach the desired state for the given action."""
         # Using Server object for wait_for_server function
         server = self.conn.compute.find_server(self.params['server'])
-        self.conn.compute.wait_for_server(
-            server,
-            status=_action_map[self.params['action']],
-            wait=self.params['timeout'])
+        states = _action_map[self.params['action']]
+
+        try:
+            self.conn.compute.wait_for_server(
+                server,
+                status=states[0],
+                wait=self.params['timeout'])
+        except self.sdk.exceptions.ResourceTimeout:
+            # raise if there is only one valid state
+            if len(states) < 2:
+                raise
+            # fetch current server status and compare to other valid states
+            server = self.conn.compute.get_server(os_server['id'])
+            if server.status not in states:
+                raise
 
     def __system_state_change(self, os_server):
         """Check if system state would change."""
-        return os_server.status != _action_map[self.params['action']]
+        return os_server.status not in _action_map[self.params['action']]
 
 
 def main():
