@@ -53,6 +53,7 @@ action_groups:
     - image
     - image_info
     - keypair
+    - keypair_info
     - keystone_federation_protocol
     - keystone_federation_protocol_info
     - lb_listener
@@ -147,6 +148,7 @@ action_groups:
     - image
     - image_info
     - keypair
+    - keypair_info
     - keystone_federation_protocol
     - keystone_federation_protocol_info
     - lb_listener
