@@ -133,7 +133,7 @@ class VolumeInfoModule(OpenStackModule):
             status=self.params['status'],
         )
         result = self.conn.block_storage.volumes(**kwargs)
-        result = list(result)
+        result = [vol if isinstance(vol, dict) else vol.to_dict() for vol in result]
         self.results.update({'volumes': result})
 
 
