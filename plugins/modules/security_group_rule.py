@@ -19,8 +19,7 @@ options:
       type: str
    protocol:
       description:
-        - IP protocols ANY TCP UDP ICMP 112 (VRRP) 132 (SCTP)
-      choices: ['any', 'tcp', 'udp', 'icmp', '112', '132', None]
+        - IP protocols ANY TCP UDP ICMP and others, also number in range 0-255
       type: str
    port_range_min:
       description:
@@ -246,14 +245,11 @@ class SecurityGroupRuleModule(OpenStackModule):
 
     argument_spec = dict(
         security_group=dict(required=True),
-        # NOTE(Shrews): None is an acceptable protocol value for
-        # Neutron, but Nova will balk at this.
-        protocol=dict(default=None,
-                      choices=[None, 'any', 'tcp', 'udp', 'icmp', '112', '132']),
+        protocol=dict(type='str'),
         port_range_min=dict(required=False, type='int'),
         port_range_max=dict(required=False, type='int'),
-        remote_ip_prefix=dict(required=False, default=None),
-        remote_group=dict(required=False, default=None),
+        remote_ip_prefix=dict(required=False),
+        remote_group=dict(required=False),
         ethertype=dict(default='IPv4',
                        choices=['IPv4', 'IPv6']),
         direction=dict(default='ingress',
