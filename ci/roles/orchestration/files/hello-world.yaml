@@ -1,0 +1,11 @@
+#
+# Minimal HOT template defining a single compute server.
+#
+heat_template_version: 2013-05-23
+
+description: >
+  Minimal HOT template for stack
+
+parameters:
+resources:
+outputs:

@@ -1,0 +1,44 @@
+---
+- name: Create minimal stack
+  openstack.cloud.stack:
+    cloud: "{{ cloud }}"
+    # template is searched related to playbook location or as absolute path
+    template: "roles/orchestration/files/hello-world.yaml"
+    name: "{{ stack_name }}"
+
+- name: List stacks
+  openstack.cloud.stack_info:
+    cloud: "{{ cloud }}"
+  register: stacks
+
+- assert:
+    that:
+      - stacks['stacks']|length > 0
+
+- name: Get Single stack
+  openstack.cloud.stack_info:
+    cloud: "{{ cloud }}"
+    name: "{{ stack_name }}"
+  register: test_stack
+
+- assert:
+    that:
+      - test_stack is defined
+      - test_stack['stacks'][0]['name'] == stack_name
+
+- name: Delete stack
+  openstack.cloud.stack:
+    cloud: "{{ cloud }}"
+    name: "{{ stack_name }}"
+    state: absent
+
+- name: Get Single stack
+  openstack.cloud.stack_info:
+    cloud: "{{ cloud }}"
+    name: "{{ stack_name }}"
+  register: stacks
+
+- assert:
+    that:
+      - stacks is defined
+      - stacks['stacks']|length == 0
