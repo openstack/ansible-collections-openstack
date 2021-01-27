@@ -7,6 +7,17 @@
   register:
     keypair
 
+- name: Get list of keypairs
+  openstack.cloud.keypair_info:
+    cloud: "{{ cloud }}"
+    name: "{{ keypair_name }}"
+  register: keypairs
+
+- name: Ensure that list of keypairs contains single element
+  assert:
+    that:
+      - keypairs['openstack_keypairs']|length == 1
+
 # This assert verifies that Ansible is capable serializing data returned by SDK
 - name: Ensure private key is returned
   assert:
@@ -18,6 +29,17 @@
       cloud: "{{ cloud }}"
       name: "{{ keypair_name }}"
       state: absent
+
+- name: Get list of keypairs
+  openstack.cloud.keypair_info:
+    cloud: "{{ cloud }}"
+    name: "{{ keypair_name }}"
+  register: keypairs
+
+- name: Ensure that list of keypairs is empty
+  assert:
+    that:
+      - keypairs['openstack_keypairs']|length == 0
 
 - name: Generate test key file
   user:
@@ -32,11 +54,33 @@
       state: present
       public_key_file: "{{ ansible_env.HOME }}/.ssh/shade_id_rsa.pub"
 
+- name: Get list of keypairs
+  openstack.cloud.keypair_info:
+    cloud: "{{ cloud }}"
+    name: "{{ keypair_name }}"
+  register: keypairs
+
+- name: Ensure that list of keypairs contains single element
+  assert:
+    that:
+      - keypairs['openstack_keypairs']|length == 1
+
 - name: Delete keypair (file)
   openstack.cloud.keypair:
       cloud: "{{ cloud }}"
       name: "{{ keypair_name }}"
       state: absent
+
+- name: Get list of keypairs
+  openstack.cloud.keypair_info:
+    cloud: "{{ cloud }}"
+    name: "{{ keypair_name }}"
+  register: keypairs
+
+- name: Ensure that list of keypairs is empty
+  assert:
+    that:
+      - keypairs['openstack_keypairs']|length == 0
 
 - name: Create keypair (key)
   openstack.cloud.keypair:
@@ -45,11 +89,33 @@
       state: present
       public_key: "{{ lookup('file', '~/.ssh/shade_id_rsa.pub') }}"
 
+- name: Get list of keypairs
+  openstack.cloud.keypair_info:
+    cloud: "{{ cloud }}"
+    name: "{{ keypair_name }}"
+  register: keypairs
+
+- name: Ensure that list of keypairs contains single element
+  assert:
+    that:
+      - keypairs['openstack_keypairs']|length == 1
+
 - name: Delete keypair (key)
   openstack.cloud.keypair:
       cloud: "{{ cloud }}"
       name: "{{ keypair_name }}"
       state: absent
+
+- name: Get list of keypairs
+  openstack.cloud.keypair_info:
+    cloud: "{{ cloud }}"
+    name: "{{ keypair_name }}"
+  register: keypairs
+
+- name: Ensure that list of keypairs is empty
+  assert:
+    that:
+      - keypairs['openstack_keypairs']|length == 0
 
 - name: Delete test key pub file
   file:
