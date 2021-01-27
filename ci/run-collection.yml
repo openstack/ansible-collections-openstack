@@ -42,3 +42,5 @@
     - role: orchestration
       tags: orchestrate
       when: sdk_version is version("0.53.0", '>=')
+    - role: loadbalancer
+      tags: loadbalancer

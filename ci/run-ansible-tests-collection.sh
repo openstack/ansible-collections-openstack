@@ -106,6 +106,27 @@ then
   exit 1
 fi
 
+# In case of Octavia enabled:
+_octavia_image_path="/tmp/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2"
+if systemctl list-units --full -all | grep -Fq "devstack@o-api.service" && \
+  test -f "$_octavia_image_path"
+then
+    # Upload apmhora image for Octavia to test load balancers
+    OCTAVIA_AMP_IMAGE_FILE=${OCTAVIA_AMP_IMAGE_FILE:-"$_octavia_image_path"}
+    OCTAVIA_AMP_IMAGE_NAME=${OCTAVIA_AMP_IMAGE_NAME:-"test-only-amphora-x64-haproxy-ubuntu-bionic"}
+    OCTAVIA_AMP_IMAGE_SIZE=${OCTAVIA_AMP_IMAGE_SIZE:-3}
+    openstack --os-cloud=${CLOUD} image create \
+        --container-format bare \
+        --disk-format qcow2 \
+        --private \
+        --file $OCTAVIA_AMP_IMAGE_FILE \
+        --project service $OCTAVIA_AMP_IMAGE_NAME
+    openstack --os-cloud=${CLOUD} image set --tag amphora $OCTAVIA_AMP_IMAGE_NAME
+    # End of Octavia preparement
+else
+    tag_opt="$tag_opt --skip-tags loadbalancer"
+fi
+
 # Discover openstackSDK version
 SDK_VER=$(python -c "import openstack; print(openstack.version.__version__)")
 pushd ci/

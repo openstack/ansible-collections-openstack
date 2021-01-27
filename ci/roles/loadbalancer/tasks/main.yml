@@ -1,0 +1,50 @@
+
+---
+- name: Create network {{ network_name }} for LB
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: "{{ network_name }}"
+    state: present
+
+- name: Create subnet {{ subnet_name }} on network {{ network_name }} for LB
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    network_name: "{{ network_name }}"
+    name: "{{ subnet_name }}"
+    state: present
+    enable_dhcp: true
+    dns_nameservers:
+      - 8.8.8.7
+      - 8.8.8.8
+    cidr: 192.168.0.0/24
+    gateway_ip: 192.168.0.1
+    allocation_pool_start: 192.168.0.2
+    allocation_pool_end: 192.168.0.254
+
+- name: Create loadbalancer - generic
+  openstack.cloud.loadbalancer:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ lb_name }}"
+    vip_subnet: "{{ subnet_name }}"
+    timeout: 450
+
+- name: Delete loadbalancer
+  openstack.cloud.loadbalancer:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ lb_name }}"
+    timeout: 150
+
+- name: Delete subnet {{ subnet_name }} on network {{ network_name }}
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    network_name: "{{ network_name }}"
+    name: "{{ subnet_name }}"
+    state: absent
+
+- name: Delete network {{ network_name }} of LB
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: "{{ network_name }}"
+    state: absent

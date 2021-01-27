@@ -20,6 +20,42 @@
         designate: true
 
 - job:
+    name: ansible-collections-openstack-functional-devstack-octavia
+    parent: ansible-collections-openstack-functional-devstack
+    description: |
+      Run openstack collections functional tests against a master devstack
+      with Octavia plugin enabled, using releases of openstacksdk and latest
+      ansible release. Run it only on Load Balancer changes.
+    pre-run: ci/playbooks/get_amphora_tarball.yaml
+    required-projects:
+      - openstack/octavia
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.10
+    files:
+      - ^ci/roles/loadbalancer/.*$
+      - ^plugins/modules/lb_health_monitor.py
+      - ^plugins/modules/lb_listener.py
+      - ^plugins/modules/lb_member.py
+      - ^plugins/modules/lb_pool.py
+      - ^plugins/modules/loadbalancer.py
+    vars:
+      tox_envlist: ansible
+      devstack_plugins:
+        designate: https://opendev.org/openstack/designate
+        octavia: https://opendev.org/openstack/octavia
+      devstack_services:
+        designate: true
+        octavia: true
+        o-api: true
+        o-cw: true
+        o-hk: true
+        o-hm: true
+      devstack_localrc:
+        OCTAVIA_AMP_IMAGE_FILE: "/tmp/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2"
+        OCTAVIA_AMP_IMAGE_SIZE: 3
+        OCTAVIA_AMP_IMAGE_NAME: "test-only-amphora-x64-haproxy-ubuntu-bionic"
+
+- job:
     name: ansible-collections-openstack-functional-devstack-releases
     parent: ansible-collections-openstack-functional-devstack
     description: |
@@ -315,6 +351,9 @@
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.10:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
+        - ansible-collections-openstack-functional-devstack-octavia:
+            dependencies: *deps_unit_lint
+            irrelevant-files: *ignore_files
 
         - bifrost-collections-src:
             voting: false
@@ -342,6 +381,7 @@
         - ansible-collections-openstack-functional-devstack-stein-ansible-2.10
         - ansible-collections-openstack-functional-devstack-rocky-ansible-2.10
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.10
+        - ansible-collections-openstack-functional-devstack-octavia
 
     periodic:
       jobs:
@@ -363,3 +403,4 @@
         - ansible-collections-openstack-functional-devstack-queens-ansible-devel
         - bifrost-collections-src
         - bifrost-keystone-collections-src
+        - ansible-collections-openstack-functional-devstack-octavia
