@@ -115,7 +115,7 @@ def _needs_update(module, project):
     if properties:
         project_properties = project.get('properties')
         for k, v in properties.items():
-            if v is not None and v != project_properties[k]:
+            if v is not None and (k not in project_properties or v != project_properties[k]):
                 return True
 
     return False
