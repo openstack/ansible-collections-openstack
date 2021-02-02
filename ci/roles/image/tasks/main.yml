@@ -15,7 +15,16 @@
      disk_format: raw
   register: image
 
-- debug: var=image
+- name: Get details of created image
+  openstack.cloud.image_info:
+    cloud: "{{ cloud }}"
+    image: "{{ image_name }}"
+  register: image_info_result
+
+- name: Verify image info
+  assert:
+    that:
+      - "image_info_result.openstack_image.name == image_name"
 
 - name: Delete raw image (defaults)
   openstack.cloud.image:
@@ -40,8 +49,6 @@
         distro: ubuntu
   register: image
 
-- debug: var=image
-
 - name: Delete raw image (complex)
   openstack.cloud.image:
      cloud: "{{ cloud }}"
@@ -52,3 +59,14 @@
   file:
      name: "{{ tmp_file.stdout }}"
      state: absent
+
+- name: Try to get details of deleted image
+  openstack.cloud.image_info:
+    cloud: "{{ cloud }}"
+    image: "{{ image_name }}"
+  register: deleted_image_info_result
+
+- name: Verify image is deleted
+  assert:
+    that:
+      - not deleted_image_info_result.openstack_image

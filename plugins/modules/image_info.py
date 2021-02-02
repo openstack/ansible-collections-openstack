@@ -142,44 +142,31 @@ openstack_image:
             type: int
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
+
+
+class ImageInfoModule(OpenStackModule):
+
+    deprecated_names = ('openstack.cloud.os_image_facts', 'openstack.cloud.os_image_info')
+
+    argument_spec = dict(
+        image=dict(type='str', required=False),
+        properties=dict(type='dict', required=False),
+    )
+
+    def run(self):
+
+        if self.params['image']:
+            image = self.conn.get_image(self.params['image'])
+            self.exit(changed=False, openstack_image=image)
+        else:
+            images = self.conn.search_images(filters=self.params['properties'])
+            self.exit(changed=False, openstack_image=images)
 
 
 def main():
-
-    argument_spec = openstack_full_argument_spec(
-        image=dict(required=False),
-        properties=dict(default=None, type='dict'),
-    )
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
-    is_old_facts = module._name == 'openstack.cloud.image_facts'
-    if is_old_facts:
-        module.deprecate("The 'openstack.cloud.image_facts' module has been renamed to 'openstack.cloud.image_info', "
-                         "and the renamed one no longer returns ansible_facts", version='2.13')
-
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        if module.params['image']:
-            image = cloud.get_image(module.params['image'])
-            if is_old_facts:
-                module.exit_json(changed=False, ansible_facts=dict(
-                    openstack_image=image))
-            else:
-                module.exit_json(changed=False, openstack_image=image)
-        else:
-            images = cloud.search_images(filters=module.params['properties'])
-            if is_old_facts:
-                module.exit_json(changed=False, ansible_facts=dict(
-                    openstack_image=images))
-            else:
-                module.exit_json(changed=False, openstack_image=images)
-
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+    module = ImageInfoModule()
+    module()
 
 
 if __name__ == '__main__':
