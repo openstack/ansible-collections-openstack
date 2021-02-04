@@ -147,95 +147,95 @@ EXAMPLES = '''
     name: myvol_image
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def main():
+class ImageModule(OpenStackModule):
 
-    argument_spec = openstack_full_argument_spec(
-        name=dict(required=True),
-        id=dict(default=None),
-        checksum=dict(default=None),
-        disk_format=dict(default='qcow2', choices=['ami', 'ari', 'aki', 'vhd', 'vmdk', 'raw', 'qcow2', 'vdi', 'iso', 'vhdx', 'ploop']),
+    deprecated_names = ('os_image', 'openstack.cloud.os_image')
+
+    argument_spec = dict(
+        name=dict(required=True, type='str'),
+        id=dict(type='str'),
+        checksum=dict(type='str'),
+        disk_format=dict(default='qcow2',
+                         choices=['ami', 'ari', 'aki', 'vhd', 'vmdk', 'raw', 'qcow2', 'vdi', 'iso', 'vhdx', 'ploop']),
         container_format=dict(default='bare', choices=['ami', 'aki', 'ari', 'bare', 'ovf', 'ova', 'docker']),
-        owner=dict(default=None),
+        owner=dict(type='str'),
         min_disk=dict(type='int', default=0),
         min_ram=dict(type='int', default=0),
         is_public=dict(type='bool', default=False),
         protected=dict(type='bool', default=False),
-        filename=dict(default=None),
-        ramdisk=dict(default=None),
-        kernel=dict(default=None),
+        filename=dict(type='str'),
+        ramdisk=dict(type='str'),
+        kernel=dict(type='str'),
         properties=dict(type='dict', default={}),
-        volume=dict(default=None),
+        volume=dict(type='str'),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
-    module_kwargs = openstack_module_kwargs(
+    module_kwargs = dict(
         mutually_exclusive=[['filename', 'volume']],
     )
-    module = AnsibleModule(argument_spec, **module_kwargs)
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+    def run(self):
 
         changed = False
-        if module.params['id']:
-            image = cloud.get_image(name_or_id=module.params['id'])
-        elif module.params['checksum']:
-            image = cloud.get_image(name_or_id=module.params['name'], filters={'checksum': module.params['checksum']})
+        if self.params['id']:
+            image = self.conn.get_image(name_or_id=self.params['id'])
+        elif self.params['checksum']:
+            image = self.conn.get_image(name_or_id=self.params['name'], filters={'checksum': self.params['checksum']})
         else:
-            image = cloud.get_image(name_or_id=module.params['name'])
+            image = self.conn.get_image(name_or_id=self.params['name'])
 
-        if module.params['state'] == 'present':
+        if self.params['state'] == 'present':
             if not image:
                 kwargs = {}
-                if module.params['id'] is not None:
-                    kwargs['id'] = module.params['id']
-                image = cloud.create_image(
-                    name=module.params['name'],
-                    filename=module.params['filename'],
-                    disk_format=module.params['disk_format'],
-                    container_format=module.params['container_format'],
-                    wait=module.params['wait'],
-                    timeout=module.params['timeout'],
-                    is_public=module.params['is_public'],
-                    protected=module.params['protected'],
-                    min_disk=module.params['min_disk'],
-                    min_ram=module.params['min_ram'],
-                    volume=module.params['volume'],
+                if self.params['id'] is not None:
+                    kwargs['id'] = self.params['id']
+                image = self.conn.create_image(
+                    name=self.params['name'],
+                    filename=self.params['filename'],
+                    disk_format=self.params['disk_format'],
+                    container_format=self.params['container_format'],
+                    wait=self.params['wait'],
+                    timeout=self.params['timeout'],
+                    is_public=self.params['is_public'],
+                    protected=self.params['protected'],
+                    min_disk=self.params['min_disk'],
+                    min_ram=self.params['min_ram'],
+                    volume=self.params['volume'],
                     **kwargs
                 )
                 changed = True
-                if not module.params['wait']:
-                    module.exit_json(changed=changed, image=image, id=image.id)
+                if not self.params['wait']:
+                    self.exit(changed=changed, image=image, id=image.id)
 
-            cloud.update_image_properties(
+            self.conn.update_image_properties(
                 image=image,
-                kernel=module.params['kernel'],
-                ramdisk=module.params['ramdisk'],
-                protected=module.params['protected'],
-                **module.params['properties'])
-            image = cloud.get_image(name_or_id=image.id)
-            module.exit_json(changed=changed, image=image, id=image.id)
+                kernel=self.params['kernel'],
+                ramdisk=self.params['ramdisk'],
+                protected=self.params['protected'],
+                **self.params['properties'])
+            image = self.conn.get_image(name_or_id=image.id)
+            self.exit(changed=changed, image=image, id=image.id)
 
-        elif module.params['state'] == 'absent':
+        elif self.params['state'] == 'absent':
             if not image:
                 changed = False
             else:
-                cloud.delete_image(
-                    name_or_id=module.params['name'],
-                    wait=module.params['wait'],
-                    timeout=module.params['timeout'])
+                self.conn.delete_image(
+                    name_or_id=self.params['name'],
+                    wait=self.params['wait'],
+                    timeout=self.params['timeout'])
                 changed = True
-            module.exit_json(changed=changed)
-
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+            self.exit(changed=changed)
 
 
-if __name__ == "__main__":
+def main():
+    module = ImageModule()
+    module()
+
+
+if __name__ == '__main__':
     main()
