@@ -61,6 +61,14 @@ options:
         - List of DNS nameservers for this subnet.
      type: list
      elements: str
+   subnetpool_id:
+     description:
+        - The ID of the subnet pool associated with the subnet.
+     type: str
+   prefixlen:
+     description:
+        - The prefix length to use for subnet allocation from a subnet pool. If not specified, the default_prefixlen value of the subnet pool will be used.
+     type: str
    allocation_pool_start:
      description:
         - From the subnet pool the starting address from which the IP should
@@ -169,6 +177,8 @@ class SubnetModule(OpenStackModule):
         dns_nameservers=dict(type='list', default=None, elements='str'),
         allocation_pool_start=dict(type='str'),
         allocation_pool_end=dict(type='str'),
+        subnetpool_id=dict(type='str'),
+        prefixlen=dict(type='str'),
         host_routes=dict(type='list', default=None, elements='dict'),
         ipv6_ra_mode=dict(type='str', choices=ipv6_mode_choices),
         ipv6_address_mode=dict(type='str', choices=ipv6_mode_choices),
@@ -267,6 +277,8 @@ class SubnetModule(OpenStackModule):
         dns = self.params['dns_nameservers']
         pool_start = self.params['allocation_pool_start']
         pool_end = self.params['allocation_pool_end']
+        subnetpool_id = self.params['subnetpool_id']
+        prefixlen = self.params['prefixlen']
         host_routes = self.params['host_routes']
         ipv6_ra_mode = self.params['ipv6_ra_mode']
         ipv6_a_mode = self.params['ipv6_address_mode']
@@ -281,7 +293,7 @@ class SubnetModule(OpenStackModule):
             if (
                 not self.params['cidr']
                 and not use_default_subnetpool
-                and not extra_specs.get('subnetpool_id', False)
+                and not subnetpool_id
             ):
                 self.fail(msg='cidr or use_default_subnetpool or '
                           'subnetpool_id required with present state')
@@ -314,6 +326,8 @@ class SubnetModule(OpenStackModule):
                 kwargs = dict(
                     cidr=cidr,
                     ip_version=ip_version,
+                    subnetpool_id=subnetpool_id,
+                    prefixlen=prefixlen,
                     enable_dhcp=enable_dhcp,
                     subnet_name=subnet_name,
                     gateway_ip=gateway_ip,
