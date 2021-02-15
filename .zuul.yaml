@@ -264,11 +264,13 @@
         - tox-pep8
         - openstack-tox-linters-ansible-devel
         - openstack-tox-linters-ansible-2.10
-        - openstack-tox-linters-ansible-2.9
+        # Issue with ansible-test 2.9: https://github.com/ansible/ansible/pull/73530
+        - openstack-tox-linters-ansible-2.9:
+            voting: false
         - ansible-collections-openstack-functional-devstack:
             dependencies: &deps_unit_lint
               - tox-pep8
-              - openstack-tox-linters-ansible-2.9
+              # - openstack-tox-linters-ansible-2.9
               - openstack-tox-linters-ansible-2.10
             irrelevant-files: &ignore_files
               - changelogs/.*
@@ -327,7 +329,8 @@
       jobs:
         - tox-pep8
         - openstack-tox-linters-ansible-2.10
-        - openstack-tox-linters-ansible-2.9
+        # https://github.com/ansible/ansible/pull/73530
+        # - openstack-tox-linters-ansible-2.9
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-ansible-2.9
