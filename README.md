@@ -11,7 +11,7 @@ The collection includes the Openstack modules and plugins supported by Openstack
 
 ### Installing dependencies
 
-For using Openstack Cloud collection firstly need to install `ansible` and `openstacksdk` Python modules on Ansible controller.
+For using the Openstack Cloud collection firstly you need to install `ansible` and `openstacksdk` Python modules on your Ansible controller.
 For example with pip:
 
 ```bash
@@ -19,8 +19,8 @@ pip install ansible openstacksdk
 ```
 
 OpenStackSDK has to be available to Ansible and to the Python interpreter on the host, where Ansible executes the module (target host).
-Please note, that under some circumstances Ansible might invoke not standard Python interpreter on the target host.
-Using Python verison 3 is highly recommended for OpenstackSDK and strongly required from OpenstackSDK version 0.39.0.
+Please note, that under some circumstances Ansible might invoke a non-standard Python interpreter on the target host.
+Using Python version 3 is highly recommended for OpenstackSDK and strongly required from OpenstackSDK version 0.39.0.
 
 ---
 
@@ -39,7 +39,7 @@ Before using the Openstack Cloud collection, you need to install the collection 
 
 `ansible-galaxy collection install openstack.cloud`
 
-You can also include it in a `requirements.yml` file and install it via `ansible-galaxy collection install -r requirements.yml` using the format:
+You can also include it in a `requirements.yml` file and install it through `ansible-galaxy collection install -r requirements.yml` using the format:
 
 ```yaml
 collections:
@@ -48,7 +48,7 @@ collections:
 
 ### Playbooks
 
-To use a module from Openstack Cloud collection, please reference the full namespace, collection name, and modules name that you want to use:
+To use a module from the Openstack Cloud collection, please reference the full namespace, collection name, and module name that you want to use:
 
 ```yaml
 ---
@@ -66,7 +66,7 @@ To use a module from Openstack Cloud collection, please reference the full names
         volume_size: 75
 ```
 
-Or you can add full namepsace and collecton name in the `collections` element:
+Or you can add the full namespace and collection name in the `collections` element:
 
 ```yaml
 ---
