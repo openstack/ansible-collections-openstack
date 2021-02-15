@@ -58,10 +58,10 @@ Libraries
   users as a primary audience, they are for intra-server communication.
 * All modules should be registered in ``meta/action_groups.yml`` for enabling the
   variables to be set in `group level
-  <https://docs.ansible.com/ansible/latest/user_guide/playbooks_module_defaults.html>`.
+  <https://docs.ansible.com/ansible/latest/user_guide/playbooks_module_defaults.html>`_.
 
 Testing
 -------
 
 * Integration testing is currently done in `OpenStack's CI system
-  <https://opendev.org/openstack/ansible-collections-openstack/src/branch/master/zuul.yaml>`
+  <https://opendev.org/openstack/ansible-collections-openstack/src/branch/master/.zuul.yaml>`_
