@@ -2,7 +2,6 @@ plugins/modules/baremetal_node.py pylint:ansible-deprecated-no-collection-name
 plugins/modules/compute_flavor_info.py pylint:ansible-deprecated-no-collection-name
 plugins/modules/identity_domain_info.py pylint:ansible-deprecated-no-collection-name
 plugins/modules/identity_user_info.py pylint:ansible-deprecated-no-collection-name
-plugins/modules/image_info.py pylint:ansible-deprecated-no-collection-name
 plugins/modules/port_info.py pylint:ansible-deprecated-no-collection-name
 plugins/modules/project_info.py pylint:ansible-deprecated-no-collection-name
 plugins/module_utils/openstack.py pylint:ansible-deprecated-no-collection-name
