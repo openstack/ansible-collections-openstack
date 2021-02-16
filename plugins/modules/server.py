@@ -189,6 +189,10 @@ options:
      description:
        - Availability zone in which to create the server.
      type: str
+   description:
+     description:
+       - Description of the server.
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -505,6 +509,7 @@ class ServerModule(OpenStackModule):
         state=dict(default='present', choices=['absent', 'present']),
         delete_fip=dict(default=False, type='bool'),
         reuse_ips=dict(default=True, type='bool'),
+        description=dict(default=None, type='str'),
     )
     module_kwargs = dict(
         mutually_exclusive=[
@@ -608,7 +613,8 @@ class ServerModule(OpenStackModule):
         )
         for optional_param in (
                 'key_name', 'availability_zone', 'network',
-                'scheduler_hints', 'volume_size', 'volumes'):
+                'scheduler_hints', 'volume_size', 'volumes',
+                'description'):
             if self.params[optional_param]:
                 bootkwargs[optional_param] = self.params[optional_param]
 
