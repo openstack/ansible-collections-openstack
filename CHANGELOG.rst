@@ -5,6 +5,44 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.3.0
+======
+
+Release Summary
+---------------
+
+New modules and bugfixes.
+
+Minor Changes
+-------------
+
+- Fix some typos in readme
+- Guidelines Fix links and formatting
+- baremetal_node - Add support for new features
+- baremetal_node - ironic deprecate sub-options of driver_info
+- baremetal_node - ironic stop putting meaningless values to properties
+- image_info - Migrating image_info module from AnsibleModule to OpenStackModule
+- recordset -  Update recordset docu
+- server - Allow description field to be set with os_server
+- server_action - Added shelve and unshelve as new server actions
+
+Bugfixes
+--------
+
+- port - Fixed check for None in os_port
+- project - Fix setting custom property on os_project
+- security_group_rule - Remove protocols choice in security rules
+- volume_info - Fix volume_info result for SDK < 0.19
+
+New Modules
+-----------
+
+- openstack.cloud.identity_role_info - Retrieve information about Openstack Identity roles.
+- openstack.cloud.keypair_info - Retrieve information about Openstack key pairs.
+- openstack.cloud.security_group_info - Retrieve information about Openstack Security Groups.
+- openstack.cloud.security_group_rule_info - Retrieve information about Openstack Security Group rules.
+- openstack.cloud.stack_info - Retrieve information about Openstack Heat stacks.
+
 v1.2.1
 ======
 

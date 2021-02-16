@@ -1,111 +1,151 @@
+ancestor: null
 releases:
-  1.2.1:
-    release_date: '2021-01-03'
-    changes:
-      release_summary: Porting modules to new OpenstackModule class and fixes.
-      minor_changes:
-        - dns_zone, recordset - Enable update for recordset and add tests for dns and recordset module
-        - loadbalancer - Refactor loadbalancer module
-        - openstack - OpenStackModule Support defining a minimum version of the SDK
-        - ironic - Refactor ironic authentication into a new module_utils module
-        - endpoint - Do not fail when endpoint state is absent
-        - subnet - Fix subnets update and idempotency
-        - volume_info - Fix volume_info arguments for SDK 0.19
-        - routers_info - Added deprecated_names for router_info module
-        - security_group_rule - Refactor TCP/UDP port check
-        - openstack - Fix docs-args mismatch in modules
-        - security_group.py - Migrating security_group from AnsibleModule to OpenStackModule
-        - router - Migrating routers from AnsibleModule to OpenStackModule
-        - server_volume - Migrating server_volume from AnsibleModule to OpenStackModule
-        - dns_zone - Migrating dns_zone from AnsibleModule to OpenStackModule
-        - network - Migrating network from AnsibleModule to OpenStackModule
-        - routers_info - Migrating routers_info from AnsibleModule to OpenStackModule
-        - networks_info - Migrating networks_info from AnsibleModule to OpenStackModule
-        - subnets_info - Migrating subnets_info from AnsibleModule to OpenStackModule
-        - server.py - Improve "server" module with OpenstackModule class
-        - volume.py - Migrating volume from AnsibleModule to OpenStackModule
-        - subnet - Migrating subnet module from AnsibleModule to OpenStackModule
-        - openstack - Add galaxy.yml to support install from git
-  1.2.0:
-    release_date: '2020-10-13'
-    changes:
-      release_summary: New volume backup modules.
-      minor_changes:
-        - lb_health_monitor - Make it possible to create a health monitor to a pool
-    modules:
-      - name: volume_snapshot_info module
-        description: Retrieve information about Openstack volume snapshots.
-        namespace: ''
-      - name: volume_backup_info module
-        description: Retrieve information about Openstack volume backups.
-        namespace: ''
-      - name: volume_backup module
-        description: Add/Delete Openstack volumes backup.
-        namespace: ''
-  1.1.0:
-    release_date: '2020-08-17'
-    changes:
-      release_summary: Starting redesign modules and bugfixes.
-      minor_changes:
-        - A basic module subclass was introduced and a few modules moved to inherit from it.
-        - Added pip installation option for collection.
-        - Added template for generation of artibtrary module.
-        - Add more useful information from exception
-        - inventory_openstack - Add openstack logger and Ansible display utility
-        - loadbalancer - Add support for setting the Flavor when creating a load balancer
-        - baremetal modules - Do not require ironic_url if cloud or auth.endpoint is provided
-      bugfixes:
-        - security_group_rule - Don't pass tenant_id for remote group
-        - Fix non existing attribuites in SDK exception
-    modules:
-      - name: volume_info
-        description: Retrieve information about Openstack volumes.
-        namespace: ''
-  1.0.1:
-    release_date: '2020-05-22'
-    changes:
-      release_summary: Bugfix for server_info
-      bugfixes:
-        - server_info - Fix broken server_info module and add tests
   1.0.0:
-    release_date: '2020-05-19'
     changes:
-      release_summary: Initial release of collection.
-      minor_changes:
-        - Renaming all modules and removing "os" prefix from names.
-        - server_action - pass imageRef to rebuild
-        - subnet - Updated allocation pool checks
-        - project - Add properties for os_project
-        - config - Update os_client_config to use openstacksdk
-        - host_aggregate - Add support for not 'purging' missing hosts
-        - baremetal_node_action - Support json type for the ironic_node config_drive parameter
       bugfixes:
-        - federation_mapping - Fixup some minor nits found in followup reviews
-        - coe_cluster - Retrive id/uuid correctly
-        - baremetal_node - Correct parameter name
-        - network - Bump minimum openstacksdk version when using os_network/dns_domain
-        - inventory_openstack - Fix constructed compose
-        - role_assignment - Fix os_user_role for groups in multidomain context
-        - role_assignment - Fix os_user_role issue to grant a role in a domain
+      - baremetal_node - Correct parameter name
+      - coe_cluster - Retrive id/uuid correctly
+      - federation_mapping - Fixup some minor nits found in followup reviews
+      - inventory_openstack - Fix constructed compose
+      - network - Bump minimum openstacksdk version when using os_network/dns_domain
+      - role_assignment - Fix os_user_role for groups in multidomain context
+      - role_assignment - Fix os_user_role issue to grant a role in a domain
+      minor_changes:
+      - Renaming all modules and removing "os" prefix from names.
+      - baremetal_node_action - Support json type for the ironic_node config_drive
+        parameter
+      - config - Update os_client_config to use openstacksdk
+      - host_aggregate - Add support for not 'purging' missing hosts
+      - project - Add properties for os_project
+      - server_action - pass imageRef to rebuild
+      - subnet - Updated allocation pool checks
+      release_summary: Initial release of collection.
     modules:
-      - name: keystone_federation_protocol_info
-        description: Add support for getting information about Keystone federation Protocols
-        namespace: ''
-      - name: keystone_federation_protocol
-        description: Add support for Keystone federation Protocols
-        namespace: ''
-      - name: federation_idp_info
-        description: Add support for fetching the information about federation IDPs
-        namespace: ''
-      - name: federation_idp
-        description: Add support for Keystone Identity Providers
-        namespace: ''
-      - name: federation_mapping_info
-        description: Add support for fetching the information about Keystone mappings
-        namespace: ''
-      - name: federation_mapping
-        description: Add support for Keystone mappings
-        namespace: ''
-      - name: routers_info
-        description: Retrieve information about one or more OpenStack routers.
-        namespace: ''
+    - description: Add support for Keystone Identity Providers
+      name: federation_idp
+      namespace: ''
+    - description: Add support for fetching the information about federation IDPs
+      name: federation_idp_info
+      namespace: ''
+    - description: Add support for Keystone mappings
+      name: federation_mapping
+      namespace: ''
+    - description: Add support for fetching the information about Keystone mappings
+      name: federation_mapping_info
+      namespace: ''
+    - description: Add support for Keystone federation Protocols
+      name: keystone_federation_protocol
+      namespace: ''
+    - description: Add support for getting information about Keystone federation Protocols
+      name: keystone_federation_protocol_info
+      namespace: ''
+    - description: Retrieve information about one or more OpenStack routers.
+      name: routers_info
+      namespace: ''
+    release_date: '2020-05-19'
+  1.0.1:
+    changes:
+      bugfixes:
+      - server_info - Fix broken server_info module and add tests
+      release_summary: Bugfix for server_info
+    release_date: '2020-05-22'
+  1.1.0:
+    changes:
+      bugfixes:
+      - Fix non existing attribuites in SDK exception
+      - security_group_rule - Don't pass tenant_id for remote group
+      minor_changes:
+      - A basic module subclass was introduced and a few modules moved to inherit
+        from it.
+      - Add more useful information from exception
+      - Added pip installation option for collection.
+      - Added template for generation of artibtrary module.
+      - baremetal modules - Do not require ironic_url if cloud or auth.endpoint is
+        provided
+      - inventory_openstack - Add openstack logger and Ansible display utility
+      - loadbalancer - Add support for setting the Flavor when creating a load balancer
+      release_summary: Starting redesign modules and bugfixes.
+    modules:
+    - description: Retrieve information about Openstack volumes.
+      name: volume_info
+      namespace: ''
+    release_date: '2020-08-17'
+  1.2.0:
+    changes:
+      minor_changes:
+      - lb_health_monitor - Make it possible to create a health monitor to a pool
+      release_summary: New volume backup modules.
+    modules:
+    - description: Add/Delete Openstack volumes backup.
+      name: volume_backup module
+      namespace: ''
+    - description: Retrieve information about Openstack volume backups.
+      name: volume_backup_info module
+      namespace: ''
+    - description: Retrieve information about Openstack volume snapshots.
+      name: volume_snapshot_info module
+      namespace: ''
+    release_date: '2020-10-13'
+  1.2.1:
+    changes:
+      minor_changes:
+      - dns_zone - Migrating dns_zone from AnsibleModule to OpenStackModule
+      - dns_zone, recordset - Enable update for recordset and add tests for dns and
+        recordset module
+      - endpoint - Do not fail when endpoint state is absent
+      - ironic - Refactor ironic authentication into a new module_utils module
+      - loadbalancer - Refactor loadbalancer module
+      - network - Migrating network from AnsibleModule to OpenStackModule
+      - networks_info - Migrating networks_info from AnsibleModule to OpenStackModule
+      - openstack - Add galaxy.yml to support install from git
+      - openstack - Fix docs-args mismatch in modules
+      - openstack - OpenStackModule Support defining a minimum version of the SDK
+      - router - Migrating routers from AnsibleModule to OpenStackModule
+      - routers_info - Added deprecated_names for router_info module
+      - routers_info - Migrating routers_info from AnsibleModule to OpenStackModule
+      - security_group.py - Migrating security_group from AnsibleModule to OpenStackModule
+      - security_group_rule - Refactor TCP/UDP port check
+      - server.py - Improve "server" module with OpenstackModule class
+      - server_volume - Migrating server_volume from AnsibleModule to OpenStackModule
+      - subnet - Fix subnets update and idempotency
+      - subnet - Migrating subnet module from AnsibleModule to OpenStackModule
+      - subnets_info - Migrating subnets_info from AnsibleModule to OpenStackModule
+      - volume.py - Migrating volume from AnsibleModule to OpenStackModule
+      - volume_info - Fix volume_info arguments for SDK 0.19
+      release_summary: Porting modules to new OpenstackModule class and fixes.
+    release_date: '2021-01-03'
+  1.3.0:
+    changes:
+      bugfixes:
+      - port - Fixed check for None in os_port
+      - project - Fix setting custom property on os_project
+      - security_group_rule - Remove protocols choice in security rules
+      - volume_info - Fix volume_info result for SDK < 0.19
+      minor_changes:
+      - Fix some typos in readme
+      - Guidelines Fix links and formatting
+      - baremetal_node - Add support for new features
+      - baremetal_node - ironic deprecate sub-options of driver_info
+      - baremetal_node - ironic stop putting meaningless values to properties
+      - image_info - Migrating image_info module from AnsibleModule to OpenStackModule
+      - recordset -  Update recordset docu
+      - server - Allow description field to be set with os_server
+      - server_action - Added shelve and unshelve as new server actions
+      release_summary: New modules and bugfixes.
+    modules:
+    - description: Retrieve information about Openstack Identity roles.
+      name: identity_role_info
+      namespace: ''
+    - description: Retrieve information about Openstack key pairs.
+      name: keypair_info
+      namespace: ''
+    - description: Retrieve information about Openstack Security Groups.
+      name: security_group_info
+      namespace: ''
+    - description: Retrieve information about Openstack Security Group rules.
+      name: security_group_rule_info
+      namespace: ''
+    - description: Retrieve information about Openstack Heat stacks.
+      name: stack_info
+      namespace: ''
+    release_date: '2021-02-16'
