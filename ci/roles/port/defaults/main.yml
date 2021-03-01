@@ -4,3 +4,6 @@ subnet_name: ansible_port_subnet
 port_name: ansible_port
 secgroup_name: ansible_port_secgroup
 no_security_groups: True
+binding_profile:
+  "pci_slot": "0000:03:11.1"
+  "physical_network": "provider"
