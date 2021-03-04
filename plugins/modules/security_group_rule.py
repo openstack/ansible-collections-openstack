@@ -202,7 +202,7 @@ def _ports_match(protocol, module_min, module_max, rule_min, rule_max):
     """
 
     # Check if the user is supplying -1 for ICMP.
-    if protocol == 'icmp':
+    if protocol in ['icmp', 'ipv6-icmp']:
         if module_min and int(module_min) == -1:
             module_min = None
         if module_max and int(module_max) == -1:
