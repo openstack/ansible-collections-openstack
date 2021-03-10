@@ -6,6 +6,9 @@
   roles:
     - { role: auth, tags: auth }
     - { role: client_config, tags: client_config }
+    - role: object_container
+      tags: object_container
+      when: sdk_version is version(0.18, '>=')
     - { role: group, tags: group }
     - role: dns
       tags: dns

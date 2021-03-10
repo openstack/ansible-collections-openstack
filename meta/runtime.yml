@@ -66,6 +66,7 @@ action_groups:
     - network
     - networks_info
     - object
+    - object_container
     - port
     - port_info
     - project
@@ -163,6 +164,7 @@ action_groups:
     - network
     - networks_info
     - object
+    - object_container
     - port
     - port_info
     - project

@@ -1,0 +1,60 @@
+---
+- module_defaults:
+    openstack.cloud.object_container:
+      cloud: "{{ cloud }}"
+  block:
+    - name: Create an empty container
+      openstack.cloud.object_container:
+        container: "{{ container_name }}"
+      register: container
+
+    - name: Verify container was created
+      assert:
+        that:
+          - container is success
+          - container is changed
+          - container.container.name == container_name
+
+    - name: Set metadata for a container
+      openstack.cloud.object_container:
+        container: "{{ container_name }}"
+        metadata: "Cache-Control='no-cache'"
+      register: set_meta
+
+    - name: Verify container metadata was set
+      assert:
+        that:
+          - set_meta is success
+          - set_meta is changed
+
+    - name: Delete some keys from container metadata
+      openstack.cloud.object_container:
+        container: "{{ container_name }}"
+        keys:
+            - Cache-Control
+      register: delete_meta
+
+    - name: Verify some keys from container metadata was deleted
+      assert:
+        that:
+          - delete_meta is success
+          - delete_meta is changed
+
+    - name: Delete container
+      openstack.cloud.object_container:
+        container: "{{ container_name }}"
+        state: absent
+      register: deleted
+
+    - name: Verify container was deleted
+      assert:
+        that:
+          - deleted is success
+          - deleted is changed
+
+  always:
+    - name: Delete container
+      openstack.cloud.object_container:
+        container: "{{ container_name }}"
+        state: absent
+      ignore_errors: yes
