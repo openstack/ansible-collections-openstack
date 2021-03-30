@@ -140,6 +140,10 @@ openstack_image:
             description: Size of the image.
             returned: success
             type: int
+        tags:
+            description: List of tags assigned to the image
+            returned: success
+            type: list
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule

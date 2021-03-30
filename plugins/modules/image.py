@@ -85,6 +85,12 @@ options:
      choices: [present, absent]
      default: present
      type: str
+   tags:
+     description:
+       - List of tags to be applied to the image
+     default: []
+     type: list
+     elements: str
    volume:
      description:
        - ID of a volume to create an image from.
@@ -115,6 +121,8 @@ EXAMPLES = '''
     filename: cirros-0.3.0-x86_64-disk.img
     kernel: cirros-vmlinuz
     ramdisk: cirros-initrd
+    tags:
+      - custom
     properties:
       cpu_arch: x86_64
       distro: ubuntu
@@ -171,6 +179,7 @@ class ImageModule(OpenStackModule):
         kernel=dict(type='str'),
         properties=dict(type='dict', default={}),
         volume=dict(type='str'),
+        tags=dict(type='list', default=[], elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
@@ -205,6 +214,7 @@ class ImageModule(OpenStackModule):
                     min_disk=self.params['min_disk'],
                     min_ram=self.params['min_ram'],
                     volume=self.params['volume'],
+                    tags=self.params['tags'],
                     **kwargs
                 )
                 changed = True
@@ -217,6 +227,8 @@ class ImageModule(OpenStackModule):
                 ramdisk=self.params['ramdisk'],
                 protected=self.params['protected'],
                 **self.params['properties'])
+            if self.params['tags']:
+                self.conn.image.update_image(image.id, tags=self.params['tags'])
             image = self.conn.get_image(name_or_id=image.id)
             self.exit(changed=changed, image=image, id=image.id)
 

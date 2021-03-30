@@ -13,6 +13,7 @@
      name: "{{ image_name }}"
      filename: "{{ tmp_file.stdout }}"
      disk_format: raw
+     tags: "{{ image_tags }}"
   register: image
 
 - name: Get details of created image
@@ -25,6 +26,7 @@
   assert:
     that:
       - "image_info_result.openstack_image.name == image_name"
+      - "image_info_result.openstack_image.tags | sort == image_tags | sort"
 
 - name: Delete raw image (defaults)
   openstack.cloud.image:
