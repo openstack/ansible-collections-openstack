@@ -381,7 +381,7 @@ def main():
         injected_files=dict(required=False, type='int', default=None),
         injected_path_size=dict(required=False, type='int', default=None),
         instances=dict(required=False, type='int', default=None),
-        key_pairs=dict(required=False, type='int', default=None),
+        key_pairs=dict(required=False, type='int', default=None, no_log=False),
         loadbalancer=dict(required=False, type='int', default=None),
         network=dict(required=False, type='int', default=None),
         per_volume_gigabytes=dict(required=False, type='int', default=None),

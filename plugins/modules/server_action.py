@@ -119,7 +119,7 @@ class ServerActionModule(OpenStackModule):
                              'lock', 'unlock', 'suspend', 'resume',
                              'rebuild', 'shelve', 'shelve_offload', 'unshelve']),
         image=dict(required=False, type='str'),
-        admin_password=dict(required=False, type='str'),
+        admin_password=dict(required=False, type='str', no_log=True),
     )
     module_kwargs = dict(
         required_if=[('action', 'rebuild', ['image'])],

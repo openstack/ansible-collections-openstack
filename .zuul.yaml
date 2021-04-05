@@ -340,15 +340,19 @@
         - ansible-collections-openstack-functional-devstack-train-ansible-2.10:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
+            voting: false
         - ansible-collections-openstack-functional-devstack-stein-ansible-2.10:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
+            voting: false
         - ansible-collections-openstack-functional-devstack-rocky-ansible-2.10:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
+            voting: false
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.10:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
+            voting: false
         - ansible-collections-openstack-functional-devstack-octavia:
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
@@ -375,9 +379,9 @@
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.10
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.10
         # - ansible-collections-openstack-functional-devstack-train-ansible-2.10
-        - ansible-collections-openstack-functional-devstack-stein-ansible-2.10
-        - ansible-collections-openstack-functional-devstack-rocky-ansible-2.10
-        - ansible-collections-openstack-functional-devstack-queens-ansible-2.10
+        # - ansible-collections-openstack-functional-devstack-stein-ansible-2.10
+        # - ansible-collections-openstack-functional-devstack-rocky-ansible-2.10
+        # - ansible-collections-openstack-functional-devstack-queens-ansible-2.10
         - ansible-collections-openstack-functional-devstack-octavia
 
     periodic:

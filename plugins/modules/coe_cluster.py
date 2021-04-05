@@ -230,7 +230,7 @@ def main():
         discovery_url=dict(default=None),
         docker_volume_size=dict(type='int'),
         flavor_id=dict(default=None),
-        keypair=dict(default=None),
+        keypair=dict(default=None, no_log=False),
         labels=dict(default=None, type='raw'),
         master_count=dict(type='int', default=1),
         master_flavor_id=dict(default=None),
