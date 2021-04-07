@@ -195,7 +195,8 @@ def main():
     is_old_facts = module._name == 'openstack.cloud.port_facts'
     if is_old_facts:
         module.deprecate("The 'openstack.cloud.port_facts' module has been renamed to 'openstack.cloud.port_info', "
-                         "and the renamed one no longer returns ansible_facts", version='2.13')
+                         "and the renamed one no longer returns ansible_facts", version='2.0.0',
+                         collection_name='openstack.cloud')
 
     port = module.params.get('port')
     filters = module.params.get('filters')

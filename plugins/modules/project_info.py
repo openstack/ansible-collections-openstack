@@ -115,7 +115,8 @@ def main():
     is_old_facts = module._name == 'openstack.cloud.project_facts'
     if is_old_facts:
         module.deprecate("The 'openstack.cloud.project_facts' module has been renamed to 'openstack.cloud.project_info', "
-                         "and the renamed one no longer returns ansible_facts", version='2.13')
+                         "and the renamed one no longer returns ansible_facts", version='2.0.0',
+                         collection_name='openstack.cloud')
 
     sdk, opcloud = openstack_cloud_from_module(module)
     try:

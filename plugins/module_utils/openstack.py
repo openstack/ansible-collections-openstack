@@ -290,7 +290,7 @@ class OpenStackModule:
                 "The '%s' module has been renamed to '%s' in openstack "
                 "collection: openstack.cloud.%s" % (
                     self.module_name, new_module_name, new_module_name),
-                version='2.10')
+                version='2.0.0', collection_name='openstack.cloud')
 
     def openstack_cloud_from_module(self):
         """Sets up connection to cloud using provided options. Checks if all

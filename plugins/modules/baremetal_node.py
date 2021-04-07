@@ -242,7 +242,8 @@ def _parse_driver_info(sdk, module):
             info.update(info.pop(deprecated))
             module.deprecate("Suboption %s of the driver_info parameter of "
                              "'openstack.cloud.baremetal_node' is deprecated"
-                             % deprecated, version='2.0.0')
+                             % deprecated, version='2.0.0',
+                             collection_name='openstack.cloud')
     return info
 
 

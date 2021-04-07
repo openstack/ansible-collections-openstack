@@ -184,7 +184,8 @@ def main():
     is_old_facts = module._name == 'openstack.cloud.compute_flavor_facts'
     if is_old_facts:
         module.deprecate("The 'openstack.cloud.compute_flavor_facts' module has been renamed to 'openstack.cloud.compute_flavor_info', "
-                         "and the renamed one no longer returns ansible_facts", version='2.13')
+                         "and the renamed one no longer returns ansible_facts", version='2.0.0',
+                         collection_name='openstack.cloud')
 
     name = module.params['name']
     vcpus = module.params['vcpus']
