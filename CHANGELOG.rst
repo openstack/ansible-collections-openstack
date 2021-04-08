@@ -5,6 +5,31 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.4.0
+======
+
+Release Summary
+---------------
+
+New object_container module and bugfixes.
+
+Bugfixes
+--------
+
+- Add Octavia job for testing Load Balancer
+- Add binding profile to port module
+- Add execution environment metadata
+- Fix CI for latest ansible-test with no_log
+- Fix issues with newest ansible-test 2.11
+- Prepare for Ansible 2.11 tests
+- add option to exclude legacy groups
+- security_group_rule add support ipv6-icmp
+
+New Modules
+-----------
+
+- openstack.cloud.object_container - Manage Swift container
+
 v1.3.0
 ======
 
