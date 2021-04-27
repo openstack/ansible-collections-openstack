@@ -220,6 +220,8 @@ def main():
 
             if flavor:
                 old_extra_specs = flavor['extra_specs']
+                if flavor['swap'] == "":
+                    flavor['swap'] = 0
                 for param_key in ['ram', 'vcpus', 'disk', 'ephemeral', 'swap', 'rxtx_factor', 'is_public']:
                     if module.params[param_key] != flavor[param_key]:
                         require_update = True
