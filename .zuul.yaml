@@ -9,6 +9,15 @@
     required-projects:
       - openstack/ansible-collections-openstack
       - openstack/designate
+    irrelevant-files: &ignore_files
+      - changelogs/.*
+      - COPYING
+      - docs/.*
+      - .*\.md
+      - .*\.rst
+      - tools/run-ansible-sanity.sh
+      - tests/sanity/.*
+      - contrib/.*
     vars:
       zuul_work_dir: src/opendev.org/openstack/ansible-collections-openstack
       tox_envlist: ansible
@@ -309,6 +318,34 @@
     required-projects:
       - openstack/ansible-collections-openstack
 
+# TripleO jobs
+- job:
+    name: tripleo-ci-centos-8-content-provider-osa
+    parent: tripleo-ci-centos-8-content-provider
+    # Run only on files used in TripleO
+    files: &ooo_files
+      - ^plugins/modules/catalog_service.*$
+      - ^plugins/modules/endpoint.*$
+      - ^plugins/modules/identity_domain.*$
+      - ^plugins/modules/identity_domain_info.*$
+      - ^plugins/modules/identity_role.*$
+      - ^plugins/modules/identity_user.*$
+      - ^plugins/modules/keypair.*$
+      - ^plugins/modules/project.*$
+      - ^plugins/modules/role_assignment.*$
+      - ^plugins/modules/stack.*$
+      - ^plugins/module_utils/openstack.*$
+
+- job:
+    name: tripleo-ci-centos-8-standalone-osa
+    parent: tripleo-ci-centos-8-standalone
+    files: *ooo_files
+    vars:
+      consumer_job: true
+      build_container_images: false
+      remove_tags:
+        - build
+
 - project:
     check:
       jobs:
@@ -321,50 +358,30 @@
               - tox-pep8
               - openstack-tox-linters-ansible-2.9
               - openstack-tox-linters-ansible-2.11
-            irrelevant-files: &ignore_files
-              - changelogs/.*
-              - COPYING
-              - docs/.*
-              - .*\.md
-              - .*\.rst
-              - tools/run-ansible-sanity.sh
-              - tests/sanity/.*
-              - contrib/.*
 
         - ansible-collections-openstack-functional-devstack-releases:
             dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-ansible-2.9:
             dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-ansible-2.11:
             dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-ansible-devel:
             dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-ansible-pip:
             dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.11:
             dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.11:
             dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11:
             dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11:
             dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.11:
             dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
             voting: false
         - ansible-collections-openstack-functional-devstack-octavia:
             dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
 
         - bifrost-collections-src:
             voting: false
@@ -374,6 +391,15 @@
             voting: false
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
+
+        - tripleo-ci-centos-8-content-provider-osa:
+            dependencies: *deps_unit_lint
+        - tripleo-ci-centos-8-standalone-osa:
+            dependencies:
+              - tox-pep8
+              - openstack-tox-linters-ansible-2.9
+              - openstack-tox-linters-ansible-2.11
+              - tripleo-ci-centos-8-content-provider-osa
 
     gate:
       jobs:
@@ -391,6 +417,11 @@
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
         # - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
         - ansible-collections-openstack-functional-devstack-octavia
+        - tripleo-ci-centos-8-content-provider-osa
+        - tripleo-ci-centos-8-standalone-osa:
+            dependencies:
+              - tripleo-ci-centos-8-content-provider-osa
+
 
     periodic:
       jobs:
