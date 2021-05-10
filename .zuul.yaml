@@ -320,8 +320,11 @@
 
 # TripleO jobs
 - job:
-    name: tripleo-ci-centos-8-content-provider-osa
-    parent: tripleo-ci-centos-8-content-provider
+    name: tripleo-ci-centos-8-standalone-osa
+    parent: tripleo-ci-centos-8-standalone
+    vars:
+      consumer_job: false
+      build_container_images: true
     # Run only on files used in TripleO
     files: &ooo_files
       - ^plugins/modules/catalog_service.*$
@@ -335,16 +338,6 @@
       - ^plugins/modules/role_assignment.*$
       - ^plugins/modules/stack.*$
       - ^plugins/module_utils/openstack.*$
-
-- job:
-    name: tripleo-ci-centos-8-standalone-osa
-    parent: tripleo-ci-centos-8-standalone
-    files: *ooo_files
-    vars:
-      consumer_job: true
-      build_container_images: false
-      remove_tags:
-        - build
 
 - project:
     check:
@@ -392,14 +385,10 @@
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
 
-        - tripleo-ci-centos-8-content-provider-osa:
-            dependencies: *deps_unit_lint
         - tripleo-ci-centos-8-standalone-osa:
-            dependencies:
-              - tox-pep8
-              - openstack-tox-linters-ansible-2.9
-              - openstack-tox-linters-ansible-2.11
-              - tripleo-ci-centos-8-content-provider-osa
+            # Set voting to true when TripleO CI is back
+            voting: false
+            dependencies: *deps_unit_lint
 
     gate:
       jobs:
@@ -417,11 +406,7 @@
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
         # - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
         - ansible-collections-openstack-functional-devstack-octavia
-        - tripleo-ci-centos-8-content-provider-osa
-        - tripleo-ci-centos-8-standalone-osa:
-            dependencies:
-              - tripleo-ci-centos-8-content-provider-osa
-
+        - tripleo-ci-centos-8-standalone-osa
 
     periodic:
       jobs:
