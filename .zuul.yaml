@@ -339,6 +339,14 @@
       - ^plugins/modules/stack.*$
       - ^plugins/module_utils/openstack.*$
 
+- job:
+    name: tripleo-ci-centos-8-standalone-train-osa
+    parent: tripleo-ci-centos-8-standalone-osa
+    voting: false
+    override-checkout: stable/train
+    vars:
+      branch_override: stable/train
+
 - project:
     check:
       jobs:
@@ -388,6 +396,9 @@
         - tripleo-ci-centos-8-standalone-osa:
             # Set voting to true when TripleO CI is back
             voting: false
+            dependencies: *deps_unit_lint
+
+        - tripleo-ci-centos-8-standalone-train-osa:
             dependencies: *deps_unit_lint
 
     gate:
