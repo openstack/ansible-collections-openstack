@@ -38,7 +38,7 @@ options:
         - Additional properties to be associated with this project. Requires
           openstacksdk>0.45.
      type: dict
-     default: {}
+     required: false
    state:
      description:
        - Should the resource be present or absent.
@@ -99,133 +99,121 @@ project:
             sample: True
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _needs_update(module, project):
-    keys = ('description', 'enabled')
-    for key in keys:
-        if module.params[key] is not None and module.params[key] != project.get(key):
-            return True
-
-    properties = module.params['properties']
-    if properties:
-        project_properties = project.get('properties')
-        for k, v in properties.items():
-            if v is not None and (k not in project_properties or v != project_properties[k]):
-                return True
-
-    return False
-
-
-def _system_state_change(module, project):
-    state = module.params['state']
-    if state == 'present':
-        if project is None:
-            changed = True
-        else:
-            if _needs_update(module, project):
-                changed = True
-            else:
-                changed = False
-
-    elif state == 'absent':
-        if project is None:
-            changed = False
-        else:
-            changed = True
-
-    return changed
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class IdentityProjectModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=True),
-        description=dict(required=False, default=None),
-        domain_id=dict(required=False, default=None, aliases=['domain']),
-        properties=dict(type='dict', default={}),
+        description=dict(required=False),
+        domain_id=dict(required=False, aliases=['domain']),
+        properties=dict(required=False, type='dict', min_ver='0.45.1'),
         enabled=dict(default=True, type='bool'),
         state=dict(default='present', choices=['absent', 'present'])
     )
-
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(
-        argument_spec,
-        supports_check_mode=True,
-        **module_kwargs
+    module_kwargs = dict(
+        supports_check_mode=True
     )
 
-    name = module.params['name']
-    description = module.params['description']
-    domain = module.params.get('domain_id')
-    enabled = module.params['enabled']
-    properties = module.params['properties']
-    state = module.params['state']
+    def _needs_update(self, project):
+        keys = ('description', 'enabled')
+        for key in keys:
+            if self.params[key] is not None and self.params[key] != project.get(key):
+                return True
 
-    min_version = None
+        properties = self.params['properties']
+        if properties:
+            project_properties = project.get('properties')
+            for k, v in properties.items():
+                if v is not None and (k not in project_properties or v != project_properties[k]):
+                    return True
 
-    if properties:
-        min_version = '0.45.1'
+        return False
 
-    sdk, cloud = openstack_cloud_from_module(module, min_version)
-    try:
+    def _system_state_change(self, project):
+        state = self.params['state']
+        if state == 'present':
+            if project is None:
+                changed = True
+            else:
+                if self._needs_update(project):
+                    changed = True
+                else:
+                    changed = False
+
+        elif state == 'absent':
+            changed = project is not None
+
+        return changed
+
+    def run(self):
+        name = self.params['name']
+        description = self.params['description']
+        domain = self.params['domain_id']
+        enabled = self.params['enabled']
+        properties = self.params['properties'] or {}
+        state = self.params['state']
+
         if domain:
             try:
                 # We assume admin is passing domain id
-                dom = cloud.get_domain(domain)['id']
+                dom = self.conn.get_domain(domain)['id']
                 domain = dom
             except Exception:
                 # If we fail, maybe admin is passing a domain name.
                 # Note that domains have unique names, just like id.
                 try:
-                    dom = cloud.search_domains(filters={'name': domain})[0]['id']
+                    dom = self.conn.search_domains(filters={'name': domain})[0]['id']
                     domain = dom
                 except Exception:
                     # Ok, let's hope the user is non-admin and passing a sane id
                     pass
 
         if domain:
-            project = cloud.get_project(name, domain_id=domain)
+            project = self.conn.get_project(name, domain_id=domain)
         else:
-            project = cloud.get_project(name)
+            project = self.conn.get_project(name)
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(module, project))
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(project))
 
         if state == 'present':
             if project is None:
-                project = cloud.create_project(
+                project = self.conn.create_project(
                     name=name, description=description,
                     domain_id=domain,
                     enabled=enabled)
                 changed = True
 
-                project = cloud.update_project(
-                    project['id'], description=description,
-                    enabled=enabled, **properties)
+                project = self.conn.update_project(
+                    project['id'],
+                    description=description,
+                    enabled=enabled,
+                    **properties)
             else:
-                if _needs_update(module, project):
-                    project = cloud.update_project(
-                        project['id'], description=description,
-                        enabled=enabled, **properties)
+                if self._needs_update(project):
+                    project = self.conn.update_project(
+                        project['id'],
+                        description=description,
+                        enabled=enabled,
+                        **properties)
                     changed = True
                 else:
                     changed = False
-            module.exit_json(changed=changed, project=project)
+            self.exit_json(changed=changed, project=project)
 
         elif state == 'absent':
             if project is None:
                 changed = False
             else:
-                cloud.delete_project(project['id'])
+                self.conn.delete_project(project['id'])
                 changed = True
-            module.exit_json(changed=changed)
+            self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=e.message, extra_data=e.extra_data)
+
+def main():
+    module = IdentityProjectModule()
+    module()
 
 
 if __name__ == '__main__':

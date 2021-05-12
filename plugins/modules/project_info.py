@@ -99,59 +99,57 @@ openstack_projects:
             type: bool
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_full_argument_spec, openstack_cloud_from_module
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def main():
+class IdentityProjectInfoModule(OpenStackModule):
+    deprecated_names = ('project_facts', 'openstack.cloud.project_facts')
 
-    argument_spec = openstack_full_argument_spec(
-        name=dict(required=False, default=None),
-        domain=dict(required=False, default=None),
-        filters=dict(required=False, type='dict', default=None),
+    argument_spec = dict(
+        name=dict(required=False),
+        domain=dict(required=False),
+        filters=dict(required=False, type='dict'),
+    )
+    module_kwargs = dict(
+        supports_check_mode=True
     )
 
-    module = AnsibleModule(argument_spec)
-    is_old_facts = module._name == 'openstack.cloud.project_facts'
-    if is_old_facts:
-        module.deprecate("The 'openstack.cloud.project_facts' module has been renamed to 'openstack.cloud.project_info', "
-                         "and the renamed one no longer returns ansible_facts", version='2.0.0',
-                         collection_name='openstack.cloud')
-
-    sdk, opcloud = openstack_cloud_from_module(module)
-    try:
-        name = module.params['name']
-        domain = module.params['domain']
-        filters = module.params['filters']
+    def run(self):
+        name = self.params['name']
+        domain = self.params['domain']
+        filters = self.params['filters']
+        is_old_facts = self.module_name == 'openstack.cloud.project_facts'
 
         if domain:
             try:
                 # We assume admin is passing domain id
-                dom = opcloud.get_domain(domain)['id']
+                dom = self.conn.get_domain(domain)['id']
                 domain = dom
             except Exception:
                 # If we fail, maybe admin is passing a domain name.
                 # Note that domains have unique names, just like id.
-                dom = opcloud.search_domains(filters={'name': domain})
+                dom = self.conn.search_domains(filters={'name': domain})
                 if dom:
                     domain = dom[0]['id']
                 else:
-                    module.fail_json(msg='Domain name or ID does not exist')
+                    self.fail_json(msg='Domain name or ID does not exist')
 
             if not filters:
                 filters = {}
 
             filters['domain_id'] = domain
 
-        projects = opcloud.search_projects(name, filters)
+        projects = self.conn.search_projects(name, filters)
         if is_old_facts:
-            module.exit_json(changed=False, ansible_facts=dict(
+            self.exit_json(changed=False, ansible_facts=dict(
                 openstack_projects=projects))
         else:
-            module.exit_json(changed=False, openstack_projects=projects)
+            self.exit_json(changed=False, openstack_projects=projects)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = IdentityProjectInfoModule()
+    module()
 
 
 if __name__ == '__main__':
