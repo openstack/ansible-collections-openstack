@@ -120,7 +120,7 @@ def openstack_full_argument_spec(**kwargs):
         auth=dict(default=None, type='dict', no_log=True),
         region_name=dict(default=None),
         availability_zone=dict(default=None),
-        validate_certs=dict(default=False, type='bool', aliases=['verify']),
+        validate_certs=dict(default=None, type='bool', aliases=['verify']),
         ca_cert=dict(default=None, aliases=['cacert']),
         client_cert=dict(default=None, aliases=['cert']),
         client_key=dict(default=None, no_log=True, aliases=['key']),
