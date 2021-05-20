@@ -96,70 +96,66 @@ user_id:
     type: str
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _system_state_change(state, server_group):
-    if state == 'present' and not server_group:
-        return True
-    if state == 'absent' and server_group:
-        return True
-
-    return False
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class ServerGroupModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=True),
         policies=dict(required=False, type='list', elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
     )
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(
-        argument_spec,
+
+    module_kwargs = dict(
         supports_check_mode=True,
-        **module_kwargs
     )
 
-    name = module.params['name']
-    policies = module.params['policies']
-    state = module.params['state']
+    def _system_state_change(self, state, server_group):
+        if state == 'present' and not server_group:
+            return True
+        if state == 'absent' and server_group:
+            return True
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        server_group = cloud.get_server_group(name)
+        return False
 
-        if module.check_mode:
-            module.exit_json(
-                changed=_system_state_change(state, server_group)
+    def run(self):
+        name = self.params['name']
+        policies = self.params['policies']
+        state = self.params['state']
+
+        server_group = self.conn.get_server_group(name)
+
+        if self.ansible.check_mode:
+            self.exit_json(
+                changed=self._system_state_change(state, server_group)
             )
 
         changed = False
         if state == 'present':
             if not server_group:
                 if not policies:
-                    module.fail_json(
+                    self.fail_json(
                         msg="Parameter 'policies' is required in Server Group "
                             "Create"
                     )
-                server_group = cloud.create_server_group(name, policies)
+                server_group = self.conn.create_server_group(name, policies)
                 changed = True
 
-            module.exit_json(
+            self.exit_json(
                 changed=changed,
                 id=server_group['id'],
                 server_group=server_group
             )
         if state == 'absent':
             if server_group:
-                cloud.delete_server_group(server_group['id'])
+                self.conn.delete_server_group(server_group['id'])
                 changed = True
-            module.exit_json(changed=changed)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+            self.exit_json(changed=changed)
+
+
+def main():
+    module = ServerGroupModule()
+    module()
 
 
 if __name__ == '__main__':
