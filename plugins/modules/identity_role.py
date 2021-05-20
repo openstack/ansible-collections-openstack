@@ -59,58 +59,54 @@ role:
             sample: "demo"
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _system_state_change(state, role):
-    if state == 'present' and not role:
-        return True
-    if state == 'absent' and role:
-        return True
-    return False
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class IdentityRoleModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
-    name = module.params.get('name')
-    state = module.params.get('state')
+    def _system_state_change(self, state, role):
+        if state == 'present' and not role:
+            return True
+        if state == 'absent' and role:
+            return True
+        return False
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        role = cloud.get_role(name)
+    def run(self):
+        name = self.params.get('name')
+        state = self.params.get('state')
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(state, role))
+        role = self.conn.get_role(name)
+
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(state, role))
 
         if state == 'present':
             if role is None:
-                role = cloud.create_role(name)
+                role = self.conn.create_role(name)
                 changed = True
             else:
                 changed = False
-            module.exit_json(changed=changed, role=role)
+            self.exit_json(changed=changed, role=role)
         elif state == 'absent':
             if role is None:
                 changed = False
             else:
-                cloud.delete_role(name)
+                self.conn.delete_role(name)
                 changed = True
-            module.exit_json(changed=changed)
+            self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = IdentityRoleModule()
+    module()
 
 
 if __name__ == '__main__':
