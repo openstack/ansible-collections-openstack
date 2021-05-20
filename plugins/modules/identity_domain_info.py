@@ -81,53 +81,42 @@ openstack_domains:
             type: bool
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def main():
-
-    argument_spec = openstack_full_argument_spec(
+class IdentityDomainInfoModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=False, default=None),
         filters=dict(required=False, type='dict', default=None),
     )
-    module_kwargs = openstack_module_kwargs(
+    module_kwargs = dict(
         mutually_exclusive=[
             ['name', 'filters'],
         ]
     )
-    module = AnsibleModule(argument_spec, **module_kwargs)
-    is_old_facts = module._name == 'openstack.cloud.identity_domain_facts'
-    if is_old_facts:
-        module.deprecate("The 'openstack.cloud.identity_domain_facts' module has been renamed to 'openstack.cloud.identity_domain_info', "
-                         "and the renamed one no longer returns ansible_facts", version='2.0.0',
-                         collection_name='openstack.cloud')
 
-    sdk, opcloud = openstack_cloud_from_module(module)
-    try:
-        name = module.params['name']
-        filters = module.params['filters']
+    deprecated_names = ('openstack.cloud.identity_domain_facts')
+
+    def run(self):
+        name = self.params['name']
+        filters = self.params['filters']
 
         if name:
             # Let's suppose user is passing domain ID
             try:
-                domains = opcloud.get_domain(name)
+                domains = self.conn.get_domain(name)
             except Exception:
-                domains = opcloud.search_domains(filters={'name': name})
+                domains = self.conn.search_domains(filters={'name': name})
 
         else:
-            domains = opcloud.search_domains(filters)
+            domains = self.conn.search_domains(filters)
 
-        if is_old_facts:
-            module.exit_json(changed=False, ansible_facts=dict(
-                openstack_domains=domains))
-        else:
-            module.exit_json(changed=False, openstack_domains=domains)
+        self.exit_json(changed=False, openstack_domains=domains)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = IdentityDomainInfoModule()
+    module()
 
 
 if __name__ == '__main__':
