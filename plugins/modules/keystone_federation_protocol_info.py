@@ -45,65 +45,53 @@ EXAMPLES = '''
 RETURN = '''
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_full_argument_spec
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_module_kwargs
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_cloud_from_module
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def normalize_protocol(protocol):
-    """
-    Normalizes the protocol definitions so that the outputs are consistent with the
-    parameters
-
-    - "name" (parameter) == "id" (SDK)
-    """
-    if protocol is None:
-        return None
-
-    _protocol = protocol.to_dict()
-    _protocol['name'] = protocol['id']
-    # As of 0.44 SDK doesn't copy the URI parameters over, so let's add them
-    _protocol['idp_id'] = protocol['idp_id']
-    return _protocol
-
-
-def main():
-    """ Module entry point """
-
-    argument_spec = openstack_full_argument_spec(
+class IdentityFederationProtocolInfoModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(aliases=['id']),
         idp_id=dict(required=True, aliases=['idp_name']),
     )
-    module_kwargs = openstack_module_kwargs(
-    )
-    module = AnsibleModule(
-        argument_spec,
-        supports_check_mode=True,
-        **module_kwargs
+    module_kwargs = dict(
+        supports_check_mode=True
     )
 
-    name = module.params.get('name')
-    idp = module.params.get('idp_id')
+    def normalize_protocol(self, protocol):
+        """
+        Normalizes the protocol definitions so that the outputs are consistent with the
+        parameters
 
-    sdk, cloud = openstack_cloud_from_module(module, min_version="0.44")
+        - "name" (parameter) == "id" (SDK)
+        """
+        if protocol is None:
+            return None
 
-    if name:
-        try:
-            protocol = cloud.identity.get_federation_protocol(idp, name)
-            protocol = normalize_protocol(protocol)
-        except sdk.exceptions.ResourceNotFound:
-            module.fail_json(msg='Failed to find protocol')
-        except sdk.exceptions.OpenStackCloudException as ex:
-            module.fail_json(msg='Failed to get protocol: {0}'.format(str(ex)))
-        module.exit_json(changed=False, protocols=[protocol])
+        _protocol = protocol.to_dict()
+        _protocol['name'] = protocol['id']
+        # As of 0.44 SDK doesn't copy the URI parameters over, so let's add them
+        _protocol['idp_id'] = protocol['idp_id']
+        return _protocol
 
-    else:
-        try:
-            protocols = list(map(normalize_protocol, cloud.identity.federation_protocols(idp)))
-        except sdk.exceptions.OpenStackCloudException as ex:
-            module.fail_json(msg='Failed to list protocols: {0}'.format(str(ex)))
-        module.exit_json(changed=False, protocols=protocols)
+    def run(self):
+        """ Module entry point """
+
+        name = self.params.get('name')
+        idp = self.params.get('idp_id')
+
+        if name:
+            protocol = self.conn.identity.get_federation_protocol(idp, name)
+            protocol = self.normalize_protocol(protocol)
+            self.exit_json(changed=False, protocols=[protocol])
+
+        else:
+            protocols = list(map(self.normalize_protocol, self.conn.identity.federation_protocols(idp)))
+            self.exit_json(changed=False, protocols=protocols)
+
+
+def main():
+    module = IdentityFederationProtocolInfoModule()
+    module()
 
 
 if __name__ == '__main__':
