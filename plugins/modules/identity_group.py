@@ -86,75 +86,71 @@ group:
             sample: "default"
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _system_state_change(state, description, group):
-    if state == 'present' and not group:
-        return True
-    if state == 'present' and description is not None and group.description != description:
-        return True
-    if state == 'absent' and group:
-        return True
-    return False
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class IdentityGroupModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=True),
         description=dict(required=False, default=None),
         domain_id=dict(required=False, default=None),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
-    name = module.params.get('name')
-    description = module.params.get('description')
-    state = module.params.get('state')
+    def _system_state_change(self, state, description, group):
+        if state == 'present' and not group:
+            return True
+        if state == 'present' and description is not None and group.description != description:
+            return True
+        if state == 'absent' and group:
+            return True
+        return False
 
-    domain_id = module.params.pop('domain_id')
+    def run(self):
+        name = self.params.get('name')
+        description = self.params.get('description')
+        state = self.params.get('state')
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+        domain_id = self.params.pop('domain_id')
+
         if domain_id:
-            group = cloud.get_group(name, filters={'domain_id': domain_id})
+            group = self.conn.get_group(name, filters={'domain_id': domain_id})
         else:
-            group = cloud.get_group(name)
+            group = self.conn.get_group(name)
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(state, description, group))
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(state, description, group))
 
         if state == 'present':
             if group is None:
-                group = cloud.create_group(
+                group = self.conn.create_group(
                     name=name, description=description, domain=domain_id)
                 changed = True
             else:
                 if description is not None and group.description != description:
-                    group = cloud.update_group(
+                    group = self.conn.update_group(
                         group.id, description=description)
                     changed = True
                 else:
                     changed = False
-            module.exit_json(changed=changed, group=group)
+            self.exit_json(changed=changed, group=group)
 
         elif state == 'absent':
             if group is None:
                 changed = False
             else:
-                cloud.delete_group(group.id)
+                self.conn.delete_group(group.id)
                 changed = True
-            module.exit_json(changed=changed)
+            self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = IdentityGroupModule()
+    module()
 
 
 if __name__ == '__main__':
