@@ -179,39 +179,30 @@ openstack_ports:
             sample: "51fce036d7984ba6af4f6c849f65ef00"
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def main():
-    argument_spec = openstack_full_argument_spec(
+class NetworkPortInfoModule(OpenStackModule):
+    argument_spec = dict(
         port=dict(required=False),
         filters=dict(type='dict', required=False),
     )
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
-    is_old_facts = module._name == 'openstack.cloud.port_facts'
-    if is_old_facts:
-        module.deprecate("The 'openstack.cloud.port_facts' module has been renamed to 'openstack.cloud.port_info', "
-                         "and the renamed one no longer returns ansible_facts", version='2.0.0',
-                         collection_name='openstack.cloud')
+    module_kwargs = dict(
+    )
 
-    port = module.params.get('port')
-    filters = module.params.get('filters')
+    deprecated_names = ('openstack.cloud.port_facts')
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        ports = cloud.search_ports(port, filters)
-        if is_old_facts:
-            module.exit_json(changed=False, ansible_facts=dict(
-                openstack_ports=ports))
-        else:
-            module.exit_json(changed=False, openstack_ports=ports)
+    def run(self):
+        port = self.params.get('port')
+        filters = self.params.get('filters')
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+        ports = self.conn.search_ports(port, filters)
+        self.exit_json(changed=False, openstack_ports=ports)
+
+
+def main():
+    module = NetworkPortInfoModule()
+    module()
 
 
 if __name__ == '__main__':
