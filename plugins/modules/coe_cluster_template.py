@@ -281,26 +281,11 @@ EXAMPLES = '''
     public: no
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _parse_labels(labels):
-    if isinstance(labels, str):
-        labels_dict = {}
-        for kv_str in labels.split(","):
-            k, v = kv_str.split("=")
-            labels_dict[k] = v
-        return labels_dict
-    if not labels:
-        return {}
-    return labels
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class CoeClusterTemplateModule(OpenStackModule):
+    argument_spec = dict(
         coe=dict(required=True, choices=['kubernetes', 'swarm', 'mesos']),
         dns_nameserver=dict(default='8.8.8.8'),
         docker_storage_driver=dict(choices=['devicemapper', 'overlay', 'overlay2']),
@@ -327,61 +312,76 @@ def main():
         tls_disabled=dict(type='bool', default=False),
         volume_driver=dict(choices=['cinder', 'rexray']),
     )
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
+    module_kwargs = dict()
 
-    params = module.params.copy()
+    def _parse_labels(self, labels):
+        if isinstance(labels, str):
+            labels_dict = {}
+            for kv_str in labels.split(","):
+                k, v = kv_str.split("=")
+                labels_dict[k] = v
+            return labels_dict
+        if not labels:
+            return {}
+        return labels
 
-    state = module.params['state']
-    name = module.params['name']
-    coe = module.params['coe']
-    image_id = module.params['image_id']
+    def run(self):
+        params = self.params.copy()
 
-    kwargs = dict(
-        dns_nameserver=module.params['dns_nameserver'],
-        docker_storage_driver=module.params['docker_storage_driver'],
-        docker_volume_size=module.params['docker_volume_size'],
-        external_network_id=module.params['external_network_id'],
-        fixed_network=module.params['fixed_network'],
-        fixed_subnet=module.params['fixed_subnet'],
-        flavor_id=module.params['flavor_id'],
-        floating_ip_enabled=module.params['floating_ip_enabled'],
-        keypair_id=module.params['keypair_id'],
-        labels=_parse_labels(params['labels']),
-        http_proxy=module.params['http_proxy'],
-        https_proxy=module.params['https_proxy'],
-        master_lb_enabled=module.params['master_lb_enabled'],
-        master_flavor_id=module.params['master_flavor_id'],
-        network_driver=module.params['network_driver'],
-        no_proxy=module.params['no_proxy'],
-        public=module.params['public'],
-        registry_enabled=module.params['registry_enabled'],
-        server_type=module.params['server_type'],
-        tls_disabled=module.params['tls_disabled'],
-        volume_driver=module.params['volume_driver'],
-    )
+        state = self.params['state']
+        name = self.params['name']
+        coe = self.params['coe']
+        image_id = self.params['image_id']
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+        kwargs = dict(
+            dns_nameserver=self.params['dns_nameserver'],
+            docker_storage_driver=self.params['docker_storage_driver'],
+            docker_volume_size=self.params['docker_volume_size'],
+            external_network_id=self.params['external_network_id'],
+            fixed_network=self.params['fixed_network'],
+            fixed_subnet=self.params['fixed_subnet'],
+            flavor_id=self.params['flavor_id'],
+            floating_ip_enabled=self.params['floating_ip_enabled'],
+            keypair_id=self.params['keypair_id'],
+            labels=self._parse_labels(params['labels']),
+            http_proxy=self.params['http_proxy'],
+            https_proxy=self.params['https_proxy'],
+            master_lb_enabled=self.params['master_lb_enabled'],
+            master_flavor_id=self.params['master_flavor_id'],
+            network_driver=self.params['network_driver'],
+            no_proxy=self.params['no_proxy'],
+            public=self.params['public'],
+            registry_enabled=self.params['registry_enabled'],
+            server_type=self.params['server_type'],
+            tls_disabled=self.params['tls_disabled'],
+            volume_driver=self.params['volume_driver'],
+        )
+
         changed = False
-        template = cloud.get_coe_cluster_template(name_or_id=name, filters={'coe': coe, 'image_id': image_id})
+        template = self.conn.get_coe_cluster_template(
+            name_or_id=name, filters={'coe': coe, 'image_id': image_id})
 
         if state == 'present':
             if not template:
-                template = cloud.create_coe_cluster_template(name, coe=coe, image_id=image_id, **kwargs)
+                template = self.conn.create_coe_cluster_template(
+                    name, coe=coe, image_id=image_id, **kwargs)
                 changed = True
             else:
                 changed = False
 
-            module.exit_json(changed=changed, cluster_template=template, id=template['uuid'])
+            self.exit_json(
+                changed=changed, cluster_template=template, id=template['uuid'])
         elif state == 'absent':
             if not template:
-                module.exit_json(changed=False)
+                self.exit_json(changed=False)
             else:
-                cloud.delete_coe_cluster_template(name)
-                module.exit_json(changed=True)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+                self.conn.delete_coe_cluster_template(name)
+                self.exit_json(changed=True)
+
+
+def main():
+    module = CoeClusterTemplateModule()
+    module()
 
 
 if __name__ == "__main__":
