@@ -85,92 +85,86 @@ id:
     sample: "474acfe5-be34-494c-b339-50f06aa143e4"
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _needs_update(module, domain):
-    if module.params['description'] is not None and \
-       domain.description != module.params['description']:
-        return True
-    if domain.enabled != module.params['enabled']:
-        return True
-    return False
-
-
-def _system_state_change(module, domain):
-    state = module.params['state']
-    if state == 'absent' and domain:
-        return True
-
-    if state == 'present':
-        if domain is None:
-            return True
-        return _needs_update(module, domain)
-
-    return False
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class IdentityDomainModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=True),
         description=dict(default=None),
         enabled=dict(default=True, type='bool'),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
-    name = module.params['name']
-    description = module.params['description']
-    enabled = module.params['enabled']
-    state = module.params['state']
+    def _needs_update(self, domain):
+        if self.params['description'] is not None and \
+           domain.description != self.params['description']:
+            return True
+        if domain.enabled != self.params['enabled']:
+            return True
+        return False
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+    def _system_state_change(self, domain):
+        state = self.params['state']
+        if state == 'absent' and domain:
+            return True
 
-        domains = cloud.search_domains(filters=dict(name=name))
+        if state == 'present':
+            if domain is None:
+                return True
+            return self._needs_update(domain)
+
+        return False
+
+    def run(self):
+        name = self.params['name']
+        description = self.params['description']
+        enabled = self.params['enabled']
+        state = self.params['state']
+
+        domains = self.conn.search_domains(filters=dict(name=name))
 
         if len(domains) > 1:
-            module.fail_json(msg='Domain name %s is not unique' % name)
+            self.fail_json(msg='Domain name %s is not unique' % name)
         elif len(domains) == 1:
             domain = domains[0]
         else:
             domain = None
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(module, domain))
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(domain))
 
         if state == 'present':
             if domain is None:
-                domain = cloud.create_domain(
+                domain = self.conn.create_domain(
                     name=name, description=description, enabled=enabled)
                 changed = True
             else:
-                if _needs_update(module, domain):
-                    domain = cloud.update_domain(
+                if self._needs_update(domain):
+                    domain = self.conn.update_domain(
                         domain.id, name=name, description=description,
                         enabled=enabled)
                     changed = True
                 else:
                     changed = False
-            module.exit_json(changed=changed, domain=domain, id=domain.id)
+            self.exit_json(changed=changed, domain=domain, id=domain.id)
 
         elif state == 'absent':
             if domain is None:
                 changed = False
             else:
-                cloud.delete_domain(domain.id)
+                self.conn.delete_domain(domain.id)
                 changed = True
-            module.exit_json(changed=changed)
+            self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = IdentityDomainModule()
+    module()
 
 
 if __name__ == '__main__':
