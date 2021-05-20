@@ -91,49 +91,41 @@ flavor:
 
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def main():
-    argument_spec = openstack_full_argument_spec(
+class IdentityProjectAccess(OpenStackModule):
+    argument_spec = dict(
         state=dict(required=False, default='present',
                    choices=['absent', 'present']),
-
         target_project_id=dict(required=True, type='str'),
         resource_type=dict(required=True, type='str'),
         resource_name=dict(required=True, type='str'),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(
-        argument_spec,
+    module_kwargs = dict(
         supports_check_mode=True,
         required_if=[
             ('state', 'present', ['target_project_id'])
-        ],
-        **module_kwargs)
+        ]
+    )
 
-    sdk, cloud = openstack_cloud_from_module(module)
+    def run(self):
+        state = self.params['state']
+        resource_name = self.params['resource_name']
+        resource_type = self.params['resource_type']
+        target_project_id = self.params['target_project_id']
 
-    state = module.params['state']
-    resource_name = module.params['resource_name']
-    resource_type = module.params['resource_type']
-    target_project_id = module.params['target_project_id']
-
-    try:
         if resource_type == 'nova_flavor':
             # returns Munch({'NAME_ATTR': 'name',
             # 'tenant_id': u'37e55da59ec842649d84230f3a24eed5',
             # 'HUMAN_ID': False,
             # 'flavor_id': u'6d4d37b9-0480-4a8c-b8c9-f77deaad73f9',
             #  'request_ids': [], 'human_id': None}),
-            _get_resource = cloud.get_flavor
-            _list_resource_access = cloud.list_flavor_access
-            _add_resource_access = cloud.add_flavor_access
-            _remove_resource_access = cloud.remove_flavor_access
+            _get_resource = self.conn.get_flavor
+            _list_resource_access = self.conn.list_flavor_access
+            _add_resource_access = self.conn.add_flavor_access
+            _remove_resource_access = self.conn.remove_flavor_access
         elif resource_type == 'cinder_volume_type':
             # returns [Munch({
             # 'project_id': u'178cdb9955b047eea7afbe582038dc94',
@@ -141,41 +133,43 @@ def main():
             #  'human_id': None,
             # 'HUMAN_ID': False},
             #  'id': u'd5573023-b290-42c8-b232-7c5ca493667f'}),
-            _get_resource = cloud.get_volume_type
-            _list_resource_access = cloud.get_volume_type_access
-            _add_resource_access = cloud.add_volume_type_access
-            _remove_resource_access = cloud.remove_volume_type_access
+            _get_resource = self.conn.get_volume_type
+            _list_resource_access = self.conn.get_volume_type_access
+            _add_resource_access = self.conn.add_volume_type_access
+            _remove_resource_access = self.conn.remove_volume_type_access
         else:
-            module.exit_json(changed=False,
-                             resource_name=resource_name,
-                             resource_type=resource_type,
-                             error="Not implemented.")
+            self.exit_json(
+                changed=False,
+                resource_name=resource_name,
+                resource_type=resource_type,
+                error="Not implemented.")
 
         resource = _get_resource(resource_name)
         if not resource:
-            module.exit_json(changed=False,
-                             resource_name=resource_name,
-                             resource_type=resource_type,
-                             error="Not found.")
+            self.exit_json(
+                changed=False,
+                resource_name=resource_name,
+                resource_type=resource_type,
+                error="Not found.")
         resource_id = getattr(resource, 'id', resource['id'])
         # _list_resource_access returns a list of dicts containing 'project_id'
         acls = _list_resource_access(resource_id)
 
         if not all(acl.get('project_id') for acl in acls):
-            module.exit_json(changed=False,
-                             resource_name=resource_name,
-                             resource_type=resource_type,
-                             error="Missing project_id in resource output.")
+            self.exit_json(
+                changed=False,
+                resource_name=resource_name,
+                resource_type=resource_type,
+                error="Missing project_id in resource output.")
         allowed_tenants = [acl['project_id'] for acl in acls]
 
         changed_access = any((
             state == 'present' and target_project_id not in allowed_tenants,
             state == 'absent' and target_project_id in allowed_tenants
         ))
-        if module.check_mode or not changed_access:
-            module.exit_json(changed=changed_access,
-                             resource=resource,
-                             id=resource_id)
+        if self.ansible.check_mode or not changed_access:
+            self.exit_json(
+                changed=changed_access, resource=resource, id=resource_id)
 
         if state == 'present':
             _add_resource_access(
@@ -186,12 +180,13 @@ def main():
                 resource_id, target_project_id
             )
 
-        module.exit_json(changed=True,
-                         resource=resource,
-                         id=resource_id)
+        self.exit_json(
+            changed=True, resource=resource, id=resource_id)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), **module.params)
+
+def main():
+    module = IdentityProjectAccess()
+    module()
 
 
 if __name__ == '__main__':
