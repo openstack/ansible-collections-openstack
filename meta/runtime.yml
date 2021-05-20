@@ -1,5 +1,6 @@
 action_groups:
   openstack:
+    - address_scope
     - auth
     - baremetal_inspect
     - baremetal_inspect

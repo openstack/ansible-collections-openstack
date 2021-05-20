@@ -4,6 +4,7 @@
   gather_facts: true
 
   roles:
+    - { role: address_scope, tags: address_scope }
     - { role: auth, tags: auth }
     - { role: client_config, tags: client_config }
     - role: object_container
