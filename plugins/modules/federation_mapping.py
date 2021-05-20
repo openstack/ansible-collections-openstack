@@ -78,93 +78,11 @@ EXAMPLES = '''
 RETURN = '''
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_full_argument_spec
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_module_kwargs
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_cloud_from_module
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def normalize_mapping(mapping):
-    """
-    Normalizes the mapping definitions so that the outputs are consistent with
-    the parameters
-
-    - "name" (parameter) == "id" (SDK)
-    """
-    if mapping is None:
-        return None
-
-    _mapping = mapping.to_dict()
-    _mapping['name'] = mapping['id']
-    return _mapping
-
-
-def create_mapping(module, sdk, cloud, name):
-    """
-    Attempt to create a Mapping
-
-    returns: A tuple containing the "Changed" state and the created mapping
-    """
-
-    if module.check_mode:
-        return (True, None)
-
-    rules = module.params.get('rules')
-
-    try:
-        mapping = cloud.identity.create_mapping(id=name, rules=rules)
-    except sdk.exceptions.OpenStackCloudException as ex:
-        module.fail_json(msg='Failed to create mapping: {0}'.format(str(ex)))
-    return (True, mapping)
-
-
-def delete_mapping(module, sdk, cloud, mapping):
-    """
-    Attempt to delete a Mapping
-
-    returns: the "Changed" state
-    """
-    if mapping is None:
-        return False
-
-    if module.check_mode:
-        return True
-
-    try:
-        cloud.identity.delete_mapping(mapping)
-    except sdk.exceptions.OpenStackCloudException as ex:
-        module.fail_json(msg='Failed to delete mapping: {0}'.format(str(ex)))
-    return True
-
-
-def update_mapping(module, sdk, cloud, mapping):
-    """
-    Attempt to delete a Mapping
-
-    returns: The "Changed" state and the the new mapping
-    """
-
-    current_rules = mapping.rules
-    new_rules = module.params.get('rules')
-
-    # Nothing to do
-    if current_rules == new_rules:
-        return (False, mapping)
-
-    if module.check_mode:
-        return (True, None)
-
-    try:
-        new_mapping = cloud.identity.update_mapping(mapping, rules=new_rules)
-    except sdk.exceptions.OpenStackCloudException as ex:
-        module.fail_json(msg='Failed to update mapping: {0}'.format(str(ex)))
-    return (True, new_mapping)
-
-
-def main():
-    """ Module entry point """
-
-    argument_spec = openstack_full_argument_spec(
+class IdentityFederationMappingModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=True, aliases=['id']),
         state=dict(default='present', choices=['absent', 'present']),
         rules=dict(type='list', elements='dict', options=dict(
@@ -172,46 +90,107 @@ def main():
             remote=dict(required=True, type='list', elements='dict')
         )),
     )
-    module_kwargs = openstack_module_kwargs(
-        required_if=[('state', 'present', ['rules'])]
-    )
-    module = AnsibleModule(
-        argument_spec,
-        supports_check_mode=True,
-        **module_kwargs
+    module_kwargs = dict(
+        required_if=[('state', 'present', ['rules'])],
+        supports_check_mode=True
     )
 
-    name = module.params.get('name')
-    state = module.params.get('state')
-    changed = False
+    def normalize_mapping(self, mapping):
+        """
+        Normalizes the mapping definitions so that the outputs are consistent with
+        the parameters
 
-    sdk, cloud = openstack_cloud_from_module(module, min_version="0.44")
-
-    try:
-        mapping = cloud.identity.get_mapping(name)
-    except sdk.exceptions.ResourceNotFound:
-        mapping = None
-    except sdk.exceptions.OpenStackCloudException as ex:
-        module.fail_json(msg='Failed to fetch mapping: {0}'.format(str(ex)))
-
-    if state == 'absent':
-        if mapping is not None:
-            changed = delete_mapping(module, sdk, cloud, mapping)
-        module.exit_json(changed=changed)
-
-    # state == 'present'
-    else:
-        if len(module.params.get('rules')) < 1:
-            module.fail_json(msg='At least one rule must be passed')
-
+        - "name" (parameter) == "id" (SDK)
+        """
         if mapping is None:
-            (changed, mapping) = create_mapping(module, sdk, cloud, name)
-            mapping = normalize_mapping(mapping)
-            module.exit_json(changed=changed, mapping=mapping)
+            return None
+
+        _mapping = mapping.to_dict()
+        _mapping['name'] = mapping['id']
+        return _mapping
+
+    def create_mapping(self, name):
+        """
+        Attempt to create a Mapping
+
+        returns: A tuple containing the "Changed" state and the created mapping
+        """
+
+        if self.ansible.check_mode:
+            return (True, None)
+
+        rules = self.params.get('rules')
+
+        mapping = self.conn.identity.create_mapping(id=name, rules=rules)
+        return (True, mapping)
+
+    def delete_mapping(self, mapping):
+        """
+        Attempt to delete a Mapping
+
+        returns: the "Changed" state
+        """
+        if mapping is None:
+            return False
+
+        if self.ansible.check_mode:
+            return True
+
+        self.conn.identity.delete_mapping(mapping)
+        return True
+
+    def update_mapping(self, mapping):
+        """
+        Attempt to delete a Mapping
+
+        returns: The "Changed" state and the the new mapping
+        """
+
+        current_rules = mapping.rules
+        new_rules = self.params.get('rules')
+
+        # Nothing to do
+        if current_rules == new_rules:
+            return (False, mapping)
+
+        if self.ansible.check_mode:
+            return (True, None)
+
+        new_mapping = self.conn.identity.update_mapping(mapping, rules=new_rules)
+        return (True, new_mapping)
+
+    def run(self):
+        """ Module entry point """
+
+        name = self.params.get('name')
+        state = self.params.get('state')
+        changed = False
+
+        mapping = self.conn.identity.find_mapping(name)
+
+        if state == 'absent':
+            if mapping is not None:
+                changed = self.delete_mapping(mapping)
+            self.exit_json(changed=changed)
+
+        # state == 'present'
         else:
-            (changed, new_mapping) = update_mapping(module, sdk, cloud, mapping)
-            new_mapping = normalize_mapping(new_mapping)
-            module.exit_json(mapping=new_mapping, changed=changed)
+            if len(self.params.get('rules')) < 1:
+                self.fail_json(msg='At least one rule must be passed')
+
+            if mapping is None:
+                (changed, mapping) = self.create_mapping(name)
+                mapping = self.normalize_mapping(mapping)
+                self.exit_json(changed=changed, mapping=mapping)
+            else:
+                (changed, new_mapping) = self.update_mapping(mapping)
+                new_mapping = self.normalize_mapping(new_mapping)
+                self.exit_json(mapping=new_mapping, changed=changed)
+
+
+def main():
+    module = IdentityFederationMappingModule()
+    module()
 
 
 if __name__ == '__main__':
