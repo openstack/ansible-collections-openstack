@@ -160,23 +160,11 @@ flavor:
                 "aggregate_instance_extra_specs:pinned": false
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _system_state_change(module, flavor):
-    state = module.params['state']
-    if state == 'present' and not flavor:
-        return True
-    if state == 'absent' and flavor:
-        return True
-    return False
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class ComputeFlavorModule(OpenStackModule):
+    argument_spec = dict(
         state=dict(required=False, default='present',
                    choices=['absent', 'present']),
         name=dict(required=True),
@@ -194,25 +182,30 @@ def main():
         extra_specs=dict(required=False, default=None, type='dict'),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(
-        argument_spec,
-        supports_check_mode=True,
+    module_kwargs = dict(
         required_if=[
             ('state', 'present', ['ram', 'vcpus', 'disk'])
         ],
-        **module_kwargs)
+        supports_check_mode=True
+    )
 
-    state = module.params['state']
-    name = module.params['name']
-    extra_specs = module.params['extra_specs'] or {}
+    def _system_state_change(self, flavor):
+        state = self.params['state']
+        if state == 'present' and not flavor:
+            return True
+        if state == 'absent' and flavor:
+            return True
+        return False
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        flavor = cloud.get_flavor(name)
+    def run(self):
+        state = self.params['state']
+        name = self.params['name']
+        extra_specs = self.params['extra_specs'] or {}
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(module, flavor))
+        flavor = self.conn.get_flavor(name)
+
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(flavor))
 
         if state == 'present':
             old_extra_specs = {}
@@ -222,26 +215,27 @@ def main():
                 old_extra_specs = flavor['extra_specs']
                 if flavor['swap'] == "":
                     flavor['swap'] = 0
-                for param_key in ['ram', 'vcpus', 'disk', 'ephemeral', 'swap', 'rxtx_factor', 'is_public']:
-                    if module.params[param_key] != flavor[param_key]:
+                for param_key in ['ram', 'vcpus', 'disk', 'ephemeral',
+                                  'swap', 'rxtx_factor', 'is_public']:
+                    if self.params[param_key] != flavor[param_key]:
                         require_update = True
                         break
 
             if flavor and require_update:
-                cloud.delete_flavor(name)
+                self.conn.delete_flavor(name)
                 flavor = None
 
             if not flavor:
-                flavor = cloud.create_flavor(
+                flavor = self.conn.create_flavor(
                     name=name,
-                    ram=module.params['ram'],
-                    vcpus=module.params['vcpus'],
-                    disk=module.params['disk'],
-                    flavorid=module.params['flavorid'],
-                    ephemeral=module.params['ephemeral'],
-                    swap=module.params['swap'],
-                    rxtx_factor=module.params['rxtx_factor'],
-                    is_public=module.params['is_public']
+                    ram=self.params['ram'],
+                    vcpus=self.params['vcpus'],
+                    disk=self.params['disk'],
+                    flavorid=self.params['flavorid'],
+                    ephemeral=self.params['ephemeral'],
+                    swap=self.params['swap'],
+                    rxtx_factor=self.params['rxtx_factor'],
+                    is_public=self.params['is_public']
                 )
                 changed = True
             else:
@@ -251,25 +245,26 @@ def main():
             unset_keys = set(old_extra_specs.keys()) - set(extra_specs.keys())
 
             if unset_keys and not require_update:
-                cloud.unset_flavor_specs(flavor['id'], unset_keys)
+                self.conn.unset_flavor_specs(flavor['id'], unset_keys)
 
             if old_extra_specs != new_extra_specs:
-                cloud.set_flavor_specs(flavor['id'], extra_specs)
+                self.conn.set_flavor_specs(flavor['id'], extra_specs)
 
             changed = (changed or old_extra_specs != new_extra_specs)
 
-            module.exit_json(changed=changed,
-                             flavor=flavor,
-                             id=flavor['id'])
+            self.exit_json(
+                changed=changed, flavor=flavor, id=flavor['id'])
 
         elif state == 'absent':
             if flavor:
-                cloud.delete_flavor(name)
-                module.exit_json(changed=True)
-            module.exit_json(changed=False)
+                self.conn.delete_flavor(name)
+                self.exit_json(changed=True)
+            self.exit_json(changed=False)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = ComputeFlavorModule()
+    module()
 
 
 if __name__ == '__main__':
