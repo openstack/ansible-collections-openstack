@@ -394,11 +394,10 @@
             irrelevant-files: *ignore_files
 
         - tripleo-ci-centos-8-standalone-osa:
-            # Set voting to true when TripleO CI is back
-            voting: false
             dependencies: *deps_unit_lint
 
         - tripleo-ci-centos-8-standalone-train-osa:
+            voting: false
             dependencies: *deps_unit_lint
 
     gate:
