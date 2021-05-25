@@ -112,17 +112,6 @@
     vars:
       tox_envlist: ansible-2.11
 
-# Pip installation job
-- job:
-    name: ansible-collections-openstack-functional-devstack-ansible-pip
-    parent: ansible-collections-openstack-functional-devstack
-    description: |
-      Run openstack collections functional tests against a master devstack
-      using master of openstacksdk with latest ansible release.
-      Ansible collection is built using PIP.
-    vars:
-      tox_envlist: ansible-pip
-
 # Stable branches tests
 - job:
     name: ansible-collections-openstack-functional-devstack-wallaby-ansible-2.11
@@ -368,8 +357,6 @@
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-ansible-devel:
             dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-ansible-pip:
-            dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.11:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.11:
@@ -409,7 +396,6 @@
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-ansible-2.9
         - ansible-collections-openstack-functional-devstack-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-ansible-pip
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.11
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.11
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
@@ -428,7 +414,6 @@
         - ansible-collections-openstack-functional-devstack-ansible-2.9
         - ansible-collections-openstack-functional-devstack-ansible-2.11
         - ansible-collections-openstack-functional-devstack-ansible-devel
-        - ansible-collections-openstack-functional-devstack-ansible-pip
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.11
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.11
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
