@@ -22,7 +22,7 @@ options:
     plugin:
         description: token that ensures this is a source file for the 'openstack' plugin.
         required: True
-        choices: ['openstack']
+        choices: ['openstack', 'openstack.cloud.openstack']
     show_all:
         description: toggles showing all vms vs only those with a working IP
         type: bool
@@ -112,7 +112,7 @@ extends_documentation_fragment:
 EXAMPLES = '''
 # file must be named openstack.yaml or openstack.yml
 # Make the plugin behave like the default behavior of the old script
-plugin: openstack
+plugin: openstack.cloud.openstack
 expand_hostvars: yes
 fail_on_errors: yes
 all_projects: yes
@@ -159,7 +159,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
         msg = ''
         if not self._config_data:
             msg = 'File empty. this is not my config file'
-        elif 'plugin' in self._config_data and self._config_data['plugin'] != self.NAME:
+        elif 'plugin' in self._config_data and self._config_data['plugin'] not in (self.NAME, 'openstack'):
             msg = 'plugin config file, but not for us: %s' % self._config_data['plugin']
         elif 'plugin' not in self._config_data and 'clouds' not in self._config_data:
             msg = "it's not a plugin configuration nor a clouds.yaml file"
