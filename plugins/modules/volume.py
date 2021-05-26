@@ -188,6 +188,8 @@ class VolumeModule(OpenStackModule):
         )
         if self.params['image']:
             image_id = self.conn.get_image_id(self.params['image'])
+            if not image_id:
+                self.fail_json(msg="Failed to find image '%s'" % self.params['image'])
             volume_args['imageRef'] = image_id
 
         if self.params['volume']:
