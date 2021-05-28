@@ -126,14 +126,14 @@ def _update_hosts(cloud, aggregate, hosts, purge_hosts):
     if hosts is None:
         return
 
-    hosts_to_add = set(hosts) - set(aggregate.hosts)
+    hosts_to_add = set(hosts) - set(aggregate.get("hosts", []))
     for i in hosts_to_add:
         cloud.add_host_to_aggregate(aggregate.id, i)
 
     if not purge_hosts:
         return
 
-    hosts_to_remove = set(aggregate.hosts) - set(hosts)
+    hosts_to_remove = set(aggregate.get("hosts", [])) - set(hosts)
     for i in hosts_to_remove:
         cloud.remove_host_from_aggregate(aggregate.id, i)
 
