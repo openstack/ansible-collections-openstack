@@ -20,7 +20,7 @@ action_groups:
     - config
     - config
     - dns_zone
-    - dns_zone
+    - dns_zone_info
     - endpoint
     - endpoint
     - federation_idp
