@@ -256,6 +256,7 @@ class OpenStackModule:
             **self.module_kwargs)
         self.params = self.ansible.params
         self.module_name = self.ansible._name
+        self.check_mode = self.ansible.check_mode
         self.sdk_version = None
         self.results = {'changed': False}
         self.exit = self.exit_json = self.ansible.exit_json
