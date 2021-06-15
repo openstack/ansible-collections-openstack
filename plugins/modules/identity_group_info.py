@@ -110,48 +110,45 @@ openstack_groups:
             type: bool
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_full_argument_spec, openstack_cloud_from_module
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def main():
-
-    argument_spec = openstack_full_argument_spec(
+class IdentityGroupInfoModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=False, default=None),
         domain=dict(required=False, default=None),
         filters=dict(required=False, type='dict', default=None),
     )
 
-    module = AnsibleModule(argument_spec)
-
-    sdk, opcloud = openstack_cloud_from_module(module)
-    try:
-        name = module.params['name']
-        domain = module.params['domain']
-        filters = module.params['filters']
+    def run(self):
+        name = self.params['name']
+        domain = self.params['domain']
+        filters = self.params['filters']
 
         if domain:
             try:
                 # We assume admin is passing domain id
-                dom = opcloud.get_domain(domain)['id']
+                dom = self.conn.get_domain(domain)['id']
                 domain = dom
             except Exception:
                 # If we fail, maybe admin is passing a domain name.
                 # Note that domains have unique names, just like id.
-                dom = opcloud.search_domains(filters={'name': domain})
+                dom = self.conn.search_domains(filters={'name': domain})
                 if dom:
                     domain = dom[0]['id']
                 else:
-                    module.fail_json(msg='Domain name or ID does not exist')
+                    self.fail_json(msg='Domain name or ID does not exist')
 
             if not filters:
                 filters = {}
 
-        groups = opcloud.search_groups(name, filters, domain_id=domain)
-        module.exit_json(changed=False, groups=groups)
+        groups = self.conn.search_groups(name, filters, domain_id=domain)
+        self.exit_json(changed=False, groups=groups)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = IdentityGroupInfoModule()
+    module()
 
 
 if __name__ == '__main__':
