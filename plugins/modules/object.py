@@ -65,58 +65,55 @@ EXAMPLES = '''
     container: config
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def process_object(
-        cloud_obj, container, name, filename, container_access, **kwargs):
-
-    changed = False
-    container_obj = cloud_obj.get_container(container)
-    if kwargs['state'] == 'present':
-        if not container_obj:
-            container_obj = cloud_obj.create_container(container)
-            changed = True
-        if cloud_obj.get_container_access(container) != container_access:
-            cloud_obj.set_container_access(container, container_access)
-            changed = True
-        if name:
-            if cloud_obj.is_object_stale(container, name, filename):
-                cloud_obj.create_object(container, name, filename)
-                changed = True
-    else:
-        if container_obj:
-            if name:
-                if cloud_obj.get_object_metadata(container, name):
-                    cloud_obj.delete_object(container, name)
-                changed = True
-            else:
-                cloud_obj.delete_container(container)
-                changed = True
-    return changed
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class SwiftObjectModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=False, default=None),
         container=dict(required=True),
         filename=dict(required=False, default=None),
         container_access=dict(default='private', choices=['private', 'public']),
         state=dict(default='present', choices=['absent', 'present']),
     )
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
+    module_kwargs = dict()
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        changed = process_object(cloud, **module.params)
+    def process_object(
+        self, container, name, filename, container_access, **kwargs
+    ):
+        changed = False
+        container_obj = self.conn.get_container(container)
+        if kwargs['state'] == 'present':
+            if not container_obj:
+                container_obj = self.conn.create_container(container)
+                changed = True
+            if self.conn.get_container_access(container) != container_access:
+                self.conn.set_container_access(container, container_access)
+                changed = True
+            if name:
+                if self.conn.is_object_stale(container, name, filename):
+                    self.conn.create_object(container, name, filename)
+                    changed = True
+        else:
+            if container_obj:
+                if name:
+                    if self.conn.get_object_metadata(container, name):
+                        self.conn.delete_object(container, name)
+                    changed = True
+                else:
+                    self.conn.delete_container(container)
+                    changed = True
+        return changed
 
-        module.exit_json(changed=changed)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+    def run(self):
+        changed = self.process_object(**self.params)
+
+        self.exit_json(changed=changed)
+
+
+def main():
+    module = SwiftObjectModule()
+    module()
 
 
 if __name__ == "__main__":
