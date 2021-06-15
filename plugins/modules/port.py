@@ -270,10 +270,8 @@ binding:profile:
     type: dict
 '''
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible.module_utils.basic import missing_required_lib
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 try:
     from collections import OrderedDict
@@ -286,122 +284,8 @@ except ImportError:
         HAS_ORDEREDDICT = False
 
 
-def _needs_update(module, port, cloud):
-    """Check for differences in the updatable values.
-
-    NOTE: We don't currently allow name updates.
-    """
-    compare_simple = ['admin_state_up',
-                      'mac_address',
-                      'device_owner',
-                      'device_id',
-                      'binding:vnic_type',
-                      'port_security_enabled',
-                      'binding:profile']
-    compare_list_dict = ['allowed_address_pairs',
-                         'extra_dhcp_opts']
-    compare_list = ['security_groups']
-
-    for key in compare_simple:
-        if module.params[key] is not None and module.params[key] != port[key]:
-            return True
-    for key in compare_list:
-        if (
-            module.params[key] is not None
-            and set(module.params[key]) != set(port[key])
-        ):
-            return True
-
-    for key in compare_list_dict:
-        if module.params[key]:
-            if not port[key]:
-                return True
-
-            # sort dicts in list
-            port_ordered = [OrderedDict(sorted(d.items())) for d in port[key]]
-            param_ordered = [OrderedDict(sorted(d.items())) for d in module.params[key]]
-
-            for d in param_ordered:
-                if d not in port_ordered:
-                    return True
-
-            for d in port_ordered:
-                if d not in param_ordered:
-                    return True
-
-    # NOTE: if port was created or updated with 'no_security_groups=True',
-    # subsequent updates without 'no_security_groups' flag or
-    # 'no_security_groups=False' and no specified 'security_groups', will not
-    # result in an update to the port where the default security group is
-    # applied.
-    if module.params['no_security_groups'] and port['security_groups'] != []:
-        return True
-
-    if module.params['fixed_ips'] is not None:
-        for item in module.params['fixed_ips']:
-            if 'ip_address' in item:
-                # if ip_address in request does not match any in existing port,
-                # update is required.
-                if not any(match['ip_address'] == item['ip_address']
-                           for match in port['fixed_ips']):
-                    return True
-            if 'subnet_id' in item:
-                return True
-        for item in port['fixed_ips']:
-            # if ip_address in existing port does not match any in request,
-            # update is required.
-            if not any(match.get('ip_address') == item['ip_address']
-                       for match in module.params['fixed_ips']):
-                return True
-
-    return False
-
-
-def _system_state_change(module, port, cloud):
-    state = module.params['state']
-    if state == 'present':
-        if not port:
-            return True
-        return _needs_update(module, port, cloud)
-    if state == 'absent' and port:
-        return True
-    return False
-
-
-def _compose_port_args(module, cloud):
-    port_kwargs = {}
-    optional_parameters = ['name',
-                           'fixed_ips',
-                           'admin_state_up',
-                           'mac_address',
-                           'security_groups',
-                           'allowed_address_pairs',
-                           'extra_dhcp_opts',
-                           'device_owner',
-                           'device_id',
-                           'binding:vnic_type',
-                           'port_security_enabled',
-                           'binding:profile']
-    for optional_param in optional_parameters:
-        if module.params[optional_param] is not None:
-            port_kwargs[optional_param] = module.params[optional_param]
-
-    if module.params['no_security_groups']:
-        port_kwargs['security_groups'] = []
-
-    return port_kwargs
-
-
-def get_security_group_id(module, cloud, security_group_name_or_id):
-    security_group = cloud.get_security_group(security_group_name_or_id)
-    if not security_group:
-        module.fail_json(msg="Security group: %s, was not found"
-                             % security_group_name_or_id)
-    return security_group['id']
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class NetworkPortModule(OpenStackModule):
+    argument_spec = dict(
         network=dict(required=False),
         name=dict(required=False),
         fixed_ips=dict(type='list', default=None, elements='dict'),
@@ -421,81 +305,189 @@ def main():
         binding_profile=dict(default=None, type='dict')
     )
 
-    module_kwargs = openstack_module_kwargs(
+    module_kwargs = dict(
         mutually_exclusive=[
             ['no_security_groups', 'security_groups'],
-        ]
+        ],
+        supports_check_mode=True
     )
 
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    def _needs_update(self, port):
+        """Check for differences in the updatable values.
 
-    if not HAS_ORDEREDDICT:
-        module.fail_json(msg=missing_required_lib('ordereddict'))
+        NOTE: We don't currently allow name updates.
+        """
+        compare_simple = ['admin_state_up',
+                          'mac_address',
+                          'device_owner',
+                          'device_id',
+                          'binding:vnic_type',
+                          'port_security_enabled',
+                          'binding:profile']
+        compare_list_dict = ['allowed_address_pairs',
+                             'extra_dhcp_opts']
+        compare_list = ['security_groups']
 
-    name = module.params['name']
-    state = module.params['state']
+        for key in compare_simple:
+            if self.params[key] is not None and self.params[key] != port[key]:
+                return True
+        for key in compare_list:
+            if (
+                self.params[key] is not None
+                and set(self.params[key]) != set(port[key])
+            ):
+                return True
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        if module.params['security_groups']:
+        for key in compare_list_dict:
+            if self.params[key]:
+                if not port[key]:
+                    return True
+
+                # sort dicts in list
+                port_ordered = [OrderedDict(sorted(d.items())) for d in port[key]]
+                param_ordered = [OrderedDict(sorted(d.items())) for d in self.params[key]]
+
+                for d in param_ordered:
+                    if d not in port_ordered:
+                        return True
+
+                for d in port_ordered:
+                    if d not in param_ordered:
+                        return True
+
+        # NOTE: if port was created or updated with 'no_security_groups=True',
+        # subsequent updates without 'no_security_groups' flag or
+        # 'no_security_groups=False' and no specified 'security_groups', will not
+        # result in an update to the port where the default security group is
+        # applied.
+        if self.params['no_security_groups'] and port['security_groups'] != []:
+            return True
+
+        if self.params['fixed_ips'] is not None:
+            for item in self.params['fixed_ips']:
+                if 'ip_address' in item:
+                    # if ip_address in request does not match any in existing port,
+                    # update is required.
+                    if not any(match['ip_address'] == item['ip_address']
+                               for match in port['fixed_ips']):
+                        return True
+                if 'subnet_id' in item:
+                    return True
+            for item in port['fixed_ips']:
+                # if ip_address in existing port does not match any in request,
+                # update is required.
+                if not any(match.get('ip_address') == item['ip_address']
+                           for match in self.params['fixed_ips']):
+                    return True
+
+        return False
+
+    def _system_state_change(self, port):
+        state = self.params['state']
+        if state == 'present':
+            if not port:
+                return True
+            return self._needs_update(port)
+        if state == 'absent' and port:
+            return True
+        return False
+
+    def _compose_port_args(self):
+        port_kwargs = {}
+        optional_parameters = ['name',
+                               'fixed_ips',
+                               'admin_state_up',
+                               'mac_address',
+                               'security_groups',
+                               'allowed_address_pairs',
+                               'extra_dhcp_opts',
+                               'device_owner',
+                               'device_id',
+                               'binding:vnic_type',
+                               'port_security_enabled',
+                               'binding:profile']
+        for optional_param in optional_parameters:
+            if self.params[optional_param] is not None:
+                port_kwargs[optional_param] = self.params[optional_param]
+
+        if self.params['no_security_groups']:
+            port_kwargs['security_groups'] = []
+
+        return port_kwargs
+
+    def get_security_group_id(self, security_group_name_or_id):
+        security_group = self.conn.get_security_group(security_group_name_or_id)
+        if not security_group:
+            self.fail_json(msg="Security group: %s, was not found"
+                           % security_group_name_or_id)
+        return security_group['id']
+
+    def run(self):
+        if not HAS_ORDEREDDICT:
+            self.fail_json(msg=missing_required_lib('ordereddict'))
+
+        name = self.params['name']
+        state = self.params['state']
+
+        if self.params['security_groups']:
             # translate security_groups to UUID's if names where provided
-            module.params['security_groups'] = [
-                get_security_group_id(module, cloud, v)
-                for v in module.params['security_groups']
+            self.params['security_groups'] = [
+                self.get_security_group_id(v)
+                for v in self.params['security_groups']
             ]
 
         # Neutron API accept 'binding:vnic_type' as an argument
         # for the port type.
-        module.params['binding:vnic_type'] = module.params.pop('vnic_type')
+        self.params['binding:vnic_type'] = self.params.pop('vnic_type')
         # Neutron API accept 'binding:profile' as an argument
         # for the port binding profile type.
-        module.params['binding:profile'] = module.params.pop('binding_profile')
+        self.params['binding:profile'] = self.params.pop('binding_profile')
 
         port = None
         network_id = None
         if name:
-            port = cloud.get_port(name)
+            port = self.conn.get_port(name)
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(module, port, cloud))
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(port))
 
         changed = False
         if state == 'present':
             if not port:
-                network = module.params['network']
+                network = self.params['network']
                 if not network:
-                    module.fail_json(
+                    self.fail_json(
                         msg="Parameter 'network' is required in Port Create"
                     )
-                port_kwargs = _compose_port_args(module, cloud)
-                network_object = cloud.get_network(network)
+                port_kwargs = self._compose_port_args()
+                network_object = self.conn.get_network(network)
 
                 if network_object:
                     network_id = network_object['id']
                 else:
-                    module.fail_json(
+                    self.fail_json(
                         msg="Specified network was not found."
                     )
 
-                port = cloud.create_port(network_id, **port_kwargs)
+                port = self.conn.create_port(network_id, **port_kwargs)
                 changed = True
             else:
-                if _needs_update(module, port, cloud):
-                    port_kwargs = _compose_port_args(module, cloud)
-                    port = cloud.update_port(port['id'], **port_kwargs)
+                if self._needs_update(port):
+                    port_kwargs = self._compose_port_args()
+                    port = self.conn.update_port(port['id'], **port_kwargs)
                     changed = True
-            module.exit_json(changed=changed, id=port['id'], port=port)
+            self.exit_json(changed=changed, id=port['id'], port=port)
 
         if state == 'absent':
             if port:
-                cloud.delete_port(port['id'])
+                self.conn.delete_port(port['id'])
                 changed = True
-            module.exit_json(changed=changed)
+            self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = NetworkPortModule()
+    module()
 
 
 if __name__ == '__main__':
