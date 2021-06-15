@@ -1,0 +1,11 @@
+---
+- name: Getting info about allocated ips
+  openstack.cloud.floating_ip_info:
+    cloud: "{{ cloud }}"
+  register: fips
+
+- name: assert result
+  assert:
+    that:
+      - fips is success
+      - fips is not changed

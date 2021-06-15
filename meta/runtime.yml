@@ -32,6 +32,7 @@ action_groups:
     - federation_mapping_info
     - federation_mapping_info
     - floating_ip
+    - floating_ip_info
     - group_assignment
     - group_assignment
     - host_aggregate

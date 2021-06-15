@@ -13,6 +13,7 @@
     - role: dns
       tags: dns
       when: sdk_version is version(0.28, '>=')
+    - { role: floating_ip_info, tags: floating_ip_info }
     - { role: image, tags: image }
     - { role: keypair, tags: keypair }
     - { role: keystone_domain, tags: keystone_domain }
