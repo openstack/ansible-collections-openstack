@@ -206,26 +206,11 @@ EXAMPLES = '''
     node_count: 5
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _parse_labels(labels):
-    if isinstance(labels, str):
-        labels_dict = {}
-        for kv_str in labels.split(","):
-            k, v = kv_str.split("=")
-            labels_dict[k] = v
-        return labels_dict
-    if not labels:
-        return {}
-    return labels
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class CoeClusterModule(OpenStackModule):
+    argument_spec = dict(
         cluster_template_id=dict(required=True),
         discovery_url=dict(default=None),
         docker_volume_size=dict(type='int'),
@@ -239,35 +224,46 @@ def main():
         state=dict(default='present', choices=['absent', 'present']),
         timeout=dict(type='int', default=60),
     )
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
+    module_kwargs = dict()
 
-    params = module.params.copy()
+    def _parse_labels(self, labels):
+        if isinstance(labels, str):
+            labels_dict = {}
+            for kv_str in labels.split(","):
+                k, v = kv_str.split("=")
+                labels_dict[k] = v
+            return labels_dict
+        if not labels:
+            return {}
+        return labels
 
-    state = module.params['state']
-    name = module.params['name']
-    cluster_template_id = module.params['cluster_template_id']
+    def run(self):
+        params = self.params.copy()
 
-    kwargs = dict(
-        discovery_url=module.params['discovery_url'],
-        docker_volume_size=module.params['docker_volume_size'],
-        flavor_id=module.params['flavor_id'],
-        keypair=module.params['keypair'],
-        labels=_parse_labels(params['labels']),
-        master_count=module.params['master_count'],
-        master_flavor_id=module.params['master_flavor_id'],
-        node_count=module.params['node_count'],
-        create_timeout=module.params['timeout'],
-    )
+        state = self.params['state']
+        name = self.params['name']
+        cluster_template_id = self.params['cluster_template_id']
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+        kwargs = dict(
+            discovery_url=self.params['discovery_url'],
+            docker_volume_size=self.params['docker_volume_size'],
+            flavor_id=self.params['flavor_id'],
+            keypair=self.params['keypair'],
+            labels=self._parse_labels(params['labels']),
+            master_count=self.params['master_count'],
+            master_flavor_id=self.params['master_flavor_id'],
+            node_count=self.params['node_count'],
+            create_timeout=self.params['timeout'],
+        )
+
         changed = False
-        cluster = cloud.get_coe_cluster(name_or_id=name, filters={'cluster_template_id': cluster_template_id})
+        cluster = self.conn.get_coe_cluster(
+            name_or_id=name, filters={'cluster_template_id': cluster_template_id})
 
         if state == 'present':
             if not cluster:
-                cluster = cloud.create_coe_cluster(name, cluster_template_id=cluster_template_id, **kwargs)
+                cluster = self.conn.create_coe_cluster(
+                    name, cluster_template_id=cluster_template_id, **kwargs)
                 changed = True
             else:
                 changed = False
@@ -278,15 +274,18 @@ def main():
             # therefore try `id` first then `uuid`.
             cluster_id = cluster.get('id', cluster.get('uuid'))
             cluster['id'] = cluster['uuid'] = cluster_id
-            module.exit_json(changed=changed, cluster=cluster, id=cluster_id)
+            self.exit_json(changed=changed, cluster=cluster, id=cluster_id)
         elif state == 'absent':
             if not cluster:
-                module.exit_json(changed=False)
+                self.exit_json(changed=False)
             else:
-                cloud.delete_coe_cluster(name)
-                module.exit_json(changed=True)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+                self.conn.delete_coe_cluster(name)
+                self.exit_json(changed=True)
+
+
+def main():
+    module = CoeClusterModule()
+    module()
 
 
 if __name__ == "__main__":
