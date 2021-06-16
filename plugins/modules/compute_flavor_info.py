@@ -158,71 +158,59 @@ openstack_flavors:
             sample: true
 '''
 
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def main():
-    argument_spec = openstack_full_argument_spec(
+class ComputeFlavorInfoModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=False, default=None),
         ram=dict(required=False, default=None),
         vcpus=dict(required=False, default=None),
         limit=dict(required=False, default=None, type='int'),
         ephemeral=dict(required=False, default=None),
     )
-    module_kwargs = openstack_module_kwargs(
+    module_kwargs = dict(
         mutually_exclusive=[
             ['name', 'ram'],
             ['name', 'vcpus'],
             ['name', 'ephemeral']
         ]
     )
-    module = AnsibleModule(argument_spec, **module_kwargs)
-    is_old_facts = module._name == 'openstack.cloud.compute_flavor_facts'
-    if is_old_facts:
-        module.deprecate("The 'openstack.cloud.compute_flavor_facts' module has been renamed to 'openstack.cloud.compute_flavor_info', "
-                         "and the renamed one no longer returns ansible_facts", version='2.0.0',
-                         collection_name='openstack.cloud')
 
-    name = module.params['name']
-    vcpus = module.params['vcpus']
-    ram = module.params['ram']
-    ephemeral = module.params['ephemeral']
-    limit = module.params['limit']
+    deprecated_names = ('openstack.cloud.compute_flavor_facts')
 
-    filters = {}
-    if vcpus:
-        filters['vcpus'] = vcpus
-    if ram:
-        filters['ram'] = ram
-    if ephemeral:
-        filters['ephemeral'] = ephemeral
+    def run(self):
+        name = self.params['name']
+        vcpus = self.params['vcpus']
+        ram = self.params['ram']
+        ephemeral = self.params['ephemeral']
+        limit = self.params['limit']
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+        filters = {}
+        if vcpus:
+            filters['vcpus'] = vcpus
+        if ram:
+            filters['ram'] = ram
+        if ephemeral:
+            filters['ephemeral'] = ephemeral
+
         if name:
-            flavors = cloud.search_flavors(filters={'name': name})
+            flavors = self.conn.search_flavors(filters={'name': name})
 
         else:
-            flavors = cloud.list_flavors()
+            flavors = self.conn.list_flavors()
             if filters:
-                flavors = cloud.range_search(flavors, filters)
+                flavors = self.conn.range_search(flavors, filters)
 
         if limit is not None:
             flavors = flavors[:limit]
 
-        if is_old_facts:
-            module.exit_json(changed=False,
-                             ansible_facts=dict(openstack_flavors=flavors))
-        else:
-            module.exit_json(changed=False,
-                             openstack_flavors=flavors)
+        self.exit_json(changed=False, openstack_flavors=flavors)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = ComputeFlavorInfoModule()
+    module()
 
 
 if __name__ == '__main__':
