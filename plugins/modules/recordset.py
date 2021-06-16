@@ -122,29 +122,11 @@ recordset:
             sample: ['10.0.0.1']
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _system_state_change(state, records, description, ttl, recordset):
-    if state == 'present':
-        if recordset is None:
-            return True
-        if records is not None and recordset['records'] != records:
-            return True
-        if description is not None and recordset['description'] != description:
-            return True
-        if ttl is not None and recordset['ttl'] != ttl:
-            return True
-    if state == 'absent' and recordset:
-        return True
-    return False
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class DnsRecordsetModule(OpenStackModule):
+    argument_spec = dict(
         zone=dict(required=True),
         name=dict(required=True),
         recordset_type=dict(required=False, choices=['a', 'aaaa', 'mx', 'cname', 'txt', 'ns', 'srv', 'ptr', 'caa']),
@@ -154,85 +136,102 @@ def main():
         state=dict(default='present', choices=['absent', 'present']),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           required_if=[
-                               ('state', 'present',
-                                ['recordset_type', 'records'])],
-                           supports_check_mode=True,
-                           **module_kwargs)
+    module_kwargs = dict(
+        required_if=[
+            ('state', 'present',
+             ['recordset_type', 'records'])],
+        supports_check_mode=True
+    )
 
-    module.module_min_sdk_version = '0.28.0'
-    zone = module.params.get('zone')
-    name = module.params.get('name')
-    state = module.params.get('state')
+    module_min_sdk_version = '0.28.0'
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    recordsets = cloud.search_recordsets(zone, name_or_id=name)
+    def _system_state_change(self, state, records, description, ttl, recordset):
+        if state == 'present':
+            if recordset is None:
+                return True
+            if records is not None and recordset['records'] != records:
+                return True
+            if description is not None and recordset['description'] != description:
+                return True
+            if ttl is not None and recordset['ttl'] != ttl:
+                return True
+        if state == 'absent' and recordset:
+            return True
+        return False
 
-    if recordsets:
-        recordset = recordsets[0]
-        try:
-            recordset_id = recordset['id']
-        except KeyError as e:
-            module.fail_json(msg=str(e))
-    else:
-        # recordsets is filtered by type and should never be more than 1 return
-        recordset = None
+    def run(self):
+        zone = self.params.get('zone')
+        name = self.params.get('name')
+        state = self.params.get('state')
 
-    if state == 'present':
-        recordset_type = module.params.get('recordset_type').upper()
-        records = module.params.get('records')
-        description = module.params.get('description')
-        ttl = module.params.get('ttl')
+        recordsets = self.conn.search_recordsets(zone, name_or_id=name)
 
-        kwargs = {}
-        if description:
-            kwargs['description'] = description
-        kwargs['records'] = records
+        if recordsets:
+            recordset = recordsets[0]
+            try:
+                recordset_id = recordset['id']
+            except KeyError as e:
+                self.fail_json(msg=str(e))
+        else:
+            # recordsets is filtered by type and should never be more than 1 return
+            recordset = None
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(state,
-                                                          records, description,
-                                                          ttl, recordset))
+        if state == 'present':
+            recordset_type = self.params.get('recordset_type').upper()
+            records = self.params.get('records')
+            description = self.params.get('description')
+            ttl = self.params.get('ttl')
 
-        if recordset is None:
-            if ttl:
-                kwargs['ttl'] = ttl
+            kwargs = {}
+            if description:
+                kwargs['description'] = description
+            kwargs['records'] = records
+
+            if self.ansible.check_mode:
+                self.exit_json(
+                    changed=self._system_state_change(
+                        state, records, description, ttl, recordset))
+
+            if recordset is None:
+                if ttl:
+                    kwargs['ttl'] = ttl
+                else:
+                    kwargs['ttl'] = 300
+
+                recordset = self.conn.create_recordset(
+                    zone=zone, name=name, recordset_type=recordset_type,
+                    **kwargs)
+                changed = True
             else:
-                kwargs['ttl'] = 300
 
-            recordset = cloud.create_recordset(
-                zone=zone, name=name, recordset_type=recordset_type,
-                **kwargs)
-            changed = True
-        else:
+                if ttl:
+                    kwargs['ttl'] = ttl
 
-            if ttl:
-                kwargs['ttl'] = ttl
+                pre_update_recordset = recordset
+                changed = self._system_state_change(
+                    state, records, description, ttl, pre_update_recordset)
+                if changed:
+                    recordset = self.conn.update_recordset(
+                        zone=zone, name_or_id=recordset_id, **kwargs)
 
-            pre_update_recordset = recordset
-            changed = _system_state_change(state, records,
-                                           description, ttl,
-                                           pre_update_recordset)
-            if changed:
-                recordset = cloud.update_recordset(
-                    zone=zone, name_or_id=recordset_id, **kwargs)
+            self.exit_json(changed=changed, recordset=recordset)
 
-        module.exit_json(changed=changed, recordset=recordset)
+        elif state == 'absent':
+            if self.ansible.check_mode:
+                self.exit_json(changed=self._system_state_change(
+                    state, None, None, None, recordset))
 
-    elif state == 'absent':
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(state,
-                                                          None, None,
-                                                          None, recordset))
+            if recordset is None:
+                changed = False
+            else:
+                self.conn.delete_recordset(zone, recordset_id)
+                changed = True
+            self.exit_json(changed=changed)
 
-        if recordset is None:
-            changed = False
-        else:
-            cloud.delete_recordset(zone, recordset_id)
-            changed = True
-        module.exit_json(changed=changed)
+
+def main():
+    module = DnsRecordsetModule()
+    module()
 
 
 if __name__ == '__main__':
