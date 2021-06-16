@@ -103,35 +103,11 @@ endpoint:
             sample: True
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _needs_update(module, endpoint):
-    if endpoint.enabled != module.params['enabled']:
-        return True
-    if endpoint.url != module.params['url']:
-        return True
-    return False
-
-
-def _system_state_change(module, endpoint):
-    state = module.params['state']
-    if state == 'absent' and endpoint:
-        return True
-
-    if state == 'present':
-        if endpoint is None:
-            return True
-        return _needs_update(module, endpoint)
-
-    return False
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class IdentityEndpointModule(OpenStackModule):
+    argument_spec = dict(
         service=dict(type='str', required=True),
         endpoint_interface=dict(type='str', required=True, choices=['admin', 'public', 'internal']),
         url=dict(type='str', required=True),
@@ -140,71 +116,89 @@ def main():
         state=dict(type='str', default='present', choices=['absent', 'present']),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
-    service_name_or_id = module.params['service']
-    interface = module.params['endpoint_interface']
-    url = module.params['url']
-    region = module.params['region']
-    enabled = module.params['enabled']
-    state = module.params['state']
+    def _needs_update(self, endpoint):
+        if endpoint.enabled != self.params['enabled']:
+            return True
+        if endpoint.url != self.params['url']:
+            return True
+        return False
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+    def _system_state_change(self, endpoint):
+        state = self.params['state']
+        if state == 'absent' and endpoint:
+            return True
 
-        service = cloud.get_service(service_name_or_id)
+        if state == 'present':
+            if endpoint is None:
+                return True
+            return self._needs_update(endpoint)
+
+        return False
+
+    def run(self):
+        service_name_or_id = self.params['service']
+        interface = self.params['endpoint_interface']
+        url = self.params['url']
+        region = self.params['region']
+        enabled = self.params['enabled']
+        state = self.params['state']
+
+        service = self.conn.get_service(service_name_or_id)
         if service is None and state == 'absent':
-            module.exit_json(changed=False)
+            self.exit_json(changed=False)
 
         elif service is None and state == 'present':
-            module.fail_json(msg='Service %s does not exist' % service_name_or_id)
+            self.fail_json(msg='Service %s does not exist' % service_name_or_id)
 
         filters = dict(service_id=service.id, interface=interface)
         if region is not None:
             filters['region'] = region
-        endpoints = cloud.search_endpoints(filters=filters)
+        endpoints = self.conn.search_endpoints(filters=filters)
 
         if len(endpoints) > 1:
-            module.fail_json(msg='Service %s, interface %s and region %s are '
-                                 'not unique' %
-                                 (service_name_or_id, interface, region))
+            self.fail_json(msg='Service %s, interface %s and region %s are '
+                           'not unique' %
+                           (service_name_or_id, interface, region))
         elif len(endpoints) == 1:
             endpoint = endpoints[0]
         else:
             endpoint = None
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(module, endpoint))
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(endpoint))
 
         if state == 'present':
             if endpoint is None:
-                result = cloud.create_endpoint(service_name_or_id=service,
-                                               url=url, interface=interface,
-                                               region=region, enabled=enabled)
+                result = self.conn.create_endpoint(
+                    service_name_or_id=service, url=url, interface=interface,
+                    region=region, enabled=enabled)
                 endpoint = result[0]
                 changed = True
             else:
-                if _needs_update(module, endpoint):
-                    endpoint = cloud.update_endpoint(
+                if self._needs_update(endpoint):
+                    endpoint = self.conn.update_endpoint(
                         endpoint.id, url=url, enabled=enabled)
                     changed = True
                 else:
                     changed = False
-            module.exit_json(changed=changed, endpoint=endpoint)
+            self.exit_json(changed=changed, endpoint=endpoint)
 
         elif state == 'absent':
             if endpoint is None:
                 changed = False
             else:
-                cloud.delete_endpoint(endpoint.id)
+                self.conn.delete_endpoint(endpoint.id)
                 changed = True
-            module.exit_json(changed=changed)
+            self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = IdentityEndpointModule()
+    module()
 
 
 if __name__ == '__main__':
