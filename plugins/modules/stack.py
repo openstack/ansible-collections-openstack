@@ -145,74 +145,14 @@ stack:
                         'updated_time': null}"
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
-from ansible.module_utils._text import to_native
-from distutils.version import StrictVersion
+
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _create_stack(module, stack, cloud, sdk, parameters):
-    try:
-        stack = cloud.create_stack(module.params['name'],
-                                   template_file=module.params['template'],
-                                   environment_files=module.params['environment'],
-                                   timeout=module.params['timeout'],
-                                   wait=True,
-                                   rollback=module.params['rollback'],
-                                   **parameters)
-
-        stack = cloud.get_stack(stack.id, None)
-        if stack.stack_status == 'CREATE_COMPLETE':
-            return stack
-        else:
-            module.fail_json(msg="Failure in creating stack: {0}".format(stack))
-    except sdk.exceptions.OpenStackCloudException as e:
-        if hasattr(e, 'response'):
-            module.fail_json(msg=to_native(e), response=e.response.json())
-        else:
-            module.fail_json(msg=to_native(e))
-
-
-def _update_stack(module, stack, cloud, sdk, parameters):
-    try:
-        stack = cloud.update_stack(
-            module.params['name'],
-            template_file=module.params['template'],
-            environment_files=module.params['environment'],
-            timeout=module.params['timeout'],
-            rollback=module.params['rollback'],
-            wait=module.params['wait'],
-            **parameters)
-
-        if stack['stack_status'] == 'UPDATE_COMPLETE':
-            return stack
-        else:
-            module.fail_json(msg="Failure in updating stack: %s" %
-                             stack['stack_status_reason'])
-    except sdk.exceptions.OpenStackCloudException as e:
-        if hasattr(e, 'response'):
-            module.fail_json(msg=to_native(e), response=e.response.json())
-        else:
-            module.fail_json(msg=to_native(e))
-
-
-def _system_state_change(module, stack, cloud):
-    state = module.params['state']
-    if state == 'present':
-        if not stack:
-            return True
-    if state == 'absent' and stack:
-        return True
-    return False
-
-
-def main():
-
-    argument_spec = openstack_full_argument_spec(
+class StackModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=True),
-        tag=dict(required=False, default=None),
+        tag=dict(required=False, default=None, min_ver='0.28.0'),
         template=dict(default=None),
         environment=dict(default=None, type='list', elements='str'),
         parameters=dict(default={}, type='dict'),
@@ -221,53 +161,87 @@ def main():
         state=dict(default='present', choices=['absent', 'present']),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
-    state = module.params['state']
-    name = module.params['name']
-    # Check for required parameters when state == 'present'
-    if state == 'present':
-        for p in ['template']:
-            if not module.params[p]:
-                module.fail_json(msg='%s required with present state' % p)
+    def _create_stack(self, stack, parameters):
+        stack = self.conn.create_stack(
+            self.params['name'],
+            template_file=self.params['template'],
+            environment_files=self.params['environment'],
+            timeout=self.params['timeout'],
+            wait=True,
+            rollback=self.params['rollback'],
+            **parameters)
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        stack = cloud.get_stack(name)
+        stack = self.conn.get_stack(stack.id, None)
+        if stack.stack_status == 'CREATE_COMPLETE':
+            return stack
+        else:
+            self.fail_json(msg="Failure in creating stack: {0}".format(stack))
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(module, stack, cloud))
+    def _update_stack(self, stack, parameters):
+        stack = self.conn.update_stack(
+            self.params['name'],
+            template_file=self.params['template'],
+            environment_files=self.params['environment'],
+            timeout=self.params['timeout'],
+            rollback=self.params['rollback'],
+            wait=self.params['wait'],
+            **parameters)
+
+        if stack['stack_status'] == 'UPDATE_COMPLETE':
+            return stack
+        else:
+            self.fail_json(msg="Failure in updating stack: %s" %
+                           stack['stack_status_reason'])
+
+    def _system_state_change(self, stack):
+        state = self.params['state']
+        if state == 'present':
+            if not stack:
+                return True
+        if state == 'absent' and stack:
+            return True
+        return False
+
+    def run(self):
+        state = self.params['state']
+        name = self.params['name']
+        # Check for required parameters when state == 'present'
+        if state == 'present':
+            for p in ['template']:
+                if not self.params[p]:
+                    self.fail_json(msg='%s required with present state' % p)
+
+        stack = self.conn.get_stack(name)
+
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(stack))
 
         if state == 'present':
-            parameters = module.params['parameters']
-            if module.params['tag']:
-                parameters['tags'] = module.params['tag']
-                min_version = '0.28.0'
-                if StrictVersion(sdk.version.__version__) < StrictVersion(min_version) and stack:
-                    module.warn("To update tags using openstack.cloud.stack module, the"
-                                "installed version of the openstacksdk"
-                                "library MUST be >={min_version}"
-                                "".format(min_version=min_version))
+            parameters = self.params['parameters']
             if not stack:
-                stack = _create_stack(module, stack, cloud, sdk, parameters)
+                stack = self._create_stack(stack, parameters)
             else:
-                stack = _update_stack(module, stack, cloud, sdk, parameters)
-            module.exit_json(changed=True,
-                             stack=stack,
-                             id=stack.id)
+                stack = self._update_stack(stack, parameters)
+            self.exit_json(changed=True,
+                           stack=stack,
+                           id=stack.id)
         elif state == 'absent':
             if not stack:
                 changed = False
             else:
                 changed = True
-                if not cloud.delete_stack(name, wait=module.params['wait']):
-                    module.fail_json(msg='delete stack failed for stack: %s' % name)
-            module.exit_json(changed=changed)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=to_native(e))
+                if not self.conn.delete_stack(name, wait=self.params['wait']):
+                    self.fail_json(msg='delete stack failed for stack: %s' % name)
+            self.exit_json(changed=changed)
+
+
+def main():
+    module = StackModule()
+    module()
 
 
 if __name__ == '__main__':
