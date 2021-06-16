@@ -38,29 +38,24 @@ service_catalog:
     type: dict
 '''
 
-import traceback
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+
+class AuthModule(OpenStackModule):
+    argument_spec = dict()
+    module_kwargs = dict()
+
+    def run(self):
+        self.exit_json(
+            changed=False,
+            ansible_facts=dict(
+                auth_token=self.conn.auth_token,
+                service_catalog=self.conn.service_catalog))
 
 
 def main():
-
-    argument_spec = openstack_full_argument_spec()
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
-
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        module.exit_json(
-            changed=False,
-            ansible_facts=dict(
-                auth_token=cloud.auth_token,
-                service_catalog=cloud.service_catalog))
-    except Exception as e:
-        module.fail_json(msg=str(e), exception=traceback.format_exc())
+    module = AuthModule()
+    module()
 
 
 if __name__ == '__main__':
