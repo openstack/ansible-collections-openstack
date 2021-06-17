@@ -42,58 +42,54 @@ EXAMPLES = '''
   group: demo
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _system_state_change(state, in_group):
-    if state == 'present' and not in_group:
-        return True
-    if state == 'absent' and in_group:
-        return True
-    return False
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class IdentityGroupAssignment(OpenStackModule):
+    argument_spec = dict(
         user=dict(required=True),
         group=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
-    user = module.params['user']
-    group = module.params['group']
-    state = module.params['state']
+    def _system_state_change(self, state, in_group):
+        if state == 'present' and not in_group:
+            return True
+        if state == 'absent' and in_group:
+            return True
+        return False
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        in_group = cloud.is_user_in_group(user, group)
+    def run(self):
+        user = self.params['user']
+        group = self.params['group']
+        state = self.params['state']
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(state, in_group))
+        in_group = self.conn.is_user_in_group(user, group)
+
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(state, in_group))
 
         changed = False
         if state == 'present':
             if not in_group:
-                cloud.add_user_to_group(user, group)
+                self.conn.add_user_to_group(user, group)
                 changed = True
 
         elif state == 'absent':
             if in_group:
-                cloud.remove_user_from_group(user, group)
+                self.conn.remove_user_from_group(user, group)
                 changed = True
 
-        module.exit_json(changed=changed)
+        self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+
+def main():
+    module = IdentityGroupAssignment()
+    module()
 
 
 if __name__ == '__main__':
