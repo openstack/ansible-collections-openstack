@@ -38,60 +38,50 @@ EXAMPLES = '''
 RETURN = '''
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_full_argument_spec
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_module_kwargs
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_cloud_from_module
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def normalize_mapping(mapping):
-    """
-    Normalizes the mapping definitions so that the outputs are consistent with the
-    parameters
+class IdentityFederationMappingInfoModule(OpenStackModule):
+    argument_spec = dict(
+        name=dict(aliases=['id']),
+    )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
-    - "name" (parameter) == "id" (SDK)
-    """
-    if mapping is None:
-        return None
+    module_min_sdk_version = "0.44"
 
-    _mapping = mapping.to_dict()
-    _mapping['name'] = mapping['id']
-    return _mapping
+    def normalize_mapping(self, mapping):
+        """
+        Normalizes the mapping definitions so that the outputs are consistent with the
+        parameters
+
+        - "name" (parameter) == "id" (SDK)
+        """
+        if mapping is None:
+            return None
+
+        _mapping = mapping.to_dict()
+        _mapping['name'] = mapping['id']
+        return _mapping
+
+    def run(self):
+        """ Module entry point """
+        name = self.params.get('name')
+
+        if name:
+            mapping = self.normalize_mapping(
+                self.conn.identity.get_mapping(name))
+            self.exit_json(changed=False, mappings=[mapping])
+        else:
+            mappings = list(map(
+                self.normalize_mapping, self.conn.identity.mappings()))
+            self.exit_json(changed=False, mappings=mappings)
 
 
 def main():
-    """ Module entry point """
-
-    argument_spec = openstack_full_argument_spec(
-        name=dict(aliases=['id']),
-    )
-    module_kwargs = openstack_module_kwargs(
-    )
-    module = AnsibleModule(
-        argument_spec,
-        supports_check_mode=True,
-        **module_kwargs
-    )
-
-    name = module.params.get('name')
-
-    sdk, cloud = openstack_cloud_from_module(module, min_version="0.44")
-
-    if name:
-        try:
-            mapping = normalize_mapping(cloud.identity.get_mapping(name))
-        except sdk.exceptions.ResourceNotFound:
-            module.fail_json(msg='Failed to find mapping')
-        except sdk.exceptions.OpenStackCloudException as ex:
-            module.fail_json(msg='Failed to get mapping: {0}'.format(str(ex)))
-        module.exit_json(changed=False, mappings=[mapping])
-
-    else:
-        try:
-            mappings = list(map(normalize_mapping, cloud.identity.mappings()))
-        except sdk.exceptions.OpenStackCloudException as ex:
-            module.fail_json(msg='Failed to list mappings: {0}'.format(str(ex)))
-        module.exit_json(changed=False, mappings=mappings)
+    module = IdentityFederationMappingInfoModule()
+    module()
 
 
 if __name__ == '__main__':
