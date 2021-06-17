@@ -143,41 +143,11 @@ EXAMPLES = '''
 
 import time
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _lb_wait_for_status(module, cloud, lb, status, failures, interval=5):
-    """Wait for load balancer to be in a particular provisioning status."""
-    timeout = module.params['timeout']
-
-    total_sleep = 0
-    if failures is None:
-        failures = []
-
-    while total_sleep < timeout:
-        lb = cloud.load_balancer.get_load_balancer(lb.id)
-        if lb.provisioning_status == status:
-            return None
-        if lb.provisioning_status in failures:
-            module.fail_json(
-                msg="Load Balancer %s transitioned to failure state %s" %
-                    (lb.id, lb.provisioning_status)
-            )
-
-        time.sleep(interval)
-        total_sleep += interval
-
-    module.fail_json(
-        msg="Timeout waiting for Load Balancer %s to transition to %s" %
-            (lb.id, status)
-    )
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class LoadbalancerListenerModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
         loadbalancer=dict(required=True),
@@ -185,70 +155,98 @@ def main():
                       choices=['HTTP', 'HTTPS', 'TCP', 'TERMINATED_HTTPS']),
         protocol_port=dict(default=80, type='int', required=False),
     )
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
-    sdk, cloud = openstack_cloud_from_module(module)
-    loadbalancer = module.params['loadbalancer']
-    loadbalancer_id = None
+    module_kwargs = dict()
 
-    try:
+    def _lb_wait_for_status(self, lb, status, failures, interval=5):
+        """Wait for load balancer to be in a particular provisioning status."""
+        timeout = self.params['timeout']
+
+        total_sleep = 0
+        if failures is None:
+            failures = []
+
+        while total_sleep < timeout:
+            lb = self.conn.load_balancer.get_load_balancer(lb.id)
+            if lb.provisioning_status == status:
+                return None
+            if lb.provisioning_status in failures:
+                self.fail_json(
+                    msg="Load Balancer %s transitioned to failure state %s" %
+                        (lb.id, lb.provisioning_status)
+                )
+
+            time.sleep(interval)
+            total_sleep += interval
+
+        self.fail_json(
+            msg="Timeout waiting for Load Balancer %s to transition to %s" %
+                (lb.id, status)
+        )
+
+    def run(self):
+        loadbalancer = self.params['loadbalancer']
+        loadbalancer_id = None
+
         changed = False
-        listener = cloud.load_balancer.find_listener(
-            name_or_id=module.params['name'])
+        listener = self.conn.load_balancer.find_listener(
+            name_or_id=self.params['name'])
 
-        if module.params['state'] == 'present':
+        if self.params['state'] == 'present':
             if not listener:
-                lb = cloud.load_balancer.find_load_balancer(loadbalancer)
+                lb = self.conn.load_balancer.find_load_balancer(loadbalancer)
                 if not lb:
-                    module.fail_json(
+                    self.fail_json(
                         msg='load balancer %s is not found' % loadbalancer
                     )
                 loadbalancer_id = lb.id
 
-                listener = cloud.load_balancer.create_listener(
-                    name=module.params['name'],
+                listener = self.conn.load_balancer.create_listener(
+                    name=self.params['name'],
                     loadbalancer_id=loadbalancer_id,
-                    protocol=module.params['protocol'],
-                    protocol_port=module.params['protocol_port'],
+                    protocol=self.params['protocol'],
+                    protocol_port=self.params['protocol_port'],
                 )
                 changed = True
 
-                if not module.params['wait']:
-                    module.exit_json(changed=changed,
-                                     listener=listener.to_dict(),
-                                     id=listener.id)
+                if not self.params['wait']:
+                    self.exit_json(
+                        changed=changed, listener=listener.to_dict(),
+                        id=listener.id)
 
-            if module.params['wait']:
+            if self.params['wait']:
                 # Check in case the listener already exists.
-                lb = cloud.load_balancer.find_load_balancer(loadbalancer)
+                lb = self.conn.load_balancer.find_load_balancer(loadbalancer)
                 if not lb:
-                    module.fail_json(
+                    self.fail_json(
                         msg='load balancer %s is not found' % loadbalancer
                     )
-                _lb_wait_for_status(module, cloud, lb, "ACTIVE", ["ERROR"])
+                self._lb_wait_for_status(lb, "ACTIVE", ["ERROR"])
 
-            module.exit_json(changed=changed, listener=listener.to_dict(),
-                             id=listener.id)
-        elif module.params['state'] == 'absent':
+            self.exit_json(
+                changed=changed, listener=listener.to_dict(), id=listener.id)
+        elif self.params['state'] == 'absent':
             if not listener:
                 changed = False
             else:
-                cloud.load_balancer.delete_listener(listener)
+                self.conn.load_balancer.delete_listener(listener)
                 changed = True
 
-                if module.params['wait']:
+                if self.params['wait']:
                     # Wait for the load balancer to be active after deleting
                     # the listener.
-                    lb = cloud.load_balancer.find_load_balancer(loadbalancer)
+                    lb = self.conn.load_balancer.find_load_balancer(loadbalancer)
                     if not lb:
-                        module.fail_json(
+                        self.fail_json(
                             msg='load balancer %s is not found' % loadbalancer
                         )
-                    _lb_wait_for_status(module, cloud, lb, "ACTIVE", ["ERROR"])
+                    self._lb_wait_for_status(lb, "ACTIVE", ["ERROR"])
 
-            module.exit_json(changed=changed)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+            self.exit_json(changed=changed)
+
+
+def main():
+    module = LoadbalancerListenerModule()
+    module()
 
 
 if __name__ == "__main__":
