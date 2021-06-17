@@ -94,36 +94,11 @@ id:
     sample: "3292f020780b4d5baf27ff7e1d224c44"
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _needs_update(module, service):
-    if service.enabled != module.params['enabled']:
-        return True
-    if service.description is not None and \
-       service.description != module.params['description']:
-        return True
-    return False
-
-
-def _system_state_change(module, service):
-    state = module.params['state']
-    if state == 'absent' and service:
-        return True
-
-    if state == 'present':
-        if service is None:
-            return True
-        return _needs_update(module, service)
-
-    return False
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class IdentityCatalogServiceModule(OpenStackModule):
+    argument_spec = dict(
         description=dict(default=None),
         enabled=dict(default=True, type='bool'),
         name=dict(required=True),
@@ -131,58 +106,79 @@ def main():
         state=dict(default='present', choices=['absent', 'present']),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
-    description = module.params['description']
-    enabled = module.params['enabled']
-    name = module.params['name']
-    state = module.params['state']
-    service_type = module.params['service_type']
+    def _needs_update(self, service):
+        if service.enabled != self.params['enabled']:
+            return True
+        if service.description is not None and \
+           service.description != self.params['description']:
+            return True
+        return False
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        services = cloud.search_services(name_or_id=name,
-                                         filters=dict(type=service_type))
+    def _system_state_change(self, service):
+        state = self.params['state']
+        if state == 'absent' and service:
+            return True
+
+        if state == 'present':
+            if service is None:
+                return True
+            return self._needs_update(service)
+
+        return False
+
+    def run(self):
+        description = self.params['description']
+        enabled = self.params['enabled']
+        name = self.params['name']
+        state = self.params['state']
+        service_type = self.params['service_type']
+
+        services = self.conn.search_services(
+            name_or_id=name, filters=dict(type=service_type))
 
         if len(services) > 1:
-            module.fail_json(msg='Service name %s and type %s are not unique' %
-                             (name, service_type))
+            self.fail_json(
+                msg='Service name %s and type %s are not unique'
+                % (name, service_type))
         elif len(services) == 1:
             service = services[0]
         else:
             service = None
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(module, service))
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(service))
 
         if state == 'present':
             if service is None:
-                service = cloud.create_service(name=name, description=description,
-                                               type=service_type, enabled=True)
+                service = self.conn.create_service(
+                    name=name, description=description, type=service_type, enabled=True)
                 changed = True
             else:
-                if _needs_update(module, service):
-                    service = cloud.update_service(
+                if self._needs_update(service):
+                    service = self.conn.update_service(
                         service.id, name=name, type=service_type, enabled=enabled,
                         description=description)
                     changed = True
                 else:
                     changed = False
-            module.exit_json(changed=changed, service=service, id=service.id)
+            self.exit_json(changed=changed, service=service, id=service.id)
 
         elif state == 'absent':
             if service is None:
                 changed = False
             else:
-                cloud.delete_service(service.id)
+                self.conn.delete_service(service.id)
                 changed = True
-            module.exit_json(changed=changed)
+            self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = IdentityCatalogServiceModule()
+    module()
 
 
 if __name__ == '__main__':
