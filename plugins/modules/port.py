@@ -339,6 +339,10 @@ class NetworkPortModule(OpenStackModule):
                 return True
 
         for key in compare_list_dict:
+            if not self.params[key]:
+                if port[key]:
+                    return True
+
             if self.params[key]:
                 if not port[key]:
                     return True
