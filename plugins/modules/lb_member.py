@@ -130,42 +130,11 @@ EXAMPLES = '''
 
 import time
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _wait_for_member_status(module, cloud, pool_id, member_id, status,
-                            failures, interval=5):
-    timeout = module.params['timeout']
-
-    total_sleep = 0
-    if failures is None:
-        failures = []
-
-    while total_sleep < timeout:
-        member = cloud.load_balancer.get_member(member_id, pool_id)
-        provisioning_status = member.provisioning_status
-        if provisioning_status == status:
-            return member
-        if provisioning_status in failures:
-            module.fail_json(
-                msg="Member %s transitioned to failure state %s" %
-                    (member_id, provisioning_status)
-            )
-
-        time.sleep(interval)
-        total_sleep += interval
-
-    module.fail_json(
-        msg="Timeout waiting for member %s to transition to %s" %
-            (member_id, status)
-    )
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class LoadbalancerMemberModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
         pool=dict(required=True),
@@ -173,54 +142,81 @@ def main():
         protocol_port=dict(default=80, type='int'),
         subnet_id=dict(default=None),
     )
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec, **module_kwargs)
-    sdk, cloud = openstack_cloud_from_module(module)
-    name = module.params['name']
-    pool = module.params['pool']
+    module_kwargs = dict()
 
-    try:
+    def _wait_for_member_status(self, pool_id, member_id, status,
+                                failures, interval=5):
+        timeout = self.params['timeout']
+
+        total_sleep = 0
+        if failures is None:
+            failures = []
+
+        while total_sleep < timeout:
+            member = self.conn.load_balancer.get_member(member_id, pool_id)
+            provisioning_status = member.provisioning_status
+            if provisioning_status == status:
+                return member
+            if provisioning_status in failures:
+                self.fail_json(
+                    msg="Member %s transitioned to failure state %s" %
+                        (member_id, provisioning_status)
+                )
+
+            time.sleep(interval)
+            total_sleep += interval
+
+        self.fail_json(
+            msg="Timeout waiting for member %s to transition to %s" %
+                (member_id, status)
+        )
+
+    def run(self):
+        name = self.params['name']
+        pool = self.params['pool']
+
         changed = False
 
-        pool_ret = cloud.load_balancer.find_pool(name_or_id=pool)
+        pool_ret = self.conn.load_balancer.find_pool(name_or_id=pool)
         if not pool_ret:
-            module.fail_json(msg='pool %s is not found' % pool)
+            self.fail_json(msg='pool %s is not found' % pool)
 
         pool_id = pool_ret.id
-        member = cloud.load_balancer.find_member(name, pool_id)
+        member = self.conn.load_balancer.find_member(name, pool_id)
 
-        if module.params['state'] == 'present':
+        if self.params['state'] == 'present':
             if not member:
-                member = cloud.load_balancer.create_member(
+                member = self.conn.load_balancer.create_member(
                     pool_ret,
-                    address=module.params['address'],
+                    address=self.params['address'],
                     name=name,
-                    protocol_port=module.params['protocol_port'],
-                    subnet_id=module.params['subnet_id']
+                    protocol_port=self.params['protocol_port'],
+                    subnet_id=self.params['subnet_id']
                 )
                 changed = True
 
-                if not module.params['wait']:
-                    module.exit_json(changed=changed,
-                                     member=member.to_dict(),
-                                     id=member.id)
+                if not self.params['wait']:
+                    self.exit_json(
+                        changed=changed, member=member.to_dict(), id=member.id)
 
-            if module.params['wait']:
-                member = _wait_for_member_status(module, cloud, pool_id,
-                                                 member.id, "ACTIVE",
-                                                 ["ERROR"])
+            if self.params['wait']:
+                member = self._wait_for_member_status(
+                    pool_id, member.id, "ACTIVE", ["ERROR"])
 
-            module.exit_json(changed=changed, member=member.to_dict(),
-                             id=member.id)
+            self.exit_json(
+                changed=changed, member=member.to_dict(), id=member.id)
 
-        elif module.params['state'] == 'absent':
+        elif self.params['state'] == 'absent':
             if member:
-                cloud.load_balancer.delete_member(member, pool_ret)
+                self.conn.load_balancer.delete_member(member, pool_ret)
                 changed = True
 
-            module.exit_json(changed=changed)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+            self.exit_json(changed=changed)
+
+
+def main():
+    module = LoadbalancerMemberModule()
+    module()
 
 
 if __name__ == "__main__":
