@@ -1,0 +1,41 @@
+---
+- name: Set random prefix
+  set_fact:
+    prefix: "{{ 99999999 | random | to_uuid | hash('md5') }}"
+
+- name: Create dns zone
+  openstack.cloud.dns_zone:
+    cloud: "{{ cloud }}"
+    name: "{{ (prefix + '.test.zone.') }}"
+    email: test@example.net
+
+- name: Getting info about dns zones
+  openstack.cloud.dns_zone_info:
+    cloud: "{{ cloud }}"
+  register: zones
+
+- name: assert result
+  assert:
+    that:
+      - zones is success
+      - zones is not changed
+      - zones | length > 0
+
+- name: Getting info about created zone
+  openstack.cloud.dns_zone_info:
+    cloud: "{{ cloud }}"
+    name: "{{ (prefix + '.test.zone.') }}"
+  register: zone
+
+- name: assert result
+  assert:
+    that:
+      - zone is success
+      - zone is not changed
+      - zone.zones | length == 1
+
+- name: Drop created dns zone
+  openstack.cloud.dns_zone:
+    cloud: "{{ cloud }}"
+    name: "{{ (prefix + '.test.zone.') }}"
+    state: absent
