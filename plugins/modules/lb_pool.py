@@ -149,41 +149,11 @@ EXAMPLES = '''
 
 import time
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_full_argument_spec, \
-    openstack_module_kwargs, openstack_cloud_from_module
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _wait_for_pool_status(module, cloud, pool_id, status, failures,
-                          interval=5):
-    timeout = module.params['timeout']
-
-    total_sleep = 0
-    if failures is None:
-        failures = []
-
-    while total_sleep < timeout:
-        pool = cloud.load_balancer.get_pool(pool_id)
-        provisioning_status = pool.provisioning_status
-        if provisioning_status == status:
-            return pool
-        if provisioning_status in failures:
-            module.fail_json(
-                msg="pool %s transitioned to failure state %s" %
-                    (pool_id, provisioning_status)
-            )
-
-        time.sleep(interval)
-        total_sleep += interval
-
-    module.fail_json(
-        msg="timeout waiting for pool %s to transition to %s" %
-            (pool_id, status)
-    )
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class LoadbalancerPoolModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
         loadbalancer=dict(default=None),
@@ -195,71 +165,98 @@ def main():
             choices=['ROUND_ROBIN', 'LEAST_CONNECTIONS', 'SOURCE_IP']
         )
     )
-    module_kwargs = openstack_module_kwargs(
+    module_kwargs = dict(
         mutually_exclusive=[['loadbalancer', 'listener']]
     )
-    module = AnsibleModule(argument_spec, **module_kwargs)
-    sdk, cloud = openstack_cloud_from_module(module)
 
-    loadbalancer = module.params['loadbalancer']
-    listener = module.params['listener']
+    def _wait_for_pool_status(self, pool_id, status, failures,
+                              interval=5):
+        timeout = self.params['timeout']
 
-    try:
+        total_sleep = 0
+        if failures is None:
+            failures = []
+
+        while total_sleep < timeout:
+            pool = self.conn.load_balancer.get_pool(pool_id)
+            provisioning_status = pool.provisioning_status
+            if provisioning_status == status:
+                return pool
+            if provisioning_status in failures:
+                self.fail_json(
+                    msg="pool %s transitioned to failure state %s" %
+                        (pool_id, provisioning_status)
+                )
+
+            time.sleep(interval)
+            total_sleep += interval
+
+        self.fail_json(
+            msg="timeout waiting for pool %s to transition to %s" %
+                (pool_id, status)
+        )
+
+    def run(self):
+        loadbalancer = self.params['loadbalancer']
+        listener = self.params['listener']
+
         changed = False
-        pool = cloud.load_balancer.find_pool(name_or_id=module.params['name'])
+        pool = self.conn.load_balancer.find_pool(name_or_id=self.params['name'])
 
-        if module.params['state'] == 'present':
+        if self.params['state'] == 'present':
             if not pool:
                 loadbalancer_id = None
                 if not (loadbalancer or listener):
-                    module.fail_json(
+                    self.fail_json(
                         msg="either loadbalancer or listener must be provided"
                     )
 
                 if loadbalancer:
-                    lb = cloud.load_balancer.find_load_balancer(loadbalancer)
+                    lb = self.conn.load_balancer.find_load_balancer(loadbalancer)
                     if not lb:
-                        module.fail_json(msg='load balancer %s is not '
-                                             'found' % loadbalancer)
+                        self.fail_json(
+                            msg='load balancer %s is not found' % loadbalancer)
                     loadbalancer_id = lb.id
 
                 listener_id = None
                 if listener:
-                    listener_ret = cloud.load_balancer.find_listener(listener)
+                    listener_ret = self.conn.load_balancer.find_listener(listener)
                     if not listener_ret:
-                        module.fail_json(msg='listener %s is not found'
-                                             % listener)
+                        self.fail_json(
+                            msg='listener %s is not found' % listener)
                     listener_id = listener_ret.id
 
-                pool = cloud.load_balancer.create_pool(
-                    name=module.params['name'],
+                pool = self.conn.load_balancer.create_pool(
+                    name=self.params['name'],
                     loadbalancer_id=loadbalancer_id,
                     listener_id=listener_id,
-                    protocol=module.params['protocol'],
-                    lb_algorithm=module.params['lb_algorithm']
+                    protocol=self.params['protocol'],
+                    lb_algorithm=self.params['lb_algorithm']
                 )
                 changed = True
 
-                if not module.params['wait']:
-                    module.exit_json(changed=changed,
-                                     pool=pool.to_dict(),
-                                     id=pool.id)
+                if not self.params['wait']:
+                    self.exit_json(
+                        changed=changed, pool=pool.to_dict(), id=pool.id)
 
-            if module.params['wait']:
-                pool = _wait_for_pool_status(module, cloud, pool.id, "ACTIVE",
-                                             ["ERROR"])
+            if self.params['wait']:
+                pool = self._wait_for_pool_status(
+                    pool.id, "ACTIVE", ["ERROR"])
 
-            module.exit_json(changed=changed, pool=pool.to_dict(),
-                             id=pool.id)
+            self.exit_json(
+                changed=changed, pool=pool.to_dict(), id=pool.id)
 
-        elif module.params['state'] == 'absent':
+        elif self.params['state'] == 'absent':
             if pool:
-                cloud.load_balancer.delete_pool(pool)
+                self.conn.load_balancer.delete_pool(pool)
                 changed = True
 
-            module.exit_json(changed=changed)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+            self.exit_json(changed=changed)
+
+
+def main():
+    module = LoadbalancerPoolModule()
+    module()
 
 
 if __name__ == "__main__":
