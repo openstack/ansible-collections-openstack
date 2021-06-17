@@ -39,62 +39,50 @@ EXAMPLES = '''
 RETURN = '''
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_full_argument_spec
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_module_kwargs
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import openstack_cloud_from_module
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def normalize_idp(idp):
-    """
-    Normalizes the IDP definitions so that the outputs are consistent with the
-    parameters
+class IdentityFederationIdpInfoModule(OpenStackModule):
+    argument_spec = dict(
+        name=dict(aliases=['id']),
+    )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
-    - "enabled" (parameter) == "is_enabled" (SDK)
-    - "name" (parameter) == "id" (SDK)
-    """
-    if idp is None:
-        return
+    def normalize_idp(self, idp):
+        """
+        Normalizes the IDP definitions so that the outputs are consistent with the
+        parameters
 
-    _idp = idp.to_dict()
-    _idp['enabled'] = idp['is_enabled']
-    _idp['name'] = idp['id']
-    return _idp
+        - "enabled" (parameter) == "is_enabled" (SDK)
+        - "name" (parameter) == "id" (SDK)
+        """
+        if idp is None:
+            return
+
+        _idp = idp.to_dict()
+        _idp['enabled'] = idp['is_enabled']
+        _idp['name'] = idp['id']
+        return _idp
+
+    def run(self):
+        """ Module entry point """
+
+        name = self.params.get('name')
+
+        if name:
+            idp = self.normalize_idp(self.conn.identity.get_identity_provider(name))
+            self.exit_json(changed=False, identity_providers=[idp])
+
+        else:
+            providers = list(map(self.normalize_idp, self.conn.identity.identity_providers()))
+            self.exit_json(changed=False, identity_providers=providers)
 
 
 def main():
-    """ Module entry point """
-
-    argument_spec = openstack_full_argument_spec(
-        name=dict(aliases=['id']),
-    )
-    module_kwargs = openstack_module_kwargs(
-    )
-    module = AnsibleModule(
-        argument_spec,
-        supports_check_mode=True,
-        **module_kwargs
-    )
-
-    name = module.params.get('name')
-
-    sdk, cloud = openstack_cloud_from_module(module, min_version="0.44")
-
-    if name:
-        try:
-            idp = normalize_idp(cloud.identity.get_identity_provider(name))
-        except sdk.exceptions.ResourceNotFound:
-            module.fail_json(msg='Failed to find identity provider')
-        except sdk.exceptions.OpenStackCloudException as ex:
-            module.fail_json(msg='Failed to get identity provider: {0}'.format(str(ex)))
-        module.exit_json(changed=False, identity_providers=[idp])
-
-    else:
-        try:
-            providers = list(map(normalize_idp, cloud.identity.identity_providers()))
-        except sdk.exceptions.OpenStackCloudException as ex:
-            module.fail_json(msg='Failed to list identity providers: {0}'.format(str(ex)))
-        module.exit_json(changed=False, identity_providers=providers)
+    module = IdentityFederationIdpInfoModule()
+    module()
 
 
 if __name__ == '__main__':
