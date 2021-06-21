@@ -72,35 +72,11 @@ RETURN = '''
 #
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (openstack_full_argument_spec,
-                                                                                openstack_module_kwargs,
-                                                                                openstack_cloud_from_module)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _system_state_change(state, assignment):
-    if state == 'present' and not assignment:
-        return True
-    elif state == 'absent' and assignment:
-        return True
-    return False
-
-
-def _build_kwargs(user, group, project, domain):
-    kwargs = {}
-    if user:
-        kwargs['user'] = user
-    if group:
-        kwargs['group'] = group
-    if project:
-        kwargs['project'] = project
-    if domain:
-        kwargs['domain'] = domain
-    return kwargs
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class IdentityRoleAssignmentModule(OpenStackModule):
+    argument_spec = dict(
         role=dict(required=True),
         user=dict(required=False),
         group=dict(required=False),
@@ -109,92 +85,111 @@ def main():
         state=dict(default='present', choices=['absent', 'present']),
     )
 
-    module_kwargs = openstack_module_kwargs(
+    module_kwargs = dict(
         required_one_of=[
             ['user', 'group']
-        ])
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+        ],
+        supports_check_mode=True
+    )
 
-    role = module.params.get('role')
-    user = module.params.get('user')
-    group = module.params.get('group')
-    project = module.params.get('project')
-    domain = module.params.get('domain')
-    state = module.params.get('state')
+    def _system_state_change(self, state, assignment):
+        if state == 'present' and not assignment:
+            return True
+        elif state == 'absent' and assignment:
+            return True
+        return False
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
+    def _build_kwargs(self, user, group, project, domain):
+        kwargs = {}
+        if user:
+            kwargs['user'] = user
+        if group:
+            kwargs['group'] = group
+        if project:
+            kwargs['project'] = project
+        if domain:
+            kwargs['domain'] = domain
+        return kwargs
+
+    def run(self):
+        role = self.params.get('role')
+        user = self.params.get('user')
+        group = self.params.get('group')
+        project = self.params.get('project')
+        domain = self.params.get('domain')
+        state = self.params.get('state')
+
         filters = {}
         domain_id = None
 
-        r = cloud.get_role(role)
+        r = self.conn.get_role(role)
         if r is None:
-            module.fail_json(msg="Role %s is not valid" % role)
+            self.fail_json(msg="Role %s is not valid" % role)
         filters['role'] = r['id']
 
         if domain:
-            d = cloud.get_domain(name_or_id=domain)
+            d = self.conn.get_domain(name_or_id=domain)
             if d is None:
-                module.fail_json(msg="Domain %s is not valid" % domain)
+                self.fail_json(msg="Domain %s is not valid" % domain)
             filters['domain'] = d['id']
             domain_id = d['id']
         if user:
             if domain:
-                u = cloud.get_user(user, domain_id=filters['domain'])
+                u = self.conn.get_user(user, domain_id=filters['domain'])
             else:
-                u = cloud.get_user(user)
+                u = self.conn.get_user(user)
 
             if u is None:
-                module.fail_json(msg="User %s is not valid" % user)
+                self.fail_json(msg="User %s is not valid" % user)
             filters['user'] = u['id']
         if group:
             if domain:
-                g = cloud.get_group(group, domain_id=filters['domain'])
+                g = self.conn.get_group(group, domain_id=filters['domain'])
             else:
-                g = cloud.get_group(group)
+                g = self.conn.get_group(group)
             if g is None:
-                module.fail_json(msg="Group %s is not valid" % group)
+                self.fail_json(msg="Group %s is not valid" % group)
             filters['group'] = g['id']
         if project:
             if domain:
-                p = cloud.get_project(project, domain_id=filters['domain'])
+                p = self.conn.get_project(project, domain_id=filters['domain'])
                 # OpenStack won't allow us to use both a domain and project as
                 # filter. Once we identified the project (using the domain as
                 # a filter criteria), we need to remove the domain itself from
                 # the filters list.
                 domain_id = filters.pop('domain')
             else:
-                p = cloud.get_project(project)
+                p = self.conn.get_project(project)
 
             if p is None:
-                module.fail_json(msg="Project %s is not valid" % project)
+                self.fail_json(msg="Project %s is not valid" % project)
             filters['project'] = p['id']
 
-        assignment = cloud.list_role_assignments(filters=filters)
+        assignment = self.conn.list_role_assignments(filters=filters)
 
-        if module.check_mode:
-            module.exit_json(changed=_system_state_change(state, assignment))
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(state, assignment))
 
         changed = False
 
         if state == 'present':
             if not assignment:
-                kwargs = _build_kwargs(user, group, project, domain_id)
-                cloud.grant_role(role, **kwargs)
+                kwargs = self._build_kwargs(user, group, project, domain_id)
+                self.conn.grant_role(role, **kwargs)
                 changed = True
 
         elif state == 'absent':
             if assignment:
-                kwargs = _build_kwargs(user, group, project, domain_id)
-                cloud.revoke_role(role, **kwargs)
+                kwargs = self._build_kwargs(user, group, project, domain_id)
+                self.conn.revoke_role(role, **kwargs)
                 changed = True
 
-        module.exit_json(changed=changed)
+        self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = IdentityRoleAssignmentModule()
+    module()
 
 
 if __name__ == '__main__':
