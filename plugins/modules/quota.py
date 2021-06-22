@@ -256,117 +256,11 @@ openstack_quotas:
 
 '''
 
-import traceback
-
-KEYSTONEAUTH1_IMP_ERR = None
-try:
-    from keystoneauth1 import exceptions as ksa_exceptions
-    HAS_KEYSTONEAUTH1 = True
-except ImportError:
-    KEYSTONEAUTH1_IMP_ERR = traceback.format_exc()
-    HAS_KEYSTONEAUTH1 = False
-
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    openstack_full_argument_spec,
-    openstack_cloud_from_module,
-)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _get_volume_quotas(cloud, project):
-
-    return cloud.get_volume_quotas(project)
-
-
-def _get_network_quotas(cloud, project):
-
-    return cloud.get_network_quotas(project)
-
-
-def _get_compute_quotas(cloud, project):
-
-    return cloud.get_compute_quotas(project)
-
-
-def _get_quotas(sdk, module, cloud, project):
-
-    quota = {}
-    try:
-        quota['volume'] = _get_volume_quotas(cloud, project)
-    except ksa_exceptions.EndpointNotFound:
-        module.warn("No public endpoint for volumev2 service was found. Ignoring volume quotas.")
-
-    try:
-        quota['network'] = _get_network_quotas(cloud, project)
-    except ksa_exceptions.EndpointNotFound:
-        module.warn("No public endpoint for network service was found. Ignoring network quotas.")
-
-    quota['compute'] = _get_compute_quotas(cloud, project)
-
-    for quota_type in quota.keys():
-        quota[quota_type] = _scrub_results(quota[quota_type])
-
-    return quota
-
-
-def _scrub_results(quota):
-
-    filter_attr = [
-        'HUMAN_ID',
-        'NAME_ATTR',
-        'human_id',
-        'request_ids',
-        'x_openstack_request_ids',
-    ]
-
-    for attr in filter_attr:
-        if attr in quota:
-            del quota[attr]
-
-    return quota
-
-
-def _system_state_change_details(module, project_quota_output):
-
-    quota_change_request = {}
-    changes_required = False
-
-    for quota_type in project_quota_output.keys():
-        for quota_option in project_quota_output[quota_type].keys():
-            if quota_option in module.params and module.params[quota_option] is not None:
-                if project_quota_output[quota_type][quota_option] != module.params[quota_option]:
-                    changes_required = True
-
-                    if quota_type not in quota_change_request:
-                        quota_change_request[quota_type] = {}
-
-                    quota_change_request[quota_type][quota_option] = module.params[quota_option]
-
-    return (changes_required, quota_change_request)
-
-
-def _system_state_change(module, project_quota_output):
-    """
-    Determine if changes are required to the current project quota.
-
-    This is done by comparing the current project_quota_output against
-    the desired quota settings set on the module params.
-    """
-
-    changes_required, quota_change_request = _system_state_change_details(
-        module,
-        project_quota_output
-    )
-
-    if changes_required:
-        return True
-    else:
-        return False
-
-
-def main():
-
-    argument_spec = openstack_full_argument_spec(
+class QuotaModule(OpenStackModule):
+    argument_spec = dict(
         name=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
         backup_gigabytes=dict(required=False, type='int', default=None),
@@ -404,16 +298,89 @@ def main():
         volumes_types=dict(required=False, type='dict', default={})
     )
 
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True
-                           )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
-    if not HAS_KEYSTONEAUTH1:
-        module.fail_json(msg=missing_required_lib("keystoneauth1"), exception=KEYSTONEAUTH1_IMP_ERR)
+    def _get_volume_quotas(self, project):
+        return self.conn.get_volume_quotas(project)
 
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        cloud_params = dict(module.params)
+    def _get_network_quotas(self, project):
+        return self.conn.get_network_quotas(project)
+
+    def _get_compute_quotas(self, project):
+        return self.conn.get_compute_quotas(project)
+
+    def _get_quotas(self, project):
+        quota = {}
+        try:
+            quota['volume'] = self._get_volume_quotas(project)
+        except Exception:
+            self.warn("No public endpoint for volumev2 service was found. Ignoring volume quotas.")
+
+        try:
+            quota['network'] = self._get_network_quotas(project)
+        except Exception:
+            self.warn("No public endpoint for network service was found. Ignoring network quotas.")
+
+        quota['compute'] = self._get_compute_quotas(project)
+
+        for quota_type in quota.keys():
+            quota[quota_type] = self._scrub_results(quota[quota_type])
+
+        return quota
+
+    def _scrub_results(self, quota):
+        filter_attr = [
+            'HUMAN_ID',
+            'NAME_ATTR',
+            'human_id',
+            'request_ids',
+            'x_openstack_request_ids',
+        ]
+
+        for attr in filter_attr:
+            if attr in quota:
+                del quota[attr]
+
+        return quota
+
+    def _system_state_change_details(self, project_quota_output):
+        quota_change_request = {}
+        changes_required = False
+
+        for quota_type in project_quota_output.keys():
+            for quota_option in project_quota_output[quota_type].keys():
+                if quota_option in self.params and self.params[quota_option] is not None:
+                    if project_quota_output[quota_type][quota_option] != self.params[quota_option]:
+                        changes_required = True
+
+                        if quota_type not in quota_change_request:
+                            quota_change_request[quota_type] = {}
+
+                        quota_change_request[quota_type][quota_option] = self.params[quota_option]
+
+        return (changes_required, quota_change_request)
+
+    def _system_state_change(self, project_quota_output):
+        """
+        Determine if changes are required to the current project quota.
+
+        This is done by comparing the current project_quota_output against
+        the desired quota settings set on the module params.
+        """
+
+        changes_required, quota_change_request = self._system_state_change_details(
+            project_quota_output
+        )
+
+        if changes_required:
+            return True
+        else:
+            return False
+
+    def run(self):
+        cloud_params = dict(self.params)
 
         # In order to handle the different volume types we update module params after.
         dynamic_types = [
@@ -423,20 +390,19 @@ def main():
         ]
 
         for dynamic_type in dynamic_types:
-            for k, v in module.params[dynamic_type].items():
-                module.params[k] = int(v)
+            for k, v in self.params[dynamic_type].items():
+                self.params[k] = int(v)
 
         # Get current quota values
-        project_quota_output = _get_quotas(
-            sdk, module, cloud, cloud_params['name'])
+        project_quota_output = self._get_quotas(cloud_params['name'])
         changes_required = False
 
-        if module.params['state'] == "absent":
+        if self.params['state'] == "absent":
             # If a quota state is set to absent we should assume there will be changes.
             # The default quota values are not accessible so we can not determine if
             # no changes will occur or not.
-            if module.check_mode:
-                module.exit_json(changed=True)
+            if self.ansible.check_mode:
+                self.exit_json(changed=True)
 
             # Calling delete_network_quotas when a quota has not been set results
             # in an error, according to the sdk docs it should return the
@@ -447,49 +413,48 @@ def main():
             neutron_msg2 = "could not be found"
 
             for quota_type in project_quota_output.keys():
-                quota_call = getattr(cloud, 'delete_%s_quotas' % (quota_type))
+                quota_call = getattr(self.conn, 'delete_%s_quotas' % (quota_type))
                 try:
                     quota_call(cloud_params['name'])
-                except sdk.exceptions.OpenStackCloudException as e:
+                except Exception as e:
                     error_msg = str(e)
                     if error_msg.find(neutron_msg1) > -1 and error_msg.find(neutron_msg2) > -1:
                         pass
                     else:
-                        module.fail_json(msg=str(e), extra_data=e.extra_data)
+                        self.fail_json(msg=str(e), extra_data=e.extra_data)
 
-            project_quota_output = _get_quotas(
-                sdk, module, cloud, cloud_params['name'])
+            project_quota_output = self._get_quotas(cloud_params['name'])
             changes_required = True
 
-        elif module.params['state'] == "present":
-            if module.check_mode:
-                module.exit_json(changed=_system_state_change(module, project_quota_output))
+        elif self.params['state'] == "present":
+            if self.ansible.check_mode:
+                self.exit_json(changed=self._system_state_change(
+                    project_quota_output))
 
-            changes_required, quota_change_request = _system_state_change_details(
-                module,
+            changes_required, quota_change_request = self._system_state_change_details(
                 project_quota_output
             )
 
             if changes_required:
                 for quota_type in quota_change_request.keys():
-                    quota_call = getattr(cloud, 'set_%s_quotas' % (quota_type))
+                    quota_call = getattr(self.conn, 'set_%s_quotas' % (quota_type))
                     quota_call(cloud_params['name'], **quota_change_request[quota_type])
 
                 # Get quota state post changes for validation
-                project_quota_update = _get_quotas(
-                    sdk, module, cloud, cloud_params['name'])
+                project_quota_update = self._get_quotas(cloud_params['name'])
 
                 if project_quota_output == project_quota_update:
-                    module.fail_json(msg='Could not apply quota update')
+                    self.fail_json(msg='Could not apply quota update')
 
                 project_quota_output = project_quota_update
 
-        module.exit_json(changed=changes_required,
-                         openstack_quotas=project_quota_output
-                         )
+        self.exit_json(
+            changed=changes_required, openstack_quotas=project_quota_output)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e), extra_data=e.extra_data)
+
+def main():
+    module = QuotaModule()
+    module()
 
 
 if __name__ == '__main__':
