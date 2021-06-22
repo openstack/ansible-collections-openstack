@@ -83,61 +83,11 @@ snapshot:
       display_name: test_snapshot
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    openstack_full_argument_spec,
-    openstack_module_kwargs,
-    openstack_cloud_from_module,
-)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
-def _present_volume_snapshot(module, cloud):
-    volume = cloud.get_volume(module.params['volume'])
-    snapshot = cloud.get_volume_snapshot(module.params['display_name'],
-                                         filters={'volume_id': volume.id})
-    if not snapshot:
-        snapshot = cloud.create_volume_snapshot(volume.id,
-                                                force=module.params['force'],
-                                                wait=module.params['wait'],
-                                                timeout=module.params[
-                                                    'timeout'],
-                                                name=module.params['display_name'],
-                                                description=module.params.get(
-                                                    'display_description')
-                                                )
-        module.exit_json(changed=True, snapshot=snapshot)
-    else:
-        module.exit_json(changed=False, snapshot=snapshot)
-
-
-def _absent_volume_snapshot(module, cloud):
-    volume = cloud.get_volume(module.params['volume'])
-    snapshot = cloud.get_volume_snapshot(module.params['display_name'],
-                                         filters={'volume_id': volume.id})
-    if not snapshot:
-        module.exit_json(changed=False)
-    else:
-        cloud.delete_volume_snapshot(name_or_id=snapshot.id,
-                                     wait=module.params['wait'],
-                                     timeout=module.params['timeout'],
-                                     )
-        module.exit_json(changed=True, snapshot_id=snapshot.id)
-
-
-def _system_state_change(module, cloud):
-    volume = cloud.get_volume(module.params['volume'])
-    snapshot = cloud.get_volume_snapshot(module.params['display_name'],
-                                         filters={'volume_id': volume.id})
-    state = module.params['state']
-
-    if state == 'present':
-        return snapshot is None
-    if state == 'absent':
-        return snapshot is not None
-
-
-def main():
-    argument_spec = openstack_full_argument_spec(
+class VolumeSnapshotModule(OpenStackModule):
+    argument_spec = dict(
         display_name=dict(required=True, aliases=['name']),
         display_description=dict(default=None, aliases=['description']),
         volume=dict(required=True),
@@ -145,29 +95,72 @@ def main():
         state=dict(default='present', choices=['absent', 'present']),
     )
 
-    module_kwargs = openstack_module_kwargs()
-    module = AnsibleModule(argument_spec,
-                           supports_check_mode=True,
-                           **module_kwargs)
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
-    sdk, cloud = openstack_cloud_from_module(module)
-
-    state = module.params['state']
-
-    try:
-        if cloud.volume_exists(module.params['volume']):
-            if module.check_mode:
-                module.exit_json(changed=_system_state_change(module, cloud))
-            if state == 'present':
-                _present_volume_snapshot(module, cloud)
-            if state == 'absent':
-                _absent_volume_snapshot(module, cloud)
+    def _present_volume_snapshot(self):
+        volume = self.conn.get_volume(self.params['volume'])
+        snapshot = self.conn.get_volume_snapshot(
+            self.params['display_name'], filters={'volume_id': volume.id})
+        if not snapshot:
+            snapshot = self.conn.create_volume_snapshot(
+                volume.id,
+                force=self.params['force'],
+                wait=self.params['wait'],
+                timeout=self.params['timeout'],
+                name=self.params['display_name'],
+                description=self.params.get('display_description')
+            )
+            self.exit_json(changed=True, snapshot=snapshot)
         else:
-            module.fail_json(
+            self.exit_json(changed=False, snapshot=snapshot)
+
+    def _absent_volume_snapshot(self):
+        volume = self.conn.get_volume(self.params['volume'])
+        snapshot = self.conn.get_volume_snapshot(
+            self.params['display_name'], filters={'volume_id': volume.id})
+        if not snapshot:
+            self.exit_json(changed=False)
+        else:
+            self.conn.delete_volume_snapshot(
+                name_or_id=snapshot.id,
+                wait=self.params['wait'],
+                timeout=self.params['timeout'],
+            )
+            self.exit_json(changed=True, snapshot_id=snapshot.id)
+
+    def _system_state_change(self):
+        volume = self.conn.get_volume(self.params['volume'])
+        snapshot = self.conn.get_volume_snapshot(
+            self.params['display_name'],
+            filters={'volume_id': volume.id})
+        state = self.params['state']
+
+        if state == 'present':
+            return snapshot is None
+        if state == 'absent':
+            return snapshot is not None
+
+    def run(self):
+        state = self.params['state']
+
+        if self.conn.volume_exists(self.params['volume']):
+            if self.ansible.check_mode:
+                self.exit_json(changed=self._system_state_change())
+            if state == 'present':
+                self._present_volume_snapshot()
+            if state == 'absent':
+                self._absent_volume_snapshot()
+        else:
+            self.fail_json(
                 msg="No volume with name or id '{0}' was found.".format(
-                    module.params['volume']))
-    except (sdk.exceptions.OpenStackCloudException, sdk.exceptions.ResourceTimeout) as e:
-        module.fail_json(msg=e.message)
+                    self.params['volume']))
+
+
+def main():
+    module = VolumeSnapshotModule()
+    module()
 
 
 if __name__ == '__main__':

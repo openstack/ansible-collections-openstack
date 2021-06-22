@@ -21,7 +21,7 @@
     cloud: "{{ cloud }}"
     name: ansible_volume_snapshot
   register: snap_info
-  ignore_errors: sdk_version is version(0.49, '<')
+  ignore_errors: sdk_version is version('0.49', '<')
 
 - name: Create volume backup
   openstack.cloud.volume_backup:
@@ -30,14 +30,14 @@
     display_name: ansible_volume_backup
     volume: ansible_volume
   register: vol_backup
-  ignore_errors: sdk_version is version(0.49, '<')
+  ignore_errors: sdk_version is version('0.49', '<')
 
 - name: Get backup info
   openstack.cloud.volume_backup_info:
     cloud: "{{ cloud }}"
     name: ansible_volume_backup
   register: backup_info
-  ignore_errors: sdk_version is version(0.49, '<')
+  ignore_errors: sdk_version is version('0.49', '<')
 
 - debug: var=vol
 
