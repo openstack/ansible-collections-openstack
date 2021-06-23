@@ -5,6 +5,78 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.5.0
+======
+
+Release Summary
+---------------
+
+New modules for DNS and FIPs and bugfixes.
+
+Minor Changes
+-------------
+
+- Add bindep.txt for ansible-builder
+- Add check_mode attribute to OpenstackModule
+- Migrating image module from AnsibleModule to OpenStackModule
+- Switch KeystoneFederationProtocolInfo module to OpenStackModule
+- Switch ProjectAccess module to OpenStackModule
+- Switch Quota module to OpenStackModule
+- Switch Recordset module to OpenStackModule
+- Switch ServerGroup module to OpenStackModule
+- Switch ServerMetadata module to OpenStackModule
+- Switch Snapshot module to OpenStackModule
+- Switch Stack module to OpenStackModule
+- Switch auth module to OpenStackModule
+- Switch catalog_service module to OpenStackModule
+- Switch coe_cluster module to OpenStackModule
+- Switch coe_cluster_template module to OpenStackModule
+- Switch endpoint module to OpenStackModule
+- Switch federation_idp module to OpenStackModule
+- Switch federation_idp_info module to OpenStackModule
+- Switch federation_mapping module to OpenStackModule
+- Switch federation_mapping_info module to OpenStackModule
+- Switch federation_protocol module to OpenStackModule
+- Switch flavor module to OpenStackModule
+- Switch flavor_info module to OpenStackModule
+- Switch floating_ip module to OpenStackModule
+- Switch group_assignment module to OpenStackModule
+- Switch hostaggregate module to OpenStackModule
+- Switch identity_domain module to OpenStackModule
+- Switch identity_domain_info module to OpenStackModule
+- Switch identity_group module to OpenStackModule
+- Switch identity_group_info module to OpenStackModule
+- Switch identity_role module to OpenStackModule
+- Switch identity_user module to OpenStackModule
+- Switch lb_listener module to OpenStackModule
+- Switch lb_member module to OpenStackModule
+- Switch lb_pool module to OpenStackModule
+- Switch object module to OpenStackModule
+- Switch port module to OpenStackModule
+- Switch port_info module to OpenStackModule
+- Switch project and project_info module to OpenStackModule
+- Switch role_assignment module to OpenStackModule
+- Switch user_info module to OpenStackModule
+- image - Add support to setting image tags
+
+Bugfixes
+--------
+
+- Update checks for validate_certs in openstack_cloud_from_module
+- compute_flavor - Fix the idempotent of compute_flavor module
+- host_aggregate - Fix host_aggregate to tolerate aggregate.hosts being None
+- inventory/openstack - Fix inventory plugin on Ansible 2.11
+- port - fix update on empty list of allowed address pairs
+- setup.cfg Replace dashes with underscores
+- subnet - Only apply necessary changes to subnets
+- volume - Fail if referenced source image for a new volume does not exist
+
+New Modules
+-----------
+
+- openstack.cloud.dns_zone_info - Getting information about dns zones
+- openstack.cloud.floating_ip_info - Get information about floating ips
+
 v1.4.0
 ======
 
