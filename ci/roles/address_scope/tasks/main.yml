@@ -1,0 +1,40 @@
+---
+- name: Create address_scope
+  openstack.cloud.address_scope:
+    cloud: "{{ cloud }}"
+    name: "{{ address_scope_name }}"
+    shared: False
+    ip_version: "4"
+  register: create_address_scope
+
+- name: Verify address scope
+  assert:
+    that:
+      - create_address_scope is successful
+      - create_address_scope is changed
+      - create_address_scope.address_scope.name == address_scope_name
+      - create_address_scope.address_scope.is_shared ==  False
+      - create_address_scope.address_scope.ip_version == 4
+
+- name: Update address scope
+  openstack.cloud.address_scope:
+    cloud: "{{ cloud }}"
+    name: "{{ address_scope_name }}"
+    shared: True
+    ip_version: "4"
+  register: update_address_scope
+
+- name: Verify updated IPv4 address scope
+  assert:
+    that:
+      - update_address_scope is successful
+      - update_address_scope is changed
+      - update_address_scope.address_scope.name == address_scope_name
+      - update_address_scope.address_scope.is_shared ==  True
+      - update_address_scope.address_scope.ip_version == 4
+
+- name: Delete created address scope
+  openstack.cloud.address_scope:
+    cloud: "{{ cloud }}"
+    name: "{{ address_scope_name }}"
+    state: absent
