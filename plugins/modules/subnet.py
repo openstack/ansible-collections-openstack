@@ -221,35 +221,37 @@ class SubnetModule(OpenStackModule):
         no_gateway_ip = self.params['no_gateway_ip']
         dns = self.params['dns_nameservers']
         host_routes = self.params['host_routes']
-        curr_pool = dict(start=pool_start, end=pool_end)
+        if pool_start and pool_end:
+            pool = dict(start=pool_start, end=pool_end)
+        else:
+            pool = None
 
+        changes = dict()
         if subnet['enable_dhcp'] != enable_dhcp:
-            return True
+            changes['enable_dhcp'] = enable_dhcp
         if subnet_name and subnet['name'] != subnet_name:
-            return True
-        if not subnet['allocation_pools'] and pool_start and pool_end:
-            return True
-        if subnet['allocation_pools'] != [curr_pool]:
-            return True
+            changes['subnet_name'] = subnet_name
+        if pool and (not subnet['allocation_pools'] or subnet['allocation_pools'] != [pool]):
+            changes['allocation_pools'] = [pool]
         if gateway_ip and subnet['gateway_ip'] != gateway_ip:
-            return True
+            changes['gateway_ip'] = gateway_ip
         if dns and sorted(subnet['dns_nameservers']) != sorted(dns):
-            return True
+            changes['dns_nameservers'] = dns
         if host_routes:
             curr_hr = sorted(subnet['host_routes'], key=lambda t: t.keys())
             new_hr = sorted(host_routes, key=lambda t: t.keys())
             if curr_hr != new_hr:
-                return True
+                changes['host_routes'] = host_routes
         if no_gateway_ip and subnet['gateway_ip']:
-            return True
-        return False
+            changes['disable_gateway_ip'] = no_gateway_ip
+        return changes
 
     def _system_state_change(self, subnet, filters=None):
         state = self.params['state']
         if state == 'present':
             if not subnet:
                 return True
-            return self._needs_update(subnet, filters)
+            return bool(self._needs_update(subnet, filters))
         if state == 'absent' and subnet:
             return True
         return False
@@ -334,15 +336,9 @@ class SubnetModule(OpenStackModule):
                 subnet = self.conn.create_subnet(network_name, **kwargs)
                 changed = True
             else:
-                if self._needs_update(subnet, filters):
-                    subnet = self.conn.update_subnet(subnet['id'],
-                                                     subnet_name=subnet_name,
-                                                     enable_dhcp=enable_dhcp,
-                                                     gateway_ip=gateway_ip,
-                                                     disable_gateway_ip=no_gateway_ip,
-                                                     dns_nameservers=dns,
-                                                     allocation_pools=pool,
-                                                     host_routes=host_routes)
+                changes = self._needs_update(subnet, filters)
+                if changes:
+                    subnet = self.conn.update_subnet(subnet['id'], **changes)
                     changed = True
                 else:
                     changed = False
