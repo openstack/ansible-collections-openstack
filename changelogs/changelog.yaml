@@ -228,4 +228,7 @@ releases:
     - description: Get information about floating ips
       name: floating_ip_info
       namespace: ''
+    - description: Create or delete address scopes from OpenStack
+      name: address_scope
+      namespace: ''
     release_date: '2021-06-23'

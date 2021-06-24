@@ -76,6 +76,7 @@ New Modules
 
 - openstack.cloud.dns_zone_info - Getting information about dns zones
 - openstack.cloud.floating_ip_info - Get information about floating ips
+- openstack.cloud.address_scope - Create or delete address scopes from OpenStack
 
 v1.4.0
 ======
