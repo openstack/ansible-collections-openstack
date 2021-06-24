@@ -114,7 +114,7 @@ TBD
 ## Communication
 
 We have a dedicated Interest Group for Openstack Ansible modules.
-You can find other people interested in this in `#openstack-ansible-sig` on Freenode IRC.
+You can find other people interested in this in `#openstack-ansible-sig` on [OFTC IRC](https://www.oftc.net/).
 
 ## License
 
