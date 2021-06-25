@@ -1,0 +1,85 @@
+---
+# General run of tests
+# - Prepare projects/network objects
+# - Create rbac object
+# - Get rbac object info
+# - Verify RBAC object match
+# - Delete rbac object
+# - Get rbac object info
+# - Verify RBAC object deleted
+
+- name: Create source project
+  openstack.cloud.project:
+     cloud: "{{ cloud }}"
+     state: present
+     name: source_project
+     description: Source project for network RBAC test
+     domain_id: default
+     enabled: True
+  register: source_project
+
+- name: Create network - generic
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     name: "{{ network_name }}"
+     state: present
+     project: "{{ source_project.project.id }}"
+     shared: false
+     external: "{{ network_external }}"
+  register: network
+
+- name: Create target project
+  openstack.cloud.project:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_project
+     description: Target project for network RBAC test
+     domain_id: default
+     enabled: True
+  register: target_project
+
+- name: Create a new network RBAC policy
+  openstack.cloud.neutron_rbac_policy:
+    cloud: "{{ cloud }}"
+    object_id: "{{ network.network.id }}"
+    object_type: 'network'
+    action: 'access_as_shared'
+    target_project_id: "{{ target_project.project.id }}"
+    project_id: "{{ source_project.project.id }}"
+  register: rbac_policy
+
+- name: Get all rbac policies for {{ source_project.project.name }} - after creation
+  openstack.cloud.neutron_rbac_policies_info:
+    cloud: "{{ cloud }}"
+    project_id: "{{ source_project.project.id }}"
+  register: rbac_policies
+
+- name: Capture all existing policy IDs
+  set_fact:
+    rbac_policy_ids: "{{ rbac_policies.policies | map(attribute='id') | list }}"
+
+- name: Verify policy exists - after creation
+  assert:
+    that:
+      - rbac_policy.policy.id in rbac_policy_ids
+
+- name: Delete RBAC policy
+  openstack.cloud.neutron_rbac_policy:
+    cloud: "{{ cloud }}"
+    policy_id: "{{ rbac_policy.policy.id }}"
+    state: absent
+
+- name: Get all rbac policies for {{ source_project.project.name }} - after deletion
+  openstack.cloud.neutron_rbac_policies_info:
+    cloud: "{{ cloud }}"
+    project_id: "{{ source_project.project.id }}"
+  register: rbac_policies_remaining
+
+- name: Capture all remaining policy IDs
+  set_fact:
+    remaining_rbac_policy_ids: "{{ rbac_policies_remaining.policies | map(attribute='id') | list }}"
+
+- name: Verify policy does not exist - after deletion
+  assert:
+    that:
+      - not rbac_policy.policy.id in remaining_rbac_policy_ids
