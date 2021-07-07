@@ -216,6 +216,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='OpenStack Inventory Module')
     parser.add_argument('--cloud', default=os.environ.get('OS_CLOUD'),
                         help='Cloud name (default: None')
+    parser.add_argument('--config', action='store',
+                        help='Config Files (default: /etc/ansible/openstack.(yml|yaml)')
     parser.add_argument('--private',
                         action='store_true',
                         help='Use private address for ansible host')
@@ -233,6 +235,8 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if args.config:
+        CONFIG_FILES.append(args.config)
     try:
         # openstacksdk library may write to stdout, so redirect this
         sys.stdout = StringIO()
