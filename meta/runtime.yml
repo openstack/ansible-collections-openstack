@@ -99,6 +99,7 @@ action_groups:
     - stack
     - subnet
     - subnets_info
+    - subnet_pool
     - volume
     - volume_backup
     - volume_backup_info

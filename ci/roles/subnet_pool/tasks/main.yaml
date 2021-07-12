@@ -1,0 +1,73 @@
+---
+- name: Create address_scope
+  openstack.cloud.address_scope:
+    cloud: "{{ cloud }}"
+    name: "{{ address_scope_name }}"
+    shared: False
+    ip_version: "4"
+  register: create_address_scope
+
+- name: Create subnet pool
+  openstack.cloud.subnet_pool:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_pool_name }}"
+    shared: False
+    address_scope: "{{ address_scope_name }}"
+    prefixes:
+      - 192.168.0.0/24
+  register: create_subnet_pool
+
+- name: Verify subnet pool
+  assert:
+    that:
+      - create_subnet_pool is successful
+      - create_subnet_pool is changed
+      - create_subnet_pool.subnet_pool.name == subnet_pool_name
+      - create_subnet_pool.subnet_pool.is_shared ==  False
+      - create_subnet_pool.subnet_pool.is_default == False
+      - create_subnet_pool.subnet_pool.address_scope_id == create_address_scope.address_scope.id
+      - create_subnet_pool.subnet_pool.prefixes == ['192.168.0.0/24']
+
+
+- name: Update subnet pool
+  openstack.cloud.subnet_pool:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_pool_name }}"
+    address_scope: "{{ address_scope_name }}"
+    shared: False
+    default_prefix_length: "{{ default_prefix_length }}"
+    minimum_prefix_length: "{{ minimum_prefix_length }}"
+    maximum_prefix_length: "{{ maximum_prefix_length }}"
+    description: "test"
+    prefixes:
+      - 192.168.0.0/24
+      - 192.168.1.0/24
+  register: update_subnet_pool
+
+- name: Verify updated subnet pool
+  assert:
+    that:
+      - update_subnet_pool is successful
+      - update_subnet_pool is changed
+      - update_subnet_pool.subnet_pool.name == subnet_pool_name
+      - update_subnet_pool.subnet_pool.is_shared ==  False
+      - update_subnet_pool.subnet_pool.is_default == False
+      - update_subnet_pool.subnet_pool.address_scope_id == create_address_scope.address_scope.id
+      - update_subnet_pool.subnet_pool.prefixes == ['192.168.0.0/23']
+      - update_subnet_pool.subnet_pool.description == 'test'
+      - update_subnet_pool.subnet_pool.default_prefix_length == default_prefix_length
+      - update_subnet_pool.subnet_pool.minimum_prefix_length == minimum_prefix_length
+      - update_subnet_pool.subnet_pool.maximum_prefix_length == maximum_prefix_length
+
+- name: Delete created subnet pool
+  openstack.cloud.subnet_pool:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_pool_name }}"
+    state: absent
+
+
+- name: Delete created address scope
+  openstack.cloud.address_scope:
+    cloud: "{{ cloud }}"
+    name: "{{ address_scope_name }}"
+    state: absent
