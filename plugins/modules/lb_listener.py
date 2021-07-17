@@ -30,7 +30,7 @@ options:
    protocol:
      description:
         - The protocol for the listener.
-     choices: [HTTP, HTTPS, TCP, TERMINATED_HTTPS]
+     choices: [HTTP, HTTPS, TCP, TERMINATED_HTTPS, UDP, SCTP]
      default: HTTP
      type: str
    protocol_port:
@@ -152,7 +152,7 @@ class LoadbalancerListenerModule(OpenStackModule):
         state=dict(default='present', choices=['absent', 'present']),
         loadbalancer=dict(required=True),
         protocol=dict(default='HTTP',
-                      choices=['HTTP', 'HTTPS', 'TCP', 'TERMINATED_HTTPS']),
+                      choices=['HTTP', 'HTTPS', 'TCP', 'TERMINATED_HTTPS', 'UDP', 'SCTP']),
         protocol_port=dict(default=80, type='int', required=False),
     )
     module_kwargs = dict()
