@@ -24,6 +24,20 @@
         msg: "No tag was found in Zuul vars!"
       when: version_tag == 'no_version'
 
+    # Ansible Galaxy can accept only pure semver versions
+    # see https://semver.org for details
+    - name: Check that tag is proper semver
+      debug:
+        msg: >-
+          {{ version_tag is version('999.999.999', 'lt', version_type='semver') }}
+      ignore_errors: true
+      register: test_semver
+
+    - name: Fail if tag is not proper semver
+      fail:
+        msg: "Error is: {{ test_semver.msg }}"
+      when: test_semver is failed
+
     - name: Create a directory for collection
       file:
         state: "{{ item }}"
