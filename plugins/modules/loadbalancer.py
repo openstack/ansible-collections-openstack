@@ -296,6 +296,35 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class LoadBalancerModule(OpenStackModule):
 
+    def _wait_for_pool(self, pool, provisioning_status, operating_status, failures, interval=5):
+        """Wait for pool to be in a particular provisioning and operating status."""
+        timeout = self.params['timeout']  # reuse loadbalancer timeout
+
+        total_sleep = 0
+        if failures is None:
+            failures = []
+
+        while total_sleep < timeout:
+            pool = self.conn.load_balancer.find_pool(name_or_id=pool.id)
+            if pool:
+                if pool.provisioning_status == provisioning_status and pool.operating_status == operating_status:
+                    return None
+                if pool.provisioning_status in failures:
+                    self.fail_json(
+                        msg="Pool %s transitioned to failure state %s" %
+                            (pool.id, pool.provisioning_status)
+                    )
+            else:
+                if provisioning_status == "DELETED":
+                    return None
+                else:
+                    self.fail_json(
+                        msg="Pool %s transitioned to DELETED" % pool.id
+                    )
+
+            time.sleep(interval)
+            total_sleep += interval
+
     def _wait_for_lb(self, lb, status, failures, interval=5):
         """Wait for load balancer to be in a particular provisioning status."""
         timeout = self.params['timeout']
@@ -497,6 +526,7 @@ class LoadBalancerModule(OpenStackModule):
                                 protocol=protocol,
                                 lb_algorithm=lb_algorithm
                             )
+                            self._wait_for_pool(pool, "ACTIVE", "ONLINE", ["ERROR"])
                             changed = True
 
                     # Ensure members in the pool
@@ -538,6 +568,7 @@ class LoadBalancerModule(OpenStackModule):
                                 protocol_port=protocol_port,
                                 subnet_id=subnet_id
                             )
+                            self._wait_for_pool(pool, "ACTIVE", "ONLINE", ["ERROR"])
                             changed = True
 
                 # Associate public ip to the load balancer VIP. If
