@@ -453,6 +453,6 @@
         - ansible-collections-openstack-functional-devstack-rocky-ansible-2.11
         - ansible-collections-openstack-functional-devstack-queens-ansible-devel
 
-    pre-release:
+    tag:
       jobs:
         - ansible-collections-openstack-release
