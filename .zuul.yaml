@@ -276,7 +276,7 @@
     nodeset: ubuntu-bionic
     description: |
       Run openstack collections linter tests using the 2.11 branch of ansible
-    voting: false
+    voting: true
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.11
@@ -370,7 +370,7 @@
             dependencies: &deps_unit_lint
               - tox-pep8
               - openstack-tox-linters-ansible-2.9
-              # - openstack-tox-linters-ansible-2.11
+              - openstack-tox-linters-ansible-2.11
 
         - ansible-collections-openstack-functional-devstack-releases:
             dependencies: *deps_unit_lint
@@ -423,7 +423,7 @@
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.11
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
-        # - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
+        - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
         - ansible-collections-openstack-functional-devstack-octavia
         - tripleo-ci-centos-8-standalone-osa
 
