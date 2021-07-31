@@ -223,10 +223,10 @@ class HealthMonitorModule(OpenStackModule):
         expected_codes=dict(required=False, default="200"),
         admin_state_up=dict(required=False, default=True, type='bool'),
         state=dict(default='present', choices=['absent', 'present']),
-        http_method=dict(default="GET", requried=False, choices=["GET", "CONNECT", "DELETE",
+        http_method=dict(default="GET", required=False, choices=["GET", "CONNECT", "DELETE",
                                                                  "HEAD", "OPTIONS", "PATCH",
                                                                  "POST", "PUT", "TRACE"]),
-        url_path=dict(default="/", requires=False),
+        url_path=dict(default="/", required=False),
         type=dict(default='HTTP',
                   choices=['HTTP', 'HTTPS', 'PING', 'SCTP', 'TCP', 'TLS-HELLO', 'UDP-CONNECT']))
 

@@ -299,7 +299,10 @@ def main():
             required=False,
             type='bool',
             aliases=['skip_update_of_driver_password'],
-            deprecated_aliases=[dict(name='skip_update_of_driver_password', version='2.0.0')]
+            deprecated_aliases=[dict(
+                name='skip_update_of_driver_password',
+                version='2.0.0',
+                collection_name='openstack.cloud')]
         ),
         state=dict(required=False, default='present', choices=['present', 'absent'])
     )

@@ -18,6 +18,7 @@
       - tools/run-ansible-sanity.sh
       - tests/sanity/.*
       - contrib/.*
+      - .zuul.yaml
     vars:
       zuul_work_dir: src/opendev.org/openstack/ansible-collections-openstack
       tox_envlist: ansible
@@ -259,7 +260,7 @@
 - job:
     name: openstack-tox-linters-ansible-devel
     parent: openstack-tox-linters
-    nodeset: ubuntu-bionic
+    nodeset: ubuntu-focal
     description: |
       Run openstack collections linter tests using the devel branch of ansible
     # non-voting because we can't prevent ansible devel from breaking us
@@ -269,17 +270,23 @@
         override-checkout: devel
     vars:
       tox_envlist: linters-2.11
+      python_version: 3.8
+      bindep_profile: test py38
 
 - job:
     name: openstack-tox-linters-ansible-2.11
     parent: openstack-tox-linters
-    nodeset: ubuntu-bionic
+    nodeset: ubuntu-focal
     description: |
       Run openstack collections linter tests using the 2.11 branch of ansible
     voting: true
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.11
+    vars:
+      tox_envlist: linters-2.11
+      python_version: 3.8
+      bindep_profile: test py38
 
 - job:
     name: openstack-tox-linters-ansible-2.9
@@ -393,6 +400,7 @@
             voting: false
         - ansible-collections-openstack-functional-devstack-octavia:
             dependencies: *deps_unit_lint
+            voting: false
 
         - bifrost-collections-src:
             voting: false
@@ -413,7 +421,7 @@
     gate:
       jobs:
         - tox-pep8
-        # - openstack-tox-linters-ansible-2.11
+        - openstack-tox-linters-ansible-2.11
         - openstack-tox-linters-ansible-2.9
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
@@ -424,7 +432,7 @@
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-octavia
+        # - ansible-collections-openstack-functional-devstack-octavia
         - tripleo-ci-centos-8-standalone-osa
 
     periodic:
