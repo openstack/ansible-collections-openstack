@@ -49,6 +49,7 @@
       - ^plugins/modules/lb_pool.py
       - ^plugins/modules/loadbalancer.py
     vars:
+      configure_swap_size: 8192
       tox_envlist: ansible
       devstack_plugins:
         designate: https://opendev.org/openstack/designate
@@ -400,7 +401,6 @@
             voting: false
         - ansible-collections-openstack-functional-devstack-octavia:
             dependencies: *deps_unit_lint
-            voting: false
 
         - bifrost-collections-src:
             voting: false
@@ -432,7 +432,7 @@
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
-        # - ansible-collections-openstack-functional-devstack-octavia
+        - ansible-collections-openstack-functional-devstack-octavia
         - tripleo-ci-centos-8-standalone-osa
 
     periodic:
