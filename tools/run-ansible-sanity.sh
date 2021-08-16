@@ -33,4 +33,4 @@ ansible-test sanity -v \
     --python ${PY_VER} \
     --skip-test metaclass-boilerplate \
     --skip-test future-import-boilerplate \
-    plugins/ docs/ meta/ scripts/ tests/
+    plugins/ docs/ meta/ scripts/
