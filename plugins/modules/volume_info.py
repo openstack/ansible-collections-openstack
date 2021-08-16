@@ -124,6 +124,9 @@ class VolumeInfoModule(OpenStackModule):
         name=dict(type='str', required=False),
         status=dict(type='str', required=False),
     )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
     def run(self):
         kwargs = self.check_versioned(

@@ -70,6 +70,9 @@ class ServerInfoModule(OpenStackModule):
         filters=dict(required=False, type='dict', default=None),
         all_projects=dict(required=False, type='bool', default=False),
     )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
     def run(self):
 

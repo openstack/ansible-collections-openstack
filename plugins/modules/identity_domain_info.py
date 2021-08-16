@@ -92,7 +92,8 @@ class IdentityDomainInfoModule(OpenStackModule):
     module_kwargs = dict(
         mutually_exclusive=[
             ['name', 'filters'],
-        ]
+        ],
+        supports_check_mode=True
     )
 
     deprecated_names = ('openstack.cloud.identity_domain_facts')

@@ -188,6 +188,7 @@ class NetworkPortInfoModule(OpenStackModule):
         filters=dict(type='dict', required=False),
     )
     module_kwargs = dict(
+        supports_check_mode=True
     )
 
     deprecated_names = ('openstack.cloud.port_facts')

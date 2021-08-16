@@ -155,6 +155,9 @@ class RouterInfoModule(OpenStackModule):
         name=dict(required=False, default=None),
         filters=dict(required=False, type='dict', default=None)
     )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
     def run(self):
 

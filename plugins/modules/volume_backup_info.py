@@ -90,6 +90,9 @@ class VolumeBackupInfoModule(OpenStackModule):
         name=dict(required=False, type='str'),
         volume=dict(required=False, type='str')
     )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
     def run(self):
         name_filter = self.params['name']

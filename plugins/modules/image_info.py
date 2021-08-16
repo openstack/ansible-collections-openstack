@@ -157,6 +157,9 @@ class ImageInfoModule(OpenStackModule):
         image=dict(type='str', required=False),
         properties=dict(type='dict', required=False),
     )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
     def run(self):
 

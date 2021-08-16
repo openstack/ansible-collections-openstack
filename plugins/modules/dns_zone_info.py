@@ -136,6 +136,9 @@ class DnsZoneInfoModule(OpenStackModule):
         description=dict(required=False, type='str'),
         ttl=dict(required=False, type='int')
     )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
     def run(self):
 

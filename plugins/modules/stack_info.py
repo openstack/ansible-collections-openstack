@@ -80,6 +80,9 @@ class StackInfoModule(OpenStackModule):
         project_id=dict(required=False, type='str'),
         owner_id=dict(required=False, type='str')
     )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
     def run(self):
         data = []

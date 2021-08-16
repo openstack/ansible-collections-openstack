@@ -116,6 +116,9 @@ class IdentityUserInfoModule(OpenStackModule):
         domain=dict(required=False, default=None),
         filters=dict(required=False, type='dict', default=None),
     )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
     deprecated_names = ('openstack.cloud.identity_user_facts')
 

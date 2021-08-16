@@ -96,6 +96,9 @@ class VolumeSnapshotInfoModule(OpenStackModule):
                              'deleting', 'error_deleting', 'rollbacking',
                              'backing-up']),
     )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
     def run(self):
 

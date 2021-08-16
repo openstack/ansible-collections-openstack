@@ -115,6 +115,9 @@ class KeyPairInfoModule(OpenStackModule):
         limit=dict(type='int', required=False),
         marker=dict(type='str', required=False)
     )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
     def run(self):
         name = self.params['name']

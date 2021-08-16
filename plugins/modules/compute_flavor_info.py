@@ -174,7 +174,8 @@ class ComputeFlavorInfoModule(OpenStackModule):
             ['name', 'ram'],
             ['name', 'vcpus'],
             ['name', 'ephemeral']
-        ]
+        ],
+        supports_check_mode=True
     )
 
     deprecated_names = ('openstack.cloud.compute_flavor_facts')

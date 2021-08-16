@@ -177,7 +177,8 @@ class SecurityGroupRuleInfoModule(OpenStackModule):
     module_kwargs = dict(
         mutually_exclusive=[
             ['remote_ip_prefix', 'remote_group'],
-        ]
+        ],
+        supports_check_mode=True
     )
 
     def run(self):

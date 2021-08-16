@@ -148,6 +148,9 @@ class SecurityGroupInfoModule(OpenStackModule):
         not_tags=dict(required=False, type='list', elements='str'),
         not_any_tags=dict(required=False, type='list', elements='str')
     )
+    module_kwargs = dict(
+        supports_check_mode=True
+    )
 
     def run(self):
         description = self.params['description']
