@@ -261,6 +261,7 @@ class OpenStackModule:
         self.results = {'changed': False}
         self.exit = self.exit_json = self.ansible.exit_json
         self.fail = self.fail_json = self.ansible.fail_json
+        self.warn = self.ansible.warn
         self.sdk, self.conn = self.openstack_cloud_from_module()
         self.check_deprecated_names()
 
