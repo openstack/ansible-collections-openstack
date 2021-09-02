@@ -11,6 +11,7 @@
       - openstack/designate
     irrelevant-files: &ignore_files
       - changelogs/.*
+      - galaxy.*
       - COPYING
       - docs/.*
       - .*\.md
