@@ -222,13 +222,27 @@ releases:
       - image - Add support to setting image tags
       release_summary: New modules for DNS and FIPs and bugfixes.
     modules:
+    - description: Create or delete address scopes from OpenStack
+      name: address_scope
+      namespace: ''
     - description: Getting information about dns zones
       name: dns_zone_info
       namespace: ''
     - description: Get information about floating ips
       name: floating_ip_info
       namespace: ''
-    - description: Create or delete address scopes from OpenStack
-      name: address_scope
-      namespace: ''
     release_date: '2021-06-23'
+  1.5.1:
+    changes:
+      bugfixes:
+      - Add mandatory requires_ansible version to metadata
+      - Add protocol listener octavia
+      - Add support check mode for all info modules
+      - Allow to attach multiple floating ips to a server
+      - Only add or remove router interfaces when needed
+      - Wait for pool to be active and online
+      minor_changes:
+      - Changed minversion in tox to 3.18.0
+      - Update IRC server in README
+      release_summary: Bugfixes for networking modules
+    release_date: '2021-09-02'

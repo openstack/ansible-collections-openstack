@@ -5,6 +5,30 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.5.1
+======
+
+Release Summary
+---------------
+
+Bugfixes for networking modules
+
+Minor Changes
+-------------
+
+- Changed minversion in tox to 3.18.0
+- Update IRC server in README
+
+Bugfixes
+--------
+
+- Add mandatory requires_ansible version to metadata
+- Add protocol listener octavia
+- Add support check mode for all info modules
+- Allow to attach multiple floating ips to a server
+- Only add or remove router interfaces when needed
+- Wait for pool to be active and online
+
 v1.5.0
 ======
 
@@ -74,9 +98,9 @@ Bugfixes
 New Modules
 -----------
 
+- openstack.cloud.address_scope - Create or delete address scopes from OpenStack
 - openstack.cloud.dns_zone_info - Getting information about dns zones
 - openstack.cloud.floating_ip_info - Get information about floating ips
-- openstack.cloud.address_scope - Create or delete address scopes from OpenStack
 
 v1.4.0
 ======
