@@ -41,7 +41,7 @@
     required-projects:
       - openstack/octavia
       - name: github.com/ansible/ansible
-        override-checkout: stable-2.11
+        override-checkout: stable-2.12
     files:
       - ^ci/roles/loadbalancer/.*$
       - ^plugins/modules/lb_health_monitor.py
@@ -95,10 +95,22 @@
     parent: ansible-collections-openstack-functional-devstack
     description: |
       Run openstack collections functional tests against a master devstack
-      using master of openstacksdk and stable 2.11 branch of ansible
+      using master of openstacksdk and stable 2.12 branch of ansible
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.11
+    vars:
+      tox_envlist: ansible
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-ansible-2.12
+    parent: ansible-collections-openstack-functional-devstack
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using master of openstacksdk and stable 2.12 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.12
     vars:
       tox_envlist: ansible
 
@@ -113,36 +125,36 @@
       - name: github.com/ansible/ansible
         override-checkout: devel
     vars:
-      tox_envlist: ansible-2.11
+      tox_envlist: ansible-2.12
 
 # Stable branches tests
 - job:
-    name: ansible-collections-openstack-functional-devstack-wallaby-ansible-2.11
+    name: ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
     parent: ansible-collections-openstack-functional-devstack-ansible-devel
     description: |
       Run openstack collections functional tests against a wallaby devstack
-      using wallaby brach of openstacksdk and stable 2.11 branch of ansible
+      using wallaby brach of openstacksdk and stable 2.12 branch of ansible
     voting: true
     override-checkout: stable/wallaby
     required-projects:
       - name: github.com/ansible/ansible
-        override-checkout: stable-2.11
+        override-checkout: stable-2.12
       - name: openstack/openstacksdk
         override-checkout: stable/wallaby
     vars:
       tox_envlist: ansible
 
 - job:
-    name: ansible-collections-openstack-functional-devstack-victoria-ansible-2.11
+    name: ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
     parent: ansible-collections-openstack-functional-devstack-ansible-devel
     description: |
       Run openstack collections functional tests against a victoria devstack
-      using victoria brach of openstacksdk and stable 2.11 branch of ansible
+      using victoria brach of openstacksdk and stable 2.12 branch of ansible
     voting: true
     override-checkout: stable/victoria
     required-projects:
       - name: github.com/ansible/ansible
-        override-checkout: stable-2.11
+        override-checkout: stable-2.12
       - name: openstack/openstacksdk
         override-checkout: stable/victoria
     vars:
@@ -271,22 +283,22 @@
       - name: github.com/ansible/ansible
         override-checkout: devel
     vars:
-      tox_envlist: linters-2.11
+      tox_envlist: linters-2.12
       python_version: 3.8
       bindep_profile: test py38
 
 - job:
-    name: openstack-tox-linters-ansible-2.11
+    name: openstack-tox-linters-ansible-2.12
     parent: openstack-tox-linters
     nodeset: ubuntu-focal
     description: |
-      Run openstack collections linter tests using the 2.11 branch of ansible
+      Run openstack collections linter tests using the 2.12 branch of ansible
     voting: true
     required-projects:
       - name: github.com/ansible/ansible
-        override-checkout: stable-2.11
+        override-checkout: stable-2.12
     vars:
-      tox_envlist: linters-2.11
+      tox_envlist: linters-2.12
       python_version: 3.8
       bindep_profile: test py38
 
@@ -373,27 +385,25 @@
       jobs:
         - tox-pep8
         - openstack-tox-linters-ansible-devel
-        - openstack-tox-linters-ansible-2.11
+        - openstack-tox-linters-ansible-2.12
         - openstack-tox-linters-ansible-2.9
         - ansible-collections-openstack-functional-devstack:
             dependencies: &deps_unit_lint
               - tox-pep8
               - openstack-tox-linters-ansible-2.9
-              - openstack-tox-linters-ansible-2.11
+              - openstack-tox-linters-ansible-2.12
 
         - ansible-collections-openstack-functional-devstack-releases:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-ansible-2.9:
             dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-ansible-2.11:
+        - ansible-collections-openstack-functional-devstack-ansible-2.12:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-ansible-devel:
             dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.11:
+        - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12:
             dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.11:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11:
+        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11:
             dependencies: *deps_unit_lint
@@ -422,15 +432,14 @@
     gate:
       jobs:
         - tox-pep8
-        - openstack-tox-linters-ansible-2.11
+        - openstack-tox-linters-ansible-2.12
         - openstack-tox-linters-ansible-2.9
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-ansible-2.9
-        - ansible-collections-openstack-functional-devstack-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
+        - ansible-collections-openstack-functional-devstack-ansible-2.12
+        - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
+        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
         - ansible-collections-openstack-functional-devstack-octavia
@@ -439,16 +448,15 @@
     periodic:
       jobs:
         - openstack-tox-linters-ansible-devel
-        - openstack-tox-linters-ansible-2.11
+        - openstack-tox-linters-ansible-2.12
         - openstack-tox-linters-ansible-2.9
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-ansible-2.9
-        - ansible-collections-openstack-functional-devstack-ansible-2.11
+        - ansible-collections-openstack-functional-devstack-ansible-2.12
         - ansible-collections-openstack-functional-devstack-ansible-devel
-        - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
+        - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
+        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
         - ansible-collections-openstack-functional-devstack-queens-ansible-devel
@@ -458,6 +466,8 @@
 
     experimental:
       jobs:
+        - ansible-collections-openstack-functional-devstack-ansible-2.11
+        - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
         - ansible-collections-openstack-functional-devstack-stein-ansible-2.11
         - ansible-collections-openstack-functional-devstack-rocky-ansible-2.11
         - ansible-collections-openstack-functional-devstack-queens-ansible-devel
