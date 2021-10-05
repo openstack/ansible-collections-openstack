@@ -38,6 +38,16 @@ options:
         - The protocol port number for the listener.
      default: 80
      type: int
+   timeout_client_data:
+     description:
+        - Client inactivity timeout in milliseconds.
+     default: 50000
+     type: int
+   timeout_member_data:
+     description:
+        - Member inactivity timeout in milliseconds.
+     default: 50000
+     type: int
    wait:
      description:
         - If the module should wait for the load balancer to be ACTIVE.
@@ -108,6 +118,14 @@ listener:
             description: The protocol port number for the listener.
             type: int
             sample: 80
+        timeout_client_data:
+            description: Client inactivity timeout in milliseconds.
+            type: int
+            sample: 50000
+        timeout_member_data:
+            description: Member inactivity timeout in milliseconds.
+            type: int
+            sample: 50000
 '''
 
 EXAMPLES = '''
@@ -139,6 +157,18 @@ EXAMPLES = '''
     state: absent
     name: test-listener
     loadbalancer: test-loadbalancer
+
+# Create a listener, increase timeouts for connection persistence (for SSH for example).
+- openstack.cloud.lb_listener:
+    cloud: mycloud
+    endpoint_type: admin
+    state: present
+    name: test-listener
+    loadbalancer: test-loadbalancer
+    protocol: TCP
+    protocol_port: 22
+    timeout_client_data: 1800000
+    timeout_member_data: 1800000
 '''
 
 import time
@@ -154,6 +184,8 @@ class LoadbalancerListenerModule(OpenStackModule):
         protocol=dict(default='HTTP',
                       choices=['HTTP', 'HTTPS', 'TCP', 'TERMINATED_HTTPS', 'UDP', 'SCTP']),
         protocol_port=dict(default=80, type='int', required=False),
+        timeout_client_data=dict(default=50000, type='int', required=False),
+        timeout_member_data=dict(default=50000, type='int', required=False),
     )
     module_kwargs = dict()
 
@@ -205,6 +237,8 @@ class LoadbalancerListenerModule(OpenStackModule):
                     loadbalancer_id=loadbalancer_id,
                     protocol=self.params['protocol'],
                     protocol_port=self.params['protocol_port'],
+                    timeout_client_data=self.params['timeout_client_data'],
+                    timeout_member_data=self.params['timeout_member_data'],
                 )
                 changed = True
 
