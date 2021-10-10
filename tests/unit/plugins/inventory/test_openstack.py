@@ -27,7 +27,7 @@ from ansible.template import Templar
 
 
 config_data = {
-    'plugin': 'openstack',
+    'plugin': 'openstack.cloud.openstack',
     'compose': {
         'composed_var': '"testvar-" + testvar',
     },

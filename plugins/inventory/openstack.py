@@ -22,7 +22,7 @@ options:
     plugin:
         description: token that ensures this is a source file for the 'openstack' plugin.
         required: True
-        choices: ['openstack', 'openstack.cloud.openstack']
+        choices: ['openstack.cloud.openstack']
     show_all:
         description: toggles showing all vms vs only those with a working IP
         type: bool
