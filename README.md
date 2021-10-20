@@ -83,6 +83,14 @@ Or you can add the full namespace and collection name in the `collections` eleme
         device: /dev/vdb
 ```
 
+### Usage
+
+See the collection docs at Ansible site:
+
+* [openstack.cloud collection docs (version released in Ansible package)](https://docs.ansible.com/ansible/latest/collections/openstack/cloud/index.html)
+
+* [openstack.cloud collection docs (devel version)](https://docs.ansible.com/ansible/devel/collections/openstack/cloud/index.html)
+
 ## Contributing
 
 For information on contributing, please see [CONTRIBUTING](https://opendev.org/openstack/ansible-collections-openstack/src/branch/master/CONTRIBUTING.rst)
