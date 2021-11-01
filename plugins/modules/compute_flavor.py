@@ -220,9 +220,12 @@ class ComputeFlavorModule(OpenStackModule):
                     if self.params[param_key] != flavor[param_key]:
                         require_update = True
                         break
-
+            flavorid = self.params['flavorid']
             if flavor and require_update:
                 self.conn.delete_flavor(name)
+                old_extra_specs = {}
+                if flavorid == 'auto':
+                    flavorid = flavor['id']
                 flavor = None
 
             if not flavor:
@@ -231,7 +234,7 @@ class ComputeFlavorModule(OpenStackModule):
                     ram=self.params['ram'],
                     vcpus=self.params['vcpus'],
                     disk=self.params['disk'],
-                    flavorid=self.params['flavorid'],
+                    flavorid=flavorid,
                     ephemeral=self.params['ephemeral'],
                     swap=self.params['swap'],
                     rxtx_factor=self.params['rxtx_factor'],
