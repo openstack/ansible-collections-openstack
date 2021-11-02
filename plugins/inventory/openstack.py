@@ -311,7 +311,11 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
         for group_name, group_hosts in groups.items():
             gname = self.inventory.add_group(group_name)
             for host in group_hosts:
-                self.inventory.add_child(gname, host)
+                if gname == host:
+                    display.vvvv("Same name for host %s and group %s" % (host, gname))
+                    self.inventory.add_host(host, gname)
+                else:
+                    self.inventory.add_child(gname, host)
 
     def _get_groups_from_server(self, server_vars, namegroup=True):
         groups = []
