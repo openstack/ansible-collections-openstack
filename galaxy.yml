@@ -33,4 +33,4 @@ build_ignore:
   - ansible_collections_openstack.egg-info
   - contrib
   - changelogs
-version: 1.5.1
+version: 1.5.2

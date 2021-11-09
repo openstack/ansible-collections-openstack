@@ -5,6 +5,29 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.5.2
+======
+
+Release Summary
+---------------
+
+Bugfixes
+
+Minor Changes
+-------------
+
+- Add documentation links to README.md
+- Don't run functional jobs on galaxy.yml change
+- Move CI to use Ansible 2.12 version as main
+
+Bugfixes
+--------
+
+- Add client and member listener timeouts for persistence (Ex. SSH)
+- Added missing warn() used in cloud.openstack.quota
+- Fix issue with same host and group names
+- Flavor properties are not deleted on changes and id will stay
+
 v1.5.1
 ======
 
