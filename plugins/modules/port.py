@@ -340,11 +340,11 @@ class NetworkPortModule(OpenStackModule):
 
         for key in compare_list_dict:
             if not self.params[key]:
-                if port[key]:
+                if port.get(key):
                     return True
 
             if self.params[key]:
-                if not port[key]:
+                if not port.get(key):
                     return True
 
                 # sort dicts in list
