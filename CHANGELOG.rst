@@ -5,6 +5,20 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.5.3
+======
+
+Release Summary
+---------------
+
+Bugfixes
+
+Bugfixes
+--------
+
+- Don't require allowed_address_pairs for port
+- server_volume - check specified server is found
+
 v1.5.2
 ======
 
