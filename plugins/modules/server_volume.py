@@ -89,6 +89,9 @@ class ServerVolumeModule(OpenStackModule):
         server = self.conn.get_server(self.params['server'])
         volume = self.conn.get_volume(self.params['volume'])
 
+        if not server:
+            self.fail(msg='server %s is not found' % self.params['server'])
+
         if not volume:
             self.fail(msg='volume %s is not found' % self.params['volume'])
 
