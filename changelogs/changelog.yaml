@@ -259,3 +259,10 @@ releases:
       - Move CI to use Ansible 2.12 version as main
       release_summary: Bugfixes
     release_date: '2021-11-09'
+  1.5.3:
+    changes:
+      bugfixes:
+      - Don't require allowed_address_pairs for port
+      - server_volume - check specified server is found
+      release_summary: Bugfixes
+    release_date: '2021-11-11'
