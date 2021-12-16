@@ -128,6 +128,23 @@
       tox_envlist: ansible-2.12
 
 # Stable branches tests
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-xena-ansible-2.12
+    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    description: |
+      Run openstack collections functional tests against a xena devstack
+      using xena brach of openstacksdk and stable 2.12 branch of ansible
+    voting: true
+    override-checkout: stable/xena
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.12
+      - name: openstack/openstacksdk
+        override-checkout: stable/xena
+    vars:
+      tox_envlist: ansible
+
 - job:
     name: ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
     parent: ansible-collections-openstack-functional-devstack-ansible-devel
@@ -345,9 +362,9 @@
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-ansible-devel:
             dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12:
+        - ansible-collections-openstack-functional-devstack-xena-ansible-2.12:
             dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12:
+        - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11:
             dependencies: *deps_unit_lint
@@ -383,7 +400,7 @@
         - ansible-collections-openstack-functional-devstack-ansible-2.9
         - ansible-collections-openstack-functional-devstack-ansible-2.12
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
-        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
+        - ansible-collections-openstack-functional-devstack-xena-ansible-2.12
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
         - ansible-collections-openstack-functional-devstack-octavia
@@ -399,6 +416,7 @@
         - ansible-collections-openstack-functional-devstack-ansible-2.9
         - ansible-collections-openstack-functional-devstack-ansible-2.12
         - ansible-collections-openstack-functional-devstack-ansible-devel
+        - ansible-collections-openstack-functional-devstack-xena-ansible-2.12
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
@@ -410,6 +428,7 @@
     experimental:
       jobs:
         - ansible-collections-openstack-functional-devstack-ansible-2.11
+        - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
         - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
 
