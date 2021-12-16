@@ -402,7 +402,7 @@
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
+
         - bifrost-collections-src
         - bifrost-keystone-collections-src
         - ansible-collections-openstack-functional-devstack-octavia
@@ -411,6 +411,7 @@
       jobs:
         - ansible-collections-openstack-functional-devstack-ansible-2.11
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
+        - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
 
     tag:
       jobs:
