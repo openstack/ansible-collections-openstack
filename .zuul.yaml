@@ -402,7 +402,6 @@
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
         - ansible-collections-openstack-functional-devstack-xena-ansible-2.12
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
         - ansible-collections-openstack-functional-devstack-octavia
         - tripleo-ci-centos-8-standalone-osa
 
