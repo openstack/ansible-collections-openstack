@@ -69,6 +69,9 @@ options:
     loadbalancer:
         description: Number of load balancers to allow.
         type: int
+    metadata_items:
+       description: Number of metadata items allowed per instance.
+       type: int
     network:
         description: Number of networks to allow.
         type: int
@@ -183,6 +186,7 @@ EXAMPLES = '''
     instances: "{{ item.instances }}"
     key_pairs: "{{ item.key_pairs }}"
     loadbalancer: "{{ item.loadbalancer }}"
+    metadata_items: "{{ item.metadata_items }}"
     per_volume_gigabytes: "{{ item.per_volume_gigabytes }}"
     pool: "{{ item.pool }}"
     port: "{{ item.port }}"
@@ -277,6 +281,7 @@ class QuotaModule(OpenStackModule):
         instances=dict(required=False, type='int', default=None),
         key_pairs=dict(required=False, type='int', default=None, no_log=False),
         loadbalancer=dict(required=False, type='int', default=None),
+        metadata_items=dict(required=False, type='int', default=None),
         network=dict(required=False, type='int', default=None),
         per_volume_gigabytes=dict(required=False, type='int', default=None),
         pool=dict(required=False, type='int', default=None),
