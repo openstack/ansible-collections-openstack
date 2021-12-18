@@ -368,9 +368,6 @@
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11:
             dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-queens-ansible-2.11:
-            dependencies: *deps_unit_lint
-            voting: false
         - ansible-collections-openstack-functional-devstack-octavia:
             dependencies: *deps_unit_lint
 
@@ -419,7 +416,7 @@
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
-
+        - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
         - bifrost-collections-src
         - bifrost-keystone-collections-src
         - ansible-collections-openstack-functional-devstack-octavia
