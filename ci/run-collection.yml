@@ -31,6 +31,9 @@
     - { role: keystone_role, tags: keystone_role }
     - { role: network, tags: network }
     - { role: nova_flavor, tags: nova_flavor }
+    - role: nova_services
+      tags: nova_services
+      when: sdk_version is version(0.44, '>=')
     - { role: object, tags: object }
     - { role: port, tags: port }
     - { role: project, tags: project }

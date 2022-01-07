@@ -1,0 +1,15 @@
+---
+
+- name: Get nova compute services info
+  openstack.cloud.compute_service_info:
+    cloud: "{{ cloud }}"
+    binary: "nova-compute"
+  register: result
+  failed_when: "result.openstack_compute_services | length <= 0"
+
+- name: Get nova conductor services info
+  openstack.cloud.compute_service_info:
+    cloud: "{{ cloud }}"
+    binary: "nova-conductor"
+  register: result
+  failed_when: "result.openstack_compute_services | length <= 0"

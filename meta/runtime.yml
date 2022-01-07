@@ -19,6 +19,8 @@ action_groups:
     - compute_flavor
     - compute_flavor_info
     - compute_flavor_info
+    - compute_service_info
+    - compute_service_info
     - config
     - config
     - dns_zone
