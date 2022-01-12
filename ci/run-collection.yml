@@ -30,6 +30,10 @@
       when: sdk_version is version(0.44, '>=')
     - { role: keystone_role, tags: keystone_role }
     - { role: network, tags: network }
+    - role: neutron_rbac
+      tags:
+        - rbac
+        - neutron_rbac
     - { role: nova_flavor, tags: nova_flavor }
     - role: nova_services
       tags: nova_services
