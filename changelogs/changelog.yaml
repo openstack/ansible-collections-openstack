@@ -266,3 +266,20 @@ releases:
       - server_volume - check specified server is found
       release_summary: Bugfixes
     release_date: '2021-11-11'
+  1.6.0:
+    changes:
+      minor_changes:
+      - quota - Adds metadata_items parameter
+      release_summary: New modules for RBAC and Nova services
+    modules:
+    - description: Retrieve information about one or more OpenStack compute services
+      name: compute_service_info
+      namespace: ''
+    - description: Fetch Neutron policies.
+      name: neutron_rbac_policies_info
+      namespace: ''
+    - description: Create or delete a Neutron policy to apply a RBAC rule against
+        an object.
+      name: neutron_rbac_policy
+      namespace: ''
+    release_date: '2022-01-13'

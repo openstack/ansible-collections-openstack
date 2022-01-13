@@ -5,6 +5,26 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.6.0
+======
+
+Release Summary
+---------------
+
+New modules for RBAC and Nova services
+
+Minor Changes
+-------------
+
+- quota - Adds metadata_items parameter
+
+New Modules
+-----------
+
+- openstack.cloud.compute_service_info - Retrieve information about one or more OpenStack compute services
+- openstack.cloud.neutron_rbac_policies_info - Fetch Neutron policies.
+- openstack.cloud.neutron_rbac_policy - Create or delete a Neutron policy to apply a RBAC rule against an object.
+
 v1.5.3
 ======
 
