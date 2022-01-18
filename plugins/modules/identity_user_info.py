@@ -141,12 +141,7 @@ class IdentityUserInfoModule(OpenStackModule):
                 else:
                     self.fail_json(msg='Domain name or ID does not exist')
 
-            if not filters:
-                filters = {}
-
-            filters['domain_id'] = domain
-
-        users = self.conn.search_users(name, filters)
+        users = self.conn.search_users(name, filters, domain_id=domain)
         self.exit_json(changed=False, openstack_users=users)
 
 
