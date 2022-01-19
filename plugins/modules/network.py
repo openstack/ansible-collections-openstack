@@ -10,7 +10,7 @@ module: network
 short_description: Creates/removes networks from OpenStack
 author: OpenStack Ansible SIG
 description:
-   - Add or remove network from OpenStack.
+   - Add or remove network from OpenStack (doesn't update network properties).
 options:
    name:
      description:
@@ -61,18 +61,18 @@ options:
      description:
         -  Whether port security is enabled on the network or not.
            Network will use OpenStack defaults if this option is
-           not utilised. Requires openstacksdk>=0.18.
+           not utilised.
      type: bool
-   mtu_size:
+   mtu:
      description:
        -  The maximum transmission unit (MTU) value to address fragmentation.
           Network will use OpenStack defaults if this option is
-          not provided. Requires openstacksdk>=0.18.
+          not provided.
      type: int
-     aliases: ['mtu']
+     aliases: ['mtu_size']
    dns_domain:
      description:
-       -  The DNS domain value to set. Requires openstacksdk>=0.29.
+       -  The DNS domain value to set.
           Network will use Openstack defaults if this option is
           not provided.
      type: str
@@ -94,67 +94,96 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
+id:
+    description: Id of network
+    returned: On success when network exists.
+    type: str
 network:
     description: Dictionary describing the network.
-    returned: On success when I(state) is 'present'.
-    type: complex
+    returned: On success when network exists.
+    type: dict
     contains:
-        id:
-            description: Network ID.
+        availability_zone_hints:
+            description: Availability zone hints
             type: str
-            sample: "4bb4f9a5-3bd2-4562-bf6a-d17a6341bb56"
-        name:
-            description: Network name.
+        availability_zones:
+            description: Availability zones
             type: str
-            sample: "ext_network"
-        shared:
-            description: Indicates whether this network is shared across all tenants.
-            type: bool
-            sample: false
-        status:
-            description: Network status.
+        created_at:
+            description: Created at timestamp
             type: str
-            sample: "ACTIVE"
-        mtu:
-            description: The MTU of a network resource.
-            type: int
-            sample: 0
+        description:
+            description: Description
+            type: str
         dns_domain:
-            description: The DNS domain of a network resource.
+            description: Dns domain
             type: str
-            sample: "sample.openstack.org."
-        admin_state_up:
-            description: The administrative state of the network.
-            type: bool
-            sample: true
-        port_security_enabled:
-            description: The port security status
-            type: bool
-            sample: true
-        router:external:
-            description: Indicates whether this network is externally accessible.
-            type: bool
-            sample: true
-        tenant_id:
-            description: The tenant ID.
+        id:
+            description: Id
             type: str
-            sample: "06820f94b9f54b119636be2728d216fc"
-        subnets:
-            description: The associated subnets.
-            type: list
-            sample: []
-        "provider:physical_network":
-            description: The physical network where this network object is implemented.
+        ipv4_address_scope_id:
+            description: Ipv4 address scope id
             type: str
-            sample: my_vlan_net
-        "provider:network_type":
-            description: The type of physical network that maps to this network resource.
+        ipv6_address_scope_id:
+            description: Ipv6 address scope id
             type: str
-            sample: vlan
-        "provider:segmentation_id":
-            description: An isolated segment on the physical network.
+        is_admin_state_up:
+            description: Is admin state up
             type: str
-            sample: 101
+        is_default:
+            description: Is default
+            type: str
+        is_port_security_enabled:
+            description: Is port security enabled
+            type: str
+        is_router_external:
+            description: Is router external
+            type: str
+        is_shared:
+            description: Is shared
+            type: str
+        is_vlan_transparent:
+            description: Is vlan transparent
+            type: str
+        mtu:
+            description: Mtu
+            type: str
+        name:
+            description: Name
+            type: str
+        project_id:
+            description: Project id
+            type: str
+        provider_network_type:
+            description: Provider network type
+            type: str
+        provider_physical_network:
+            description: Provider physical network
+            type: str
+        provider_segmentation_id:
+            description: Provider segmentation id
+            type: str
+        qos_policy_id:
+            description: Qos policy id
+            type: str
+        revision_number:
+            description: Revision number
+            type: str
+        segments:
+            description: Segments
+            type: str
+        status:
+            description: Status
+            type: str
+        subnet_ids:
+            description: Subnet ids
+            type: str
+        tags:
+            description: Tags
+            type: str
+        updated_at:
+            description: Updated at timestamp
+            type: str
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -172,9 +201,9 @@ class NetworkModule(OpenStackModule):
         provider_segmentation_id=dict(required=False, type='int'),
         state=dict(default='present', choices=['absent', 'present']),
         project=dict(default=None),
-        port_security_enabled=dict(type='bool', min_ver='0.18.0'),
-        mtu_size=dict(required=False, type='int', min_ver='0.18.0', aliases=['mtu']),
-        dns_domain=dict(required=False, min_ver='0.29.0')
+        port_security_enabled=dict(type='bool'),
+        mtu=dict(required=False, type='int', aliases=['mtu_size']),
+        dns_domain=dict(required=False)
     )
 
     def run(self):
@@ -189,41 +218,38 @@ class NetworkModule(OpenStackModule):
         provider_segmentation_id = self.params['provider_segmentation_id']
         project = self.params['project']
 
-        kwargs = self.check_versioned(
-            mtu_size=self.params['mtu_size'], port_security_enabled=self.params['port_security_enabled'],
-            dns_domain=self.params['dns_domain']
-        )
+        kwargs = {}
+        for arg in ('port_security_enabled', 'mtu', 'dns_domain'):
+            if self.params[arg] is not None:
+                kwargs[arg] = self.params[arg]
 
         if project is not None:
-            proj = self.conn.get_project(project)
-            if proj is None:
-                self.fail_json(msg='Project %s could not be found' % project)
+            proj = self.conn.identity.find_project(project, ignore_missing=False)
             project_id = proj['id']
-            filters = {'tenant_id': project_id}
+            net_kwargs = {'project_id': project_id}
         else:
             project_id = None
-            filters = None
-        net = self.conn.get_network(name, filters=filters)
+            net_kwargs = {}
+        net = self.conn.network.find_network(name, **net_kwargs)
 
         if state == 'present':
             if not net:
-                provider = {}
                 if provider_physical_network:
-                    provider['physical_network'] = provider_physical_network
+                    kwargs['provider_physical_network'] = provider_physical_network
                 if provider_network_type:
-                    provider['network_type'] = provider_network_type
+                    kwargs['provider_network_type'] = provider_network_type
                 if provider_segmentation_id:
-                    provider['segmentation_id'] = provider_segmentation_id
+                    kwargs['provider_segmentation_id'] = provider_segmentation_id
 
                 if project_id is not None:
-                    net = self.conn.create_network(name, shared, admin_state_up,
-                                                   external, provider, project_id,
-                                                   **kwargs)
-                else:
-                    net = self.conn.create_network(name, shared, admin_state_up,
-                                                   external, provider,
-                                                   **kwargs)
+                    kwargs['project_id'] = project_id
+                net = self.conn.network.create_network(name=name,
+                                                       shared=shared,
+                                                       admin_state_up=admin_state_up,
+                                                       is_router_external=external,
+                                                       **kwargs)
                 changed = True
+                net = net.to_dict(computed=False)
             else:
                 changed = False
             self.exit(changed=changed, network=net, id=net['id'])
@@ -232,7 +258,7 @@ class NetworkModule(OpenStackModule):
             if not net:
                 self.exit(changed=False)
             else:
-                self.conn.delete_network(name)
+                self.conn.network.delete_network(net['id'])
                 self.exit(changed=True)
 
 

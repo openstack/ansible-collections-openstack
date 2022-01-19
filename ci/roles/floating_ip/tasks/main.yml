@@ -8,7 +8,7 @@
 
 - name: Assert that public network exists
   assert:
-    that: public_network.openstack_networks|length == 1
+    that: public_network.networks|length == 1
 
 - name: Create external network
   openstack.cloud.network:
@@ -120,7 +120,7 @@
 - name: Check if public network has any floating ips
   set_fact:
      public_network_had_fips: "{{ fips.floating_ips|
-                                  selectattr('floating_network_id', '==', public_network.openstack_networks.0.id)|
+                                  selectattr('floating_network_id', '==', public_network.networks.0.id)|
                                   list|length > 0 }}"
 
 # TODO: Replace with appropriate Ansible module once available
@@ -371,7 +371,7 @@
   when: not public_network_had_fips
   command: >
     openstack --os-cloud={{ cloud }} floating ip delete
-        {{ fips.floating_ips|selectattr('floating_network_id', '==', public_network.openstack_networks.0.id)|
+        {{ fips.floating_ips|selectattr('floating_network_id', '==', public_network.networks.0.id)|
            map(attribute="floating_ip_address")|list|join(' ') }}
 
 # TODO: Replace with appropriate Ansible module once available

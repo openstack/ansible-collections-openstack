@@ -44,7 +44,7 @@ EXAMPLES = '''
 
 - name: Show openstack networks
   debug:
-    msg: "{{ result.openstack_networks }}"
+    msg: "{{ result.networks }}"
 
 - name: Gather information about a previously created network by name
   openstack.cloud.networks_info:
@@ -58,7 +58,7 @@ EXAMPLES = '''
 
 - name: Show openstack networks
   debug:
-    msg: "{{ result.openstack_networks }}"
+    msg: "{{ result.networks }}"
 
 - name: Gather information about a previously created network with filter
   # Note: name and filters parameters are Not mutually exclusive
@@ -77,40 +77,97 @@ EXAMPLES = '''
 
 - name: Show openstack networks
   debug:
-    msg: "{{ result.openstack_networks }}"
+    msg: "{{ result.networks }}"
 '''
 
 RETURN = '''
-openstack_networks:
+networks:
     description: has all the openstack information about the networks
-    returned: always, but can be null
-    type: complex
+    returned: always, but can be empty list
+    type: list
+    elements: dict
     contains:
+        availability_zone_hints:
+            description: Availability zone hints
+            type: str
+        availability_zones:
+            description: Availability zones
+            type: str
+        created_at:
+            description: Created at timestamp
+            type: str
+        description:
+            description: Description
+            type: str
+        dns_domain:
+            description: Dns domain
+            type: str
         id:
-            description: Unique UUID.
-            returned: success
+            description: Id
+            type: str
+        ipv4_address_scope_id:
+            description: Ipv4 address scope id
+            type: str
+        ipv6_address_scope_id:
+            description: Ipv6 address scope id
+            type: str
+        is_admin_state_up:
+            description: Is admin state up
+            type: str
+        is_default:
+            description: Is default
+            type: str
+        is_port_security_enabled:
+            description: Is port security enabled
+            type: str
+        is_router_external:
+            description: Is router external
+            type: str
+        is_shared:
+            description: Is shared
+            type: str
+        is_vlan_transparent:
+            description: Is vlan transparent
+            type: str
+        mtu:
+            description: Mtu
             type: str
         name:
-            description: Name given to the network.
-            returned: success
+            description: Name
+            type: str
+        project_id:
+            description: Project id
+            type: str
+        provider_network_type:
+            description: Provider network type
+            type: str
+        provider_physical_network:
+            description: Provider physical network
+            type: str
+        provider_segmentation_id:
+            description: Provider segmentation id
+            type: str
+        qos_policy_id:
+            description: Qos policy id
+            type: str
+        revision_number:
+            description: Revision number
+            type: str
+        segments:
+            description: Segments
             type: str
         status:
-            description: Network status.
-            returned: success
+            description: Status
             type: str
-        subnets:
-            description: Subnet(s) included in this network.
-            returned: success
-            type: list
-            elements: str
-        tenant_id:
-            description: Tenant id associated with this network.
-            returned: success
+        subnet_ids:
+            description: Subnet ids
             type: str
-        shared:
-            description: Network shared flag.
-            returned: success
-            type: bool
+        tags:
+            description: Tags
+            type: str
+        updated_at:
+            description: Updated at timestamp
+            type: str
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -129,15 +186,13 @@ class NetworkInfoModule(OpenStackModule):
     )
 
     def run(self):
-
-        kwargs = self.check_versioned(
-            filters=self.params['filters']
-        )
-        if self.params['name']:
-            kwargs['name_or_id'] = self.params['name']
+        kwargs = {
+            'filters': self.params['filters'],
+            'name_or_id': self.params['name']
+        }
         networks = self.conn.search_networks(**kwargs)
-
-        self.exit(changed=False, openstack_networks=networks)
+        networks = [i.to_dict(computed=False) for i in networks]
+        self.exit(changed=False, networks=networks)
 
 
 def main():

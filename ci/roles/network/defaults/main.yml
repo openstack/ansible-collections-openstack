@@ -1,7 +1,35 @@
+expected_fields:
+  - availability_zone_hints
+  - availability_zones
+  - created_at
+  - description
+  - dns_domain
+  - id
+  - ipv4_address_scope_id
+  - ipv6_address_scope_id
+  - is_admin_state_up
+  - is_default
+  - is_port_security_enabled
+  - is_router_external
+  - is_shared
+  - is_vlan_transparent
+  - mtu
+  - name
+  - project_id
+  - provider_network_type
+  - provider_physical_network
+  - provider_segmentation_id
+  - qos_policy_id
+  - revision_number
+  - segments
+  - status
+  - subnet_ids
+  - tags
+  - updated_at
+dns_domain: example.opendev.org
+mtu: 1250
+network_external: false
 network_name: shade_network
 network_name_newparams: newparams_network
 network_shared: false
-network_external: false
-dns_domain: example.opendev.org
-mtu: 1250
 port_security_enabled: false

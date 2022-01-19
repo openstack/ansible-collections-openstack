@@ -86,6 +86,7 @@
         keystone_idp
         keystone_mapping
         loadbalancer
+        network
         nova_flavor
         nova_services
         object
@@ -102,7 +103,6 @@
       # failing tags
       # floating_ip
       # orchestrate
-      # network
       # neutron_rbac
       # router
       # server
