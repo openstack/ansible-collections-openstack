@@ -135,14 +135,14 @@ class ComputeHostAggregateModule(OpenStackModule):
         if hosts is None:
             return
 
-        hosts_to_add = set(hosts) - set(aggregate.get("hosts", []))
+        hosts_to_add = set(hosts) - set(aggregate.get("hosts") or [])
         for i in hosts_to_add:
             self.conn.add_host_to_aggregate(aggregate.id, i)
 
         if not purge_hosts:
             return
 
-        hosts_to_remove = set(aggregate.get("hosts", [])) - set(hosts)
+        hosts_to_remove = set(aggregate.get("hosts") or []) - set(hosts)
         for i in hosts_to_remove:
             self.conn.remove_host_from_aggregate(aggregate.id, i)
 
