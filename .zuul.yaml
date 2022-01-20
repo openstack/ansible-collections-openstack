@@ -29,6 +29,7 @@
         designate: https://opendev.org/openstack/designate
       devstack_services:
         designate: true
+        neutron-dns: true
 
 - job:
     name: ansible-collections-openstack-functional-devstack-octavia
@@ -57,6 +58,7 @@
         octavia: https://opendev.org/openstack/octavia
       devstack_services:
         designate: true
+        neutron-dns: true
         octavia: true
         o-api: true
         o-cw: true
