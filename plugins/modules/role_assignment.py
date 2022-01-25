@@ -37,6 +37,12 @@ options:
         - Name or ID of the domain to scope the role association to. Valid only
           with keystone version 3, and required if I(project) is not specified.
      type: str
+   system:
+     description:
+        - Name of system to scope the role association to. Valid only with
+          keystone version 3, and required if I(project) and I(domain)
+          are not specified.
+     type: str
    state:
      description:
        - Should the roles be present or absent on the user.
@@ -82,6 +88,7 @@ class IdentityRoleAssignmentModule(OpenStackModule):
         group=dict(required=False),
         project=dict(required=False),
         domain=dict(required=False),
+        system=dict(required=False),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
@@ -99,7 +106,7 @@ class IdentityRoleAssignmentModule(OpenStackModule):
             return True
         return False
 
-    def _build_kwargs(self, user, group, project, domain):
+    def _build_kwargs(self, user, group, project, domain, system):
         kwargs = {}
         if user:
             kwargs['user'] = user
@@ -109,6 +116,8 @@ class IdentityRoleAssignmentModule(OpenStackModule):
             kwargs['project'] = project
         if domain:
             kwargs['domain'] = domain
+        if system:
+            kwargs['system'] = system
         return kwargs
 
     def run(self):
@@ -117,6 +126,7 @@ class IdentityRoleAssignmentModule(OpenStackModule):
         group = self.params.get('group')
         project = self.params.get('project')
         domain = self.params.get('domain')
+        system = self.params.get('system')
         state = self.params.get('state')
 
         filters = {}
@@ -164,6 +174,10 @@ class IdentityRoleAssignmentModule(OpenStackModule):
             if p is None:
                 self.fail_json(msg="Project %s is not valid" % project)
             filters['project'] = p['id']
+        if system:
+            # the system role name is the argument. list_role_assignments will
+            # fail if the system role name is not valid
+            filters['system'] = system
 
         assignment = self.conn.list_role_assignments(filters=filters)
 
@@ -174,13 +188,13 @@ class IdentityRoleAssignmentModule(OpenStackModule):
 
         if state == 'present':
             if not assignment:
-                kwargs = self._build_kwargs(user, group, project, domain_id)
+                kwargs = self._build_kwargs(user, group, project, domain_id, system)
                 self.conn.grant_role(role, **kwargs)
                 changed = True
 
         elif state == 'absent':
             if assignment:
-                kwargs = self._build_kwargs(user, group, project, domain_id)
+                kwargs = self._build_kwargs(user, group, project, domain_id, system)
                 self.conn.revoke_role(role, **kwargs)
                 changed = True
 
