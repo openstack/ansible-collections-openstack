@@ -131,8 +131,9 @@ fi
 SDK_VER=$(python -c "import openstack; print(openstack.version.__version__)")
 pushd ci/
 # run tests
+set -o pipefail
 ANSIBLE_COLLECTIONS_PATHS=$TEST_COLLECTIONS_PATHS ansible-playbook \
     -vvv ./run-collection.yml \
     -e "sdk_version=${SDK_VER} cloud=${CLOUD} image=${IMAGE} ${ANSIBLE_VARS}" \
-    ${tag_opt}
+    ${tag_opt} 2>&1 | sudo tee /opt/stack/logs/test_output.log
 popd

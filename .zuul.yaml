@@ -30,6 +30,10 @@
       devstack_services:
         designate: true
         neutron-dns: true
+      zuul_copy_output:
+        '{{ devstack_log_dir }}/test_output.log': 'logs'
+      extensions_to_txt:
+        log: true
 
 - job:
     name: ansible-collections-openstack-functional-devstack-octavia
