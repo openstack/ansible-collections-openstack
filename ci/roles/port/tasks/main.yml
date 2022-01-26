@@ -60,6 +60,26 @@
      state: absent
      name: "{{ port_name }}"
 
+- name: Create port (with dns_name, dns_domain)
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ port_name }}"
+     network: "{{ network_name }}"
+     fixed_ips:
+       - ip_address: 10.5.5.69
+     dns_name: "dns-port-name"
+     dns_domain: "example.com."
+  register: port
+
+- debug: var=port
+
+- name: Delete port (with dns name,domain)
+  openstack.cloud.port:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ port_name }}"
+
 - name: Create port (with allowed_address_pairs and extra_dhcp_opts)
   openstack.cloud.port:
      cloud: "{{ cloud }}"
@@ -101,7 +121,7 @@
 
     - name: Assert binding:profile exists in created port
       assert:
-        that: "port.port['binding:profile']"
+        that: "port.port['binding_profile']"
 
     - debug: var=port
 

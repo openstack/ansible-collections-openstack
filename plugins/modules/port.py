@@ -123,6 +123,14 @@ options:
      description:
        - Binding profile dict that the port should be created with.
      type: dict
+   dns_name:
+     description:
+       - The dns name of the port ( only with dns-integration enabled )
+     type: str
+   dns_domain:
+     description:
+       - The dns domain of the port ( only with dns-integration enabled )
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -302,7 +310,9 @@ class NetworkPortModule(OpenStackModule):
                        choices=['normal', 'direct', 'direct-physical',
                                 'macvtap', 'baremetal', 'virtio-forwarder']),
         port_security_enabled=dict(default=None, type='bool'),
-        binding_profile=dict(default=None, type='dict')
+        binding_profile=dict(default=None, type='dict'),
+        dns_name=dict(type='str', default=None),
+        dns_domain=dict(type='str', default=None)
     )
 
     module_kwargs = dict(
@@ -311,6 +321,13 @@ class NetworkPortModule(OpenStackModule):
         ],
         supports_check_mode=True
     )
+
+    def _is_dns_integration_enabled(self):
+        """ Check if dns-integraton is enabled """
+        for ext in self.conn.network.extensions():
+            if ext.alias == 'dns-integration':
+                return True
+        return False
 
     def _needs_update(self, port):
         """Check for differences in the updatable values.
@@ -324,9 +341,17 @@ class NetworkPortModule(OpenStackModule):
                           'binding:vnic_type',
                           'port_security_enabled',
                           'binding:profile']
+        compare_dns = ['dns_name', 'dns_domain']
         compare_list_dict = ['allowed_address_pairs',
                              'extra_dhcp_opts']
         compare_list = ['security_groups']
+
+        if self.conn.has_service('dns') and \
+           self._is_dns_integration_enabled():
+            for key in compare_dns:
+                if self.params[key] is not None and \
+                   self.params[key] != port[key]:
+                    return True
 
         for key in compare_simple:
             if self.params[key] is not None and self.params[key] != port[key]:
@@ -410,6 +435,11 @@ class NetworkPortModule(OpenStackModule):
                                'binding:vnic_type',
                                'port_security_enabled',
                                'binding:profile']
+
+        if self.conn.has_service('dns') and \
+           self._is_dns_integration_enabled():
+            optional_parameters.extend(['dns_name', 'dns_domain'])
+
         for optional_param in optional_parameters:
             if self.params[optional_param] is not None:
                 port_kwargs[optional_param] = self.params[optional_param]
@@ -473,12 +503,14 @@ class NetworkPortModule(OpenStackModule):
                         msg="Specified network was not found."
                     )
 
-                port = self.conn.create_port(network_id, **port_kwargs)
+                port_kwargs['network_id'] = network_id
+                port = self.conn.network.create_port(**port_kwargs)
                 changed = True
             else:
                 if self._needs_update(port):
                     port_kwargs = self._compose_port_args()
-                    port = self.conn.update_port(port['id'], **port_kwargs)
+                    port = self.conn.network.update_port(port['id'],
+                                                         **port_kwargs)
                     changed = True
             self.exit_json(changed=changed, id=port['id'], port=port)
 
