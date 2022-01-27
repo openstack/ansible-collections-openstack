@@ -1,0 +1,8 @@
+- hosts: all
+  tasks:
+    - zuul_return:
+        data:
+          zuul:
+            artifacts:
+              - name: Test log
+                url: controller/logs/test_output_log.txt

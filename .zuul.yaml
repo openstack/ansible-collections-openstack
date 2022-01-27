@@ -3,6 +3,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack
     parent: openstacksdk-functional-devstack
+    post-run: ci/playbooks/postlog.yaml
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk with latest ansible release
