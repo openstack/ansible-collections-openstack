@@ -54,7 +54,8 @@ RETURN = '''
 openstack_keypairs:
   description:
     - Lists keypairs that are associated with the account.
-  type: complex
+  type: list
+  elements: dict
   returned: always
   contains:
     created_at:
@@ -120,31 +121,15 @@ class KeyPairInfoModule(OpenStackModule):
     )
 
     def run(self):
-        name = self.params['name']
-        user_id = self.params['user_id']
-        limit = self.params['limit']
-        marker = self.params['marker']
-
-        filters = {}
-        data = []
-
-        if user_id:
-            filters['user_id'] = user_id
-        if limit:
-            filters['limit'] = limit
-        if marker:
-            filters['marker'] = marker
-
-        result = self.conn.search_keypairs(name_or_id=name,
-                                           filters=filters)
-        raws = [raw if isinstance(raw, dict) else raw.to_dict()
-                for raw in result]
-
-        for raw in raws:
-            raw.pop('location')
-            data.append(raw)
-
-        self.exit(changed=False, openstack_keypairs=data)
+        filters = {k: self.params[k] for k in
+                   ['user_id', 'name', 'limit', 'marker']
+                   if self.params[k] is not None}
+        keypairs = self.conn.search_keypairs(name_or_id=self.params['name'],
+                                             filters=filters)
+        # self.conn.search_keypairs() returned munch.Munch objects before Train
+        result = [raw if isinstance(raw, dict) else raw.to_dict(computed=False)
+                  for raw in keypairs]
+        self.exit(changed=False, openstack_keypairs=result)
 
 
 def main():
