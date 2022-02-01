@@ -104,7 +104,8 @@ class IdentityDomainModule(OpenStackModule):
         if self.params['description'] is not None and \
            domain.description != self.params['description']:
             return True
-        if domain.enabled != self.params['enabled']:
+        if domain.get(
+                "is_enabled", domain.get("enabled")) != self.params['enabled']:
             return True
         return False
 
@@ -126,7 +127,7 @@ class IdentityDomainModule(OpenStackModule):
         enabled = self.params['enabled']
         state = self.params['state']
 
-        domains = self.conn.search_domains(filters=dict(name=name))
+        domains = list(self.conn.identity.domains(name=name))
 
         if len(domains) > 1:
             self.fail_json(msg='Domain name %s is not unique' % name)
@@ -151,7 +152,10 @@ class IdentityDomainModule(OpenStackModule):
                     changed = True
                 else:
                     changed = False
-            self.exit_json(changed=changed, domain=domain, id=domain.id)
+            if hasattr(domain, "to_dict"):
+                domain = domain.to_dict()
+                domain.pop("location")
+            self.exit_json(changed=changed, domain=domain, id=domain['id'])
 
         elif state == 'absent':
             if domain is None:

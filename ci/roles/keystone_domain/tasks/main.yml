@@ -1,19 +1,36 @@
 ---
 - name: Create keystone domain
   openstack.cloud.identity_domain:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ domain_name }}"
-     description: "test description"
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ domain_name }}"
+    description: "test description"
+  register: os_domain
+
+- name: Test output
+  assert:
+    that:
+      - "'domain' in os_domain"
+      - os_domain.domain.name == "{{ domain_name }}"
+      - >-
+          ('enabled' in os_domain.domain.keys() and os_domain.domain['enabled']|bool) or
+          ('is_enabled' in os_domain.domain and os_domain.domain['is_enabled']|bool)
+      - os_domain.domain.description == "test description"
 
 - name: Update keystone domain
   openstack.cloud.identity_domain:
-     cloud: "{{ cloud }}"
-     name: "{{ domain_name }}"
-     description: "updated description"
+    cloud: "{{ cloud }}"
+    name: "{{ domain_name }}"
+    description: "updated description"
+  register: os_domain_updated
+
+- name: Test output
+  assert:
+    that:
+      - os_domain_updated.domain.description == "updated description"
 
 - name: Delete keystone domain
   openstack.cloud.identity_domain:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ domain_name }}"
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ domain_name }}"
