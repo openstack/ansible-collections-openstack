@@ -76,6 +76,7 @@
         identity_role
         identity_role_info
         image
+        image_info
         keypair
         keystone_domain
         keystone_federation_protocol
