@@ -126,6 +126,29 @@ openstack_flavors:
             returned: success
             type: str
             sample: "tiny"
+        description:
+            description: Description of the flavor
+            returned: success
+            type: str
+            sample: "Small flavor"
+        is_disabled:
+            description: Wether the flavor is enabled or not
+            returned: success
+            type: bool
+            sample: False
+        rxtx_factor:
+            description: Factor to be multiplied by the rxtx_base property of
+                         the network it is attached to in order to have a
+                         different bandwidth cap.
+            returned: success
+            type: float
+            sample: 1.0
+        extra_specs:
+            description: Optional parameters to configure different flavors
+                         options.
+            returned: success
+            type: dict
+            sample: "{'hw_rng:allowed': True}"
         disk:
             description: Size of local disk, in GB.
             returned: success
@@ -196,16 +219,22 @@ class ComputeFlavorInfoModule(OpenStackModule):
             filters['ephemeral'] = ephemeral
 
         if name:
-            flavors = self.conn.search_flavors(filters={'name': name})
+            # extra_specs are exposed in the flavor representation since Rocky, so we do not
+            # need get_extra_specs=True which is not available in OpenStack SDK 0.36 (Train)
+            # Ref.: https://docs.openstack.org/nova/latest/reference/api-microversion-history.html
+            flavor = self.conn.compute.find_flavor(name)
+            flavors = [flavor] if flavor else []
 
         else:
-            flavors = self.conn.list_flavors()
+            flavors = list(self.conn.compute.flavors())
             if filters:
                 flavors = self.conn.range_search(flavors, filters)
 
         if limit is not None:
             flavors = flavors[:limit]
 
+        # Transform entries to dict
+        flavors = [flavor.to_dict(computed=True) for flavor in flavors]
         self.exit_json(changed=False, openstack_flavors=flavors)
 
 
