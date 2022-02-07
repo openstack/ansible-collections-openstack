@@ -22,6 +22,7 @@
     - { role: identity_role, tags: identity_role }
     - { role: identity_role_info, tags: identity_role_info }
     - { role: image, tags: image }
+    - { role: image_info, tags: image_info }
     - { role: keypair, tags: keypair }
     - { role: keystone_domain, tags: keystone_domain }
     - role: keystone_mapping

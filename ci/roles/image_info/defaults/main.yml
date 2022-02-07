@@ -1,0 +1,23 @@
+expected_fields:
+  - checksum
+  - container_format
+  - created_at
+  - direct_url
+  - disk_format
+  - file
+  - id
+  - locations
+  - metadata
+  - min_disk
+  - min_ram
+  - name
+  - os_hidden
+  - owner
+  - properties
+  - schema
+  - size
+  - status
+  - tags
+  - updated_at
+  - virtual_size
+  - visibility

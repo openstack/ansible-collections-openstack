@@ -25,8 +25,8 @@
 - name: Verify image info
   assert:
     that:
-      - "image_info_result.openstack_image.name == image_name"
-      - "image_info_result.openstack_image.tags | sort == image_tags | sort"
+      - "image_info_result.openstack_images[0].name == image_name"
+      - "image_info_result.openstack_images[0].tags | sort == image_tags | sort"
 
 - name: Delete raw image (defaults)
   openstack.cloud.image:
@@ -71,4 +71,4 @@
 - name: Verify image is deleted
   assert:
     that:
-      - not deleted_image_info_result.openstack_image
+      - not deleted_image_info_result.openstack_images
