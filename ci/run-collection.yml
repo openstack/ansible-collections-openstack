@@ -35,6 +35,8 @@
         - rbac
         - neutron_rbac
     - { role: nova_flavor, tags: nova_flavor }
+    - role: compute_flavor_info
+      tags: nova_flavor
     - role: nova_services
       tags: nova_services
       when: sdk_version is version(0.44, '>=')
