@@ -165,7 +165,6 @@ class FloatingIPInfoModule(OpenStackModule):
         router = self.params['router']
         status = self.params['status']
 
-        data = []
         query = {}
         if description:
             query['description'] = description
@@ -194,15 +193,8 @@ class FloatingIPInfoModule(OpenStackModule):
         if status:
             query['status'] = status.upper()
 
-        for raw in self.conn.network.ips(**query):
-            dt = raw.to_dict()
-            dt.pop('location')
-            data.append(dt)
-
-        self.exit_json(
-            changed=False,
-            floating_ips=data
-        )
+        ips = [ip.to_dict(computed=False) for ip in self.conn.network.ips(**query)]
+        self.exit_json(changed=False, floating_ips=ips)
 
 
 def main():
