@@ -9,6 +9,7 @@ action_groups:
     - baremetal_node
     - baremetal_node_action
     - baremetal_node_action
+    - baremetal_node_info
     - catalog_endpoint
     - catalog_service
     - catalog_service
