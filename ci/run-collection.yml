@@ -20,6 +20,7 @@
     - { role: identity_user, tags: identity_user }
     - { role: identity_user_info, tags: identity_user_info }
     - { role: identity_role, tags: identity_role }
+    - { role: identity_role_info, tags: identity_role_info }
     - { role: image, tags: image }
     - { role: keypair, tags: keypair }
     - { role: keystone_domain, tags: keystone_domain }
