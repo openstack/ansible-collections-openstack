@@ -32,7 +32,7 @@
   - name: Assert role found
     assert:
       that:
-        - roles.openstack_roles | length == 1
+        - roles.roles | length == 1
   - name: Assert role changed
     assert:
       that: role is changed
@@ -45,7 +45,7 @@
       that: role['role']['name'] == role_name
   - name: Assert retrieved values
     assert:
-      that: roles.openstack_roles[0].name == role_name
+      that: roles.roles[0].name == role_name
 
 - block:
   - name: Create existing keystone role
@@ -80,4 +80,4 @@
   - name: Assert no role found
     assert:
       that:
-        - roles.openstack_roles | length == 0
+        - roles.roles | length == 0

@@ -74,6 +74,7 @@
         identity_user
         identity_user_info
         identity_role
+        identity_role_info
         image
         keypair
         keystone_domain
