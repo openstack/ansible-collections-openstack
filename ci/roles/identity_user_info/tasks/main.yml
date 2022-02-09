@@ -1,0 +1,69 @@
+- name: Ensure user does not exist before tests
+  openstack.cloud.identity_user:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_user
+
+- block:
+  - name: Get unexistent user
+    openstack.cloud.identity_user_info:
+      cloud: "{{ cloud }}"
+      name: ansible_user
+    register: userinfo
+  - name: Ensure nothing was returned
+    assert:
+      that: not userinfo.users
+
+- block:
+  - name: Create user
+    openstack.cloud.identity_user:
+       cloud: "{{ cloud }}"
+       state: present
+       name: ansible_user
+       password: secret
+       email: ansible.user@nowhere.net
+       domain: default
+       default_project: demo
+    register: user
+  - name: Create second user
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_user2
+      password: secret
+      email: ansible.user2@nowhere.net
+      domain: default
+      default_project: demo
+    register: user
+  - name: Get first user info
+    openstack.cloud.identity_user_info:
+      cloud: "{{ cloud }}"
+      name: ansible_user
+    register: userinfo
+  - name: Assert only one result exists
+    assert:
+      that: "{{ userinfo.users | length }} == 1"
+  - name: Assert userinfo has fields
+    assert:
+      that: item in userinfo.users[0]
+    loop: "{{ os_expected_user_info_fields }}"
+
+- block:
+  - name: Get all users
+    openstack.cloud.identity_user_info:
+      cloud: "{{ cloud }}"
+    register: userinfo
+  - name: Assert results were returned
+    assert:
+      that: "{{ userinfo.users | length }} > 0"
+
+- name: Post-test cleanup
+  block:
+  - name: Ensure users do not exist
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: absent
+      name: "{{ item }}"
+    loop:
+      - ansible_user
+      - ansible_user2
