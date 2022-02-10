@@ -1,0 +1,197 @@
+---
+- name: setup
+  block:
+  - name: Delete user before running tests
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: absent
+      name: "{{ item }}"
+    loop:
+      - ansible_user
+      - ansible_user2
+    register: user
+
+- block:
+  - name: Delete unexistent user
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: absent
+      name: ansible_user
+    register: user
+
+  - name: Ensure user was not changed
+    assert:
+      that: user is not changed
+
+- block:
+  - name: Create a user without a password
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_user
+      email: ansible.user@nowhere.net
+      domain: default
+      default_project: demo
+    register: user
+
+  - name: Ensure user was changed
+    assert:
+      that: user is changed
+
+  - name: Ensure user has fields
+    assert:
+      that: item in user['user']
+    loop: "{{ os_identity_user_fields }}"
+
+  - name: Fail when update_password is always but no password specified
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_user
+      update_password: always
+      email: ansible.user@nowhere.net
+      domain: default
+      default_project: demo
+    register: user
+    ignore_errors: yes
+
+  - assert:
+      that: user.msg == "update_password is always but a password value is missing"
+
+  - name: Delete user
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: absent
+      name: ansible_user
+
+- block:
+  - name: Create user with a password
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_user
+      password: secret
+      email: ansible.user@nowhere.net
+      update_password: on_create
+      domain: default
+      default_project: demo
+    register: user
+
+  - name: Assert user has fields
+    assert:
+      that: item in user['user']
+    loop: "{{ os_identity_user_fields }}"
+
+- block:
+  - name: Create identical user
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_user
+      password: secret
+      email: ansible.user@nowhere.net
+      update_password: on_create
+      domain: default
+      default_project: demo
+    register: user
+
+  - name: Assert user was not changed
+    assert:
+      that: user is not changed
+
+  - name: Assert user has fields
+    assert:
+      that: item in user['user']
+    loop: "{{ os_identity_user_fields }}"
+
+- block:
+  - name: Update user with password
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_user
+      password: secret2
+      email: updated.ansible.user@nowhere.net
+    register: user
+
+  - name: Ensure user was changed
+    assert:
+      that: user is changed
+
+  - name: Ensure user has fields
+    assert:
+      that: item in user['user']
+    loop: "{{ os_identity_user_fields }}"
+
+- name: Update user without password and update_password set to always
+  block:
+  - openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_user
+      update_password: always
+      email: updated.ansible.user@nowhere.net
+    register: user
+    ignore_errors: yes
+
+  - assert:
+      that: user.msg == "update_password is always but a password value is missing"
+
+- block:
+  - name: Ensure user with update_password set to on_create
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_user
+      update_password: on_create
+      password: secret3
+      email: updated.ansible.user@nowhere.net
+    register: user
+
+  - name: Ensure user was not changed
+    assert:
+      that: user is not changed
+
+- block:
+  - name: Ensure user with update_password set to always
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_user
+      update_password: always
+      password: secret3
+      email: updated.ansible.user@nowhere.net
+    register: user
+
+  - name: Ensure user was changed
+    assert:
+      that: user is changed
+
+- block:
+  - name: Create user without a password
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_user2
+      password: secret
+      email: ansible.user2@nowhere.net
+      update_password: on_create
+      domain: default
+      default_project: demo
+    register: user
+
+  - name: Assert user has fields
+    assert:
+      that: item in user['user']
+    loop: "{{ os_identity_user_fields }}"
+
+- block:
+  - name: Delete user
+    openstack.cloud.identity_user:
+      cloud: "{{ cloud }}"
+      state: absent
+      name: ansible_user
+
+  - name: Ensure user was changed
+    assert:
+      that: user is changed

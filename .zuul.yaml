@@ -70,6 +70,7 @@
         dns_zone_info
         floating_ip_info
         group
+        identity_user
         identity_user_info
         identity_role
         image
