@@ -59,8 +59,20 @@ openstack_compute_services:
             description: The name of the host.
             returned: success
             type: str
-        zone:
+        disabled_reason:
+            description: The reason why the service is disabled
+            returned: success
+            type: str
+        availability_zone:
             description: The availability zone name.
+            returned: success
+            type: str
+        is_forced_down:
+            description: If the service has been forced down or nova-compute
+            returned: success
+            type: bool
+        name:
+            description: Service name
             returned: success
             type: str
         status:
@@ -71,7 +83,7 @@ openstack_compute_services:
             description: The state of the service. One of up or down.
             returned: success
             type: str
-        update:
+        update_at:
             description: The date and time when the resource was updated
             returned: success
             type: str
@@ -98,7 +110,7 @@ class ComputeServiceInfoModule(OpenStackModule):
         if host:
             filters['host'] = host
         services = self.conn.compute.services(**filters)
-        services = list(services)
+        services = [service.to_dict(computed=True) for service in services]
         self.exit_json(changed=False, openstack_compute_services=services)
 
 
