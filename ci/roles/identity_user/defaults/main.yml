@@ -1,0 +1,9 @@
+os_identity_user_fields:
+  - default_project_id
+  - description
+  - domain_id
+  - email
+  - enabled
+  - id
+  - name
+  - username
