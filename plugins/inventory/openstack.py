@@ -42,6 +42,13 @@ options:
             - name
             - uuid
         default: "name"
+    use_names:
+        description: |
+            Use the host's 'name' instead of 'interface_ip' for the 'ansible_host' and
+            'ansible_ssh_host' facts. This might be desired when using jump or
+            bastion hosts and the name is the FQDN of the host.
+        type: bool
+        default: 'no'
     expand_hostvars:
         description: |
             Run extra commands on each host to fill in additional
@@ -237,6 +244,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             expand_hostvars = self._config_data.get('expand_hostvars', False)
             fail_on_errors = self._config_data.get('fail_on_errors', False)
             all_projects = self._config_data.get('all_projects', False)
+            self.use_names = self._config_data.get('use_names', False)
 
             source_data = []
             try:
@@ -363,10 +371,20 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
     def _append_hostvars(self, hostvars, groups, current_host,
                          server, namegroup=False):
-        hostvars[current_host] = dict(
-            ansible_ssh_host=server['interface_ip'],
-            ansible_host=server['interface_ip'],
-            openstack=server)
+        if not self.use_names:
+            hostvars[current_host] = dict(
+                ansible_ssh_host=server['interface_ip'],
+                ansible_host=server['interface_ip'],
+                openstack=server,
+            )
+
+        if self.use_names:
+            hostvars[current_host] = dict(
+                ansible_ssh_host=server['name'],
+                ansible_host=server['name'],
+                openstack=server,
+            )
+
         self.inventory.add_host(current_host)
 
         if self.get_option('legacy_groups'):
