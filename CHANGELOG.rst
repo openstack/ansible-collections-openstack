@@ -5,6 +5,34 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.7.0
+======
+
+Release Summary
+---------------
+
+New modules for Ironic and bugfixes
+
+Minor Changes
+-------------
+
+- openstack_inventory - Adds use_name variable
+- port - Add dns_[name,domain] to the port module
+- project - Remove project properties tests and support
+
+Bugfixes
+--------
+
+- identity_user_info - Fix identity user lookup with a domain
+- keystone_domain - Move identity domain to use proxy layer
+
+New Modules
+-----------
+
+- openstack.cloud.baremetal_node_info - Retrieve information about Bare Metal nodes from OpenStack an object.
+- openstack.cloud.baremetal_port - Create, Update, Remove ironic ports from OpenStack
+- openstack.cloud.baremetal_port_info - Retrieve information about Bare Metal ports from OpenStack an object.
+
 v1.6.0
 ======
 

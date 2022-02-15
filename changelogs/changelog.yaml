@@ -283,3 +283,24 @@ releases:
       name: neutron_rbac_policy
       namespace: ''
     release_date: '2022-01-13'
+  1.7.0:
+    changes:
+      bugfixes:
+      - identity_user_info - Fix identity user lookup with a domain
+      - keystone_domain - Move identity domain to use proxy layer
+      minor_changes:
+      - openstack_inventory - Adds use_name variable
+      - port - Add dns_[name,domain] to the port module
+      - project - Remove project properties tests and support
+      release_summary: New modules for Ironic and bugfixes
+    modules:
+    - description: Retrieve information about Bare Metal nodes from OpenStack an object.
+      name: baremetal_node_info
+      namespace: ''
+    - description: Create, Update, Remove ironic ports from OpenStack
+      name: baremetal_port
+      namespace: ''
+    - description: Retrieve information about Bare Metal ports from OpenStack an object.
+      name: baremetal_port_info
+      namespace: ''
+    release_date: '2022-02-15'
