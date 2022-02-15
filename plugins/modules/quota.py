@@ -128,7 +128,7 @@ options:
     volumes_types:
         description:
             - Per-driver volume count quotas.  Keys should be
-              prefixed with C(gigabytes_) values should be ints.
+              prefixed with C(volumes_) values should be ints.
         type: dict
     project:
         description: Unused, kept for compatability
