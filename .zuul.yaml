@@ -341,12 +341,13 @@
 
 - job:
     name: tripleo-ci-centos-9-standalone-osa
-    parent: tripleo-ci-centos-9-standalone
+    parent: tripleo-ci-centos-8-standalone-osa
+    nodeset: single-centos-9-node
     branches: master
     vars:
+      containers_base_image: quay.io/centos/centos:stream9
       consumer_job: false
       build_container_images: true
-    # Run only on files used in TripleO
     files: *ooo_files
     irrelevant-files: *irr_files
 
@@ -437,7 +438,6 @@
             irrelevant-files: *ignore_files
 
         - tripleo-ci-centos-8-standalone-wallaby-osa:
-            voting: false
             dependencies: *deps_unit_lint
 
         - tripleo-ci-centos-8-standalone-train-osa:
@@ -485,6 +485,10 @@
         - bifrost-collections-src
         - bifrost-keystone-collections-src
         - ansible-collections-openstack-functional-devstack-octavia
+        - tripleo-ci-centos-9-standalone-wallaby-osa
+        - tripleo-ci-centos-9-standalone-osa
+        - tripleo-ci-centos-8-standalone-train-osa
+        - tripleo-ci-centos-8-standalone-wallaby-osa
 
     experimental:
       jobs:
