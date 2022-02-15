@@ -15,7 +15,7 @@ For using the Openstack Cloud collection firstly you need to install `ansible` a
 For example with pip:
 
 ```bash
-pip install ansible openstacksdk
+pip install "ansible>=2.9" "openstacksdk>=0.36"
 ```
 
 OpenStackSDK has to be available to Ansible and to the Python interpreter on the host, where Ansible executes the module (target host).
