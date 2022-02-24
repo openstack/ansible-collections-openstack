@@ -6,20 +6,22 @@
 #
 #    tox -e ansible [TAG ...]
 # or
-#    tox -e ansible -- -c cloudX [TAG ...]
+#    tox -e ansible -- -c cloudX -u cloudY [TAG ...]
 # or to use the development version of Ansible:
-#    tox -e ansible -- -d -c cloudX [TAG ...]
+#    tox -e ansible -- -d -c cloudX -u cloudY [TAG ...]
 #
 # USAGE:
-#    run-ansible-tests.sh -e ENVDIR [-d] [-c CLOUD] [TAG ...]
+#    run-ansible-tests.sh -e ENVDIR [-d] [-c CLOUD] [-u CLOUD_ALT] [TAG ...]
 #
 # PARAMETERS:
-#    -d         Use Ansible source repo development branch.
-#    -e ENVDIR  Directory of the tox environment to use for testing.
-#    -c CLOUD   Name of the cloud to use for testing.
-#               Defaults to "devstack-admin".
-#    [TAG ...]  Optional list of space-separated tags to control which
-#               modules are tested.
+#    -d            Use Ansible source repo development branch.
+#    -e ENVDIR     Directory of the tox environment to use for testing.
+#    -c CLOUD      Name of the cloud to use for testing.
+#                  Defaults to "devstack-admin".
+#    -u CLOUD_ALT  Name of another cloud to use for testing.
+#                  Defaults to "devstack-alt".
+#    [TAG ...]     Optional list of space-separated tags to control which
+#                  modules are tested.
 #
 # EXAMPLES:
 #    # Run all Ansible tests
@@ -31,14 +33,16 @@
 set -ex
 
 CLOUD="devstack-admin"
+CLOUD_ALT="devstack-alt"
 ENVDIR=
 USE_DEV=0
 
-while getopts "c:de:" opt
+while getopts "c:de:u:" opt
 do
     case $opt in
     d) USE_DEV=1 ;;
     c) CLOUD=${OPTARG} ;;
+    u) CLOUD_ALT=${OPTARG} ;;
     e) ENVDIR=${OPTARG} ;;
     ?) echo "Invalid option: -${OPTARG}"
        exit 1;;
@@ -134,6 +138,6 @@ pushd ci/
 set -o pipefail
 ANSIBLE_COLLECTIONS_PATHS=$TEST_COLLECTIONS_PATHS ansible-playbook \
     -vvv ./run-collection.yml \
-    -e "sdk_version=${SDK_VER} cloud=${CLOUD} image=${IMAGE} ${ANSIBLE_VARS}" \
+    -e "sdk_version=${SDK_VER} cloud=${CLOUD} cloud_alt=${CLOUD_ALT} image=${IMAGE} ${ANSIBLE_VARS}" \
     ${tag_opt} 2>&1 | sudo tee /opt/stack/logs/test_output.log
 popd

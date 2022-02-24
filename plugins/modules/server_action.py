@@ -46,6 +46,12 @@ options:
         description:
         - Admin password for server to rebuild
         type: str
+    all_projects:
+        description:
+        - Whether to search for server in all projects or just the current
+          auth scoped project.
+        type: bool
+        default: 'no'
 
 requirements:
     - "python >= 3.6"
@@ -120,6 +126,7 @@ class ServerActionModule(OpenStackModule):
                              'rebuild', 'shelve', 'shelve_offload', 'unshelve']),
         image=dict(required=False, type='str'),
         admin_password=dict(required=False, type='str', no_log=True),
+        all_projects=dict(required=False, type='bool', default=False),
     )
     module_kwargs = dict(
         required_if=[('action', 'rebuild', ['image'])],
@@ -137,7 +144,10 @@ class ServerActionModule(OpenStackModule):
 
     def _preliminary_checks(self):
         # Using Munch object for getting information about a server
-        os_server = self.conn.get_server(self.params['server'])
+        os_server = self.conn.get_server(
+            self.params['server'],
+            all_projects=self.params['all_projects'],
+        )
         if not os_server:
             self.fail_json(msg='Could not find server %s' % self.params['server'])
         # check mode
@@ -193,8 +203,9 @@ class ServerActionModule(OpenStackModule):
 
     def _wait(self, os_server):
         """Wait for the server to reach the desired state for the given action."""
-        # Using Server object for wait_for_server function
-        server = self.conn.compute.find_server(self.params['server'])
+        # The wait_for_server function needs a Server object instead of the
+        # Munch object returned by self.conn.get_server
+        server = self.conn.compute.get_server(os_server['id'])
         states = _action_map[self.params['action']]
 
         try:
