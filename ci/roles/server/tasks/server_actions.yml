@@ -518,3 +518,95 @@
     that:
       - info24.openstack_servers.0.status == 'ACTIVE'
       - server is not changed
+
+- name: Create network for alternate server
+  openstack.cloud.network:
+    cloud: "{{ cloud_alt }}"
+    name: "{{ server_alt_network }}"
+    state: present
+
+- name: Create subnet for alternate server
+  openstack.cloud.subnet:
+    cloud: "{{ cloud_alt }}"
+    network_name: "{{ server_alt_network }}"
+    name: "{{ server_alt_subnet }}"
+    state: present
+    cidr: 192.168.0.0/24
+
+- name: Create server in alternate project
+  openstack.cloud.server:
+     cloud: "{{ cloud_alt }}"
+     state: present
+     name: "{{ server_alt_name }}"
+     image: "{{ image }}"
+     flavor: "{{ flavor }}"
+     network: "{{ server_alt_network }}"
+     auto_floating_ip: false
+     wait: true
+  register: server_alt
+
+- name: Get info about server in alternate project
+  openstack.cloud.server_info:
+    cloud: "{{ cloud_alt }}"
+    server: "{{ server_alt_name }}"
+  register: info25
+
+- name: Ensure status for server in alternate project is ACTIVE
+  assert:
+    that:
+      - info25.openstack_servers.0.status == 'ACTIVE'
+
+- name: Try to stop server in alternate project
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_alt_name }}"
+    action: stop
+    wait: true
+  ignore_errors: true
+  register: server_alt
+
+- name: Ensure server was not stopped
+  assert:
+    that:
+      - server_alt is failed
+      - server_alt.msg == "Could not find server {{ server_alt_name }}"
+
+- name: Stop server in alternate project with all_projects=true
+  openstack.cloud.server_action:
+    cloud: "{{ cloud }}"
+    server: "{{ server_alt_name }}"
+    action: stop
+    wait: true
+    all_projects: True
+  register: server_alt
+
+- name: Get info about server in alternate project
+  openstack.cloud.server_info:
+    cloud: "{{ cloud_alt }}"
+    server: "{{ server_alt_name }}"
+  register: info26
+
+- name: Ensure status for server is SHUTOFF
+  assert:
+    that:
+      - info26.openstack_servers.0.status == 'SHUTOFF'
+      - server_alt is changed
+
+- name: Delete server in alternate project
+  openstack.cloud.server:
+     cloud: "{{ cloud_alt }}"
+     state: absent
+     name: "{{ server_alt_name }}"
+     wait: true
+
+- name: Delete subnet for alternate server
+  openstack.cloud.subnet:
+    cloud: "{{ cloud_alt }}"
+    name: "{{ server_alt_subnet }}"
+    state: absent
+
+- name: Delete network for alternate server
+  openstack.cloud.network:
+    cloud: "{{ cloud_alt }}"
+    name: "{{ server_alt_network }}"
+    state: absent
