@@ -9,7 +9,6 @@
 DOCUMENTATION = '''
 ---
 name: openstack
-plugin_type: inventory
 author: OpenStack Ansible SIG
 short_description: OpenStack inventory source
 requirements:
