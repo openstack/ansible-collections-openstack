@@ -51,6 +51,14 @@ options:
           into ACTIVE state.
      default: 180
      type: int
+   monitor_address:
+     description:
+        - IP address used to monitor this member
+     type: str
+   monitor_port:
+     description:
+        - Port used to monitor this member
+     type: int
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -141,6 +149,8 @@ class LoadbalancerMemberModule(OpenStackModule):
         address=dict(default=None),
         protocol_port=dict(default=80, type='int'),
         subnet_id=dict(default=None),
+        monitor_address=dict(default=None),
+        monitor_port=dict(default=None, type='int')
     )
     module_kwargs = dict()
 
@@ -191,7 +201,9 @@ class LoadbalancerMemberModule(OpenStackModule):
                     address=self.params['address'],
                     name=name,
                     protocol_port=self.params['protocol_port'],
-                    subnet_id=self.params['subnet_id']
+                    subnet_id=self.params['subnet_id'],
+                    monitor_address=self.params['monitor_address'],
+                    monitor_port=self.params['monitor_port']
                 )
                 changed = True
 
