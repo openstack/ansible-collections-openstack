@@ -304,3 +304,12 @@ releases:
       name: baremetal_port_info
       namespace: ''
     release_date: '2022-02-15'
+  1.7.1:
+    changes:
+      bugfixes:
+      - openstack_inventory - Fix documentation
+      - quota - Fix description of volumes_types parameter
+      minor_changes:
+      - lb_member - Add monitor_[address,port] parameter
+      release_summary: Bugfixes
+    release_date: '2022-03-08'
