@@ -13,7 +13,7 @@ Naming
 ------
 
 * This is a collection named ``openstack.cloud``. There is no need for further namespace prefixing.
-* Name any module that a cloud consumer would expect to use after the logical resource it manages: 
+* Name any module that a cloud consumer would expect to use after the logical resource it manages:
   ``server`` not ``nova``. This naming convention acknowledges that the end user does not care
   which service manages the resource - that is a deployment detail. For example cloud consumers may
   not know whether their floating IPs are managed by Nova or Neutron.
@@ -24,6 +24,7 @@ Interface
 * If the resource being managed has an id, it should be returned.
 * If the resource being managed has an associated object more complex than
   an id, it should also be returned.
+* Return format shall be a dictionary or list
 
 Interoperability
 ----------------
@@ -53,7 +54,7 @@ Libraries
 * All complex cloud interaction or interoperability code should be housed in
   the `openstacksdk <https://opendev.org/openstack/openstacksdk>`_
   library.
-* All OpenStack API interactions should happen via the openstacksdk and not via
+* All OpenStack API interactions should happen via the openstackSDK and not via
   OpenStack Client libraries. The OpenStack Client libraries do no have end
   users as a primary audience, they are for intra-server communication.
 * All modules should be registered in ``meta/action_groups.yml`` for enabling the
