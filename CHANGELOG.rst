@@ -5,6 +5,25 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.7.1
+======
+
+Release Summary
+---------------
+
+Bugfixes
+
+Minor Changes
+-------------
+
+- lb_member - Add monitor_[address,port] parameter
+
+Bugfixes
+--------
+
+- openstack_inventory - Fix documentation
+- quota - Fix description of volumes_types parameter
+
 v1.7.0
 ======
 
