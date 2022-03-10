@@ -5,6 +5,19 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.7.2
+======
+
+Release Summary
+---------------
+
+Bugfixes
+
+Bugfixes
+--------
+
+- Fix collection guidelines
+
 v1.7.1
 ======
 

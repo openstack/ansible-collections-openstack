@@ -313,3 +313,9 @@ releases:
       - lb_member - Add monitor_[address,port] parameter
       release_summary: Bugfixes
     release_date: '2022-03-08'
+  1.7.2:
+    changes:
+      bugfixes:
+      - Fix collection guidelines
+      release_summary: Bugfixes
+    release_date: '2022-03-10'
