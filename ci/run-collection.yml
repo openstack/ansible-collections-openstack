@@ -52,6 +52,7 @@
       when: sdk_version is version(0.44, '>=')
     - { role: object, tags: object }
     - { role: port, tags: port }
+    - { role: port_info, tags: port_info }
     - { role: project, tags: project }
     - { role: project_info, tags: project_info }
     - { role: recordset, tags: recordset }

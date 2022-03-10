@@ -95,6 +95,7 @@
         object
         object_container
         port
+        port_info
         project
         project_info
         recordset
