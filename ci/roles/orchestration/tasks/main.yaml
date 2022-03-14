@@ -41,4 +41,4 @@
 - assert:
     that:
       - stacks is defined
-      - stacks['stacks']|length == 0
+      - (stacks['stacks']|length == 0) or (stacks['stacks'][0]['status'] == 'DELETE_COMPLETE')
