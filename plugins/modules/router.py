@@ -234,8 +234,7 @@ class RouterModule(OpenStackModule):
                       missing_port_ids,
                       requested_subnet_ids,
                       existing_subnet_ids,
-                      router_ifs_cfg,
-                      filters=None):
+                      router_ifs_cfg):
         """Decide if the given router needs an update."""
         if router['admin_state_up'] != self.params['admin_state_up']:
             return True
@@ -476,8 +475,7 @@ class RouterModule(OpenStackModule):
                                              missing_port_ids,
                                              requested_subnet_ids,
                                              existing_subnet_ids,
-                                             router_ifs_cfg,
-                                             filters)
+                                             router_ifs_cfg)
             self.exit_json(changed=changed)
 
         if state == 'present':
@@ -510,8 +508,7 @@ class RouterModule(OpenStackModule):
                                       missing_port_ids,
                                       requested_subnet_ids,
                                       existing_subnet_ids,
-                                      router_ifs_cfg,
-                                      filters):
+                                      router_ifs_cfg):
                     changed = True
                     kwargs = self._build_kwargs(router, net)
                     updated_router = self.conn.update_router(**kwargs)
