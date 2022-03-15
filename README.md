@@ -7,6 +7,16 @@ This repo hosts the `openstack.cloud` Ansible Collection.
 
 The collection includes the Openstack modules and plugins supported by Openstack community to help the management of Openstack infrastructure.
 
+:warning: **WARNING:**
+This collection is currently being ported to the upcoming OpenStack SDK 1.\* release. SDK version 1.\* introduces
+numerous API changes which break backward compatibility with previous 0.\* releases. Since keeping a single collection
+release compatible with both SDK series is not sustainable, our collection codebase has been split:
+Branch stable/1.0.0 and 1.\*.\* releases of the collection are compatible with previous OpenStack SDK 0.\* releases
+only. The master branch and upcoming 2.\*.\* releases of this collection will be compatible with SDK 1.\* only. Both
+branches will continue to be maintained for now. Patches from master will be backported to stable/1.0.0 on a best effort
+basis but expect new features to be introduced in the master branch only. Contributions are welcome for both branches!
+:warning:
+
 ## Installation and Usage
 
 ### Installing dependencies
