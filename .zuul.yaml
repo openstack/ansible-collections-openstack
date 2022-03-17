@@ -57,7 +57,6 @@
       - ^plugins/modules/loadbalancer.py
     vars:
       configure_swap_size: 8192
-      tox_envlist: ansible-2.12
       tox_install_siblings: false
       devstack_plugins:
         designate: https://opendev.org/openstack/designate
@@ -83,7 +82,6 @@
       Run openstack collections functional tests against a master devstack
       using releases of openstacksdk and latest ansible release
     vars:
-      tox_envlist: ansible-2.12
       tox_install_siblings: false
 
 # Job with Ansible 2.9 for checking backward compatibility
@@ -111,7 +109,7 @@
       - name: github.com/ansible/ansible
         override-checkout: stable-2.11
     vars:
-      tox_envlist: ansible
+      tox_envlist: ansible-2.11
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.12
@@ -124,7 +122,7 @@
       - name: github.com/ansible/ansible
         override-checkout: stable-2.12
     vars:
-      tox_envlist: ansible
+      tox_envlist: ansible-2.12
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
@@ -137,112 +135,79 @@
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: devel
-    vars:
-      tox_envlist: ansible-2.12
 
 # Stable branches tests
 
 - job:
     name: ansible-collections-openstack-functional-devstack-xena-ansible-2.12
-    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    parent: ansible-collections-openstack-functional-devstack-ansible-2.12
     description: |
       Run openstack collections functional tests against a xena devstack
-      using xena brach of openstacksdk and stable 2.12 branch of ansible
-    voting: true
+      using xena branch of openstacksdk and stable 2.12 branch of ansible
     override-checkout: stable/xena
     required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.12
       - name: openstack/openstacksdk
         override-checkout: stable/xena
-    vars:
-      tox_envlist: ansible
 
 - job:
     name: ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
-    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    parent: ansible-collections-openstack-functional-devstack-ansible-2.12
     description: |
       Run openstack collections functional tests against a wallaby devstack
-      using wallaby brach of openstacksdk and stable 2.12 branch of ansible
-    voting: true
+      using wallaby branch of openstacksdk and stable 2.12 branch of ansible
     override-checkout: stable/wallaby
     required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.12
       - name: openstack/openstacksdk
         override-checkout: stable/wallaby
-    vars:
-      tox_envlist: ansible
 
 - job:
     name: ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
-    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    parent: ansible-collections-openstack-functional-devstack-ansible-2.12
     description: |
       Run openstack collections functional tests against a victoria devstack
-      using victoria brach of openstacksdk and stable 2.12 branch of ansible
-    voting: true
+      using victoria branch of openstacksdk and stable 2.12 branch of ansible
     override-checkout: stable/victoria
     required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.12
       - name: openstack/openstacksdk
         override-checkout: stable/victoria
-    vars:
-      tox_envlist: ansible
-
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
-    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    parent: ansible-collections-openstack-functional-devstack-ansible-2.11
     description: |
       Run openstack collections functional tests against a ussuri devstack
-      using ussuri brach of openstacksdk and stable 2.11 branch of ansible
-    voting: true
+      using ussuri branch of openstacksdk and stable 2.11 branch of ansible
     override-checkout: stable/ussuri
     required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.11
       - name: openstack/openstacksdk
         override-checkout: stable/ussuri
       - name: openstack/os-client-config
         override-checkout: stable/ussuri
-    vars:
-      tox_envlist: ansible
 
 - job:
     name: ansible-collections-openstack-functional-devstack-train-ansible-2.11
-    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    parent: ansible-collections-openstack-functional-devstack-ansible-2.11
     description: |
       Run openstack collections functional tests against a train devstack
-      using train brach of openstacksdk and stable 2.11 branch of ansible
-    voting: true
+      using train branch of openstacksdk and stable 2.11 branch of ansible
     override-checkout: stable/train
     required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.11
       - name: openstack/openstacksdk
         override-checkout: stable/train
       - name: openstack/os-client-config
         override-checkout: stable/train
-    vars:
-      tox_envlist: ansible
 
 - job:
     name: ansible-collections-openstack-functional-devstack-queens-ansible-2.11
-    parent: ansible-collections-openstack-functional-devstack-ansible-devel
+    parent: ansible-collections-openstack-functional-devstack-ansible-2.11
     description: |
       Run openstack collections functional tests against a queens devstack
-      using master branch of openstacksdk and stable 2.11 branch of ansible
-    voting: true
+      using train branch of openstacksdk and stable 2.11 branch of ansible
     override-checkout: stable/queens
     required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.11
       - name: openstack/openstacksdk
         # Run queens with highest possible py2 version of SDK
         override-checkout: stable/train
-    vars:
-      tox_envlist: ansible
 
 # Linters
 - job:
@@ -267,7 +232,6 @@
     nodeset: ubuntu-focal
     description: |
       Run openstack collections linter tests using the 2.12 branch of ansible
-    voting: true
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.12
@@ -282,7 +246,6 @@
     nodeset: ubuntu-bionic
     description: |
       Run openstack collections linter tests using the 2.9 branch of ansible
-    voting: true
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
