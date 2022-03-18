@@ -88,10 +88,6 @@ openstack_image:
             description: Image created at timestamp.
             returned: success
             type: str
-        deleted:
-            description: Image deleted flag.
-            returned: success
-            type: bool
         container_format:
             description: Container format of the image.
             returned: success
@@ -132,10 +128,6 @@ openstack_image:
             description: Is public flag of the image.
             returned: success
             type: bool
-        deleted_at:
-            description: Image deleted at timestamp.
-            returned: success
-            type: str
         size:
             description: Size of the image.
             returned: success
