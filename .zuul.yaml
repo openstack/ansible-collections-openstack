@@ -25,7 +25,7 @@
     vars:
       zuul_work_dir: src/opendev.org/openstack/ansible-collections-openstack
       tox_envlist: ansible
-      tox_install_siblings: false
+      tox_install_siblings: true
       fetch_subunit: false
       devstack_plugins:
         designate: https://opendev.org/openstack/designate
@@ -48,8 +48,6 @@
     pre-run: ci/playbooks/get_amphora_tarball.yaml
     required-projects:
       - openstack/octavia
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.12
     files:
       - ^ci/roles/loadbalancer/.*$
       - ^plugins/modules/lb_health_monitor.py
@@ -59,7 +57,8 @@
       - ^plugins/modules/loadbalancer.py
     vars:
       configure_swap_size: 8192
-      tox_envlist: ansible
+      tox_envlist: ansible-2.12
+      tox_install_siblings: false
       devstack_plugins:
         designate: https://opendev.org/openstack/designate
         octavia: https://opendev.org/openstack/octavia
