@@ -122,13 +122,6 @@
       tox_envlist: ansible
 
 - job:
-    name: ansible-collections-openstack-functional-devstack-ansible-new_sdk
-    parent: ansible-collections-openstack-functional-devstack-ansible-2.12
-    voting: false
-    vars:
-      tox_install_siblings: true
-
-- job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
     parent: ansible-collections-openstack-functional-devstack
     description: |
@@ -409,8 +402,6 @@
               - openstack-tox-linters-ansible-2.9
               - openstack-tox-linters-ansible-2.12
 
-        - ansible-collections-openstack-functional-devstack-ansible-new_sdk:
-            dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-releases:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-ansible-2.9:
