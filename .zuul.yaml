@@ -355,6 +355,7 @@
 - job:
     name: tripleo-ci-centos-8-standalone-train-osa
     parent: tripleo-ci-centos-8-standalone-osa
+    branches: stable/1.0.0
     override-checkout: stable/train
     vars:
       branch_override: stable/train
@@ -362,6 +363,7 @@
 - job:
     name: tripleo-ci-centos-8-standalone-wallaby-osa
     parent: tripleo-ci-centos-8-standalone-osa
+    branches: stable/1.0.0
     override-checkout: stable/wallaby
     vars:
       branch_override: stable/wallaby
@@ -369,7 +371,7 @@
 - job:
     name: tripleo-ci-centos-9-standalone-wallaby-osa
     parent: tripleo-ci-centos-9-standalone-osa
-    branches: ^(stable/1.0.0|master).*$
+    branches: stable/1.0.0
     override-checkout: stable/wallaby
     vars:
       branch_override: stable/wallaby
