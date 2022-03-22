@@ -40,8 +40,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-octavia
     parent: ansible-collections-openstack-functional-devstack
-    branches: ^(stable/1.0.0|master).*$
-    override-checkout: master
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       with Octavia plugin enabled, using releases of openstacksdk and latest
