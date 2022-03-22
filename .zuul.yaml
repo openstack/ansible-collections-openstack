@@ -3,7 +3,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack
     parent: openstacksdk-functional-devstack
-    branches: ^(stable/1.0.0|master).*$
+    branches: master
     post-run: ci/playbooks/postlog.yaml
     description: |
       Run openstack collections functional tests against a master devstack
@@ -92,7 +92,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.9
     parent: ansible-collections-openstack-functional-devstack
-    override-checkout: master
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.9 branch of ansible
@@ -105,7 +105,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.11
     parent: ansible-collections-openstack-functional-devstack
-    override-checkout: master
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.12 branch of ansible
@@ -118,7 +118,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.12
     parent: ansible-collections-openstack-functional-devstack
-    override-checkout: master
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.12 branch of ansible
@@ -131,7 +131,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
     parent: ansible-collections-openstack-functional-devstack
-    override-checkout: master
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and devel branch of ansible
