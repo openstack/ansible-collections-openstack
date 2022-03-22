@@ -78,12 +78,12 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-releases
     parent: ansible-collections-openstack-functional-devstack
-    override-checkout: master
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       using releases of openstacksdk and latest ansible release
     vars:
-      tox_envlist: ansible
+      tox_envlist: ansible-2.12
       tox_install_siblings: false
 
 # Job with Ansible 2.9 for checking backward compatibility
