@@ -3,6 +3,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack
     parent: openstacksdk-functional-devstack
+    branches: master
     post-run: ci/playbooks/postlog.yaml
     description: |
       Run openstack collections functional tests against a master devstack
@@ -39,6 +40,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-octavia
     parent: ansible-collections-openstack-functional-devstack
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       with Octavia plugin enabled, using releases of openstacksdk and latest
@@ -46,8 +48,6 @@
     pre-run: ci/playbooks/get_amphora_tarball.yaml
     required-projects:
       - openstack/octavia
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.12
     files:
       - ^ci/roles/loadbalancer/.*$
       - ^plugins/modules/lb_health_monitor.py
@@ -57,7 +57,8 @@
       - ^plugins/modules/loadbalancer.py
     vars:
       configure_swap_size: 8192
-      tox_envlist: ansible
+      tox_envlist: ansible-2.12
+      tox_install_siblings: false
       devstack_plugins:
         designate: https://opendev.org/openstack/designate
         octavia: https://opendev.org/openstack/octavia
@@ -77,17 +78,19 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-releases
     parent: ansible-collections-openstack-functional-devstack
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       using releases of openstacksdk and latest ansible release
     vars:
-      tox_envlist: ansible
+      tox_envlist: ansible-2.12
       tox_install_siblings: false
 
 # Job with Ansible 2.9 for checking backward compatibility
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.9
     parent: ansible-collections-openstack-functional-devstack
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.9 branch of ansible
@@ -100,6 +103,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.11
     parent: ansible-collections-openstack-functional-devstack
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.12 branch of ansible
@@ -112,6 +116,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.12
     parent: ansible-collections-openstack-functional-devstack
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.12 branch of ansible
@@ -124,6 +129,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
     parent: ansible-collections-openstack-functional-devstack
+    branches: master
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and devel branch of ansible
@@ -336,17 +342,20 @@
     name: tripleo-ci-centos-9-standalone-osa
     parent: tripleo-ci-centos-8-standalone-osa
     nodeset: single-centos-9-node
-    branches: master
+    branches: ^(stable/1.0.0|master).*$
+    override-checkout: master
     vars:
       containers_base_image: quay.io/centos/centos:stream9
       consumer_job: false
       build_container_images: true
+      branch_override: master
     files: *ooo_files
     irrelevant-files: *irr_files
 
 - job:
     name: tripleo-ci-centos-8-standalone-train-osa
     parent: tripleo-ci-centos-8-standalone-osa
+    branches: stable/1.0.0
     override-checkout: stable/train
     vars:
       branch_override: stable/train
@@ -354,6 +363,7 @@
 - job:
     name: tripleo-ci-centos-8-standalone-wallaby-osa
     parent: tripleo-ci-centos-8-standalone-osa
+    branches: stable/1.0.0
     override-checkout: stable/wallaby
     vars:
       branch_override: stable/wallaby
@@ -361,7 +371,7 @@
 - job:
     name: tripleo-ci-centos-9-standalone-wallaby-osa
     parent: tripleo-ci-centos-9-standalone-osa
-    branches: master
+    branches: stable/1.0.0
     override-checkout: stable/wallaby
     vars:
       branch_override: stable/wallaby
@@ -416,6 +426,7 @@
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11:
             dependencies: *deps_unit_lint
+            voting: false
         - ansible-collections-openstack-functional-devstack-octavia:
             dependencies: *deps_unit_lint
 
@@ -454,7 +465,7 @@
         - ansible-collections-openstack-functional-devstack-ansible-2.12
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
         - ansible-collections-openstack-functional-devstack-xena-ansible-2.12
-        - ansible-collections-openstack-functional-devstack-train-ansible-2.11
+        # - ansible-collections-openstack-functional-devstack-train-ansible-2.11
         - ansible-collections-openstack-functional-devstack-octavia
         - tripleo-ci-centos-8-standalone-wallaby-osa
 
