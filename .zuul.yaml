@@ -380,13 +380,16 @@
               - tox-pep8
               - openstack-tox-linters-ansible-2.9
               - openstack-tox-linters-ansible-2.12
+            voting: false
 
         - ansible-collections-openstack-functional-devstack-releases:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-ansible-2.9:
             dependencies: *deps_unit_lint
+            voting: false
         - ansible-collections-openstack-functional-devstack-ansible-2.12:
             dependencies: *deps_unit_lint
+            voting: false
         - ansible-collections-openstack-functional-devstack-ansible-devel:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-xena-ansible-2.12:
@@ -428,10 +431,10 @@
         - tox-pep8
         - openstack-tox-linters-ansible-2.12
         - openstack-tox-linters-ansible-2.9
-        - ansible-collections-openstack-functional-devstack
+        # - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
-        - ansible-collections-openstack-functional-devstack-ansible-2.9
-        - ansible-collections-openstack-functional-devstack-ansible-2.12
+        # - ansible-collections-openstack-functional-devstack-ansible-2.9
+        # - ansible-collections-openstack-functional-devstack-ansible-2.12
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
         - ansible-collections-openstack-functional-devstack-xena-ansible-2.12
         # - ansible-collections-openstack-functional-devstack-train-ansible-2.11
