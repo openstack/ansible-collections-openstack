@@ -11,6 +11,13 @@
     required-projects:
       - openstack/ansible-collections-openstack
       - openstack/designate
+      # openstack/os-client-config is required through job openstacksdk-functional-devstack
+      - # always use master branch when collecting parent job variants, refer to git blame for rationale.
+        name: openstack/devstack
+        override-checkout: master
+      - # always use master branch when collecting parent job variants, refer to git blame for rationale.
+        name: openstack/openstacksdk
+        override-checkout: master
     irrelevant-files: &ignore_files
       - changelogs/.*
       - galaxy.*
@@ -146,7 +153,10 @@
       using xena branch of openstacksdk and stable 2.12 branch of ansible
     branches: stable/1.0.0
     override-checkout: stable/xena
+    # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
+      - name: openstack/devstack
+        override-checkout: stable/xena
       - name: openstack/openstacksdk
         override-checkout: stable/xena
 
@@ -158,7 +168,10 @@
       using wallaby branch of openstacksdk and stable 2.12 branch of ansible
     branches: stable/1.0.0
     override-checkout: stable/wallaby
+    # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
+      - name: openstack/devstack
+        override-checkout: stable/wallaby
       - name: openstack/openstacksdk
         override-checkout: stable/wallaby
 
@@ -170,7 +183,10 @@
       using victoria branch of openstacksdk and stable 2.12 branch of ansible
     branches: stable/1.0.0
     override-checkout: stable/victoria
+    # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
+      - name: openstack/devstack
+        override-checkout: stable/victoria
       - name: openstack/openstacksdk
         override-checkout: stable/victoria
 
@@ -182,10 +198,11 @@
       using ussuri branch of openstacksdk and stable 2.11 branch of ansible
     branches: stable/1.0.0
     override-checkout: stable/ussuri
+    # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
-      - name: openstack/openstacksdk
+      - name: openstack/devstack
         override-checkout: stable/ussuri
-      - name: openstack/os-client-config
+      - name: openstack/openstacksdk
         override-checkout: stable/ussuri
 
 - job:
@@ -196,10 +213,11 @@
       using train branch of openstacksdk and stable 2.11 branch of ansible
     branches: stable/1.0.0
     override-checkout: stable/train
+    # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
-      - name: openstack/openstacksdk
+      - name: openstack/devstack
         override-checkout: stable/train
-      - name: openstack/os-client-config
+      - name: openstack/openstacksdk
         override-checkout: stable/train
 
 - job:
@@ -210,7 +228,10 @@
       using train branch of openstacksdk and stable 2.11 branch of ansible
     branches: stable/1.0.0
     override-checkout: stable/queens
+    # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
+      - name: openstack/devstack
+        override-checkout: stable/queens
       - name: openstack/openstacksdk
         # Run queens with highest possible py2 version of SDK
         override-checkout: stable/train
@@ -264,12 +285,17 @@
     parent: bifrost-integration-tinyipa-ubuntu-focal
     required-projects:
       - openstack/ansible-collections-openstack
-
+      - # always use master branch when collecting parent job variants, refer to git blame for rationale.
+        name: openstack/bifrost
+        override-checkout: master
 - job:
     name: bifrost-keystone-collections-src
     parent: bifrost-integration-tinyipa-keystone-ubuntu-focal
     required-projects:
       - openstack/ansible-collections-openstack
+      - # always use master branch when collecting parent job variants, refer to git blame for rationale.
+        name: openstack/bifrost
+        override-checkout: master
 
 # TripleO jobs
 - job:
@@ -279,6 +305,11 @@
       featureset: '052'
       consumer_job: false
       build_container_images: true
+    required-projects:
+      - openstack/ansible-collections-openstack
+      - # always use master branch when collecting parent job variants, refer to git blame for rationale.
+        name: openstack/tripleo-ci
+        override-checkout: master
     irrelevant-files: &irr_files
       - .*molecule.*
       - ^.*\.md$
