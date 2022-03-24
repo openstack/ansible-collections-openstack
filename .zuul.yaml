@@ -144,6 +144,7 @@
     description: |
       Run openstack collections functional tests against a xena devstack
       using xena branch of openstacksdk and stable 2.12 branch of ansible
+    branches: stable/1.0.0
     override-checkout: stable/xena
     required-projects:
       - name: openstack/openstacksdk
@@ -155,6 +156,7 @@
     description: |
       Run openstack collections functional tests against a wallaby devstack
       using wallaby branch of openstacksdk and stable 2.12 branch of ansible
+    branches: stable/1.0.0
     override-checkout: stable/wallaby
     required-projects:
       - name: openstack/openstacksdk
@@ -166,6 +168,7 @@
     description: |
       Run openstack collections functional tests against a victoria devstack
       using victoria branch of openstacksdk and stable 2.12 branch of ansible
+    branches: stable/1.0.0
     override-checkout: stable/victoria
     required-projects:
       - name: openstack/openstacksdk
@@ -177,6 +180,7 @@
     description: |
       Run openstack collections functional tests against a ussuri devstack
       using ussuri branch of openstacksdk and stable 2.11 branch of ansible
+    branches: stable/1.0.0
     override-checkout: stable/ussuri
     required-projects:
       - name: openstack/openstacksdk
@@ -190,6 +194,7 @@
     description: |
       Run openstack collections functional tests against a train devstack
       using train branch of openstacksdk and stable 2.11 branch of ansible
+    branches: stable/1.0.0
     override-checkout: stable/train
     required-projects:
       - name: openstack/openstacksdk
@@ -203,6 +208,7 @@
     description: |
       Run openstack collections functional tests against a queens devstack
       using train branch of openstacksdk and stable 2.11 branch of ansible
+    branches: stable/1.0.0
     override-checkout: stable/queens
     required-projects:
       - name: openstack/openstacksdk
