@@ -55,14 +55,15 @@
       using master of openstacksdk with latest ansible release
 
 - job:
-    name: ansible-collections-openstack-functional-devstack-octavia
+    name: ansible-collections-openstack-functional-devstack-octavia-base
     parent: ansible-collections-openstack-functional-devstack-base
-    branches: master
+    # Do not restrict branches in base jobs because else Zuul would not find a matching
+    # parent job variant during job freeze when child jobs are on other branches.
     description: |
-      Run openstack collections functional tests against a master devstack
-      with Octavia plugin enabled, using releases of openstacksdk and latest
-      ansible release. Run it only on Load Balancer changes.
+      Run openstack collections functional tests against a devstack with Octavia plugin enabled
     pre-run: ci/playbooks/get_amphora_tarball.yaml
+    # Do not set job.override-checkout or job.required-projects.override-checkout in base job because
+    # else Zuul will use this branch when matching variants for parent jobs during job freeze
     required-projects:
       - openstack/octavia
     files:
@@ -92,13 +93,60 @@
         OCTAVIA_AMP_IMAGE_NAME: "test-only-amphora-x64-haproxy-ubuntu-bionic"
 
 - job:
+    name: ansible-collections-openstack-functional-devstack-octavia
+    parent: ansible-collections-openstack-functional-devstack-octavia-base
+    branches: master
+    description: |
+      Run openstack collections functional tests against a master devstack
+      with Octavia plugin enabled, using latest releases of openstacksdk
+      and latest ansible release. Run it only on Load Balancer changes.
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-octavia
+    parent: ansible-collections-openstack-functional-devstack-octavia-base
+    branches: stable/1.0.0
+    description: |
+      Run openstack collections functional tests against a master devstack
+      with Octavia plugin enabled, using 0.*.* releases of openstacksdk
+      and latest ansible release. Run it only on Load Balancer changes.
+    required-projects:
+      - # Choose parent devstack job from master branch instead of non-existing stable/1.0.0 branch
+        name: openstack/devstack
+        override-checkout: master
+      - # Choose parent devstack job from master branch instead of non-existing stable/1.0.0 branch
+        name: openstack/openstacksdk
+        override-checkout: master
+    vars:
+      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/pip-constraints-openstacksdk-0.x.x.txt'
+
+- job:
     name: ansible-collections-openstack-functional-devstack-releases
     parent: ansible-collections-openstack-functional-devstack-base
     branches: master
     description: |
       Run openstack collections functional tests against a master devstack
-      using releases of openstacksdk and latest ansible release
+      using latest releases of openstacksdk and latest ansible release
     vars:
+      tox_install_siblings: false
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-releases
+    parent: ansible-collections-openstack-functional-devstack-base
+    branches: stable/1.0.0
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using 0.*.* releases of openstacksdk and latest ansible release
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.9
+      - # Choose parent devstack job from master branch instead of non-existing stable/1.0.0 branch
+        name: openstack/devstack
+        override-checkout: master
+      - # Choose parent devstack job from master branch instead of non-existing stable/1.0.0 branch
+        name: openstack/openstacksdk
+        override-checkout: master
+    vars:
+      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/pip-constraints-openstacksdk-0.x.x.txt'
       tox_install_siblings: false
 
 # Job with Ansible 2.9 for checking backward compatibility
@@ -109,9 +157,29 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.9 branch of ansible
+    voting: false
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
+    vars:
+      tox_envlist: ansible-2.9
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-ansible-2.9
+    parent: ansible-collections-openstack-functional-devstack-base
+    branches: stable/1.0.0
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using 0.*.* releases of openstacksdk and stable 2.9 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.9
+      - # Choose parent devstack job from master branch instead of non-existing stable/1.0.0 branch
+        name: openstack/devstack
+        override-checkout: master
+      - name: openstack/openstacksdk
+        # Yoga has the latest SDK release of the 0.*.* series atm
+        override-checkout: stable/yoga
     vars:
       tox_envlist: ansible-2.9
 
@@ -122,9 +190,29 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.12 branch of ansible
+    voting: false
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.11
+    vars:
+      tox_envlist: ansible-2.11
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-ansible-2.11
+    parent: ansible-collections-openstack-functional-devstack-base
+    branches: stable/1.0.0
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using 0.*.* releases of openstacksdk and stable 2.12 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.11
+      - # Choose parent devstack job from master branch instead of non-existing stable/1.0.0 branch
+        name: openstack/devstack
+        override-checkout: master
+      - name: openstack/openstacksdk
+        # Yoga has the latest SDK release of the 0.*.* series atm
+        override-checkout: stable/yoga
     vars:
       tox_envlist: ansible-2.11
 
@@ -135,9 +223,29 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.12 branch of ansible
+    voting: false
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.12
+    vars:
+      tox_envlist: ansible-2.12
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-ansible-2.12
+    parent: ansible-collections-openstack-functional-devstack-base
+    branches: stable/1.0.0
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using 0.*.* releases of openstacksdk and stable 2.12 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.12
+      - # Choose parent devstack job from master branch instead of non-existing stable/1.0.0 branch
+        name: openstack/devstack
+        override-checkout: master
+      - name: openstack/openstacksdk
+        # Yoga has the latest SDK release of the 0.*.* series atm
+        override-checkout: stable/yoga
     vars:
       tox_envlist: ansible-2.12
 
@@ -517,10 +625,8 @@
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-ansible-2.9:
             dependencies: *deps_unit_lint
-            voting: false
         - ansible-collections-openstack-functional-devstack-ansible-2.12:
             dependencies: *deps_unit_lint
-            voting: false
         - ansible-collections-openstack-functional-devstack-ansible-devel:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-xena-ansible-2.12:
