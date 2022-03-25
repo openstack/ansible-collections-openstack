@@ -18,7 +18,7 @@ build_ignore:
   - ci
   - galaxy.yml.in
   - setup.cfg
-  - test-requirements.txt
+  - test-requirements*
   - tests
   - tools
   - tox.ini
@@ -29,7 +29,7 @@ build_ignore:
   - importer_result.json
   - .tox
   - .env
+  - .vscode
   - ansible_collections_openstack.egg-info
   - contrib
-  - changelogs/.plugin-cache.yaml
-  - changelogs/fragments
+  - changelogs
