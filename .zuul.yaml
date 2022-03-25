@@ -457,6 +457,8 @@
       - name: github.com/ansible/ansible
         override-checkout: devel
     vars:
+      # override tox_constraints_file from parent job
+      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/pip-constraints-none.txt'
       tox_envlist: linters-2.12
       python_version: 3.8
       bindep_profile: test py38
@@ -471,6 +473,8 @@
       - name: github.com/ansible/ansible
         override-checkout: stable-2.12
     vars:
+      # override tox_constraints_file from parent job
+      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/pip-constraints-none.txt'
       tox_envlist: linters-2.12
       python_version: 3.8
       bindep_profile: test py38
@@ -485,6 +489,8 @@
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
     vars:
+      # override tox_constraints_file from parent job
+      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/pip-constraints-none.txt'
       tox_envlist: linters-2.9
 
 # Cross-checks with other projects

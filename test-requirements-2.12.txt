@@ -7,5 +7,5 @@ voluptuous
 yamllint
 rstcheck
 ruamel.yaml
-#galaxy-importer  # see https://review.opendev.org/#/c/743054
+galaxy-importer
 tox
