@@ -1,23 +1,25 @@
 # yamllint disable
 ---
+# Keep this file in sync between branches to avoid issues e.g. with job scheduling. Zuul CI will search in master branch
+# first when collecting job variants during job freeze which can have unwanted side effects. For example, when parent
+# job *-base has been changed in stable/1.0.0 branch, Zuul could still use *-base variants from master branch during job
+# freeze on child jobs such as *-ussuri-ansible-2.11 etc.
 - job:
-    name: ansible-collections-openstack-functional-devstack
+    name: ansible-collections-openstack-functional-devstack-base
     parent: openstacksdk-functional-devstack
-    branches: master
+    # Do not restrict branches in base jobs because else Zuul would not find a matching
+    # parent job variant during job freeze when child jobs are on other branches.
     post-run: ci/playbooks/postlog.yaml
     description: |
-      Run openstack collections functional tests against a master devstack
-      using master of openstacksdk with latest ansible release
+      Run openstack collections functional tests against a devstack
+    # Do not set job.override-checkout or job.required-projects.override-checkout in base job because
+    # else Zuul will use this branch when matching variants for parent jobs during job freeze
     required-projects:
       - openstack/ansible-collections-openstack
       - openstack/designate
-      # openstack/os-client-config is required through job openstacksdk-functional-devstack
-      - # always use master branch when collecting parent job variants, refer to git blame for rationale.
-        name: openstack/devstack
-        override-checkout: master
-      - # always use master branch when collecting parent job variants, refer to git blame for rationale.
-        name: openstack/openstacksdk
-        override-checkout: master
+      # openstack/devstack is required through parent job openstacksdk-functional-devstack
+      # openstack/os-client-config is required through parent job openstacksdk-functional-devstack
+      # openstack/openstacksdk is required through parent job openstacksdk-functional-devstack
     irrelevant-files: &ignore_files
       - changelogs/.*
       - galaxy.*
@@ -45,8 +47,16 @@
         log: true
 
 - job:
+    name: ansible-collections-openstack-functional-devstack
+    parent: ansible-collections-openstack-functional-devstack-base
+    branches: master
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using master of openstacksdk with latest ansible release
+
+- job:
     name: ansible-collections-openstack-functional-devstack-octavia
-    parent: ansible-collections-openstack-functional-devstack
+    parent: ansible-collections-openstack-functional-devstack-base
     branches: master
     description: |
       Run openstack collections functional tests against a master devstack
@@ -83,7 +93,7 @@
 
 - job:
     name: ansible-collections-openstack-functional-devstack-releases
-    parent: ansible-collections-openstack-functional-devstack
+    parent: ansible-collections-openstack-functional-devstack-base
     branches: master
     description: |
       Run openstack collections functional tests against a master devstack
@@ -94,7 +104,7 @@
 # Job with Ansible 2.9 for checking backward compatibility
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.9
-    parent: ansible-collections-openstack-functional-devstack
+    parent: ansible-collections-openstack-functional-devstack-base
     branches: master
     description: |
       Run openstack collections functional tests against a master devstack
@@ -107,7 +117,7 @@
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.11
-    parent: ansible-collections-openstack-functional-devstack
+    parent: ansible-collections-openstack-functional-devstack-base
     branches: master
     description: |
       Run openstack collections functional tests against a master devstack
@@ -120,7 +130,7 @@
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.12
-    parent: ansible-collections-openstack-functional-devstack
+    parent: ansible-collections-openstack-functional-devstack-base
     branches: master
     description: |
       Run openstack collections functional tests against a master devstack
@@ -133,7 +143,7 @@
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
-    parent: ansible-collections-openstack-functional-devstack
+    parent: ansible-collections-openstack-functional-devstack-base
     branches: master
     description: |
       Run openstack collections functional tests against a master devstack
@@ -147,7 +157,14 @@
 
 - job:
     name: ansible-collections-openstack-functional-devstack-xena-ansible-2.12
-    parent: ansible-collections-openstack-functional-devstack-ansible-2.12
+    # Do not inherit from any parent job which does not run for branch stable/1.0.0 because Zuul would dismiss this job
+    # when collecting parent job variants. For example, when job.branches is set to master in a parent job, then Zuul
+    # will not match that job when it collects job variants.
+    #
+    # Do not inherit from any parent job which sets job.required-projects.override-checkout on openstack/devstack
+    # because Zuul would use that git ref instead of stable branch defined below to checkout projects of parent devstack
+    # jobs when collecting variants for parent jobs.
+    parent: ansible-collections-openstack-functional-devstack-base
     description: |
       Run openstack collections functional tests against a xena devstack
       using xena branch of openstacksdk and stable 2.12 branch of ansible
@@ -155,14 +172,29 @@
     override-checkout: stable/xena
     # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
-      - name: openstack/devstack
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.12
+      - # Choose parent devstack job from stable/1.0.0 branch instead of non-existing stable/xena branch
+        name: openstack/ansible-collections-openstack
+        override-checkout: stable/1.0.0
+      - # Choose parent devstack job from stable/xena branch
+        name: openstack/devstack
         override-checkout: stable/xena
       - name: openstack/openstacksdk
         override-checkout: stable/xena
+    vars:
+      tox_envlist: ansible-2.12
 
 - job:
     name: ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
-    parent: ansible-collections-openstack-functional-devstack-ansible-2.12
+    # Do not inherit from any parent job which does not run for branch stable/1.0.0 because Zuul would dismiss this job
+    # when collecting parent job variants. For example, when job.branches is set to master in a parent job, then Zuul
+    # will not match that job when it collects job variants.
+    #
+    # Do not inherit from any parent job which sets job.required-projects.override-checkout on openstack/devstack
+    # because Zuul would use that git ref instead of stable branch defined below to checkout projects of parent devstack
+    # jobs when collecting variants for parent jobs.
+    parent: ansible-collections-openstack-functional-devstack-base
     description: |
       Run openstack collections functional tests against a wallaby devstack
       using wallaby branch of openstacksdk and stable 2.12 branch of ansible
@@ -170,14 +202,29 @@
     override-checkout: stable/wallaby
     # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
-      - name: openstack/devstack
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.12
+      - # Choose parent devstack job from stable/1.0.0 branch instead of non-existing stable/wallaby branch
+        name: openstack/ansible-collections-openstack
+        override-checkout: stable/1.0.0
+      - # Choose parent devstack job from stable/wallaby branch
+        name: openstack/devstack
         override-checkout: stable/wallaby
       - name: openstack/openstacksdk
         override-checkout: stable/wallaby
+    vars:
+      tox_envlist: ansible-2.12
 
 - job:
     name: ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
-    parent: ansible-collections-openstack-functional-devstack-ansible-2.12
+    # Do not inherit from any parent job which does not run for branch stable/1.0.0 because Zuul would dismiss this job
+    # when collecting parent job variants. For example, when job.branches is set to master in a parent job, then Zuul
+    # will not match that job when it collects job variants.
+    #
+    # Do not inherit from any parent job which sets job.required-projects.override-checkout on openstack/devstack
+    # because Zuul would use that git ref instead of stable branch defined below to checkout projects of parent devstack
+    # jobs when collecting variants for parent jobs.
+    parent: ansible-collections-openstack-functional-devstack-base
     description: |
       Run openstack collections functional tests against a victoria devstack
       using victoria branch of openstacksdk and stable 2.12 branch of ansible
@@ -185,14 +232,29 @@
     override-checkout: stable/victoria
     # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
-      - name: openstack/devstack
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.12
+      - # Choose parent devstack job from stable/1.0.0 branch instead of non-existing stable/victoria branch
+        name: openstack/ansible-collections-openstack
+        override-checkout: stable/1.0.0
+      - # Choose parent devstack job from stable/victoria branch
+        name: openstack/devstack
         override-checkout: stable/victoria
       - name: openstack/openstacksdk
         override-checkout: stable/victoria
+    vars:
+      tox_envlist: ansible-2.12
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
-    parent: ansible-collections-openstack-functional-devstack-ansible-2.11
+    # Do not inherit from any parent job which does not run for branch stable/1.0.0 because Zuul would dismiss this job
+    # when collecting parent job variants. For example, when job.branches is set to master in a parent job, then Zuul
+    # will not match that job when it collects job variants.
+    #
+    # Do not inherit from any parent job which sets job.required-projects.override-checkout on openstack/devstack
+    # because Zuul would use that git ref instead of stable branch defined below to checkout projects of parent devstack
+    # jobs when collecting variants for parent jobs.
+    parent: ansible-collections-openstack-functional-devstack-base
     description: |
       Run openstack collections functional tests against a ussuri devstack
       using ussuri branch of openstacksdk and stable 2.11 branch of ansible
@@ -200,14 +262,29 @@
     override-checkout: stable/ussuri
     # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
-      - name: openstack/devstack
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.11
+      - # Choose parent devstack job from stable/1.0.0 branch instead of non-existing stable/ussuri branch
+        name: openstack/ansible-collections-openstack
+        override-checkout: stable/1.0.0
+      - # Choose parent devstack job from stable/ussuri branch
+        name: openstack/devstack
         override-checkout: stable/ussuri
       - name: openstack/openstacksdk
         override-checkout: stable/ussuri
+    vars:
+      tox_envlist: ansible-2.11
 
 - job:
     name: ansible-collections-openstack-functional-devstack-train-ansible-2.11
-    parent: ansible-collections-openstack-functional-devstack-ansible-2.11
+    # Do not inherit from any parent job which does not run for branch stable/1.0.0 because Zuul would dismiss this job
+    # when collecting parent job variants. For example, when job.branches is set to master in a parent job, then Zuul
+    # will not match that job when it collects job variants.
+    #
+    # Do not inherit from any parent job which sets job.required-projects.override-checkout on openstack/devstack
+    # because Zuul would use that git ref instead of stable branch defined below to checkout projects of parent devstack
+    # jobs when collecting variants for parent jobs.
+    parent: ansible-collections-openstack-functional-devstack-base
     description: |
       Run openstack collections functional tests against a train devstack
       using train branch of openstacksdk and stable 2.11 branch of ansible
@@ -215,14 +292,29 @@
     override-checkout: stable/train
     # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
-      - name: openstack/devstack
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.11
+      - # Choose parent devstack job from stable/1.0.0 branch instead of non-existing stable/train branch
+        name: openstack/ansible-collections-openstack
+        override-checkout: stable/1.0.0
+      - # Choose parent devstack job from stable/train branch
+        name: openstack/devstack
         override-checkout: stable/train
       - name: openstack/openstacksdk
         override-checkout: stable/train
+    vars:
+      tox_envlist: ansible-2.11
 
 - job:
     name: ansible-collections-openstack-functional-devstack-queens-ansible-2.11
-    parent: ansible-collections-openstack-functional-devstack-ansible-2.11
+    # Do not inherit from any parent job which does not run for branch stable/1.0.0 because Zuul would dismiss this job
+    # when collecting parent job variants. For example, when job.branches is set to master in a parent job, then Zuul
+    # will not match that job when it collects job variants.
+    #
+    # Do not inherit from any parent job which sets job.required-projects.override-checkout on openstack/devstack
+    # because Zuul would use that git ref instead of stable branch defined below to checkout projects of parent devstack
+    # jobs when collecting variants for parent jobs.
+    parent: ansible-collections-openstack-functional-devstack-base
     description: |
       Run openstack collections functional tests against a queens devstack
       using train branch of openstacksdk and stable 2.11 branch of ansible
@@ -230,11 +322,19 @@
     override-checkout: stable/queens
     # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
-      - name: openstack/devstack
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.11
+      - # Choose parent devstack job from stable/1.0.0 branch instead of non-existing stable/queens branch
+        name: openstack/ansible-collections-openstack
+        override-checkout: stable/1.0.0
+      - # Choose parent devstack job from stable/queens branch
+        name: openstack/devstack
         override-checkout: stable/queens
       - name: openstack/openstacksdk
         # Run queens with highest possible py2 version of SDK
         override-checkout: stable/train
+    vars:
+      tox_envlist: ansible-2.11
 
 # Linters
 - job:
