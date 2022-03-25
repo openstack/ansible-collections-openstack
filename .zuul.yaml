@@ -529,7 +529,6 @@
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11:
             dependencies: *deps_unit_lint
-            voting: false
         - ansible-collections-openstack-functional-devstack-octavia:
             dependencies: *deps_unit_lint
 
@@ -568,7 +567,7 @@
         # - ansible-collections-openstack-functional-devstack-ansible-2.12
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
         - ansible-collections-openstack-functional-devstack-xena-ansible-2.12
-        # - ansible-collections-openstack-functional-devstack-train-ansible-2.11
+        - ansible-collections-openstack-functional-devstack-train-ansible-2.11
         - ansible-collections-openstack-functional-devstack-octavia
         - tripleo-ci-centos-8-standalone-wallaby-osa
 
