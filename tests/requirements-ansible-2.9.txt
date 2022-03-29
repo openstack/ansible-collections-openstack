@@ -1,0 +1,13 @@
+ansible>=2.9.0,<2.10.0
+flake8
+# galaxy-importer 0.3.2 moved from ansible 2.9 to ansible-core 2.11
+# Ref.: https://github.com/ansible/galaxy-importer/commit/98933547831922c45243f39d85eefe150b55fc36
+galaxy-importer==0.3.1
+openstacksdk
+pycodestyle
+pylint
+rstcheck
+ruamel.yaml
+tox
+voluptuous
+yamllint

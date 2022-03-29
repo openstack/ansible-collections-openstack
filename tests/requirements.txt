@@ -1,0 +1,11 @@
+ansible-core
+flake8
+galaxy-importer
+openstacksdk
+pycodestyle
+pylint
+rstcheck
+ruamel.yaml
+tox
+voluptuous
+yamllint
