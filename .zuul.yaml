@@ -117,7 +117,7 @@
         name: openstack/openstacksdk
         override-checkout: master
     vars:
-      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/pip-constraints-openstacksdk-0.x.x.txt'
+      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-openstacksdk-0.x.x.txt'
 
 - job:
     name: ansible-collections-openstack-functional-devstack-releases
@@ -126,7 +126,11 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using latest releases of openstacksdk and latest ansible release
+    # OpenStack SDK 1.*.* has not been released to PyPI yet
+    voting: false
     vars:
+      # Uncomment once OpenStack SDK 1.*.* has been released to PyPI
+      # tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-openstacksdk-1.x.x.txt'
       tox_install_siblings: false
 
 - job:
@@ -146,7 +150,7 @@
         name: openstack/openstacksdk
         override-checkout: master
     vars:
-      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/pip-constraints-openstacksdk-0.x.x.txt'
+      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-openstacksdk-0.x.x.txt'
       tox_install_siblings: false
 
 # Job with Ansible 2.9 for checking backward compatibility
@@ -446,9 +450,23 @@
 
 # Linters
 - job:
-    name: openstack-tox-linters-ansible-devel
+    name: openstack-tox-linters-ansible
     parent: openstack-tox-linters
     nodeset: ubuntu-focal
+    description: |
+      Run openstack collections linter tests using the master branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: master
+    vars:
+      # override tox_constraints_file from parent job
+      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-none.txt'
+      tox_envlist: linters
+      tox_install_siblings: true
+
+- job:
+    name: openstack-tox-linters-ansible-devel
+    parent: openstack-tox-linters-ansible
     description: |
       Run openstack collections linter tests using the devel branch of ansible
     # non-voting because we can't prevent ansible devel from breaking us
@@ -457,31 +475,25 @@
       - name: github.com/ansible/ansible
         override-checkout: devel
     vars:
-      # override tox_constraints_file from parent job
-      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/pip-constraints-none.txt'
-      tox_envlist: linters-2.12
       python_version: 3.8
       bindep_profile: test py38
 
 - job:
     name: openstack-tox-linters-ansible-2.12
-    parent: openstack-tox-linters
-    nodeset: ubuntu-focal
+    parent: openstack-tox-linters-ansible
     description: |
       Run openstack collections linter tests using the 2.12 branch of ansible
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.12
     vars:
-      # override tox_constraints_file from parent job
-      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/pip-constraints-none.txt'
       tox_envlist: linters-2.12
       python_version: 3.8
       bindep_profile: test py38
 
 - job:
     name: openstack-tox-linters-ansible-2.9
-    parent: openstack-tox-linters
+    parent: openstack-tox-linters-ansible
     nodeset: ubuntu-bionic
     description: |
       Run openstack collections linter tests using the 2.9 branch of ansible
@@ -489,8 +501,6 @@
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
     vars:
-      # override tox_constraints_file from parent job
-      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/pip-constraints-none.txt'
       tox_envlist: linters-2.9
 
 # Cross-checks with other projects
@@ -535,7 +545,6 @@
       - ^tests/.*$
       - ^tools/.*$
       - ^requirements.*$
-      - ^test-requirements.*$
       - ^setup.*$
       - tox.ini
     # Run only on files used in TripleO
