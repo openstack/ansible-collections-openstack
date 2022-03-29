@@ -39,7 +39,7 @@ options:
    ip_version:
      description:
         - The IP version of the subnet 4 or 6
-     default: 4
+     default: '4'
      type: str
      choices: ['4', '6']
    enable_dhcp:

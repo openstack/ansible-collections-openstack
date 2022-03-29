@@ -45,7 +45,7 @@ options:
         - The number of successful checks before changing the operating status of the member to ONLINE.
    max_retries_down:
      type: 'str'
-     default: 3
+     default: '3'
      description:
         - The number of allowed check failures before changing the operating status of the member to ERROR. A valid value is from 1 to 10. The default is 3.
    resp_timeout:
@@ -60,7 +60,7 @@ options:
      type: bool
    expected_codes:
      type: 'str'
-     default: 200
+     default: '200'
      description:
       - The list of HTTP status codes expected in response from the member to declare it healthy. Specify one of the following values
         A single value, such as 200
