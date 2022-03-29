@@ -61,7 +61,7 @@ options:
      description:
         - Prevent image from being deleted
      type: bool
-     default: 'no'
+     default: false
    filename:
      description:
         - The path to the file which has to be uploaded

@@ -25,7 +25,7 @@ options:
     show_all:
         description: toggles showing all vms vs only those with a working IP
         type: bool
-        default: 'no'
+        default: false
     inventory_hostname:
         description: |
             What to register as the inventory hostname.
@@ -47,7 +47,7 @@ options:
             'ansible_ssh_host' facts. This might be desired when using jump or
             bastion hosts and the name is the FQDN of the host.
         type: bool
-        default: 'no'
+        default: false
     expand_hostvars:
         description: |
             Run extra commands on each host to fill in additional
@@ -56,7 +56,7 @@ options:
             (Note, the default value of this is opposite from the default
             old openstack.py inventory script's option expand_hostvars)
         type: bool
-        default: 'no'
+        default: false
     private:
         description: |
             Use the private interface of each server, if it has one, as
@@ -64,12 +64,13 @@ options:
             running ansible inside a server in the cloud and would rather
             communicate to your servers over the private network.
         type: bool
-        default: 'no'
+        default: false
     only_clouds:
         description: |
             List of clouds from clouds.yaml to use, instead of using
             the whole list.
         type: list
+        elements: str
         default: []
     fail_on_errors:
         description: |
@@ -80,12 +81,12 @@ options:
             default value of this is opposite from the old openstack.py
             inventory script's option fail_on_errors)
         type: bool
-        default: 'no'
+        default: false
     all_projects:
         description: |
             Lists servers from all projects
         type: bool
-        default: 'no'
+        default: false
     clouds_yaml_path:
         description: |
             Override path to clouds.yaml file. If this value is given it
@@ -94,6 +95,7 @@ options:
             /etc/ansible/openstack.yml to the regular locations documented
             at https://docs.openstack.org/os-client-config/latest/user/configuration.html#config-files
         type: list
+        elements: str
         env:
             - name: OS_CLIENT_CONFIG_FILE
     compose:
