@@ -454,10 +454,10 @@
     parent: openstack-tox-linters
     nodeset: ubuntu-focal
     description: |
-      Run openstack collections linter tests using the master branch of ansible
+      Run openstack collections linter tests using the devel branch of ansible
     required-projects:
       - name: github.com/ansible/ansible
-        override-checkout: master
+        override-checkout: devel
     vars:
       # override tox_constraints_file from parent job
       tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-none.txt'
@@ -471,9 +471,6 @@
       Run openstack collections linter tests using the devel branch of ansible
     # non-voting because we can't prevent ansible devel from breaking us
     voting: false
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: devel
     vars:
       python_version: 3.8
       bindep_profile: test py38
