@@ -5,6 +5,35 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.8.0
+======
+
+Release Summary
+---------------
+
+Subnet pool module and bugfixes
+
+Bugfixes
+--------
+
+- Add 'all_projects' to server_action module
+- Add subnet pool module
+- Bumped minimum required OpenStack SDK release to SDK 0.36.0 (Train)
+- Changed compute_flavor_info module to use OpenStack SDK's proxy layer
+- Dropped deprecated return values in floating_ip_info and assert remaining fields
+- Fix ansible-lint issues for the newest version
+- Fix assertion after stack deletion
+- Handle aggregate host list set to None
+- Reenabled check-import.sh which tests imports to Ansible Galaxy
+- Remove old, unsupported parameters from documentation in image_info module
+- Router - Remove unneeded 'filter' parameter
+- Updated return value docs of compute_service_info module
+
+New Modules
+-----------
+
+- openstack.cloud.subnet_pool - Create or Delete subnet pools from OpenStack.
+
 v1.7.2
 ======
 
