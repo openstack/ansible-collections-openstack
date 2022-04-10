@@ -63,6 +63,11 @@ options:
         - Unique name or ID of the project.
      required: false
      type: str
+   description:
+     required: false
+     description:
+       - Description of the rule.
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -256,6 +261,7 @@ class SecurityGroupRuleModule(OpenStackModule):
                        choices=['egress', 'ingress']),
         state=dict(default='present',
                    choices=['absent', 'present']),
+        description=dict(required=False, default=None),
         project=dict(default=None),
     )
 
@@ -349,10 +355,12 @@ class SecurityGroupRuleModule(OpenStackModule):
                 kwargs = {}
                 if project_id:
                     kwargs['project_id'] = project_id
-                rule = self.conn.create_security_group_rule(
-                    secgroup['id'],
-                    port_range_min=self.params['port_range_min'],
-                    port_range_max=self.params['port_range_max'],
+                if self.params["description"] is not None:
+                    kwargs["description"] = self.params['description']
+                rule = self.conn.network.create_security_group_rule(
+                    security_group_id=secgroup['id'],
+                    port_range_min=None if self.params['port_range_min'] == -1 else self.params['port_range_min'],
+                    port_range_max=None if self.params['port_range_max'] == -1 else self.params['port_range_max'],
                     protocol=self.params['protocol'],
                     remote_ip_prefix=self.params['remote_ip_prefix'],
                     remote_group_id=remotegroup['id'],
