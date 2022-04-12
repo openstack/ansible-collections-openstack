@@ -179,7 +179,7 @@ class RouterInfoModule(OpenStackModule):
                             'ip_address': ip_spec.get('ip_address'),
                             'subnet_id': ip_spec.get('subnet_id')
                         }
-                    interfaces_info.append(int_info)
+                        interfaces_info.append(int_info)
             router['interfaces_info'] = interfaces_info
 
         self.exit(changed=False, openstack_routers=routers)
