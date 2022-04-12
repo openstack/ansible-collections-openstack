@@ -82,7 +82,7 @@ openstack_users:
             returned: success
             type: str
         name:
-            description: Name given to the user.
+            description: Username of the user.
             returned: success
             type: str
         enabled:
@@ -102,7 +102,7 @@ openstack_users:
             returned: success
             type: str
         username:
-            description: Username of the user
+            description: Username with Identity API v2 (OpenStack Pike or earlier) else Null
             returned: success
             type: str
 '''
