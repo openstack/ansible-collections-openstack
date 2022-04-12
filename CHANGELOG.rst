@@ -1,9 +1,118 @@
-=============================================
-Openstack Cloud Ansilbe modules Release Notes
-=============================================
+==========================================
+Ansible OpenStack Collection Release Notes
+==========================================
 
 .. contents:: Topics
 
+
+v2.0.0
+======
+
+Release Summary
+---------------
+
+Our new major release 2.0.0 of the Ansible collection for OpenStack clouds aka ``openstack.cloud`` is a complete overhaul of the code base and brings full compatibility with openstacksdk 1.0.0.
+
+Highlights of this release are
+* three new modules which for example provide a generic and uniform API for interacting with OpenStack cloud resources,
+* a complete refactoring of all existing modules bringing dozens of bugfixes, new features as well as consistent
+  and properly documented module results and options,
+* 100% compatibility with openstacksdk's first major release 1.0.0,
+* new guides for contributors from devstack setup over coding guidelines to our release process and
+* massively increased CI coverage with many new integration tests, now covering all modules and plugins.
+
+Note, this ``2.0.0`` release *breaks backward compatibility* with previous ``1.x.x`` releases!
+* ``2.x.x`` releases of this collection are compatible with openstacksdk ``1.x.x`` and later *only*,
+* ``1.x.x`` releases of this collection are compatible with openstacksdk ``0.x.x`` prior to ``0.99.0`` *only*,
+* ``2.x.x`` releases of are not backward compatible with ``1.x.x`` releases,
+* ``1.x.x`` release series will be in maintenance mode now and receive bugfixes only.
+
+However, this collection as well as openstacksdk continue to be backward compatible with clouds running on older OpenStack releases. For example, it is fine and a fully supported use case to use this 2.0.0 release with clouds based on OpenStack Train, Wallaby or Zed. Feel encouraged to always use the latest releases of this collection and openstacksdk regardless of which version of OpenStack is installed in your cloud.
+
+This collection is compatible with and tested with Ansible 2.9 and later. However, support for old ``os_*`` short module names such as ``os_server`` have been dropped with this release. You have to call modules using their FQCN (Fully-Qualified Collection Name) such as ``openstack.cloud.server`` instead.
+
+Many thanks to all contributors who made this release possible. Tens of thousands LOCs have been reviewed and changed and fixed and tested throughout last year. You rock!
+
+Major Changes
+-------------
+
+- Many modules gained support for Ansible's check mode or have been fixed to properly implement a no change policy during check mode runs.
+- Many modules gained support for updates. In the past, those modules allowed to create and delete OpenStack cloud resources but would ignore when module options had been changed.
+- Many modules such as ``openstack.cloud.server``, ``openstack.cloud.baremetal_node`` and all load-balancer related modules now properly implement the ``wait`` option. For example, when ``wait`` is set to ``true`` then modules will not return until resources have reached its ``active`` or ``deleted`` state.
+- Module ``openstack.cloud.resource`` has been added. It provides an generic and uniform interface to create, update and delete any OpenStack cloud resource which openstacksdk supports. This module unlocks a huge amount of functionality from OpenStack clouds to Ansible users which has been inaccessible with existing modules so far.
+- Module ``openstack.cloud.resources`` has been added. It provides an generic and uniform interface to list any type of OpenStack cloud resources which openstacksdk supports. This module fetch any OpenStack cloud resource without having to implement a new Ansible ``*_info`` module for this type of resource first.
+- Module ``openstack.cloud.subnet_pool`` has been added. It allows to create and delete subnet pools in OpenStack clouds.
+- Module examples have been improved and updated for most modules.
+- Module results have been properly documented for all modules.
+- Options in all modules have been renamed to match openstacksdk's attribute names (if applicable). The previous option names have been added as aliases to keep module options backward compatible.
+- Our CI integration tests have been massively expanded. Our test coverage spans across all modules and plugins now, including tests for our inventory plugin and our new ``openstack.cloud.resource`` and ``openstack.cloud.resources`` modules.
+- Our contributors documentation has been heavily extended. In directory ``docs`` you will find the rationale for our branching strategy, a developer's guide on how to contribute to the collection, a tutorial to set up a DevStack environment for hacking on and testing the collection, a step-by-step guide for publishing new releases and a list of questions to ask when doing reviews or submitting patches for review.
+
+Minor Changes
+-------------
+
+- Added generic module options ``sdk_log_path`` and ``sdk_log_level`` which allow to track openstacksdk activity.
+- Many more options were added to modules but we stopped counting at one point...
+- Module ``openstack.cloud.coe_cluster`` gained support for option ``is_floating_ip_enabled``.
+- Module ``openstack.cloud.lb_listener`` gained options ``default_tls_container_ref`` and ``sni_container_refs`` which allow to specify TLS certificates when using the ``TERMINATED_HTTPS`` protocol.
+- Module ``openstack.cloud.network`` gained support for updates, i.e. existing networks will be properly updated now when module options such as ``mtu`` or ``admin_state_up`` have been changed.
+- Module ``openstack.cloud.port`` gained an ``description`` option.
+- Module ``openstack.cloud.role_assignment`` gained an ``system`` option.
+- Module ``openstack.cloud.security_group_rule`` gained an ``description`` option.
+- Module ``openstack.cloud.server_action`` gained an option ``all_projects`` which allows to execute actions on servers outside of the current auth-scoped project (if the user has permission to do so).
+- Module ``openstack.cloud.server_info`` gained an ``description`` option.
+- Module ``openstack.cloud.server`` gained an ``description`` option.
+- Module ``openstack.cloud.server`` gained support for updates. For example, options such as ``description`` and floating ip addresses can be updated now.
+- Module ``openstack.cloud.subnet`` gained an ``subnet_pool`` option.
+
+Breaking Changes / Porting Guide
+--------------------------------
+
+- 2.x.x releases of this collection are not backward compatible with 1.x.x releases. Backward compatibility is guaranteed within each release series only. Module options have been kept backward compatible across both release series, apart from a few exceptions noted below. However, module results have changed for most modules due to deep changes in openstacksdk. For easier porting and usage, we streamlined return values across modules and documented return values of all modules.
+- Default value for option ``security_groups`` in ``openstack.cloud.server`` has been changed from ``['default']`` to ``[]`` because the latter is the default in python-openstackclient and the former behavior causes issues with existing servers.
+- Dropped symbolic links with prefix ``os_`` and plugin routing for deprecated ``os_*`` module names. This means users have to call modules of the Ansible OpenStack collection using their FQCN (Fully Qualified Collection Name) such as ``openstack.cloud.server``. Short module names such as ``os_server`` will now raise an Ansible error.
+- Module ``openstack.cloud.project_access`` has been split into two separate modules ``openstack.cloud.compute_flavor_access`` and ``openstack.cloud.volume_type_access``.
+- Option ``availability_zone`` has been removed from the list of generic options available in all modules. Instead it has been inserted into the ``openstack.cloud.server`` and ``openstack.cloud.volume`` modules because it is relevant to those two modules only.
+- Option ``name`` of module ``openstack.cloud.port`` is required now because it is used to find, update and delete ports and idempotency would break otherwise.
+- Option ``policies`` has been replaced with option ``policy`` in module ``openstack.cloud.server_group``. The former is ancient and was superceded by ``policy`` a long time ago.
+- Release series 2.x.x of this collection is compatible with openstacksdk 1.0.0 and later only. For compatibility with openstacksdk < 0.99.0 use release series 1.x.x of this collection. Ansible will raise an error when modules and plugins in this collection are used with an incompatible release of openstacksdk.
+- Special value ``auto`` for option ``id`` in module ``openstack.cloud.compute_flavor`` has been deprecated to be consistent with our other modules and openstacksdk's behaviour.
+
+Deprecated Features
+-------------------
+
+- Option ``is_public`` in module ``openstack.cloud.image`` has been deprecated and replaced with option ``visibility``.
+- Option ``volume`` in module ``openstack.cloud.image`` has been deprecated and it should be replaced with module ``openstack.cloud.volume`` in user code.
+
+Removed Features (previously deprecated)
+----------------------------------------
+
+- Dropped deprecated ``skip_update_of_driver_password`` option from module ``openstack.cloud.baremetal_node``.
+- Dropped unmaintained, obsolete and broken inventory script ``scripts/inventory/openstack_inventory.py``. It had been replaced with a proper Ansible inventory plugin ``openstack.cloud.openstack`` during the 1.x.x life cycle.
+- Module ``openstack.cloud.object`` no longer allows to create and delete containers, its sole purpose is managing an object in a container now. Use module ``openstack.cloud.object_container`` to managing Swift containers instead.
+- Option ``listeners`` has been removed from module ``openstack.cloud.loadbalancer`` because it duplicates a subset of the functionality (and code) provided by our ``openstack.cloud.lb_{listener,member,pool}`` modules.
+- Our outdated, undocumented, untested and bloated code templates in ``contrib`` directory which could be used to generate and develop new Ansible modules for this collection have been removed.
+
+Bugfixes
+--------
+
+- Ansible check mode has been fixed in module ``openstack.cloud.compute_flavor``, it will no longer apply changes when check mode is enabled.
+- Creating load-balancers with module ``openstack.cloud.loadbalancer`` properly handles situations where several provider networks exist. A floating ip address specified in option ``floating_ip_address`` will be allocated from Neutron external network specified in option ``floating_ip_network``.
+- Default values for options ``shared``, ``admin_state_up`` and ``external`` in module ``openstack.cloud.network`` have been dropped because they cause failures for clouds which do not have those optional extensions installed.
+- Dropped default values for options ``min_disk`` and ``min_ram`` in module ``openstack.cloud.image`` because it interferes with its update mechanism and Glance uses those values anyway. Fixed handling of options ``name``, ``id``, ``visibility`` and ``is_public``.
+- Module ``openstack.cloud.baremetal_node_info`` will now properly return machine details when iterating over all available baremetal nodes.
+- Module ``openstack.cloud.host_aggregate`` now correctly handles ``hosts`` not being set or being set to ``None``.
+- Module ``openstack.cloud.identity_user`` will no longer fail when no password is supplied since Keystone allows to create a user without an password.
+- Module ``openstack.cloud.keypair`` no longer removes trailing spaces when reading a public key because this broke idempotency when using openstackclient and this module at the same time.
+- Module ``openstack.cloud.quota`` no longer sends invalid attributes such as ``project_id`` to OpenStack API when updating Nova, Neutron and Cinder quotas.
+- Module ``openstack.cloud.server`` will no longer change security groups to ``['default']`` on existing servers when option ``security_groups`` has not been specified.
+- Module ``openstack.cloud.subnet`` now properly handles updates, thus idempotency has been fixed and restored.
+- Modules ``openstack.cloud.security_group`` and ``openstack.cloud.security_group_rule`` gained support for specifying string ``any`` as a valid protocol in security group rules.
+- Option ``interfaces`` in module ``openstack.cloud.router`` no longer requires option ``network`` to be set, it is ``external_fixed_ips`` what requires ``network``.
+- Option ``is_public`` in module ``openstack.cloud.image`` will now be handled as a boolean instead of a string to be compatible to Glance API and fix issues when interacting with Glance service.
+- Option ``network`` in module ``openstack.cloud.router`` is now propery marked as required by options ``enable_snat`` and ``external_fixed_ips``.
+- Option ``owner`` in module ``openstack.cloud.image`` is now respected when searching for and creating images.
+- Our OpenStack inventory plugin now properly supports Ansible's cache feature.
 
 v1.7.1
 ======

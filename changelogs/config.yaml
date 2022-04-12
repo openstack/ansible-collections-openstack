@@ -6,9 +6,9 @@ ignore_other_fragment_extensions: true
 keep_fragments: false
 mention_ancestor: true
 new_plugins_after_name: removed_features
-notesdir: fragments
-prelude_section_name: release_summary
-prelude_section_title: Release Summary
+notes_dir: fragments
+prelude_name: release_summary
+prelude_title: Release Summary
 sections:
 - - major_changes
   - Major Changes
@@ -26,6 +26,6 @@ sections:
   - Bugfixes
 - - known_issues
   - Known Issues
-title: Openstack Cloud Ansilbe modules
+title: Ansible OpenStack Collection
 trivial_section_name: trivial
 use_fqcn: true
