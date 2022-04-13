@@ -63,13 +63,13 @@
         dns_zone_info
         floating_ip_info
         group
+        identity_role
         image
         keypair
         keystone_domain
         keystone_federation_protocol
         keystone_idp
         keystone_mapping
-        keystone_role
         loadbalancer
         nova_flavor
         nova_services

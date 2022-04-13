@@ -47,12 +47,24 @@ RETURN = '''
 role:
     description: Dictionary describing the role.
     returned: On success when I(state) is 'present'.
-    type: complex
+    type: list
+    elements: dict
     contains:
+        description:
+            description: Description of the role resource
+            type: str
+            sample: role description
+        domain_id:
+            description: Domain to which the role belongs
+            type: str
+            sample: default
         id:
             description: Unique role ID.
             type: str
             sample: "677bfab34c844a01b88a217aa12ec4c2"
+        links:
+            description: Links for the role resource
+            type: list
         name:
             description: Role name.
             type: str
@@ -83,25 +95,22 @@ class IdentityRoleModule(OpenStackModule):
         name = self.params.get('name')
         state = self.params.get('state')
 
-        role = self.conn.get_role(name)
+        role = self.conn.identity.find_role(name)
 
         if self.ansible.check_mode:
             self.exit_json(changed=self._system_state_change(state, role))
 
+        changed = False
         if state == 'present':
             if role is None:
-                role = self.conn.create_role(name)
+                role = self.conn.identity.create_role(name=name)
                 changed = True
-            else:
-                changed = False
+            role = role.to_dict(computed=False)
             self.exit_json(changed=changed, role=role)
-        elif state == 'absent':
-            if role is None:
-                changed = False
-            else:
-                self.conn.delete_role(name)
-                changed = True
-            self.exit_json(changed=changed)
+        elif state == 'absent' and role is not None:
+            self.conn.identity.delete_role(role['id'])
+            changed = True
+        self.exit_json(changed=changed)
 
 
 def main():

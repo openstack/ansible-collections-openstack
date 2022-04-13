@@ -1,0 +1,7 @@
+role_name: ansible_keystone_role
+expected_fields:
+  - description
+  - domain_id
+  - id
+  - links
+  - name

@@ -1,0 +1,83 @@
+---
+- name: Cleanup before tests
+  block:
+    - openstack.cloud.identity_role:
+        cloud: "{{ cloud }}"
+        state: absent
+        name: "{{ role_name }}"
+
+- block:
+  - name: Delete unexistent role
+    openstack.cloud.identity_role:
+      cloud: "{{ cloud }}"
+      state: absent
+      name: "{{ role_name }}"
+    register: role
+  - name: Assert role didn't change
+    assert:
+      that: role is not changed
+
+- block:
+  - name: Create keystone role
+    openstack.cloud.identity_role:
+      cloud: "{{ cloud }}"
+      state: present
+      name: "{{ role_name }}"
+    register: role
+  - name: Try to get role
+    openstack.cloud.identity_role_info:
+       cloud: "{{ cloud }}"
+       name: "{{ role_name }}"
+    register: roles
+  - name: Assert role found
+    assert:
+      that:
+        - roles.openstack_roles | length == 1
+  - name: Assert role changed
+    assert:
+      that: role is changed
+  - name: Assert return fields
+    assert:
+      that: item in role['role']
+    loop: "{{ expected_fields }}"
+  - name: Assert return value
+    assert:
+      that: role['role']['name'] == role_name
+  - name: Assert retrieved values
+    assert:
+      that: roles.openstack_roles[0].name == role_name
+
+- block:
+  - name: Create existing keystone role
+    openstack.cloud.identity_role:
+      cloud: "{{ cloud }}"
+      state: present
+      name: "{{ role_name }}"
+    register: role
+  - name: Assert role not changed
+    assert:
+      that: role is not changed
+  - name: Assert return fields
+    assert:
+      that: item in role['role']
+    loop: "{{ expected_fields }}"
+
+- block:
+  - name: Delete keystone role
+    openstack.cloud.identity_role:
+      cloud: "{{ cloud }}"
+      state: absent
+      name: "{{ role_name }}"
+    register: role
+  - name: Assert role changed
+    assert:
+      that: role is changed
+  - name: Try to get role
+    openstack.cloud.identity_role_info:
+       cloud: "{{ cloud }}"
+       name: "{{ role_name }}"
+    register: roles
+  - name: Assert no role found
+    assert:
+      that:
+        - roles.openstack_roles | length == 0
