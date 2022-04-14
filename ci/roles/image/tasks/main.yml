@@ -57,11 +57,6 @@
      state: absent
      name: "{{ image_name }}"
 
-- name: Delete test image file
-  file:
-     name: "{{ tmp_file.stdout }}"
-     state: absent
-
 - name: Try to get details of deleted image
   openstack.cloud.image_info:
     cloud: "{{ cloud }}"
@@ -72,3 +67,82 @@
   assert:
     that:
       - not deleted_image_info_result.images
+
+- name: Create owner project
+  openstack.cloud.project:
+     cloud: "{{ cloud }}"
+     state: present
+     name: image_owner_project
+     description: Project owning test image
+     domain_id: default
+     enabled: True
+  register: owner_project
+
+- name: Create raw image (owner by project name)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ image_name }}"
+     filename: "{{ tmp_file.stdout }}"
+     disk_format: raw
+     tags: "{{ image_tags }}"
+     project: image_owner_project
+  register: image
+
+- name: Get details of created image (owner by project name)
+  openstack.cloud.image_info:
+    cloud: "{{ cloud }}"
+    image: "{{ image_name }}"
+  register: image_info_result
+
+- name: Verify image owner (owner by project name)
+  assert:
+    that:
+      - image_info_result.images[0].owner == owner_project.project.id
+
+- name: Delete raw image (owner by project name)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ image_name }}"
+
+- name: Create raw image (owner by project name and domain name)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ image_name }}"
+     filename: "{{ tmp_file.stdout }}"
+     disk_format: raw
+     tags: "{{ image_tags }}"
+     project: image_owner_project
+     project_domain: default
+  register: image
+
+- name: Get details of created image (owner by project name and domain name)
+  openstack.cloud.image_info:
+    cloud: "{{ cloud }}"
+    image: "{{ image_name }}"
+  register: image_info_result
+
+- name: Verify image owner (owner by project name and domain name)
+  assert:
+    that:
+      - image_info_result.images[0].owner == owner_project.project.id
+
+- name: Delete raw image (owner by project name and domain name)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ image_name }}"
+
+- name: Delete owner project
+  openstack.cloud.project:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: image_owner_project
+     domain_id: default
+
+- name: Delete test image file
+  file:
+     name: "{{ tmp_file.stdout }}"
+     state: absent

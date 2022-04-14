@@ -40,9 +40,15 @@ options:
      default: bare
      choices: ['ami', 'aki', 'ari', 'bare', 'ovf', 'ova', 'docker']
      type: str
-   owner:
+   project:
      description:
-        - The owner of the image
+        - The name or ID of the project owning the image
+     type: str
+     aliases: ['owner']
+   project_domain:
+     description:
+        - The domain the project owning the image belongs to
+        - May be used to identify a unique project when providing a name to the project argument and multiple projects with such name exist
      type: str
    min_disk:
      description:
@@ -170,7 +176,8 @@ class ImageModule(OpenStackModule):
         disk_format=dict(default='qcow2',
                          choices=['ami', 'ari', 'aki', 'vhd', 'vmdk', 'raw', 'qcow2', 'vdi', 'iso', 'vhdx', 'ploop']),
         container_format=dict(default='bare', choices=['ami', 'aki', 'ari', 'bare', 'ovf', 'ova', 'docker']),
-        owner=dict(type='str'),
+        project=dict(type='str', aliases=['owner']),
+        project_domain=dict(type='str'),
         min_disk=dict(type='int', default=0),
         min_ram=dict(type='int', default=0),
         is_public=dict(type='bool', default=False),
@@ -203,6 +210,16 @@ class ImageModule(OpenStackModule):
                 kwargs = {}
                 if self.params['id'] is not None:
                     kwargs['id'] = self.params['id']
+                if self.params['project']:
+                    project_domain = {'id': None}
+                    if self.params['project_domain']:
+                        project_domain = self.conn.get_domain(name_or_id=self.params['project_domain'])
+                        if not project_domain or project_domain['id'] is None:
+                            self.fail(msg='Project domain %s could not be found' % self.params['project_domain'])
+                    project = self.conn.get_project(name_or_id=self.params['project'], domain_id=project_domain['id'])
+                    if not project:
+                        self.fail(msg='Project %s could not be found' % self.params['project'])
+                    kwargs['owner'] = project['id']
                 image = self.conn.create_image(
                     name=self.params['name'],
                     filename=self.params['filename'],
