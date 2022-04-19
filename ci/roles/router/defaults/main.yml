@@ -1,3 +1,23 @@
+expected_fields:
+  - availability_zone_hints
+  - availability_zones
+  - created_at
+  - description
+  - external_gateway_info
+  - flavor_id
+  - id
+  - interfaces_info
+  - is_admin_state_up
+  - is_distributed
+  - is_ha
+  - name
+  - project_id
+  - revision_number
+  - routes
+  - status
+  - tags
+  - tenant_id
+  - updated_at
 external_network_name: ansible_external_net
 network_external: true
 router_name: ansible_router

@@ -99,6 +99,7 @@
         project_info
         recordset
         role_assignment
+        router
         security_group
         security_group_rule
         subnet
@@ -111,7 +112,6 @@
       # floating_ip
       # orchestrate
       # neutron_rbac
-      # router
       # server
 
 - job:

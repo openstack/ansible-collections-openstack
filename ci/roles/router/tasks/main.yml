@@ -77,8 +77,28 @@
 - name: Verify routers info
   assert:
     that:
-      - "result.openstack_routers.0.name == router_name"
-      - (result.openstack_routers.0.interfaces_info|length) == 1
+      - "result.routers.0.name == router_name"
+      - (result.routers.0.interfaces_info|length) == 1
+
+- name: Gather routers info with filters
+  openstack.cloud.routers_info:
+      cloud: "{{ cloud }}"
+      filters:
+        admin_state_up: true
+        name: "{{ router_name }}"
+  register: result_filter
+
+- name: Verify routers info with filter
+  assert:
+    that:
+      - "result_filter.routers.0.name == router_name"
+      - (result_filter.routers.0.interfaces_info|length) == 1
+
+- name: Verify returned values
+  assert:
+    that:
+      - item in result.routers[0]
+  loop: '{{ expected_fields }}'
 
 - name: Update router (change interfaces)
   openstack.cloud.router:
@@ -116,15 +136,15 @@
      cloud: "{{ cloud }}"
      name: "{{ router_name }}"
      filters:
-       admin_state_up: true
+       is_admin_state_up: true
   register: result
 
 - name: Verify routers info
   assert:
     that:
-      - "result.openstack_routers.0.name == router_name"
-      - (result.openstack_routers.0.interfaces_info|length) == 3
-      - result.openstack_routers.0.interfaces_info|map(attribute='ip_address')|sort|list ==
+      - "result.routers.0.name == router_name"
+      - (result.routers.0.interfaces_info|length) == 3
+      - result.routers.0.interfaces_info|map(attribute='ip_address')|sort|list ==
         ['10.10.10.1', '10.8.8.1', '10.9.9.1']
 
 - name: Update router (remove interface)
@@ -157,15 +177,15 @@
      cloud: "{{ cloud }}"
      name: "{{ router_name }}"
      filters:
-       admin_state_up: true
+       is_admin_state_up: true
   register: result
 
 - name: Verify routers info
   assert:
     that:
-      - "result.openstack_routers.0.name == router_name"
-      - (result.openstack_routers.0.interfaces_info|length) == 1
-      - result.openstack_routers.0.interfaces_info.0.ip_address == '10.7.7.1'
+      - "result.routers.0.name == router_name"
+      - (result.routers.0.interfaces_info|length) == 1
+      - result.routers.0.interfaces_info.0.ip_address == '10.7.7.1'
 
 # Admin operation
 - name: Create external network
@@ -209,8 +229,8 @@
 - name: Verify routers info
   assert:
     that:
-      - "result.openstack_routers.0.name == router_name"
-      - (result.openstack_routers.0.interfaces_info|length) == 1
+      - "result.routers.0.name == router_name"
+      - (result.routers.0.interfaces_info|length) == 1
 
 - name: Update router (change external fixed ips)
   openstack.cloud.router:
@@ -237,9 +257,9 @@
 - name: Verify routers info
   assert:
     that:
-      - "result.openstack_routers.0.name == router_name"
-      - (result.openstack_routers.0.external_gateway_info.external_fixed_ips|length) == 1
-      - result.openstack_routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.100"
+      - "result.routers.0.name == router_name"
+      - (result.routers.0.external_gateway_info.external_fixed_ips|length) == 1
+      - result.routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.100"
   when:
     - network_external
 
@@ -291,9 +311,9 @@
 - name: Verify routers info
   assert:
     that:
-      - "result.openstack_routers.0.name == router_name"
-      - (result.openstack_routers.0.external_gateway_info.external_fixed_ips|length) == 2
-      - result.openstack_routers.0.external_gateway_info.external_fixed_ips|map(attribute='ip_address')|sort|list ==
+      - "result.routers.0.name == router_name"
+      - (result.routers.0.external_gateway_info.external_fixed_ips|length) == 2
+      - result.routers.0.external_gateway_info.external_fixed_ips|map(attribute='ip_address')|sort|list ==
         ["10.6.6.100", "10.6.6.101"]
   when:
     - network_external
@@ -342,9 +362,9 @@
 - name: Verify routers info
   assert:
     that:
-      - "result.openstack_routers.0.name == router_name"
-      - (result.openstack_routers.0.external_gateway_info.external_fixed_ips|length) == 1
-      - result.openstack_routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.101"
+      - "result.routers.0.name == router_name"
+      - (result.routers.0.external_gateway_info.external_fixed_ips|length) == 1
+      - result.routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.101"
   when:
     - network_external
 

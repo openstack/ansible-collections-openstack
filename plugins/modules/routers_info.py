@@ -37,7 +37,7 @@ options:
          description:
            - Filter the list result by the human-readable description of the resource.
          type: str
-       admin_state_up:
+       is_admin_state_up:
          description:
            - Filter the list result by the administrative state of the resource, which is up (true) or down (false).
          type: bool
@@ -69,7 +69,7 @@ EXAMPLES = '''
 
 - name: Show openstack routers
   debug:
-    msg: "{{ result.openstack_routers }}"
+    msg: "{{ result.routers }}"
 
 - name: Gather information about a router by name
   openstack.cloud.routers_info:
@@ -83,7 +83,7 @@ EXAMPLES = '''
 
 - name: Show openstack routers
   debug:
-    msg: "{{ result.openstack_routers }}"
+    msg: "{{ result.routers }}"
 
 - name: Gather information about a router with filter
   openstack.cloud.routers_info:
@@ -93,56 +93,97 @@ EXAMPLES = '''
       password: password
       project_name: someproject
     filters:
-      tenant_id: bc3ea709c96849d6b81f54640400a19f
+      is_admin_state_up: True
   register: result
 
 - name: Show openstack routers
   debug:
-    msg: "{{ result.openstack_routers }}"
+    msg: "{{ result.routers }}"
 '''
 
 RETURN = '''
-openstack_routers:
+routers:
     description: has all the openstack information about the routers
     returned: always, but can be null
-    type: complex
+    type: list
+    elements: dict
     contains:
-        id:
-            description: Unique UUID.
+        availability_zones:
+            description: Availability zones
+            returned: success
+            type: list
+        availability_zone_hints:
+            description: Availability zone hints
+            returned: success
+            type: list
+        created_at:
+            description: Date and time when the router was created
             returned: success
             type: str
-        name:
-            description: Name given to the router.
-            returned: success
-            type: str
-        status:
-            description: Router status.
+        description:
+            description: Description notes of the router
             returned: success
             type: str
         external_gateway_info:
             description: The external gateway information of the router.
             returned: success
             type: dict
+        flavor_id:
+            description: ID of the flavor of the router
+            returned: success
+            type: str
+        id:
+            description: Unique UUID.
+            returned: success
+            type: str
         interfaces_info:
             description: List of connected interfaces.
             returned: success
             type: list
-        distributed:
+        is_admin_state_up:
+            description: Network administrative state
+            returned: success
+            type: bool
+        is_distributed:
             description: Indicates a distributed router.
             returned: success
             type: bool
-        ha:
+        is_ha:
             description: Indicates a highly-available router.
             returned: success
             type: bool
+        name:
+            description: Name given to the router.
+            returned: success
+            type: str
         project_id:
             description: Project id associated with this router.
             returned: success
             type: str
+        revision_number:
+            description: Revision number
+            returned: success
+            type: int
         routes:
             description: The extra routes configuration for L3 router.
             returned: success
             type: list
+        status:
+            description: Router status.
+            returned: success
+            type: str
+        tags:
+            description: List of tags
+            returned: success
+            type: list
+        tenant_id:
+            description: Owner tenant ID
+            returned: success
+            type: str
+        updated_at:
+            description: Date of last update on the router
+            returned: success
+            type: str
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -154,24 +195,30 @@ class RouterInfoModule(OpenStackModule):
 
     argument_spec = dict(
         name=dict(required=False, default=None),
-        filters=dict(required=False, type='dict', default=None)
+        filters=dict(required=False, type='dict', default={})
     )
     module_kwargs = dict(
         supports_check_mode=True
     )
 
     def run(self):
+        routers = self.conn.search_routers(name_or_id=self.params['name'],
+                                           filters=self.params['filters'])
 
-        kwargs = self.check_versioned(
-            filters=self.params['filters']
-        )
-        if self.params['name']:
-            kwargs['name_or_id'] = self.params['name']
-        routers = self.conn.search_routers(**kwargs)
+        routers = [r.to_dict(computed=False) for r in routers]
 
+        # The following code replicates self.conn.list_router_interfaces()
+        # but only uses a single api call per router instead of four api
+        # calls as the former does.
+        allowed_device_owners = ('network:router_interface',
+                                 'network_router_interface_distributed',
+                                 'network:ha_router_replicated_interface',
+                                 'network:router_gateway')
         for router in routers:
             interfaces_info = []
-            for port in self.conn.list_router_interfaces(router):
+            for port in self.conn.network.ports(device_id=router['id']):
+                if port.device_owner not in allowed_device_owners:
+                    continue
                 if port.device_owner != "network:router_gateway":
                     for ip_spec in port.fixed_ips:
                         int_info = {
@@ -182,7 +229,7 @@ class RouterInfoModule(OpenStackModule):
                         interfaces_info.append(int_info)
             router['interfaces_info'] = interfaces_info
 
-        self.exit(changed=False, openstack_routers=routers)
+        self.exit(changed=False, routers=routers)
 
 
 def main():
