@@ -494,6 +494,8 @@
     nodeset: ubuntu-bionic
     description: |
       Run openstack collections linter tests using the 2.9 branch of ansible
+    # TODO: Change back to voting once ansible-test is compatible with rstcheck on Python 3.6
+    voting: false
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
@@ -629,7 +631,8 @@
         - ansible-collections-openstack-functional-devstack:
             dependencies: &deps_unit_lint
               - tox-pep8
-              - openstack-tox-linters-ansible-2.9
+              # TODO: Add back once ansible-test is compatible with rstcheck on Python 3.6
+              #- openstack-tox-linters-ansible-2.9
               - openstack-tox-linters-ansible-2.12
             voting: false
 
@@ -678,7 +681,8 @@
       jobs:
         - tox-pep8
         - openstack-tox-linters-ansible-2.12
-        - openstack-tox-linters-ansible-2.9
+        # TODO: Add back once ansible-test is compatible with rstcheck on Python 3.6
+        #- openstack-tox-linters-ansible-2.9
         # - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         # - ansible-collections-openstack-functional-devstack-ansible-2.9
