@@ -57,9 +57,10 @@ options:
         - Whether the image can be accessed publicly. Note that publicizing an image requires admin role by default.
      type: bool
      default: false
-   protected:
+   is_protected:
      description:
         - Prevent image from being deleted
+     aliases: ['protected']
      type: bool
      default: false
    filename:
@@ -173,7 +174,7 @@ class ImageModule(OpenStackModule):
         min_disk=dict(type='int', default=0),
         min_ram=dict(type='int', default=0),
         is_public=dict(type='bool', default=False),
-        protected=dict(type='bool', default=False),
+        is_protected=dict(type='bool', default=False, aliases=['protected']),
         filename=dict(type='str'),
         ramdisk=dict(type='str'),
         kernel=dict(type='str'),
@@ -210,7 +211,7 @@ class ImageModule(OpenStackModule):
                     wait=self.params['wait'],
                     timeout=self.params['timeout'],
                     is_public=self.params['is_public'],
-                    protected=self.params['protected'],
+                    is_protected=self.params['is_protected'],
                     min_disk=self.params['min_disk'],
                     min_ram=self.params['min_ram'],
                     volume=self.params['volume'],
@@ -225,7 +226,7 @@ class ImageModule(OpenStackModule):
                 image=image,
                 kernel=self.params['kernel'],
                 ramdisk=self.params['ramdisk'],
-                protected=self.params['protected'],
+                is_protected=self.params['is_protected'],
                 **self.params['properties'])
             if self.params['tags']:
                 self.conn.image.update_image(image.id, tags=self.params['tags'])
