@@ -91,7 +91,7 @@ options:
     type: str
 requirements:
   - python >= 3.6
-  - openstacksdk >= 0.12.0
+  - openstacksdk >= 0.36.0
 notes:
   - The standard OpenStack environment variables, such as C(OS_USERNAME)
     may be used instead of providing explicit values.
