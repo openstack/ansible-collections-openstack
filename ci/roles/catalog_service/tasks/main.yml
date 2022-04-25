@@ -1,0 +1,94 @@
+---
+- name: Delete service test
+  openstack.cloud.catalog_service:
+    cloud: "{{ cloud }}"
+    service_type: test
+    name: test
+    state: absent
+  register: service_delete
+
+- name: Assert changed is set to false
+  assert:
+    that:
+      - not service_delete.changed
+
+- name: Create a service for test
+  openstack.cloud.catalog_service:
+    cloud: "{{ cloud }}"
+    name: "test_service"
+    state: present
+    service_type: test_type
+    description: "Test service"
+  register: service_test
+
+- name: Verify returned values
+  assert:
+    that:
+      - item in service_test.service
+  loop:
+    - description
+    - id
+    - is_enabled
+    - links
+    - name
+    - type
+
+- name: Check if the service test was created successfully
+  openstack.cloud.catalog_service:
+    cloud: "{{ cloud }}"
+    service_type: test
+    name: test
+  register: service_created
+
+- name: Verify returned values
+  assert:
+    that:
+      - item in service_created.service
+  loop:
+    - description
+    - id
+    - is_enabled
+    - links
+    - name
+    - type
+
+- name: Update service test
+  openstack.cloud.catalog_service:
+    cloud: "{{ cloud }}"
+    service_type: test
+    description: "A new description"
+    is_enabled: False
+    name: test
+  register: service_test
+
+- name: Check if description and enabled were updated
+  assert:
+    that:
+      - service_test.service.description == "A new description"
+      - not (service_test.service.is_enabled|bool)
+
+- name: Delete service test
+  openstack.cloud.catalog_service:
+    cloud: "{{ cloud }}"
+    service_type: test
+    name: test
+    state: absent
+  register: service_deleted
+
+- name: Verify if service was deleted
+  assert:
+    that:
+      - service_deleted.changed
+
+- name: Delete service test again
+  openstack.cloud.catalog_service:
+    cloud: "{{ cloud }}"
+    service_type: test
+    name: test
+    state: absent
+  register: service_deleted
+
+- name: Assert changed is set to false
+  assert:
+    that:
+      - not service_deleted.changed
