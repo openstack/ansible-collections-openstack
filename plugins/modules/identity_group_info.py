@@ -87,10 +87,11 @@ EXAMPLES = '''
 
 
 RETURN = '''
-openstack_groups:
+groups:
     description: Dictionary describing all the matching groups.
-    returned: always, but can be null
-    type: complex
+    returned: always, but can be an empty list
+    type: list
+    elements: dict
     contains:
         name:
             description: Name given to the group.
@@ -126,26 +127,18 @@ class IdentityGroupInfoModule(OpenStackModule):
     def run(self):
         name = self.params['name']
         domain = self.params['domain']
-        filters = self.params['filters']
+        filters = self.params['filters'] or {}
 
+        args = {}
         if domain:
-            try:
-                # We assume admin is passing domain id
-                dom = self.conn.get_domain(domain)['id']
-                domain = dom
-            except Exception:
-                # If we fail, maybe admin is passing a domain name.
-                # Note that domains have unique names, just like id.
-                dom = self.conn.search_domains(filters={'name': domain})
-                if dom:
-                    domain = dom[0]['id']
-                else:
-                    self.fail_json(msg='Domain name or ID does not exist')
+            dom = self.conn.identity.find_domain(domain)
+            if dom:
+                args['domain_id'] = dom['id']
+            else:
+                self.fail_json(msg='Domain name or ID does not exist')
 
-            if not filters:
-                filters = {}
-
-        groups = self.conn.search_groups(name, filters, domain_id=domain)
+        groups = self.conn.search_groups(name, filters, **args)
+        groups = [g.to_dict(computed=False) for g in groups]
         self.exit_json(changed=False, groups=groups)
 
 

@@ -1,0 +1,74 @@
+---
+- name: List group by domain_id
+  openstack.cloud.identity_group_info:
+    cloud: "{{ cloud }}"
+    domain: default
+  register: group_domain
+
+- name: Assert groups were returned
+  assert:
+    that:
+      - group_domain.groups | length > 0
+      - group_domain.groups[0].domain_id == 'default'
+      - group_domain.groups[0].id is defined
+      - group_domain.groups[0].description is defined
+      - group_domain.groups[0].name is defined
+
+- name: List group by domain_id and group
+  openstack.cloud.identity_group_info:
+    cloud: "{{ cloud }}"
+    domain: default
+    name: admins
+  register: groups_info
+
+- name: Assert groups by domain_id and grouph returned
+  assert:
+    that:
+      - groups_info.groups | length > 0
+      - groups_info.groups[0].domain_id == 'default'
+      - groups_info.groups[0].id is defined
+      - groups_info.groups[0].description is defined
+      - groups_info.groups[0].name is defined
+
+- name: List group by filter
+  openstack.cloud.identity_group_info:
+    cloud: "{{ cloud }}"
+    domain: default
+    filters:
+      name: admins
+  register: groups_filter
+
+- name: Assert group by filter returned
+  assert:
+    that:
+      - groups_filter.groups | length > 0
+      - groups_filter.groups[0].domain_id == 'default'
+      - groups_filter.groups[0].id is defined
+      - groups_filter.groups[0].description is defined
+      - groups_filter.groups[0].name is defined
+
+- name: Verify returned values of group info
+  assert:
+    that:
+      - item in groups_info.groups[0]
+  loop:
+    - description
+    - domain_id
+    - id
+    - name
+
+- name: List group by group name
+  openstack.cloud.identity_group_info:
+    cloud: "{{ cloud }}"
+    name: admins
+  register: groups_name
+
+- name: Assert group by name returned
+  assert:
+    that:
+      - groups_name.groups | length > 0
+      - groups_name.groups[0].domain_id == 'default'
+      - groups_name.groups[0].id is defined
+      - groups_name.groups[0].description is defined
+      - groups_name.groups[0].name is defined
+      - groups_name.groups[0].name == 'admins'
