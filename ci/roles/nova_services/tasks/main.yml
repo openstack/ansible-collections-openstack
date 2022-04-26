@@ -3,20 +3,22 @@
 - name: Get nova compute services info
   openstack.cloud.compute_service_info:
     cloud: "{{ cloud }}"
-    binary: "nova-compute"
   register: result
   failed_when: "result.openstack_compute_services | length <= 0"
 
 - name: Assert fields
   assert:
     that:
-      - '["availability_zone", "binary", "disabled_reason", "is_forced_down",
-          "host", "name", "state", "status", "updated_at", "id"] |
-          difference(result.openstack_compute_services.0.keys()) | length == 0'
+    - '["availability_zone", "binary", "disabled_reason", "is_forced_down",
+        "host", "name", "state", "status", "updated_at", "id"] |
+        difference(result.openstack_compute_services.0.keys()) | length == 0'
 
-- name: Get nova conductor services info
-  openstack.cloud.compute_service_info:
-    cloud: "{{ cloud }}"
-    binary: "nova-conductor"
-  register: result
-  failed_when: "result.openstack_compute_services | length <= 0"
+- name: Filter compute services. Supported since OpenStack SDK 0.53.0 (Wallaby).
+  when: sdk_version is version(0.53, '>=')
+  block:
+  - name: Get nova compute services info
+    openstack.cloud.compute_service_info:
+      cloud: "{{ cloud }}"
+      binary: "nova-compute"
+    register: result
+    failed_when: "result.openstack_compute_services | length <= 0"
