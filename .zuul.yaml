@@ -442,6 +442,9 @@
       - # Choose parent devstack job from stable/queens branch
         name: openstack/devstack
         override-checkout: stable/queens
+      - name: openstack/heat
+        # Earliest branch in Heat repository is stable/rocky
+        override-checkout: stable/rocky
       - name: openstack/openstacksdk
         # Run queens with highest possible py2 version of SDK
         override-checkout: stable/train
