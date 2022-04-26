@@ -68,7 +68,7 @@ OVERRIDES = {'os_client_config': 'config',
 CUSTOM_VAR_PARAMS = ['min_ver', 'max_ver']
 
 MINIMUM_SDK_VERSION = '0.36.0'
-MAXIMUM_SDK_VERSION = None
+MAXIMUM_SDK_VERSION = '0.98.999'
 
 
 def openstack_argument_spec():
