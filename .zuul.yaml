@@ -68,6 +68,7 @@
         client_config
         dns
         dns_zone_info
+        endpoint
         floating_ip_info
         group
         host_aggregate
