@@ -18,7 +18,7 @@ options:
      type: str
    filters:
      description:
-        - A dictionary of meta data to use for further filtering.  Elements of
+        - A dictionary of meta data to use for filtering. Elements of
           this dictionary may be additional dictionaries.
      type: dict
 requirements:
@@ -61,7 +61,8 @@ RETURN = '''
 openstack_domains:
     description: has all the OpenStack information about domains
     returned: always, but can be null
-    type: complex
+    type: list
+    elements: dict
     contains:
         id:
             description: Unique UUID.
@@ -75,10 +76,14 @@ openstack_domains:
             description: Description of the domain.
             returned: success
             type: str
-        enabled:
+        is_enabled:
             description: Flag to indicate if the domain is enabled.
             returned: success
             type: bool
+        links:
+            type: list
+            returned: success
+            description: The links related to the domain resource
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -89,10 +94,8 @@ class IdentityDomainInfoModule(OpenStackModule):
         name=dict(required=False, default=None),
         filters=dict(required=False, type='dict', default=None),
     )
+
     module_kwargs = dict(
-        mutually_exclusive=[
-            ['name', 'filters'],
-        ],
         supports_check_mode=True
     )
 
@@ -100,18 +103,14 @@ class IdentityDomainInfoModule(OpenStackModule):
 
     def run(self):
         name = self.params['name']
-        filters = self.params['filters']
+        filters = self.params['filters'] or {}
 
+        args = {}
         if name:
-            # Let's suppose user is passing domain ID
-            try:
-                domains = self.conn.get_domain(name)
-            except Exception:
-                domains = self.conn.search_domains(filters={'name': name})
+            args['name_or_id'] = name
+        args['filters'] = filters
 
-        else:
-            domains = self.conn.search_domains(filters)
-
+        domains = [d.to_dict(computed=False) for d in self.conn.search_domains(**args)]
         self.exit_json(changed=False, openstack_domains=domains)
 
 

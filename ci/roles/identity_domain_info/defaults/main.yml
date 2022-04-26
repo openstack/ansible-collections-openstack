@@ -1,0 +1,9 @@
+domain_name: domain_info_test_domain
+unexistent_domain_name: domain_info_unexistent_domain
+disabled_domain_name: test_domain_disabled
+domain_info_fields:
+  - description
+  - id
+  - is_enabled
+  - name
+  - links

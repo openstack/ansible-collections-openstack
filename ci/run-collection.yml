@@ -16,6 +16,7 @@
       tags: dns
       when: sdk_version is version(0.28, '>=')
     - { role: floating_ip_info, tags: floating_ip_info }
+    - { role: identity_domain_info, tags: identity_domain_info }
     - { role: identity_user, tags: identity_user }
     - { role: identity_user_info, tags: identity_user_info }
     - { role: identity_role, tags: identity_role }
