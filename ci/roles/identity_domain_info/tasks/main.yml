@@ -1,0 +1,72 @@
+---
+- block:
+  - name: Ensure domain does not exist
+    openstack.cloud.identity_domain:
+      cloud: "{{ cloud }}"
+      state: absent
+      name: "{{ unexistent_domain_name }}"
+  - name: Get unexistent domain
+    openstack.cloud.identity_domain_info:
+      cloud: "{{ cloud }}"
+      name: "{{ unexistent_domain_name }}"
+    register: domain_info
+  - name: Assert no results returned
+    assert:
+      that: not domain_info.openstack_domains
+
+
+- block:
+  - name: Ensure domain exists
+    openstack.cloud.identity_domain:
+      cloud: "{{ cloud }}"
+      state: present
+      name: "{{ domain_name }}"
+      description: "test description"
+    register: domain
+  - name: Get domain
+    openstack.cloud.identity_domain_info:
+      cloud: "{{ cloud }}"
+      name: "{{ domain_name }}"
+    register: domain_info
+  - name: Assert one result exists
+    assert:
+      that: domain_info.openstack_domains | length == 1
+  - name: Assert fields are present
+    assert:
+      that: item in domain_info.openstack_domains[0]
+    loop: "{{ domain_info_fields }}"
+  - name: Assert returned value
+    assert:
+      that:
+        - domain_info.openstack_domains[0].description == domain.domain.description
+
+- block:
+  - name: Get all domains
+    openstack.cloud.identity_domain_info:
+      cloud: "{{ cloud }}"
+    register: domain_info
+
+- block:
+  - name: Ensure disabled domain exists
+    openstack.cloud.identity_domain:
+      cloud: "{{ cloud }}"
+      state: present
+      name: "{{ disabled_domain_name }}"
+      enabled: false
+      description: "test description"
+    register: domain
+  - name: Get filtered domains
+    openstack.cloud.identity_domain_info:
+      cloud: "{{ cloud }}"
+      filters:
+        enabled: true
+    register: domain_info
+  - name: Assert at least one result
+    assert:
+      that: domain_info.openstack_domains | length >= 1
+  - name: Assert returned value
+    assert:
+      that: item.enabled == true
+    loop: "{{ domain_info.openstack_domains }}"
+
+
