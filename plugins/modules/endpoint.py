@@ -81,26 +81,34 @@ endpoint:
             description: Endpoint ID.
             type: str
             sample: 3292f020780b4d5baf27ff7e1d224c44
+        interface:
+            description: Endpoint Interface.
+            type: str
+            sample: public
+        enabled:
+            description: Service status.
+            type: bool
+            sample: True
+        links:
+            description: Links for the endpoint
+            type: str
+            sample: http://controller/identity/v3/endpoints/123
         region:
-            description: Region Name.
+            description: Same as C(region_id). Deprecated.
+            type: str
+            sample: RegionOne
+        region_id:
+            description: Region ID.
             type: str
             sample: RegionOne
         service_id:
             description: Service ID.
             type: str
             sample: b91f1318f735494a825a55388ee118f3
-        interface:
-            description: Endpoint Interface.
-            type: str
-            sample: public
         url:
             description: Service URL.
             type: str
             sample: http://controller:9292
-        enabled:
-            description: Service status.
-            type: bool
-            sample: True
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -148,10 +156,11 @@ class IdentityEndpointModule(OpenStackModule):
         state = self.params['state']
 
         service = self.conn.get_service(service_name_or_id)
+
         if service is None and state == 'absent':
             self.exit_json(changed=False)
 
-        elif service is None and state == 'present':
+        if service is None and state == 'present':
             self.fail_json(msg='Service %s does not exist' % service_name_or_id)
 
         filters = dict(service_id=service.id, interface=interface)
@@ -159,24 +168,27 @@ class IdentityEndpointModule(OpenStackModule):
             filters['region'] = region
         endpoints = self.conn.search_endpoints(filters=filters)
 
+        endpoint = None
         if len(endpoints) > 1:
             self.fail_json(msg='Service %s, interface %s and region %s are '
                            'not unique' %
                            (service_name_or_id, interface, region))
         elif len(endpoints) == 1:
             endpoint = endpoints[0]
-        else:
-            endpoint = None
 
         if self.ansible.check_mode:
             self.exit_json(changed=self._system_state_change(endpoint))
 
         if state == 'present':
             if endpoint is None:
-                result = self.conn.create_endpoint(
-                    service_name_or_id=service, url=url, interface=interface,
-                    region=region, enabled=enabled)
-                endpoint = result[0]
+                args = {'url': url, 'interface': interface,
+                        'service_name_or_id': service.id, 'enabled': enabled,
+                        'region': region}
+                endpoints = self.conn.create_endpoint(**args)
+                # safe because endpoints contains a single item when url is
+                # given to self.conn.create_endpoint()
+                endpoint = endpoints[0]
+
                 changed = True
             else:
                 if self._needs_update(endpoint):
@@ -185,7 +197,8 @@ class IdentityEndpointModule(OpenStackModule):
                     changed = True
                 else:
                     changed = False
-            self.exit_json(changed=changed, endpoint=endpoint)
+            self.exit_json(changed=changed,
+                           endpoint=endpoint)
 
         elif state == 'absent':
             if endpoint is None:

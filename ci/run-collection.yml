@@ -16,8 +16,9 @@
     - role: dns
       tags: dns
       when: sdk_version is version(0.28, '>=')
-    - { role: host_aggregate, tags: host_aggregate }
+    - { role: endpoint, tags: endpoint }
     - { role: floating_ip_info, tags: floating_ip_info }
+    - { role: host_aggregate, tags: host_aggregate }
     - { role: identity_domain_info, tags: identity_domain_info }
     - { role: identity_group_info, tags: identity_group_info }
     - { role: identity_user, tags: identity_user }
