@@ -1,3 +1,4 @@
+#!/bin/bash
 #############################################################################
 # run-ansible-tests.sh
 #
@@ -41,27 +42,39 @@ while getopts "c:de:u:" opt
 do
     case $opt in
     d) USE_DEV=1 ;;
-    c) CLOUD=${OPTARG} ;;
-    u) CLOUD_ALT=${OPTARG} ;;
-    e) ENVDIR=${OPTARG} ;;
-    ?) echo "Invalid option: -${OPTARG}"
+    c) CLOUD=$OPTARG ;;
+    u) CLOUD_ALT=$OPTARG ;;
+    e) ENVDIR=$OPTARG ;;
+    ?) echo "Invalid option: -$OPTARG"
        exit 1;;
     esac
 done
 
-if [ -z ${ENVDIR} ]
-then
+# Shift arguments read by getopts
+shift $((OPTIND-1))
+
+# Remaining arguments are Ansible tags
+TAGS=$( echo "$*" | tr ' ' , )
+
+if [ -z "$ENVDIR" ]; then
     echo "Option -e is required"
     exit 1
 fi
 
-shift $((OPTIND-1))
-TAGS=$( echo "$*" | tr ' ' , )
+if [ ! -d ci ]; then
+    echo "Script must be run from collection's root directory"
+    exit 2
+fi
 
-# Install collections before dealing with Ansible virtual environments
-if [[ -z "$PIP_INSTALL" ]]; then
+# Install Ansible collections before dealing with virtual environments for Ansible
+
+# Install collections used in ci
+ansible-galaxy collection install --requirements-file ci/requirements.yml
+
+# Install this collection
+if [ -z "$PIP_INSTALL" ]; then
     tox -ebuild
-    ansible-galaxy collection install $(ls build_artifact/openstack-cloud-*) --force
+    ansible-galaxy collection install "$(find build_artifact/ -maxdepth 1 -name 'openstack-cloud-*')" --force
     TEST_COLLECTIONS_PATHS=${HOME}/.ansible/collections:$ANSIBLE_COLLECTIONS_PATHS
 else
     pip freeze | grep ansible-collections-openstack
@@ -70,25 +83,22 @@ fi
 
 # We need to source the current tox environment so that Ansible will
 # be setup for the correct python environment.
-source $ENVDIR/bin/activate
+source "$ENVDIR/bin/activate"
 
-if [ ${USE_DEV} -eq 1 ]
-then
-    if [ -d ${ENVDIR}/ansible ]
-    then
+if [ "$USE_DEV" -eq 1 ]; then
+    if [ -d "$ENVDIR/ansible" ]; then
         echo "Using existing Ansible source repo"
     else
         echo "Installing Ansible source repo at $ENVDIR"
-        git clone --recursive https://github.com/ansible/ansible.git ${ENVDIR}/ansible
+        git clone --recursive https://github.com/ansible/ansible.git "$ENVDIR/ansible"
     fi
-    source $ENVDIR/ansible/hacking/env-setup
+    source "$ENVDIR/ansible/hacking/env-setup"
 fi
 
 # Run the shade Ansible tests
 tag_opt=""
-if [ ! -z ${TAGS} ]
-then
-    tag_opt="--tags ${TAGS}"
+if [ -n "$TAGS" ]; then
+    tag_opt="--tags $TAGS"
 fi
 
 # Loop through all ANSIBLE_VAR_ environment variables to allow passing the further
@@ -103,41 +113,42 @@ done
 # Until we have a module that lets us determine the image we want from
 # within a playbook, we have to find the image here and pass it in.
 # We use the openstack client instead of nova client since it can use clouds.yaml.
-IMAGE=`openstack --os-cloud=${CLOUD} image list -f value -c Name | grep cirros | grep -v -e ramdisk -e kernel`
-if [ $? -ne 0 ]
-then
+IMAGE=$(openstack "--os-cloud=$CLOUD" image list -f value -c Name | grep cirros | grep -v -e ramdisk -e kernel)
+if [ -z "$IMAGE" ]; then
   echo "Failed to find Cirros image"
-  exit 1
+  exit 3
 fi
 
 # In case of Octavia enabled:
 _octavia_image_path="/tmp/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2"
 if systemctl list-units --full -all | grep -Fq "devstack@o-api.service" && \
-  test -f "$_octavia_image_path"
-then
+  test -f "$_octavia_image_path"; then
     # Upload apmhora image for Octavia to test load balancers
     OCTAVIA_AMP_IMAGE_FILE=${OCTAVIA_AMP_IMAGE_FILE:-"$_octavia_image_path"}
     OCTAVIA_AMP_IMAGE_NAME=${OCTAVIA_AMP_IMAGE_NAME:-"test-only-amphora-x64-haproxy-ubuntu-bionic"}
     OCTAVIA_AMP_IMAGE_SIZE=${OCTAVIA_AMP_IMAGE_SIZE:-3}
-    openstack --os-cloud=${CLOUD} image create \
+    openstack "--os-cloud=$CLOUD" image create \
         --container-format bare \
         --disk-format qcow2 \
         --private \
-        --file $OCTAVIA_AMP_IMAGE_FILE \
-        --project service $OCTAVIA_AMP_IMAGE_NAME
-    openstack --os-cloud=${CLOUD} image set --tag amphora $OCTAVIA_AMP_IMAGE_NAME
+        --file "$OCTAVIA_AMP_IMAGE_FILE" \
+        --project service "$OCTAVIA_AMP_IMAGE_NAME"
+    openstack "--os-cloud=$CLOUD" image set --tag amphora "$OCTAVIA_AMP_IMAGE_NAME"
     # End of Octavia preparement
 else
-    tag_opt="$tag_opt --skip-tags loadbalancer"
+    # Run all tasks except for loadbalancer tasks
+    tag_opt+=" --skip-tags loadbalancer"
 fi
 
-# Discover openstackSDK version
+# Discover openstacksdk version
 SDK_VER=$(python -c "import openstack; print(openstack.version.__version__)")
-pushd ci/
-# run tests
+
+cd ci/
+
+# Run tests
 set -o pipefail
+# shellcheck disable=SC2086
 ANSIBLE_COLLECTIONS_PATHS=$TEST_COLLECTIONS_PATHS ansible-playbook \
     -vvv ./run-collection.yml \
     -e "sdk_version=${SDK_VER} cloud=${CLOUD} cloud_alt=${CLOUD_ALT} image_name=${IMAGE} ${ANSIBLE_VARS}" \
     ${tag_opt} 2>&1 | sudo tee /opt/stack/logs/test_output.log
-popd
