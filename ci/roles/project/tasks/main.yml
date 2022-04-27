@@ -1,28 +1,155 @@
 ---
-- name: Create project
+- name: Ensure project doesn't exist before tests
   openstack.cloud.project:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_project
-     description: dummy description
-     domain_id: default
-     enabled: True
-  register: project
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_project
 
-- debug: var=project
+- block:
+  - name: Create project
+    openstack.cloud.project:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_project
+      description: dummy description
+      domain: default
+      enabled: True
+    register: project
 
-- name: Update project
-  openstack.cloud.project:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_project
-     description: new description
-  register: updatedproject
+  - name: Assert project changed
+    assert:
+       that: project is changed
 
-- debug: var=updatedproject
+  - name: Assert project fields
+    assert:
+      that: item in project['project']
+    loop: "{{ project_fields }}"
 
-- name: Delete project
-  openstack.cloud.project:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: ansible_project
+  - name: Get project
+    openstack.cloud.project_info:
+       cloud: "{{ cloud }}"
+       name: ansible_project
+    register: project_info
+
+  - name: Assert project
+    assert:
+      that:
+        - project_info.openstack_projects | length == 1
+        - project_info.openstack_projects[0]['name'] == 'ansible_project'
+        - project_info.openstack_projects[0]['description'] == 'dummy description'
+
+- block:
+  - name: Create identical project
+    openstack.cloud.project:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_project
+      description: dummy description
+      domain: default
+      enabled: True
+    register: project
+
+  - name: Assert project not changed
+    assert:
+       that: project is not changed
+
+  - name: Assert project fields
+    assert:
+      that: item in project['project']
+    loop: "{{ project_fields }}"
+
+
+- block:
+  - name: Update project
+    openstack.cloud.project:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_project
+      description: new description
+      properties:
+        tags:
+          - example_tag
+    register: project
+
+  - name: Assert project changed
+    assert:
+       that: project is changed
+
+  - name: Assert project fields
+    assert:
+      that: item in project['project']
+    loop: "{{ project_fields }}"
+
+  - name: Get project
+    openstack.cloud.project_info:
+       cloud: "{{ cloud }}"
+       name: ansible_project
+    register: project_info
+
+  - name: Assert project
+    assert:
+      that:
+        - project_info.openstack_projects | length == 1
+        - project_info.openstack_projects[0]['description'] == 'new description'
+
+- block:
+  - name: Delete project
+    openstack.cloud.project:
+       cloud: "{{ cloud }}"
+       state: absent
+       name: ansible_project
+    register: project
+
+  - name: Assert project changed
+    assert:
+       that: project is changed
+
+  - name: Get project
+    openstack.cloud.project_info:
+       cloud: "{{ cloud }}"
+       name: ansible_project
+    register: project_info
+
+  - name: Assert project deleted
+    assert:
+      that:
+        - project_info.openstack_projects | length == 0
+
+
+- block:
+  - name: Delete non existant project
+    openstack.cloud.project:
+       cloud: "{{ cloud }}"
+       state: absent
+       name: ansible_project
+    register: project
+
+  - name: Assert project not changed
+    assert:
+       that: project is not changed
+
+- block:
+  - name: Create project with properties
+    openstack.cloud.project:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_project
+      description: dummy description
+      domain: default
+      enabled: True
+      properties:
+        dummy_key: dummy_value
+    register: project
+
+- block:
+  - name: Update project with properties
+    openstack.cloud.project:
+      cloud: "{{ cloud }}"
+      state: present
+      name: ansible_project
+      description: dummy description
+      domain: default
+      enabled: True
+      properties:
+        dummy_key: other_dummy_value
+    register: project

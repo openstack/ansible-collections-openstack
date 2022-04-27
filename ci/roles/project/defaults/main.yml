@@ -1,0 +1,10 @@
+project_fields:
+  - description
+  - domain_id
+  - id
+  - is_domain
+  - is_enabled
+  - name
+  - options
+  - parent_id
+  - tags
