@@ -100,6 +100,7 @@
       Run openstack collections functional tests against a master devstack
       with Octavia plugin enabled, using latest releases of openstacksdk
       and latest ansible release. Run it only on Load Balancer changes.
+    voting: false
 
 - job:
     name: ansible-collections-openstack-functional-devstack-octavia
