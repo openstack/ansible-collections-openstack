@@ -339,40 +339,6 @@
     vars:
       tox_envlist: ansible-2.11
 
-- job:
-    name: ansible-collections-openstack-functional-devstack-queens-ansible-2.11
-    # Do not inherit from any parent job which does not run for branch stable/1.0.0 because Zuul would dismiss this job
-    # when collecting parent job variants. For example, when job.branches is set to master in a parent job, then Zuul
-    # will not match that job when it collects job variants.
-    #
-    # Do not inherit from any parent job which sets job.required-projects.override-checkout on openstack/devstack
-    # because Zuul would use that git ref instead of stable branch defined below to checkout projects of parent devstack
-    # jobs when collecting variants for parent jobs.
-    parent: ansible-collections-openstack-functional-devstack-base
-    description: |
-      Run openstack collections functional tests against a queens devstack
-      using train branch of openstacksdk and stable 2.11 branch of ansible
-    branches: stable/1.0.0
-    override-checkout: stable/queens
-    # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.11
-      - # Choose parent devstack job from stable/1.0.0 branch instead of non-existing stable/queens branch
-        name: openstack/ansible-collections-openstack
-        override-checkout: stable/1.0.0
-      - # Choose parent devstack job from stable/queens branch
-        name: openstack/devstack
-        override-checkout: stable/queens
-      - name: openstack/heat
-        # Earliest branch in Heat repository is stable/rocky
-        override-checkout: stable/rocky
-      - name: openstack/openstacksdk
-        # Run queens with highest possible py2 version of SDK
-        override-checkout: stable/train
-    vars:
-      tox_envlist: ansible-2.11
-
 # Linters
 - job:
     name: openstack-tox-linters-ansible
@@ -607,7 +573,6 @@
         - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
         - bifrost-collections-src
         - bifrost-keystone-collections-src
         - ansible-collections-openstack-functional-devstack-octavia
@@ -621,7 +586,6 @@
         - ansible-collections-openstack-functional-devstack-ansible-2.11
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-queens-ansible-2.11
 
     tag:
       jobs:
