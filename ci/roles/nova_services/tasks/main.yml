@@ -10,8 +10,8 @@
   when: sdk_version is version(0.53, '<')
   assert:
     that:
-    - '["availability_zone", "binary", "disables_reason", "is_forced_down",
-        "host", "name", "state", "status", "updated_at", "id"] |
+    - '["availability_zone", "binary", "disables_reason",
+        "host", "name", "state", "status", "id"] |
         difference(result.openstack_compute_services.0.keys()) | length == 0'
 
 - name: Assert fields on OpenStack SDK 0.53 and later
