@@ -61,7 +61,11 @@ openstack_compute_services:
             type: str
         disabled_reason:
             description: The reason why the service is disabled
-            returned: success
+            returned: success and OpenStack SDK >= 0.53
+            type: str
+        disables_reason:
+            description: The reason why the service is disabled
+            returned: success and OpenStack SDK < 0.53
             type: str
         availability_zone:
             description: The availability zone name.
