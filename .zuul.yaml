@@ -1,9 +1,16 @@
 # yamllint disable
 ---
-# Keep this file in sync between branches to avoid issues e.g. with job scheduling. Zuul CI will search in master branch
-# first when collecting job variants during job freeze which can have unwanted side effects. For example, when parent
-# job *-base has been changed in stable/1.0.0 branch, Zuul could still use *-base variants from master branch during job
-# freeze on child jobs such as *-ussuri-ansible-2.11 etc.
+# Keep parent jobs in sync between branches to avoid issues e.g. with job scheduling. Zuul CI will search in master
+# branch first when collecting job variants during job freeze which can have unwanted side effects. For example, when
+# parent job *-base has been changed in stable/1.0.0 branch, Zuul could still use *-base variants from master branch
+# during job freeze on child jobs such as *-ussuri-ansible-2.11 etc.
+#
+# Do not share job definitions with the job.branches attribute across multiple branches. Do not define jobs which are
+# specific to other branches, except for parent jobs which are shared across branches. For example, to not add a job
+# which is specific for the stable/1.0.0 branch to the .zuul.yaml in master branch. In particular do not use the
+# job.branches directive on a job which will be copied to multiple branches. When you have multiple copies of a job with
+# the job.branches attribute, Zuul CI could pick any of the job definitions which might not be the one you expected.
+
 - job:
     name: ansible-collections-openstack-functional-devstack-base
     parent: openstacksdk-functional-devstack
@@ -47,52 +54,6 @@
         log: true
 
 - job:
-    name: ansible-collections-openstack-functional-devstack
-    parent: ansible-collections-openstack-functional-devstack-base
-    branches: master
-    description: |
-      Run openstack collections functional tests against a master devstack
-      using master of openstacksdk with latest ansible release
-    vars:
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: &skip_broken_ci_roles >-
-        address_scope
-        auth
-        client_config
-        dns
-        dns_zone_info
-        floating_ip_info
-        group
-        identity_role
-        image
-        keypair
-        keystone_domain
-        keystone_federation_protocol
-        keystone_idp
-        keystone_mapping
-        loadbalancer
-        nova_flavor
-        nova_services
-        object
-        object_container
-        port
-        project
-        security_group
-        subnet_pool
-        user
-        user_group
-        user_role
-        volume
-      # failing tags
-      # floating_ip
-      # orchestrate
-      # network
-      # neutron_rbac
-      # router
-      # server
-      # subnet
-
-- job:
     name: ansible-collections-openstack-functional-devstack-octavia-base
     parent: ansible-collections-openstack-functional-devstack-base
     # Do not restrict branches in base jobs because else Zuul would not find a matching
@@ -133,19 +94,6 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-octavia
     parent: ansible-collections-openstack-functional-devstack-octavia-base
-    branches: master
-    description: |
-      Run openstack collections functional tests against a master devstack
-      with Octavia plugin enabled, using latest releases of openstacksdk
-      and latest ansible release. Run it only on Load Balancer changes.
-    voting: false
-    vars:
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
-
-- job:
-    name: ansible-collections-openstack-functional-devstack-octavia
-    parent: ansible-collections-openstack-functional-devstack-octavia-base
     branches: stable/1.0.0
     description: |
       Run openstack collections functional tests against a master devstack
@@ -160,22 +108,6 @@
         override-checkout: master
     vars:
       tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-openstacksdk-0.x.x.txt'
-
-- job:
-    name: ansible-collections-openstack-functional-devstack-releases
-    parent: ansible-collections-openstack-functional-devstack-base
-    branches: master
-    description: |
-      Run openstack collections functional tests against a master devstack
-      using latest releases of openstacksdk and latest ansible release
-    # OpenStack SDK 1.*.* has not been released to PyPI yet
-    voting: false
-    vars:
-      # Uncomment once OpenStack SDK 1.*.* has been released to PyPI
-      # tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-openstacksdk-1.x.x.txt'
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
-      tox_install_siblings: false
 
 - job:
     name: ansible-collections-openstack-functional-devstack-releases
@@ -201,22 +133,6 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.9
     parent: ansible-collections-openstack-functional-devstack-base
-    branches: master
-    description: |
-      Run openstack collections functional tests against a master devstack
-      using master of openstacksdk and stable 2.9 branch of ansible
-    voting: false
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.9
-    vars:
-      tox_envlist: ansible-2.9
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
-
-- job:
-    name: ansible-collections-openstack-functional-devstack-ansible-2.9
-    parent: ansible-collections-openstack-functional-devstack-base
     branches: stable/1.0.0
     description: |
       Run openstack collections functional tests against a master devstack
@@ -236,22 +152,6 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.11
     parent: ansible-collections-openstack-functional-devstack-base
-    branches: master
-    description: |
-      Run openstack collections functional tests against a master devstack
-      using master of openstacksdk and stable 2.12 branch of ansible
-    voting: false
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.11
-    vars:
-      tox_envlist: ansible-2.11
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
-
-- job:
-    name: ansible-collections-openstack-functional-devstack-ansible-2.11
-    parent: ansible-collections-openstack-functional-devstack-base
     branches: stable/1.0.0
     description: |
       Run openstack collections functional tests against a master devstack
@@ -271,22 +171,6 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.12
     parent: ansible-collections-openstack-functional-devstack-base
-    branches: master
-    description: |
-      Run openstack collections functional tests against a master devstack
-      using master of openstacksdk and stable 2.12 branch of ansible
-    voting: false
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.12
-    vars:
-      tox_envlist: ansible-2.12
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
-
-- job:
-    name: ansible-collections-openstack-functional-devstack-ansible-2.12
-    parent: ansible-collections-openstack-functional-devstack-base
     branches: stable/1.0.0
     description: |
       Run openstack collections functional tests against a master devstack
@@ -302,21 +186,6 @@
         override-checkout: stable/yoga
     vars:
       tox_envlist: ansible-2.12
-
-- job:
-    name: ansible-collections-openstack-functional-devstack-ansible-devel
-    parent: ansible-collections-openstack-functional-devstack-base
-    branches: master
-    description: |
-      Run openstack collections functional tests against a master devstack
-      using master of openstacksdk and devel branch of ansible
-    voting: false
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: devel
-    vars:
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
 
 # Stable branches tests
 
@@ -669,14 +538,11 @@
         - tox-pep8
         - openstack-tox-linters-ansible-devel
         - openstack-tox-linters-ansible-2.12
-        - ansible-collections-openstack-functional-devstack:
+        - ansible-collections-openstack-functional-devstack-releases:
             dependencies: &deps_unit_lint
               - tox-pep8
               - openstack-tox-linters-ansible-2.12
             voting: false
-
-        - ansible-collections-openstack-functional-devstack-releases:
-            dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-ansible-2.9:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-ansible-2.12:
@@ -720,7 +586,6 @@
       jobs:
         - tox-pep8
         - openstack-tox-linters-ansible-2.12
-        # - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         # - ansible-collections-openstack-functional-devstack-ansible-2.9
         # - ansible-collections-openstack-functional-devstack-ansible-2.12
@@ -734,7 +599,6 @@
       jobs:
         - openstack-tox-linters-ansible-devel
         - openstack-tox-linters-ansible-2.12
-        - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-ansible-2.9
         - ansible-collections-openstack-functional-devstack-ansible-2.12
