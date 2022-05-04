@@ -47,8 +47,7 @@ RETURN = '''
 role:
     description: Dictionary describing the role.
     returned: On success when I(state) is 'present'.
-    type: list
-    elements: dict
+    type: dict
     contains:
         description:
             description: Description of the role resource
