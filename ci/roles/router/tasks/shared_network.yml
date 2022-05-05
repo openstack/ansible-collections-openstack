@@ -1,0 +1,127 @@
+---
+- name: Create the first project
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "shared_net_test_1"
+    description: "Project that contains the subnet to be shared"
+    domain_id: default
+    enabled: True
+  register: project_1
+
+- name: Create the network to be shared
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "my_shared_network"
+    project: "shared_net_test_1"
+    external: False
+    provider_network_type: vxlan
+  register: shared_network
+
+- name: Create ipv4 subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: present
+    network_name: "{{ shared_network.id }}"
+    name: "my_shared_subnet"
+    project: "shared_net_test_1"
+    ip_version: "4"
+    cidr: "10.0.0.0/24"
+    gateway_ip: "10.0.0.1"
+  register: shared_subnet
+
+- name: Create the second project
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "shared_net_test_2"
+    description: "Project that contains the subnet to be shared"
+    domain_id: default
+    enabled: True
+  register: project_2
+
+- name: Share the network with the second project
+  openstack.cloud.neutron_rbac_policy:
+    cloud: "{{ cloud }}"
+    action: 'access_as_shared'
+    object_id: "{{ shared_network.id }}"
+    object_type: 'network'
+    target_project_id: "{{ project_2.project.id }}"
+    project_id: "{{ project_1.project.id }}"
+  register: rbac_rule
+
+- name: Create router with interface in shared network
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "shared_net_test2_router"
+    project: "shared_net_test_2"
+    interfaces:
+      - net: "{{ shared_network.id }}"
+        portip: "10.0.0.42"
+        subnet: "{{ shared_subnet.id }}"
+  register: router
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "shared_net_test2_router"
+  register: routers
+
+- name: List ports of first router
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      device_id: "{{ routers.routers.0.id }}"
+  register: ports
+
+- name: Verify routers info
+  assert:
+    that:
+      - routers.routers.0.id == router.router.id
+      - ports.ports
+        |rejectattr('device_owner', 'equalto', 'network:router_gateway')
+        |sum(attribute='fixed_ips', start=[])
+        |map(attribute='ip_address')
+        |sort|list == ["10.0.0.42"]
+
+- name: delete router
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "shared_net_test2_router"
+    project: "shared_net_test_2"
+
+- name: delete rbac rule
+  openstack.cloud.neutron_rbac_policy:
+    cloud: "{{ cloud }}"
+    policy_id: "{{ rbac_rule.policy.id }}"
+    state: absent
+
+- name: delete subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: absent
+    network_name: "{{ shared_network.id }}"
+    name: "my_shared_subnet"
+    project: "shared_net_test_1"
+
+- name: delete network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "my_shared_network"
+    project: "shared_net_test_1"
+
+- name: delete project 2
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "shared_net_test_2"
+
+- name: delete project 1
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "shared_net_test_1"

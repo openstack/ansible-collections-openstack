@@ -750,3 +750,5 @@
      name: "{{ external_network_name }}"
   when:
     - network_external
+
+- include_tasks: shared_network.yml

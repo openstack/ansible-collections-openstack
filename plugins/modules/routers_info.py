@@ -115,7 +115,7 @@ EXAMPLES = '''
   openstack.cloud.port_info:
     cloud: devstack
     filters:
-      device_id: "{{ routers[0].router.id }}"
+      device_id: "{{ routers.routers.0.id }}"
   register: ports
 
 - name: Show first router's fixed ips
