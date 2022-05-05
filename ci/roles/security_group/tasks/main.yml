@@ -4,7 +4,6 @@
      cloud: "{{ cloud }}"
      name: "{{ secgroup_name }}"
      state: absent
-     description: Created from Ansible playbook
 
 - name: Create security group
   openstack.cloud.security_group:
@@ -12,16 +11,23 @@
      name: "{{ secgroup_name }}"
      state: present
      description: Created from Ansible playbook
+  register: security_group
 
 - name: List all security groups of a project
   openstack.cloud.security_group_info:
      cloud: "{{ cloud }}"
   register: test_sec_groups
 
-- name: Check - List all security groups of a project
+- name: Check list all security groups of a project
   assert:
     that:
       - test_sec_groups.security_groups | length > 0
+
+- name: Assert fields returned by security_group_info
+  assert:
+    that:
+      - item in test_sec_groups.security_groups[0]
+  loop: "{{ expected_fields }}"
 
 - name: Filter security group by name
   openstack.cloud.security_group_info:
@@ -29,13 +35,38 @@
      name: "{{ secgroup_name }}"
   register: test_sec_group
 
-- name: Check - List all security groups of a project
+- name: Check filter security group by name
   assert:
     that:
       - test_sec_group.security_groups | length  == 1
-      - test_sec_group.security_groups[0]['name'] == secgroup_name
-  # This fails on Stein only
-  when: sdk_version is version("0.36.5", '>=')
+      - test_sec_group.security_groups[0]['id'] == security_group.id
+
+- name: Filter security group by description
+  openstack.cloud.security_group_info:
+     cloud: "{{ cloud }}"
+     description: Created from Ansible playbook
+  register: test_sec_group
+
+- name: Check filter security group by description
+  assert:
+    that:
+      - test_sec_group.security_groups | length  == 1
+      - test_sec_group.security_groups[0]['id'] == security_group.id
+
+- name: Filter security group by not_tags
+  openstack.cloud.security_group_info:
+     cloud: "{{ cloud }}"
+     name: "{{ secgroup_name }}"
+     not_tags:
+     - ansibletag1
+     - ansibletag2
+  register: test_sec_group
+
+- name: Check filter security group by not_tags
+  assert:
+    that:
+      - test_sec_group.security_groups | length  == 1
+      - test_sec_group.security_groups[0]['id'] == security_group.id
 
 - name: Delete security group
   openstack.cloud.security_group:

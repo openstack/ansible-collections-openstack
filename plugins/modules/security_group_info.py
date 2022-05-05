@@ -61,7 +61,8 @@ requirements: ["openstacksdk"]
 RETURN = '''
 security_groups:
   description: List of dictionaries describing security groups.
-  type: complex
+  type: list
+  elements: dict
   returned: On Success.
   contains:
     created_at:
@@ -82,6 +83,13 @@ security_groups:
       sample: "my-sg"
     project_id:
       description: Project ID where the security group is located in.
+      type: str
+      sample: "25d24fc8-d019-4a34-9fff-0a09fde6a567"
+    revision_number:
+      description: The revision number of the resource.
+      type: int
+    tenant_id:
+      description: Tenant ID where the security group is located in. Deprecated
       type: str
       sample: "25d24fc8-d019-4a34-9fff-0a09fde6a567"
     security_group_rules:
@@ -115,6 +123,12 @@ security_groups:
           "security_group_id": "0431c9c5-1660-42e0-8a00-134bec7f03e2"
         }
       ]
+    stateful:
+      description: Indicates if the security group is stateful or stateless.
+      type: bool
+    tags:
+      description: The list of tags on the resource.
+      type: list
     updated_at:
       description: Update time of the security group
       type: str
@@ -153,38 +167,30 @@ class SecurityGroupInfoModule(OpenStackModule):
     )
 
     def run(self):
-        description = self.params['description']
         name = self.params['name']
-        project_id = self.params['project_id']
-        revision_number = self.params['revision_number']
-        tags = self.params['tags']
-        any_tags = self.params['any_tags']
-        not_tags = self.params['not_tags']
-        not_any_tags = self.params['not_any_tags']
+        args = {
+            k: self.params[k]
+            for k in ['description', 'project_id', 'revision_number']
+            if self.params[k]
+        }
+        args.update({
+            k: ','.join(self.params[k])
+            for k in ['tags', 'any_tags', 'not_tags', 'not_any_tags']
+            if self.params[k]
+        })
 
-        attrs = {}
+        # self.conn.search_security_groups() cannot be used here,
+        # refer to git blame for rationale.
+        security_groups = self.conn.network.security_groups(**args)
 
-        if description:
-            attrs['description'] = description
-        if project_id:
-            attrs['project_id'] = project_id
-        if revision_number:
-            attrs['revision_number'] = revision_number
-        if tags:
-            attrs['tags'] = ','.join(tags)
-        if any_tags:
-            attrs['any_tags'] = ','.join(any_tags)
-        if not_tags:
-            attrs['not_tags'] = ','.join(not_tags)
-        if not_any_tags:
-            attrs['not_any_tags'] = ','.join(not_any_tags)
-
-        attrs = self.check_versioned(**attrs)
-        result = self.conn.network.security_groups(**attrs)
-        result = [item if isinstance(item, dict) else item.to_dict() for item in result]
         if name:
-            result = [item for item in result if name in (item['id'], item['name'])]
-        self.results.update({'security_groups': result})
+            # TODO: Upgrade name_or_id code to match openstacksdk [1]?
+            # [1] https://opendev.org/openstack/openstacksdk/src/commit/0898398415ae7b0e2447d61226acf50f01567cdd/openstack/cloud/_utils.py#L89
+            security_groups = [item for item in security_groups
+                               if name in (item['id'], item['name'])]
+
+        security_groups = [item.to_dict() for item in security_groups]
+        self.exit(changed=False, security_groups=security_groups)
 
 
 def main():

@@ -1,1 +1,13 @@
+expected_fields:
+- created_at
+- description
+- name
+- project_id
+- security_group_rules
+- stateful
+- tenant_id
+- updated_at
+- revision_number
+- id
+- tags
 secgroup_name: shade_secgroup
