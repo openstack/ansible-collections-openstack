@@ -91,6 +91,10 @@ users:
             description: Default project ID of the user
             returned: success
             type: str
+        description:
+            description: The description of this user
+            returned: success
+            type: str
         domain_id:
             description: Domain ID containing the user
             returned: success
