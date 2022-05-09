@@ -150,16 +150,15 @@ class IdentityUserInfoModule(OpenStackModule):
         domain = self.params['domain']
         filters = self.params['filters']
 
+        args = {}
         if domain:
             dom_obj = self.conn.identity.find_domain(domain)
             if dom_obj is None:
                 self.fail_json(
                     msg="Domain name or ID '{0}' does not exist".format(domain))
-            filters['domain_id'] = dom_obj.id
+            args['domain_id'] = dom_obj.id
 
-        users = self.conn.identity.users(
-            name=name, **filters)
-        users = [user.to_dict(computed=False) for user in users]
+        users = [user.to_dict(computed=False) for user in self.conn.search_users(name, filters, **args)]
         self.exit_json(changed=False, users=users)
 
 
