@@ -6,6 +6,12 @@
     state: present
   register: keypair
 
+- name: Assert fields
+  assert:
+    that:
+      - item in keypair.keypair
+  loop: "{{ expected_fields }}"
+
 - name: Get list of all keypairs
   openstack.cloud.keypair_info:
     cloud: "{{ cloud }}"
@@ -32,7 +38,7 @@
 - name: Ensure public key is returned
   assert:
     that:
-      - keypair.key.public_key is defined and keypair.key.public_key
+      - keypair.keypair.public_key is defined and keypair.keypair.public_key
 
 - name: Create another keypair
   openstack.cloud.keypair:

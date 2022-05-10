@@ -61,23 +61,49 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
-id:
-    description: Unique UUID.
-    returned: success
-    type: str
-name:
-    description: Name given to the keypair.
-    returned: success
-    type: str
-public_key:
-    description: The public key value for the keypair.
-    returned: success
-    type: str
-private_key:
-    description: The private key value for the keypair.
-    returned: Only when a keypair is generated for the user (e.g., when creating one
-              and a public key is not specified).
-    type: str
+keypair:
+    description: Dictionary describing the keypair.
+    returned: On success when I(state) is 'present'
+    type: dict
+    contains:
+        created_at:
+            description: Date the keypair was created
+            returned: success
+            type: str
+        fingerprint:
+            description: The short fingerprint associated with the public_key
+                         for this keypair.
+            returned: success
+            type: str
+        id:
+            description: Unique UUID.
+            returned: success
+            type: str
+        is_deleted:
+            description: Whether the keypair is deleted or not
+            returned: success
+            type: bool
+        name:
+            description: Name given to the keypair.
+            returned: success
+            type: str
+        private_key:
+            description: The private key value for the keypair.
+            returned: Only when a keypair is generated for the user (e.g., when
+                      creating one and a public key is not specified).
+            type: str
+        public_key:
+            description: The public key value for the keypair.
+            returned: success
+            type: str
+        type:
+            description: The type of keypair
+            returned: success
+            type: str
+        user_id:
+            description: The user id for a keypair
+            returned: success
+            type: str
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
@@ -115,11 +141,12 @@ class KeyPairModule(OpenStackModule):
             with open(self.params['public_key_file']) as public_key_fh:
                 public_key = public_key_fh.read().rstrip()
 
-        keypair = self.conn.get_keypair(name)
+        keypair = self.conn.compute.find_keypair(name)
 
         if self.ansible.check_mode:
             self.exit_json(changed=self._system_state_change(keypair))
 
+        changed = False
         if state in ('present', 'replace'):
             if keypair and keypair['name'] == name:
                 if public_key and (public_key != keypair['public_key']):
@@ -129,20 +156,19 @@ class KeyPairModule(OpenStackModule):
                                 " as offered. Delete key first." % name
                         )
                     else:
-                        self.conn.delete_keypair(name)
+                        self.conn.compute.delete_keypair(keypair)
                         keypair = self.conn.create_keypair(name, public_key)
                         changed = True
-                else:
-                    changed = False
             else:
                 keypair = self.conn.create_keypair(name, public_key)
                 changed = True
 
-            self.exit_json(changed=changed, key=keypair, id=keypair['id'])
+            self.exit_json(
+                changed=changed, keypair=keypair.to_dict(computed=False))
 
         elif state == 'absent':
             if keypair:
-                self.conn.delete_keypair(name)
+                self.conn.compute.delete_keypair(keypair)
                 self.exit_json(changed=True)
             self.exit_json(changed=False)
 
