@@ -405,6 +405,7 @@
       featureset: '052'
       consumer_job: false
       build_container_images: true
+      force_non_periodic: true
     required-projects:
       - openstack/ansible-collections-openstack
       - # always use master branch when collecting parent job variants, refer to git blame for rationale.
