@@ -1,0 +1,10 @@
+# Parameter deleted has been renamed to is_deleted in openstacksdk 0.52.0,
+# hence we cannot test with this list here.
+# Ref.: https://github.com/openstack/openstacksdk/commit/b60915aab3ee0348f3e3cc8aa548f94d2a68b7eb
+expected_fields:
+  - availability_zone
+  - hosts
+  - id
+  - location
+  - metadata
+  - name

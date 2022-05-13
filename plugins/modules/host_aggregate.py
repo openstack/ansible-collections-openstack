@@ -73,8 +73,36 @@ EXAMPLES = '''
     name: db_aggregate
 '''
 
-RETURN = '''
-
+RETURN = r'''
+aggregate:
+    description: A host aggregate resource.
+    type: complex
+    returned: On success, when I(state) is present
+    contains:
+        availability_zone:
+            description: Availability zone of the aggregate
+            type: str
+            returned: always
+        deleted:
+            description: Whether or not the resource is deleted
+            type: bool
+            returned: always
+        hosts:
+            description: Hosts belonging to the aggregate
+            type: str
+            returned: always
+        id:
+            description: The UUID of the aggregate.
+            type: str
+            returned: always
+        metadata:
+            description: Metadata attached to the aggregate
+            type: str
+            returned: always
+        name:
+            description: Name of the aggregate
+            type: str
+            returned: always
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -94,14 +122,20 @@ class ComputeHostAggregateModule(OpenStackModule):
         supports_check_mode=True
     )
 
+    def _find_aggregate(self, name_or_id):
+        aggregates = self.conn.search_aggregates(name_or_id=name_or_id)
+        if len(aggregates) == 1:
+            return aggregates[0]
+        elif len(aggregates) == 0:
+            return None
+        raise Exception("Aggregate is not unique, this should be impossible")
+
     def _needs_update(self, aggregate):
-        new_metadata = (self.params['metadata'] or {})
+        new_metadata = self.params['metadata'] or {}
 
         if self.params['availability_zone'] is not None:
             new_metadata['availability_zone'] = self.params['availability_zone']
 
-        if self.params['name'] != aggregate.name:
-            return True
         if self.params['hosts'] is not None:
             if self.params['purge_hosts']:
                 if set(self.params['hosts']) != set(aggregate.hosts):
@@ -110,11 +144,10 @@ class ComputeHostAggregateModule(OpenStackModule):
                 intersection = set(self.params['hosts']).intersection(set(aggregate.hosts))
                 if set(self.params['hosts']) != intersection:
                     return True
-        if self.params['availability_zone'] is not None:
-            if self.params['availability_zone'] != aggregate.availability_zone:
-                return True
-        if self.params['metadata'] is not None:
-            if new_metadata != aggregate.metadata:
+
+        for param in ('availability_zone', 'metadata'):
+            if self.params[param] is not None and \
+                    self.params[param] != aggregate[param]:
                 return True
 
         return False
@@ -135,16 +168,16 @@ class ComputeHostAggregateModule(OpenStackModule):
         if hosts is None:
             return
 
-        hosts_to_add = set(hosts) - set(aggregate.get("hosts") or [])
-        for i in hosts_to_add:
-            self.conn.add_host_to_aggregate(aggregate.id, i)
+        hosts_to_add = set(hosts) - set(aggregate['hosts'] or [])
+        for host in hosts_to_add:
+            self.conn.add_host_to_aggregate(aggregate.id, host)
 
         if not purge_hosts:
             return
 
-        hosts_to_remove = set(aggregate.get("hosts") or []) - set(hosts)
-        for i in hosts_to_remove:
-            self.conn.remove_host_from_aggregate(aggregate.id, i)
+        hosts_to_remove = set(aggregate["hosts"] or []) - set(hosts)
+        for host in hosts_to_remove:
+            self.conn.remove_host_from_aggregate(aggregate.id, host)
 
     def run(self):
         name = self.params['name']
@@ -157,18 +190,12 @@ class ComputeHostAggregateModule(OpenStackModule):
         if metadata is not None:
             metadata.pop('availability_zone', None)
 
-        aggregates = self.conn.search_aggregates(name_or_id=name)
-
-        if len(aggregates) == 1:
-            aggregate = aggregates[0]
-        elif len(aggregates) == 0:
-            aggregate = None
-        else:
-            raise Exception("Should not happen")
+        aggregate = self._find_aggregate(name)
 
         if self.ansible.check_mode:
             self.exit_json(changed=self._system_state_change(aggregate))
 
+        changed = False
         if state == 'present':
             if aggregate is None:
                 aggregate = self.conn.create_aggregate(
@@ -177,32 +204,27 @@ class ComputeHostAggregateModule(OpenStackModule):
                 if metadata:
                     self.conn.set_aggregate_metadata(aggregate.id, metadata)
                 changed = True
-            else:
-                if self._needs_update(aggregate):
-                    if availability_zone is not None:
-                        aggregate = self.conn.update_aggregate(
-                            aggregate.id, name=name,
-                            availability_zone=availability_zone)
-                    if metadata is not None:
-                        metas = metadata
-                        for i in (set(aggregate.metadata.keys()) - set(metadata.keys())):
-                            if i != 'availability_zone':
-                                metas[i] = None
-                        self.conn.set_aggregate_metadata(aggregate.id, metas)
-                    self._update_hosts(aggregate, hosts, purge_hosts)
-                    changed = True
-                else:
-                    changed = False
-            self.exit_json(changed=changed)
-
-        elif state == 'absent':
-            if aggregate is None:
-                changed = False
-            else:
-                self._update_hosts(aggregate, [], True)
-                self.conn.delete_aggregate(aggregate.id)
+            elif self._needs_update(aggregate):
+                if availability_zone is not None:
+                    aggregate = self.conn.update_aggregate(
+                        aggregate.id, name=name,
+                        availability_zone=availability_zone)
+                if metadata is not None:
+                    metas = metadata
+                    for i in set(aggregate.metadata.keys() - set(metadata.keys())):
+                        if i != 'availability_zone':
+                            metas[i] = None
+                    self.conn.set_aggregate_metadata(aggregate.id, metas)
+                self._update_hosts(aggregate, hosts, purge_hosts)
                 changed = True
-            self.exit_json(changed=changed)
+            aggregate = self._find_aggregate(name)
+            self.exit_json(changed=changed, aggregate=aggregate)
+
+        elif state == 'absent' and aggregate is not None:
+            self._update_hosts(aggregate, [], True)
+            self.conn.delete_aggregate(aggregate.id)
+            changed = True
+        self.exit_json(changed=changed)
 
 
 def main():
