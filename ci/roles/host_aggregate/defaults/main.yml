@@ -1,0 +1,11 @@
+expected_fields:
+  - availability_zone
+  - created_at
+  - deleted_at
+  - hosts
+  - id
+  - is_deleted
+  - metadata
+  - name
+  - updated_at
+  - uuid

@@ -70,6 +70,7 @@
         dns_zone_info
         floating_ip_info
         group
+        host_aggregate
         identity_domain_info
         identity_group_info
         identity_role
