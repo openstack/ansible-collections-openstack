@@ -167,8 +167,7 @@
     # OpenStack SDK 1.*.* has not been released to PyPI yet
     voting: false
     vars:
-      # Uncomment once OpenStack SDK 1.*.* has been released to PyPI
-      # tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-openstacksdk-1.x.x.txt'
+      tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-openstacksdk-1.x.x.txt'
       # TODO: Remove tox_extra_args once all ci roles pass
       tox_extra_args: *skip_broken_ci_roles
       tox_install_siblings: false
