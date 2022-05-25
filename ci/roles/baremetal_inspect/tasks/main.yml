@@ -1,0 +1,15 @@
+---
+# TODO: Actually run this role in CI. Atm we do not have DevStack's ironic plugin enabled.
+- name: Introspect node
+  openstack.cloud.baremetal_inspect:
+    cloud: "{{ cloud }}"
+    name: node-1
+  register: inspect
+
+- debug: var=inspect
+
+- name: assert return values of baremetal_inspect module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(inspect.node.keys())|length == 0
