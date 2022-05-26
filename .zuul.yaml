@@ -383,19 +383,25 @@
 - job:
     name: bifrost-collections-src
     parent: bifrost-integration-tinyipa-ubuntu-focal
+    override-checkout: stable/yoga
+    # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
       - openstack/ansible-collections-openstack
-      - # always use master branch when collecting parent job variants, refer to git blame for rationale.
+      - # always use existing branch when collecting parent job variants, refer to git blame for rationale.
         name: openstack/bifrost
-        override-checkout: master
+        # Yoga has the latest SDK release of the 0.*.* series atm
+        override-checkout: stable/yoga
 - job:
     name: bifrost-keystone-collections-src
     parent: bifrost-integration-tinyipa-keystone-ubuntu-focal
+    override-checkout: stable/yoga
+    # job.override-checkout will not override job.required-projects.override-checkout in parent jobs
     required-projects:
       - openstack/ansible-collections-openstack
-      - # always use master branch when collecting parent job variants, refer to git blame for rationale.
+      - # always use existing branch when collecting parent job variants, refer to git blame for rationale.
         name: openstack/bifrost
-        override-checkout: master
+        # Yoga has the latest SDK release of the 0.*.* series atm
+        override-checkout: stable/yoga
 
 # TripleO jobs
 - job:
