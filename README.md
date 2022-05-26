@@ -2,20 +2,43 @@
 
 # Ansible Collection: openstack.cloud
 
-
 This repo hosts the `openstack.cloud` Ansible Collection.
 
 The collection includes the Openstack modules and plugins supported by Openstack community to help the management of Openstack infrastructure.
 
-:warning: **WARNING:**
-This collection is currently being ported to the upcoming OpenStack SDK 1.\* release. SDK version 1.\* introduces
-numerous API changes which break backward compatibility with previous 0.\* releases. Since keeping a single collection
-release compatible with both SDK series is not sustainable, our collection codebase has been split:
-Branch stable/1.0.0 and 1.\*.\* releases of the collection are compatible with previous OpenStack SDK 0.\* releases
-only. The master branch and upcoming 2.\*.\* releases of this collection will be compatible with SDK 1.\* only. Both
-branches will continue to be maintained for now. Patches from master will be backported to stable/1.0.0 on a best effort
-basis but expect new features to be introduced in the master branch only. Contributions are welcome for both branches!
-:warning:
+## Breaking backward compatibility :warning:
+
+Dear contributors and users of the Ansible OpenStack collection!
+Our codebase has been split into two separate release series:
+
+* `2.x.x` releases of Ansible OpenStack collection are compatible with OpenStack SDK `1.x.x` and its release candidates
+  `0.99.x` *only* (OpenStack Zed and later). Our `master` branch tracks our `2.x.x` releases.
+* `1.x.x` releases of Ansible OpenStack collection are compatible with OpenStack SDK `0.x.x` prior to `0.99.0` *only*
+  (OpenStack Yoga and earlier). Our `stable/1.0.0` branch tracks our `1.x.x` releases.
+
+Both branches will be developed in parallel for the time being. Patches from `master` will be backported to
+`stable/1.0.0` on a best effort basis but expect new features to be introduced in our `master` branch only.
+Contributions are welcome for both branches!
+Differences between both branches are mainly renamed and sometimes dropped module return values. We try to keep our
+module parameters backward compatible by offering aliases but e.g. the semantics of `filters` parameters in `*_info`
+modules have changed due to updates in the OpenStack SDK.
+
+Our decision to break backward compatibility was not taken lightly. OpenStack SDK's first major release (`1.0.0` and its
+release candidates `0.99.x`) has streamlined and improved large parts of its codebase. For example, its Connection
+interface now consistently uses the Resource interfaces under the hood. This required breaking changes from older SDK
+releases though. The Ansible OpenStack collection is heavily based on OpenStack SDK. With OpenStack SDK becoming
+backward incompatible, so does our Ansible OpenStack collection. We simply lack the devpower to maintain a backward
+compatible interface in Ansible OpenStack collection across several SDK releases.
+
+Our first `2.0.0` release is currently under development and we still have a long way to go. If you use modules of the
+Ansible OpenStack collection and want to join us in porting them to the upcoming OpenStack SDK, please contact us!
+Ping Jakob Meng <mail@jakobmeng.de> (jm1) or Rafael Castillo <rcastill@redhat.com> (rcastillo) and we will give you a
+quick introduction. We are also hanging around on `irc.oftc.net/#openstack-ansible-sig` and `irc.oftc.net/#oooq` 😎
+
+We have extensive documentation on [why, what and how we are adopting and reviewing the new modules](
+https://hackmd.io/szgyWa5qSUOWw3JJBXLmOQ?view), [how to set up a working DevStack environment for hacking on the
+collection](https://hackmd.io/PI10x-iCTBuO09duvpeWgQ?view) and, most importantly, [a list of modules where we are
+coordinating our porting efforts](https://hackmd.io/7NtovjRkRn-tKraBXfz9jw?view).
 
 ## Installation and Usage
 
