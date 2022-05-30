@@ -120,51 +120,42 @@ class IdentityRoleAssignmentModule(OpenStackModule):
         state = self.params.get('state')
 
         filters = {}
+        find_filters = {}
         domain_id = None
 
-        r = self.conn.get_role(role)
+        r = self.conn.identity.find_role(role)
         if r is None:
             self.fail_json(msg="Role %s is not valid" % role)
         filters['role'] = r['id']
 
         if domain:
-            d = self.conn.get_domain(name_or_id=domain)
+            d = self.conn.identity.find_domain(domain)
             if d is None:
                 self.fail_json(msg="Domain %s is not valid" % domain)
-            filters['domain'] = d['id']
             domain_id = d['id']
+            find_filters['domain_id'] = domain_id
         if user:
-            if domain:
-                u = self.conn.get_user(user, domain_id=filters['domain'])
-            else:
-                u = self.conn.get_user(user)
-
+            u = self.conn.identity.find_user(user, **find_filters)
             if u is None:
                 self.fail_json(msg="User %s is not valid" % user)
             filters['user'] = u['id']
+
         if group:
-            if domain:
-                g = self.conn.get_group(group, domain_id=filters['domain'])
-            else:
-                g = self.conn.get_group(group)
+            # self.conn.identity.find_group() does not accept
+            # a domain_id argument in Train's openstacksdk
+            g = self.conn.get_group(group, **find_filters)
             if g is None:
                 self.fail_json(msg="Group %s is not valid" % group)
             filters['group'] = g['id']
         if project:
-            if domain:
-                p = self.conn.get_project(project, domain_id=filters['domain'])
-                # OpenStack won't allow us to use both a domain and project as
-                # filter. Once we identified the project (using the domain as
-                # a filter criteria), we need to remove the domain itself from
-                # the filters list.
-                domain_id = filters.pop('domain')
-            else:
-                p = self.conn.get_project(project)
-
+            p = self.conn.identity.find_project(project, **find_filters)
             if p is None:
                 self.fail_json(msg="Project %s is not valid" % project)
             filters['project'] = p['id']
 
+        # Keeping the self.conn.list_role_assignments because it calls directly
+        # the identity.role_assignments and there are some logics for the
+        # filters that won't worth rewrite here.
         assignment = self.conn.list_role_assignments(filters=filters)
 
         if self.ansible.check_mode:
@@ -172,6 +163,9 @@ class IdentityRoleAssignmentModule(OpenStackModule):
 
         changed = False
 
+        # Both grant_role and revoke_role calls directly the proxy layer, and
+        # has some logic that won't worth to rewrite here so keeping it is a
+        # good idea
         if state == 'present':
             if not assignment:
                 kwargs = self._build_kwargs(user, group, project, domain_id)
