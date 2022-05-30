@@ -94,6 +94,7 @@
         port
         project
         recordset
+        role_assignment
         security_group
         subnet_pool
         user
