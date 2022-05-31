@@ -92,6 +92,7 @@
         object_container
         port
         project
+        recordset
         security_group
         subnet_pool
         user

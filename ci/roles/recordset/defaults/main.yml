@@ -1,0 +1,19 @@
+dns_zone_name: test.dns.zone.
+recordset_name: testrecordset.test.dns.zone.
+records: ['10.0.0.0']
+updated_records: ['10.1.1.1']
+
+recordset_fields:
+  - action
+  - created_at
+  - description
+  - id
+  - links
+  - name
+  - project_id
+  - records
+  - status
+  - ttl
+  - type
+  - zone_id
+  - zone_name
