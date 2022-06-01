@@ -515,7 +515,6 @@
             dependencies: &deps_unit_lint
               - tox-pep8
               - openstack-tox-linters-ansible-2.12
-            voting: false
         - ansible-collections-openstack-functional-devstack-ansible-2.9:
             dependencies: *deps_unit_lint
         - ansible-collections-openstack-functional-devstack-ansible-2.12:
