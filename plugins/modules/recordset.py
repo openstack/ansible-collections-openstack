@@ -184,6 +184,10 @@ class DnsRecordsetModule(OpenStackModule):
 
     def _needs_update(self, params, recordset):
         for k in ('description', 'records', 'ttl', 'type'):
+            if k not in params:
+                continue
+            if k not in recordset:
+                return True
             if params[k] is not None and params[k] != recordset[k]:
                 return True
         return False
@@ -204,10 +208,10 @@ class DnsRecordsetModule(OpenStackModule):
         description = self.params['description']
         ttl = self.params['ttl']
         params = {
-            description: description,
-            records: records,
-            type: recordset_type.upper(),
-            ttl: ttl,
+            'description': description,
+            'records': records,
+            'type': recordset_type.upper(),
+            'ttl': ttl,
         }
         return {k: v for k, v in params.items() if v is not None}
 

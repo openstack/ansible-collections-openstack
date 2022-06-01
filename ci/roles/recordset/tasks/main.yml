@@ -48,7 +48,7 @@
 - name: Assert recordset not changed
   assert:
     that:
-      - recordset is changed
+      - recordset is not changed
 
 - name: Assert recordset fields
   assert:
@@ -84,13 +84,13 @@
     zone: "{{ dns_zone.zone.name }}"
     name: "{{ recordset.recordset.name }}"
     state: absent
-  register: recordset
+  register: deleted_recordset
 
 - name: Verify recordset deletion
   assert:
     that:
-    - recordset is successful
-    - recordset is changed
+    - deleted_recordset is successful
+    - deleted_recordset is changed
 
 - name: Delete unexistent recordset
   openstack.cloud.recordset:
@@ -98,12 +98,12 @@
     zone: "{{ dns_zone.zone.name }}"
     name: "{{ recordset.recordset.name }}"
     state: absent
-  register: recordset
+  register: deleted_recordset
 
 - name: Verify recordset deletion
   assert:
     that:
-    - recordset is not changed
+    - deleted_recordset is not changed
 
 - name: Delete dns zone
   openstack.cloud.dns_zone:
