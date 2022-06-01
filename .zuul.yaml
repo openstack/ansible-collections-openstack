@@ -154,7 +154,6 @@
       Run openstack collections functional tests against a master devstack
       with Octavia plugin enabled, using latest releases of openstacksdk
       and latest ansible release. Run it only on Load Balancer changes.
-    voting: false
     vars:
       # TODO: Remove tox_extra_args once all ci roles pass
       tox_extra_args: *skip_broken_ci_roles
@@ -166,8 +165,6 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using latest releases of openstacksdk and latest ansible release
-    # OpenStack SDK 1.*.* has not been released to PyPI yet
-    voting: false
     vars:
       tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-openstacksdk-1.x.x.txt'
       # TODO: Remove tox_extra_args once all ci roles pass
@@ -182,7 +179,6 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.9 branch of ansible
-    voting: false
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
@@ -198,7 +194,6 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.12 branch of ansible
-    voting: false
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.11
@@ -214,7 +209,6 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and stable 2.12 branch of ansible
-    voting: false
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.12
@@ -230,6 +224,7 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk and devel branch of ansible
+    # non-voting because we can't prevent ansible devel from breaking us
     voting: false
     required-projects:
       - name: github.com/ansible/ansible
@@ -384,7 +379,6 @@
             dependencies: &deps_unit_lint
               - tox-pep8
               - openstack-tox-linters-ansible-2.12
-            voting: false
 
         - ansible-collections-openstack-functional-devstack-releases:
             dependencies: *deps_unit_lint
