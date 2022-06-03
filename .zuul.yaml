@@ -87,6 +87,7 @@
         keystone_federation_protocol
         keystone_idp
         keystone_mapping
+        logging
         loadbalancer
         network
         nova_flavor

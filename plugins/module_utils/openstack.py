@@ -131,6 +131,9 @@ def openstack_full_argument_spec(**kwargs):
         interface=dict(
             default='public', choices=['public', 'internal', 'admin'],
             aliases=['endpoint_type']),
+        sdk_log_path=dict(default=None, type='str'),
+        sdk_log_level=dict(
+            default='INFO', type='str', choices=['INFO', 'DEBUG']),
     )
     # Filter out all our custom parameters before passing to AnsibleModule
     kwargs_copy = copy.deepcopy(kwargs)
@@ -278,6 +281,7 @@ class OpenStackModule:
         self.warn = self.ansible.warn
         self.sdk, self.conn = self.openstack_cloud_from_module()
         self.check_deprecated_names()
+        self.setup_sdk_logging()
 
     def log(self, msg):
         """Prints log message to system log.
@@ -296,6 +300,16 @@ class OpenStackModule:
         if self.ansible._debug or self.ansible._verbosity > 2:
             self.ansible.log(
                 " ".join(['[DEBUG]', msg]))
+
+    def setup_sdk_logging(self):
+        log_path = self.params.get('sdk_log_path')
+        if log_path is not None:
+            log_level = self.params.get('sdk_log_level')
+            self.sdk.enable_logging(
+                debug=True if log_level == 'DEBUG' else False,
+                http_debug=True if log_level == 'DEBUG' else False,
+                path=log_path
+            )
 
     def check_deprecated_names(self):
         """Check deprecated module names if `deprecated_names` variable is set.
