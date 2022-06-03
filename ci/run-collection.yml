@@ -38,6 +38,7 @@
     - role: keystone_federation_protocol
       tags: keystone_federation_protocol
       when: sdk_version is version(0.44, '>=')
+    - { role: logging, tags: logging }
     - { role: network, tags: network }
     - role: neutron_rbac
       tags:

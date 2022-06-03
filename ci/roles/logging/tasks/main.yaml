@@ -1,0 +1,20 @@
+---
+- name: Trigger flavor listing
+  openstack.cloud.compute_flavor_info:
+    cloud: "{{ cloud }}"
+    sdk_log_path: "{{ sdk_log_file_path }}"
+    sdk_log_level: "DEBUG"
+
+- name: Check log file presence
+  ansible.builtin.stat:
+    path: "{{ sdk_log_file_path }}"
+  register: sdk_log_file
+
+- name: Assert
+  ansible.builtin.assert:
+    that:
+      - "sdk_log_file.stat.exists"
+
+- name: Debug log file content
+  ansible.builtin.debug:
+    msg: "{{ lookup('ansible.builtin.file', sdk_log_file_path) }}"
