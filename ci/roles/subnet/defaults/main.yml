@@ -1,2 +1,26 @@
-subnet_name: shade_subnet
 enable_subnet_dhcp: false
+expected_fields:
+  - allocation_pools
+  - cidr
+  - created_at
+  - description
+  - dns_nameservers
+  - gateway_ip
+  - host_routes
+  - id
+  - ip_version
+  - ipv6_address_mode
+  - ipv6_ra_mode
+  - is_dhcp_enabled
+  - name
+  - network_id
+  - prefix_length
+  - project_id
+  - revision_number
+  - segment_id
+  - service_types
+  - subnet_pool_id
+  - tags
+  - updated_at
+  - use_default_subnet_pool
+subnet_name: shade_subnet

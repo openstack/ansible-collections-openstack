@@ -99,6 +99,7 @@
         recordset
         role_assignment
         security_group
+        subnet
         subnet_pool
         user
         user_group
@@ -110,7 +111,6 @@
       # neutron_rbac
       # router
       # server
-      # subnet
 
 - job:
     name: ansible-collections-openstack-functional-devstack-octavia-base

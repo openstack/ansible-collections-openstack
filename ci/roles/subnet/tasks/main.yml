@@ -1,4 +1,16 @@
 ---
+- name: Delete subnet {{ subnet_name }} before test
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_name }}"
+    state: absent
+
+- name: Delete network {{ network_name }} before test
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: "{{ network_name }}"
+    state: absent
+
 - name: Create network {{ network_name }}
   openstack.cloud.network:
     cloud: "{{ cloud }}"
@@ -19,6 +31,36 @@
     gateway_ip: 192.168.0.1
     allocation_pool_start: 192.168.0.2
     allocation_pool_end: 192.168.0.254
+  register: subnet
+
+- name: Assert changed
+  assert:
+    that: subnet is changed
+
+- name: assert subnet fields
+  assert:
+    that: item in subnet.subnet
+  loop: "{{ expected_fields }}"
+
+- name: Create subnet {{ subnet_name }} on network {{ network_name }} again
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    network_name: "{{ network_name }}"
+    name: "{{ subnet_name }}"
+    state: present
+    enable_dhcp: "{{ enable_subnet_dhcp }}"
+    dns_nameservers:
+      - 8.8.8.7
+      - 8.8.8.8
+    cidr: 192.168.0.0/24
+    gateway_ip: 192.168.0.1
+    allocation_pool_start: 192.168.0.2
+    allocation_pool_end: 192.168.0.254
+  register: subnet
+
+- name: Assert not changed
+  assert:
+    that: subnet is not changed
 
 - name: Update subnet
   openstack.cloud.subnet:
@@ -29,12 +71,33 @@
     dns_nameservers:
       - 8.8.8.7
     cidr: 192.168.0.0/24
+  register: subnet
+
+- name: Assert changed
+  assert:
+    that: subnet is changed
 
 - name: Delete subnet {{ subnet_name }}
   openstack.cloud.subnet:
     cloud: "{{ cloud }}"
     name: "{{ subnet_name }}"
     state: absent
+  register: subnet
+
+- name: Assert changed
+  assert:
+    that: subnet is changed
+
+- name: Delete subnet {{ subnet_name }} again
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_name }}"
+    state: absent
+  register: subnet
+
+- name: Assert not changed
+  assert:
+    that: subnet is not changed
 
 - name: Delete network {{ network_name }}
   openstack.cloud.network:
