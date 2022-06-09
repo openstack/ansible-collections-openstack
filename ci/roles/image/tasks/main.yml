@@ -1,4 +1,10 @@
 ---
+- name: Ensure image does not exist before tests
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ image_name }}"
+
 - name: Create a test image file
   shell: mktemp
   register: tmp_file
@@ -6,15 +12,40 @@
 - name: Fill test image file to 1MB
   shell: truncate -s 1048576 {{ tmp_file.stdout }}
 
+- name: ensure mock kernel and ramdisk images (defaults)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ item }}"
+     filename: "{{ tmp_file.stdout }}"
+     disk_format: raw
+  loop:
+    - cirros-vmlinuz
+    - cirros-initrd
+
 - name: Create raw image (defaults)
   openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ image_name }}"
      filename: "{{ tmp_file.stdout }}"
+     is_protected: true
      disk_format: raw
      tags: "{{ image_tags }}"
-  register: image
+  register: returned_image
+
+- debug:
+    var: returned_image
+
+- name: Assert changed
+  assert:
+    that: returned_image is changed
+
+- name: Assert fields
+  assert:
+    that:
+      - item in returned_image.image
+  loop: "{{ expected_fields }}"
 
 - name: Get details of created image
   openstack.cloud.image_info:
@@ -28,11 +59,68 @@
       - "image_info_result.images[0].name == image_name"
       - "image_info_result.images[0].tags | sort == image_tags | sort"
 
+
+- name: Create raw image again (defaults)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ image_name }}"
+     filename: "{{ tmp_file.stdout }}"
+     is_protected: true
+     disk_format: raw
+     tags: "{{ image_tags }}"
+  register: returned_image
+
+- name: Assert not changed
+  assert:
+    that: returned_image is not changed
+
+- name: Assert fields
+  assert:
+    that:
+      - item in returned_image.image
+  loop: "{{ expected_fields }}"
+
+- name: Update raw image (defaults)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ image_name }}"
+     is_protected: false
+  register: returned_image
+
+- name: Assert changed
+  assert:
+    that:
+      - returned_image is changed
+      - returned_image.image.is_protected == false
+
+- name: Assert changed
+  assert:
+    that:
+      - returned_image is changed
+
 - name: Delete raw image (defaults)
   openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ image_name }}"
+  register: returned_image
+
+- name: assert image changed
+  assert:
+    that: returned_image is changed
+
+- name: Delete raw image again (defaults)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ image_name }}"
+  register: returned_image
+
+- name: assert image not changed
+  assert:
+    that: returned_image is not changed
 
 - name: Create raw image (complex)
   openstack.cloud.image:
@@ -44,12 +132,23 @@
      is_public: True
      min_disk: 10
      min_ram: 1024
+     # TODO(rcastillo): upload cirros-vmlinuz, cirros-initrd in test setup
      kernel: cirros-vmlinuz
      ramdisk: cirros-initrd
      properties:
         cpu_arch: x86_64
         distro: ubuntu
-  register: image
+  register: returned_image
+
+- name: Assert visibility
+  assert:
+     that: returned_image.image.visibility == 'public'
+
+- name: Assert fields
+  assert:
+    that:
+      - item in returned_image.image
+  loop: "{{ expected_fields }}"
 
 - name: Delete raw image (complex)
   openstack.cloud.image:
@@ -87,7 +186,7 @@
      disk_format: raw
      tags: "{{ image_tags }}"
      project: image_owner_project
-  register: image
+  register: returned_image
 
 - name: Get details of created image (owner by project name)
   openstack.cloud.image_info:
@@ -116,7 +215,7 @@
      tags: "{{ image_tags }}"
      project: image_owner_project
      project_domain: default
-  register: image
+  register: returned_image
 
 - name: Get details of created image (owner by project name and domain name)
   openstack.cloud.image_info:
