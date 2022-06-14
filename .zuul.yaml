@@ -65,6 +65,7 @@
       tox_extra_args: &skip_broken_ci_roles >-
         address_scope
         auth
+        catalog_service
         client_config
         dns
         dns_zone_info

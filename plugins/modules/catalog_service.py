@@ -21,16 +21,18 @@ options:
      description:
         - Description of the service
      type: str
-   enabled:
+   is_enabled:
      description:
         - Is the service enabled
      type: bool
      default: 'yes'
-   service_type:
+     aliases: ['enabled']
+   type:
      description:
         - The type of service
      required: true
      type: str
+     aliases: ['service_type']
    state:
      description:
        - Should the resource be present or absent.
@@ -51,21 +53,21 @@ EXAMPLES = '''
      cloud: mycloud
      state: present
      name: glance
-     service_type: image
+     type: image
      description: OpenStack Image Service
 # Delete a service
 - openstack.cloud.catalog_service:
      cloud: mycloud
      state: absent
      name: glance
-     service_type: image
+     type: image
 '''
 
 RETURN = '''
 service:
     description: Dictionary describing the service.
     returned: On success when I(state) is 'present'
-    type: complex
+    type: dict
     contains:
         id:
             description: Service ID.
@@ -75,7 +77,7 @@ service:
             description: Service name.
             type: str
             sample: "glance"
-        service_type:
+        type:
             description: Service type.
             type: str
             sample: "image"
@@ -83,10 +85,14 @@ service:
             description: Service description.
             type: str
             sample: "OpenStack Image Service"
-        enabled:
+        is_enabled:
             description: Service status.
             type: bool
             sample: True
+        links:
+            description: Link of the service
+            type: str
+            sample: http://10.0.0.1/identity/v3/services/0ae87
 id:
     description: The service ID.
     returned: On success when I(state) is 'present'
@@ -100,9 +106,9 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class IdentityCatalogServiceModule(OpenStackModule):
     argument_spec = dict(
         description=dict(default=None),
-        enabled=dict(default=True, type='bool'),
+        is_enabled=dict(default=True, aliases=['enabled'], type='bool'),
         name=dict(required=True),
-        service_type=dict(required=True),
+        type=dict(required=True, aliases=['service_type']),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
@@ -111,11 +117,9 @@ class IdentityCatalogServiceModule(OpenStackModule):
     )
 
     def _needs_update(self, service):
-        if service.enabled != self.params['enabled']:
-            return True
-        if service.description is not None and \
-           service.description != self.params['description']:
-            return True
+        for parameter in ('is_enabled', 'description', 'type'):
+            if service[parameter] != self.params[parameter]:
+                return True
         return False
 
     def _system_state_change(self, service):
@@ -132,46 +136,52 @@ class IdentityCatalogServiceModule(OpenStackModule):
 
     def run(self):
         description = self.params['description']
-        enabled = self.params['enabled']
+        enabled = self.params['is_enabled']
         name = self.params['name']
         state = self.params['state']
-        service_type = self.params['service_type']
+        type = self.params['type']
 
-        services = self.conn.search_services(
-            name_or_id=name, filters=dict(type=service_type))
+        filters = {'name': name, 'type': type}
 
+        services = list(self.conn.identity.services(**filters))
+
+        service = None
         if len(services) > 1:
             self.fail_json(
                 msg='Service name %s and type %s are not unique'
-                % (name, service_type))
+                % (name, type))
         elif len(services) == 1:
             service = services[0]
-        else:
-            service = None
 
         if self.ansible.check_mode:
             self.exit_json(changed=self._system_state_change(service))
 
+        args = {'name': name, 'enabled': enabled, 'type': type}
+        if description:
+            args['description'] = description
+
         if state == 'present':
             if service is None:
-                service = self.conn.create_service(
-                    name=name, description=description, type=service_type, enabled=True)
+                service = self.conn.identity.create_service(**args)
                 changed = True
             else:
                 if self._needs_update(service):
-                    service = self.conn.update_service(
-                        service.id, name=name, type=service_type, enabled=enabled,
-                        description=description)
+                    # The self.conn.update_service calls get_service that
+                    # checks if the service is duplicated or not. We don't need
+                    # to do it here because it was already checked above
+                    service = self.conn.identity.update_service(service,
+                                                                **args)
                     changed = True
                 else:
                     changed = False
-            self.exit_json(changed=changed, service=service, id=service.id)
+            service = service.to_dict(computed=False)
+            self.exit_json(changed=changed, service=service, id=service['id'])
 
         elif state == 'absent':
             if service is None:
                 changed = False
             else:
-                self.conn.delete_service(service.id)
+                self.conn.identity.delete_service(service)
                 changed = True
             self.exit_json(changed=changed)
 
