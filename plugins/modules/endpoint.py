@@ -75,32 +75,40 @@ RETURN = '''
 endpoint:
     description: Dictionary describing the endpoint.
     returned: On success when I(state) is C(present)
-    type: complex
+    type: dict
     contains:
         id:
             description: Endpoint ID.
             type: str
             sample: 3292f020780b4d5baf27ff7e1d224c44
-        region:
-            description: Region Name.
+        interface:
+            description: Endpoint Interface.
+            type: str
+            sample: public
+        is_enabled:
+            description: Service status.
+            type: bool
+            sample: True
+        links:
+            description: Links for the endpoint
+            type: str
+            sample: http://controller/identity/v3/endpoints/123
+        name:
+            description: Name of the endpoint
+            type: str
+            sample: cinder
+        region_id:
+            description: Region ID.
             type: str
             sample: RegionOne
         service_id:
             description: Service ID.
             type: str
             sample: b91f1318f735494a825a55388ee118f3
-        interface:
-            description: Endpoint Interface.
-            type: str
-            sample: public
         url:
             description: Service URL.
             type: str
             sample: http://controller:9292
-        enabled:
-            description: Service status.
-            type: bool
-            sample: True
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -121,7 +129,7 @@ class IdentityEndpointModule(OpenStackModule):
     )
 
     def _needs_update(self, endpoint):
-        if endpoint.enabled != self.params['enabled']:
+        if endpoint.is_enabled != self.params['enabled']:
             return True
         if endpoint.url != self.params['url']:
             return True
@@ -147,51 +155,53 @@ class IdentityEndpointModule(OpenStackModule):
         enabled = self.params['enabled']
         state = self.params['state']
 
-        service = self.conn.get_service(service_name_or_id)
+        service = self.conn.identity.find_service(service_name_or_id)
+
         if service is None and state == 'absent':
             self.exit_json(changed=False)
 
-        elif service is None and state == 'present':
+        if service is None and state == 'present':
             self.fail_json(msg='Service %s does not exist' % service_name_or_id)
 
         filters = dict(service_id=service.id, interface=interface)
         if region is not None:
-            filters['region'] = region
-        endpoints = self.conn.search_endpoints(filters=filters)
+            filters['region_id'] = region
+        endpoints = list(self.conn.identity.endpoints(**filters))
 
+        endpoint = None
         if len(endpoints) > 1:
             self.fail_json(msg='Service %s, interface %s and region %s are '
                            'not unique' %
                            (service_name_or_id, interface, region))
         elif len(endpoints) == 1:
             endpoint = endpoints[0]
-        else:
-            endpoint = None
 
         if self.ansible.check_mode:
             self.exit_json(changed=self._system_state_change(endpoint))
 
         if state == 'present':
             if endpoint is None:
-                result = self.conn.create_endpoint(
-                    service_name_or_id=service, url=url, interface=interface,
-                    region=region, enabled=enabled)
-                endpoint = result[0]
+                args = {'url': url, 'interface': interface,
+                        'service_id': service.id, 'enabled': enabled,
+                        'region_id': region}
+                endpoint = self.conn.identity.create_endpoint(**args)
+
                 changed = True
             else:
                 if self._needs_update(endpoint):
-                    endpoint = self.conn.update_endpoint(
+                    endpoint = self.conn.identity.update_endpoint(
                         endpoint.id, url=url, enabled=enabled)
                     changed = True
                 else:
                     changed = False
-            self.exit_json(changed=changed, endpoint=endpoint)
+            self.exit_json(changed=changed,
+                           endpoint=endpoint.to_dict(computed=False))
 
         elif state == 'absent':
             if endpoint is None:
                 changed = False
             else:
-                self.conn.delete_endpoint(endpoint.id)
+                self.conn.identity.delete_endpoint(endpoint.id)
                 changed = True
             self.exit_json(changed=changed)
 

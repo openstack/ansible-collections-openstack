@@ -1,0 +1,65 @@
+---
+- name: Create a service for compute
+  openstack.cloud.endpoint:
+     cloud: "{{ cloud }}"
+     service: nova
+     endpoint_interface: internal
+     url: http://controller:9292
+     region: RegionOne
+     state: present
+  register: endpoint_test
+
+- name: Ensure service was created
+  assert:
+    that:
+      - endpoint_test.endpoint.id is defined
+
+- name: Ensure service have the proper endpoint
+  assert:
+    that:
+      - endpoint_test.endpoint.url == "http://controller:9292"
+
+- name: Create service for compute again
+  openstack.cloud.endpoint:
+     cloud: "{{ cloud }}"
+     service: nova
+     endpoint_interface: internal
+     url: http://controller:9292
+     region: RegionOne
+     state: present
+  register: endpoint_again
+
+- name: Ensure changed is false
+  assert:
+    that:
+      - not endpoint_again.changed
+
+- name: Update endpoint url
+  openstack.cloud.endpoint:
+    cloud: "{{ cloud }}"
+    service: nova
+    endpoint_interface: internal
+    url: http://controller:9393
+    region: RegionOne
+    state: present
+  register: endpoint_updated
+
+- name: Ensure endpoint was updated
+  assert:
+    that:
+      - endpoint_updated.endpoint.url == "http://controller:9393"
+
+- name: Delete endpoint
+  openstack.cloud.endpoint:
+    cloud: "{{ cloud }}"
+    service: nova
+    endpoint_interface: internal
+    url: http://controller:9393
+    region: RegionOne
+    state: absent
+  register: endpoint_deleted
+
+- name: Ensure endpoint was deleted
+  assert:
+    that:
+      - endpoint_deleted.changed
