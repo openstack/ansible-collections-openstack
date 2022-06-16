@@ -23,12 +23,18 @@ options:
         which the security group rule is applied.
     choices: ['egress', 'ingress']
     type: str
-  ethertype:
+  ether_type:
     description:
-      - Filter the security group rule list result by the ethertype of
+      - Filter the security group rule list result by the ether_type of
         network traffic. The value must be IPv4 or IPv6.
     choices: ['IPv4', 'IPv6']
     type: str
+    aliases: ['ethertype']
+  id:
+    description:
+      - Filter the list result by the ID of the security group rule.
+    type: str
+    aliases: ['rule']
   port_range_min:
     description:
       - Starting port
@@ -46,7 +52,6 @@ options:
     description:
       - Filter the security group rule list result by the IP protocol.
     type: str
-    choices: ['any', 'tcp', 'udp', 'icmp', '112', '132']
   remote_group:
     description:
       - Filter the security group rule list result by the name or ID of the
@@ -60,10 +65,6 @@ options:
     description:
       - Filter the list result by the revision number of the resource.
     type: int
-  rule:
-    description:
-      - Filter the list result by the ID of the security group rule.
-    type: str
   security_group:
     description:
       - Name or ID of the security group
@@ -80,13 +81,13 @@ extends_documentation_fragment:
 EXAMPLES = '''
 # Get all security group rules
 - openstack.cloud.security_group_rule_info:
-    cloud: "{{ cloud }}"
+    cloud: devstack
   register: sg
 
 # Filter security group rules for port 80 and name
 - openstack.cloud.security_group_rule_info:
-    cloud: "{{ cloud }}"
-    security_group: "{{ rule_name }}"
+    cloud: devstack
+    security_group: foo
     protocol: tcp
     port_range_min: 80
     port_range_max: 80
@@ -94,18 +95,19 @@ EXAMPLES = '''
 
 # Filter for ICMP rules
 - openstack.cloud.security_group_rule_info:
-    cloud: "{{ cloud }}"
+    cloud: devstack
     protocol: icmp
 '''
 
 RETURN = '''
 security_group_rules:
   description: List of dictionaries describing security group rules.
-  type: complex
-  returned: On Success.
+  type: list
+  elements: dict
+  returned: always
   contains:
-    id:
-      description: Unique rule UUID.
+    created_at:
+      description: Timestamp when the security group rule was created.
       type: str
     description:
       description: Human-readable description of the resource.
@@ -115,37 +117,70 @@ security_group_rules:
       description: The direction in which the security group rule is applied.
       type: str
       sample: 'egress'
-    ethertype:
+    ether_type:
       description: One of IPv4 or IPv6.
       type: str
       sample: 'IPv4'
-    port_range_min:
-      description: The minimum port number in the range that is matched by
-                   the security group rule.
-      type: int
-      sample: 8000
+    id:
+      description: Unique rule UUID.
+      type: str
+    name:
+      description: Name of the resource.
+      type: str
     port_range_max:
       description: The maximum port number in the range that is matched by
                   the security group rule.
       type: int
       sample: 8000
-    project:
-      description:
-        - Unique ID of the project.
+    port_range_min:
+      description: The minimum port number in the range that is matched by
+                   the security group rule.
+      type: int
+      sample: 8000
+    project_id:
+      description: The ID of the project.
       type: str
-      sample: '16d53a84a13b49529d2e2c3646691123'
+      sample: 'e4f50856753b4dc6afee5fa6b9b6c550'
     protocol:
       description: The protocol that is matched by the security group rule.
       type: str
       sample: 'tcp'
+    remote_address_group_id:
+      description: The remote address group ID to be associated with this
+                   security group rule.
+      type: str
+    remote_group_id:
+      description: The remote security group ID to be associated with this
+                   security group rule.
+      type: str
     remote_ip_prefix:
-      description: The remote IP prefix to be associated with this security group rule.
+      description: The remote IP prefix to be associated with this security
+                   group rule.
+      type: str
+    revision_number:
+      description: The remote IP prefix to be associated with this security
+                   group rule.
       type: str
       sample: '0.0.0.0/0'
     security_group_id:
-      description: The security group ID to associate with this security group rule.
+      description: The security group ID to associate with this security
+                   group rule.
       type: str
       sample: '729b9660-a20a-41fe-bae6-ed8fa7f69123'
+    tags:
+      description: The security group ID to associate with this security
+                   group rule.
+      type: str
+      sample: '729b9660-a20a-41fe-bae6-ed8fa7f69123'
+    tenant_id:
+      description: The ID of the project. Deprecated.
+      type: str
+      sample: 'e4f50856753b4dc6afee5fa6b9b6c550'
+    updated_at:
+      description: Time at which the resource has been updated
+                   (in UTC ISO8601 format).
+      type: str
+      sample: '2018-03-19T19:16:56Z'
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
@@ -156,84 +191,51 @@ class SecurityGroupRuleInfoModule(OpenStackModule):
     argument_spec = dict(
         description=dict(),
         direction=dict(choices=['egress', 'ingress']),
-        ethertype=dict(choices=['IPv4', 'IPv6']),
-        port_range_min=dict(type='int', min_ver="0.32.0"),
-        port_range_max=dict(type='int', min_ver="0.32.0"),
+        ether_type=dict(choices=['IPv4', 'IPv6'], aliases=['ethertype']),
+        id=dict(aliases=['rule']),
+        port_range_min=dict(type='int'),
+        port_range_max=dict(type='int'),
         project=dict(),
-        protocol=dict(choices=['any', 'tcp', 'udp', 'icmp', '112', '132']),
+        protocol=dict(),
         remote_group=dict(),
-        remote_ip_prefix=dict(min_ver="0.32.0"),
+        remote_ip_prefix=dict(),
         revision_number=dict(type='int'),
-        rule=dict(),
         security_group=dict()
     )
 
     module_kwargs = dict(
         mutually_exclusive=[
-            ['remote_ip_prefix', 'remote_group'],
+            ('remote_ip_prefix', 'remote_group'),
         ],
         supports_check_mode=True
     )
 
     def run(self):
-        description = self.params['description']
-        direction = self.params['direction']
-        ethertype = self.params['ethertype']
-        project = self.params['project']
-        protocol = self.params['protocol']
-        remote_group = self.params['remote_group']
-        revision_number = self.params['revision_number']
-        rule = self.params['rule']
-        security_group = self.params['security_group']
+        filters = dict((k, self.params[k])
+                       for k in ['description', 'direction', 'ether_type',
+                                 'port_range_min', 'port_range_max',
+                                 'protocol', 'remote_group',
+                                 'revision_number', 'remote_ip_prefix']
+                       if self.params[k] is not None)
 
-        changed = False
-        filters = self.check_versioned(
-            port_range_min=self.params['port_range_min'],
-            port_range_max=self.params['port_range_max'],
-            remote_ip_prefix=self.params['remote_ip_prefix']
-        )
-        data = []
-
-        if rule:
-            sec_rule = self.conn.network.get_security_group_rule(rule)
-            if sec_rule is None:
-                self.exit(changed=changed, security_group_rules=[])
-            self.exit(changed=changed,
-                      security_group_rules=sec_rule.to_dict())
-            # query parameter id is currently not supported
-            # PR is open for that.
-            # filters['id] = sec_rule.id
-        if description:
-            filters['description'] = description
-        if direction:
-            filters['direction'] = direction
-        if ethertype:
-            filters['ethertype'] = ethertype
-        if project:
-            proj = self.conn.get_project(project)
-            if proj is None:
-                self.fail_json(msg='Project %s could not be found' % project)
+        if self.params['id']:
+            filters['id'] = self.params['id']
+        if self.params['project']:
+            proj = self.conn.find_project(self.params['project'],
+                                          ignore_missing=False)
             filters['project_id'] = proj.id
-        if protocol:
-            filters['protocol'] = protocol
-        if remote_group:
-            filters['remote_group_id'] = remote_group
-        if revision_number:
-            filters['revision_number'] = revision_number
-        if security_group:
+        if self.params['security_group']:
             sec_grp = self.conn.network.find_security_group(
-                name_or_id=security_group,
-                ignore_missing=True)
-            if sec_grp is None:
-                self.fail_json(msg='Security group %s could not be found' % sec_grp)
+                name_or_id=self.params['security_group'],
+                ignore_missing=False)
             filters['security_group_id'] = sec_grp.id
 
-        for item in self.conn.network.security_group_rules(**filters):
-            item = item.to_dict()
-            data.append(item)
+        security_group_rules = [
+            rule.to_dict(computed=False)
+            for rule in self.conn.network.security_group_rules(**filters)]
 
-        self.exit_json(changed=changed,
-                       security_group_rules=data)
+        self.exit_json(changed=False,
+                       security_group_rules=security_group_rules)
 
 
 def main():

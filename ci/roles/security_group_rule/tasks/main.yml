@@ -22,10 +22,30 @@
      remote_ip_prefix: 0.0.0.0/0
   register: rule
 
-- name: Assert return fields
+- name: Assert return fields for security_group_rule
   assert:
      that: item in rule.rule
   loop: "{{ expected_fields }}"
+
+- name: Fetch all security group rule
+  openstack.cloud.security_group_rule_info:
+     cloud: "{{ cloud }}"
+  register: all_rules
+
+- name: Assert return fields security_group_rule_info
+  assert:
+     that: item in all_rules.security_group_rules[0]
+  loop: "{{ expected_fields }}"
+
+- name: Fetch security group rule based on rule
+  openstack.cloud.security_group_rule_info:
+     cloud: "{{ cloud }}"
+     id: "{{ rule.rule.id }}"
+  register: filter_by_rule
+
+- name: Assert return fields security_group_rule_info
+  assert:
+    that: filter_by_rule.security_group_rules|length != 0
 
 - name: Assert changed
   assert:
