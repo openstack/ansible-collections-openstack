@@ -6,7 +6,6 @@ expected_fields:
   - external_gateway_info
   - flavor_id
   - id
-  - interfaces_info
   - is_admin_state_up
   - is_distributed
   - is_ha
@@ -18,6 +17,28 @@ expected_fields:
   - tags
   - tenant_id
   - updated_at
+network_name: ansible_net
 external_network_name: ansible_external_net
 network_external: true
 router_name: ansible_router
+test_subnets:
+  - cloud: "{{ cloud }}"
+    state: present
+    network_name: "{{ network_name }}"
+    name: shade_subnet1
+    cidr: 10.7.7.0/24
+  - cloud: "{{ cloud }}"
+    state: present
+    network_name: "{{ network_name }}"
+    name: shade_subnet2
+    cidr: 10.8.8.0/24
+  - cloud: "{{ cloud }}"
+    state: present
+    network_name: "{{ network_name }}"
+    name: shade_subnet3
+    cidr: 10.9.9.0/24
+  - cloud: "{{ cloud }}"
+    state: present
+    network_name: "{{ network_name }}"
+    name: shade_subnet4
+    cidr: 10.10.10.0/24

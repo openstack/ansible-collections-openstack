@@ -6,44 +6,51 @@
      state: present
      name: "{{ network_name }}"
      external: false
+  register: internal_net
 
-- name: Create subnet1
-  openstack.cloud.subnet:
+- name: Ensure router doesn't exist before tests
+  openstack.cloud.router:
      cloud: "{{ cloud }}"
-     state: present
-     network_name: "{{ network_name }}"
-     name: shade_subnet1
-     cidr: 10.7.7.0/24
+     state: absent
+     name: "{{ router_name }}"
 
-- name: Create subnet2
-  openstack.cloud.subnet:
-     cloud: "{{ cloud }}"
-     state: present
-     network_name: "{{ network_name }}"
-     name: shade_subnet2
-     cidr: 10.8.8.0/24
+- name: Get ports in internal network
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      network_id: "{{ internal_net.id }}"
+  register: existing_ports
 
-- name: Create subnet3
-  openstack.cloud.subnet:
-     cloud: "{{ cloud }}"
-     state: present
-     network_name: "{{ network_name }}"
-     name: shade_subnet3
-     cidr: 10.9.9.0/24
+- name: Ensure ports don't exist before tests
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    name: "{{ item.id }}"
+    state: absent
+  loop: "{{ existing_ports.ports }}"
 
-- name: Create subnet4
+- name: Delete subnets before tests
   openstack.cloud.subnet:
-     cloud: "{{ cloud }}"
-     state: present
-     network_name: "{{ network_name }}"
-     name: shade_subnet4
-     cidr: 10.10.10.0/24
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ item.name }}"
+  loop: "{{ test_subnets }}"
+
+- name: Create subnets 1-4
+  openstack.cloud.subnet: "{{ item }}"
+  loop: "{{ test_subnets }}"
 
 - name: Create router
   openstack.cloud.router:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ router_name }}"
+  register: result
+
+- name: Verify returned values
+  assert:
+    that:
+      - item in result.router
+  loop: "{{ expected_fields }}"
 
 - name: Update router (add interface)
   openstack.cloud.router:
@@ -80,6 +87,12 @@
       - "result.routers.0.name == router_name"
       - (result.routers.0.interfaces_info|length) == 1
 
+- name: Verify existence of return values
+  assert:
+    that:
+      - item in result.routers[0]
+  loop: "{{ expected_fields + ['interfaces_info'] }}"
+
 - name: Gather routers info with filters
   openstack.cloud.routers_info:
       cloud: "{{ cloud }}"
@@ -93,12 +106,6 @@
     that:
       - "result_filter.routers.0.name == router_name"
       - (result_filter.routers.0.interfaces_info|length) == 1
-
-- name: Verify returned values
-  assert:
-    that:
-      - item in result.routers[0]
-  loop: '{{ expected_fields }}'
 
 - name: Update router (change interfaces)
   openstack.cloud.router:
@@ -270,12 +277,13 @@
      name: "{{ router_name }}"
      interfaces:
          - shade_subnet1
-     network: "{{ external_network_name }}"
-     external_fixed_ips:
-        - subnet: shade_subnet5
-          ip: 10.6.6.100
-        - subnet: shade_subnet5
-          ip: 10.6.6.101
+     external_gateway_info:
+        network: "{{ external_network_name }}"
+        external_fixed_ips:
+           - subnet: shade_subnet5
+             ip: 10.6.6.100
+           - subnet: shade_subnet5
+             ip: 10.6.6.101
   when:
     - network_external
 
@@ -368,35 +376,145 @@
   when:
     - network_external
 
+- name: Update router (disable external snat)
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     enable_snat: false
+     interfaces:
+         - shade_subnet1
+     network: "{{ external_network_name }}"
+     external_fixed_ips:
+        - subnet: shade_subnet5
+          ip: 10.6.6.101
+  when:
+    - network_external
+  register: result
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+     filters:
+       admin_state_up: true
+  register: result
+- name: Verify routers info
+  assert:
+    that:
+      - "result.routers.0.name == router_name"
+      - "not result.routers.0.external_gateway_info.enable_snat"
+  when:
+    - network_external
+
+- name: Update router (disable external snat) again
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     enable_snat: false
+     interfaces:
+         - shade_subnet1
+     network: "{{ external_network_name }}"
+     external_fixed_ips:
+        - subnet: shade_subnet5
+          ip: 10.6.6.101
+  when:
+    - network_external
+  register: result
+
+- name: Assert idempotent module
+  assert:
+    that: result is not changed
+
 - name: Delete router
   openstack.cloud.router:
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ router_name }}"
 
-- name: Delete subnet1
-  openstack.cloud.subnet:
+- name: Delete router again
+  openstack.cloud.router:
      cloud: "{{ cloud }}"
      state: absent
-     name: shade_subnet1
+     name: "{{ router_name }}"
+  register: result
 
-- name: Delete subnet2
-  openstack.cloud.subnet:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: shade_subnet2
+- name: Assert idempotent module
+  assert:
+    that: result is not changed
 
-- name: Delete subnet3
-  openstack.cloud.subnet:
+- name: Create router with simple interface
+  openstack.cloud.router:
      cloud: "{{ cloud }}"
-     state: absent
-     name: shade_subnet3
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - shade_subnet1
+  register: result
 
-- name: Delete subnet4
-  openstack.cloud.subnet:
+- name: Assert changed
+  assert:
+    that: result is changed
+
+- name: Set portip in already assigned subnet
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - subnet: shade_subnet1
+           net: "{{ network_name }}"
+           portip: 10.7.7.42
+  register: result
+
+- name: Assert changed
+  assert:
+    that: result is changed
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+  register: result
+
+- name: Verify routers info
+  assert:
+    that: "'10.7.7.42' in result.routers[0].interfaces_info|map(attribute='ip_address')"
+
+- name: Unset portip in already assigned subnet
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - subnet: shade_subnet1
+           net: "{{ network_name }}"
+  register: result
+
+- name: Assert not changed
+  assert:
+    that: result is not changed
+
+- name: Delete router
+  openstack.cloud.router:
      cloud: "{{ cloud }}"
      state: absent
-     name: shade_subnet4
+     name: "{{ router_name }}"
+
+- name: Get ports in internal network
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      network_id: "{{ internal_net.id }}"
+  register: existing_ports
+
+- name: Clean up ports
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    name: "{{ item.id }}"
+    state: absent
+  loop: "{{ existing_ports.ports }}"
 
 - name: Delete subnet5
   openstack.cloud.subnet:
@@ -405,6 +523,13 @@
      name: shade_subnet5
   when:
     - network_external
+
+- name: Delete subnets 1-4
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ item.name }}"
+  loop: "{{ test_subnets }}"
 
 - name: Delete internal network
   openstack.cloud.network:
