@@ -12,21 +12,14 @@ description:
       updated. Only the I(records), I(description), and I(ttl) values
       can be updated.
 options:
-   zone:
+   description:
      description:
-        - Zone managing the recordset
-     required: true
+        - Description of the recordset
      type: str
    name:
      description:
         - Name of the recordset. It must be ended with name of dns zone.
      required: true
-     type: str
-   recordset_type:
-     description:
-        - Recordset type
-        - Required when I(state=present).
-     choices: ['a', 'aaaa', 'mx', 'cname', 'txt', 'ns', 'srv', 'ptr', 'caa']
      type: str
    records:
      description:
@@ -34,19 +27,26 @@ options:
         - Required when I(state=present).
      type: list
      elements: str
-   description:
+   recordset_type:
      description:
-        - Description of the recordset
+        - Recordset type
+        - Required when I(state=present).
+     choices: ['a', 'aaaa', 'mx', 'cname', 'txt', 'ns', 'srv', 'ptr', 'caa']
      type: str
-   ttl:
-     description:
-        -  TTL (Time To Live) value in seconds
-     type: int
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
+     type: str
+   ttl:
+     description:
+        -  TTL (Time To Live) value in seconds
+     type: int
+   zone:
+     description:
+        - Name or ID of the zone which manages the recordset
+     required: true
      type: str
 requirements:
     - "python >= 3.6"
@@ -90,36 +90,73 @@ RETURN = '''
 recordset:
     description: Dictionary describing the recordset.
     returned: On success when I(state) is 'present'.
-    type: complex
+    type: dict
     contains:
-        id:
-            description: Unique recordset ID
+        action:
+            description: Current action in progress on the resource
             type: str
-            sample: "c1c530a3-3619-46f3-b0f6-236927b2618c"
-        name:
-            description: Recordset name
+            returned: always
+        created_at:
+            description: Timestamp when the zone was created
             type: str
-            sample: "www.example.net."
-        zone_id:
-            description: Zone id
-            type: str
-            sample: 9508e177-41d8-434e-962c-6fe6ca880af7
-        type:
-            description: Recordset type
-            type: str
-            sample: "A"
+            returned: always
         description:
             description: Recordset description
             type: str
             sample: "Test description"
-        ttl:
-            description: Zone TTL value
-            type: int
-            sample: 3600
+            returned: always
+        id:
+            description: Unique recordset ID
+            type: str
+            sample: "c1c530a3-3619-46f3-b0f6-236927b2618c"
+        links:
+            description: Links related to the resource
+            type: dict
+            returned: always
+        name:
+            description: Recordset name
+            type: str
+            sample: "www.example.net."
+            returned: always
+        project_id:
+            description: ID of the proect to which the recordset belongs
+            type: str
+            returned: always
         records:
             description: Recordset records
             type: list
             sample: ['10.0.0.1']
+            returned: always
+        status:
+            description:
+                - Recordset status
+                - Valid values include `PENDING_CREATE`, `ACTIVE`,`PENDING_DELETE`,
+                  `ERROR`
+            type: str
+            returned: always
+        ttl:
+            description: Zone TTL value
+            type: int
+            sample: 3600
+            returned: always
+        type:
+            description:
+                - Recordset type
+                - Valid values include `A`, `AAAA`, `MX`, `CNAME`, `TXT`, `NS`,
+                  `SSHFP`, `SPF`, `SRV`, `PTR`
+            type: str
+            sample: "A"
+            returned: always
+        zone_id:
+            description: The id of the Zone which this recordset belongs to
+            type: str
+            sample: 9508e177-41d8-434e-962c-6fe6ca880af7
+            returned: always
+        zone_name:
+            description: The name of the Zone which this recordset belongs to
+            type: str
+            sample: "example.com."
+            returned: always
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -127,13 +164,13 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class DnsRecordsetModule(OpenStackModule):
     argument_spec = dict(
-        zone=dict(required=True),
-        name=dict(required=True),
-        recordset_type=dict(required=False, choices=['a', 'aaaa', 'mx', 'cname', 'txt', 'ns', 'srv', 'ptr', 'caa']),
-        records=dict(required=False, type='list', elements='str'),
         description=dict(required=False, default=None),
-        ttl=dict(required=False, type='int'),
+        name=dict(required=True),
+        records=dict(required=False, type='list', elements='str'),
+        recordset_type=dict(required=False, choices=['a', 'aaaa', 'mx', 'cname', 'txt', 'ns', 'srv', 'ptr', 'caa']),
         state=dict(default='present', choices=['absent', 'present']),
+        ttl=dict(required=False, type='int'),
+        zone=dict(required=True),
     )
 
     module_kwargs = dict(
@@ -145,88 +182,73 @@ class DnsRecordsetModule(OpenStackModule):
 
     module_min_sdk_version = '0.28.0'
 
-    def _system_state_change(self, state, records, description, ttl, recordset):
+    def _needs_update(self, params, recordset):
+        for k in ('description', 'records', 'ttl'):
+            if k not in params:
+                continue
+            if params[k] is not None and params[k] != recordset[k]:
+                return True
+        return False
+
+    def _system_state_change(self, state, recordset):
         if state == 'present':
             if recordset is None:
                 return True
-            if records is not None and recordset['records'] != records:
-                return True
-            if description is not None and recordset['description'] != description:
-                return True
-            if ttl is not None and recordset['ttl'] != ttl:
-                return True
+            kwargs = self._build_params()
+            return self._needs_update(kwargs, recordset)
         if state == 'absent' and recordset:
             return True
         return False
+
+    def _build_params(self):
+        recordset_type = self.params['recordset_type']
+        records = self.params['records']
+        description = self.params['description']
+        ttl = self.params['ttl']
+        params = {
+            'description': description,
+            'records': records,
+            'type': recordset_type.upper(),
+            'ttl': ttl,
+        }
+        return {k: v for k, v in params.items() if v is not None}
 
     def run(self):
         zone = self.params.get('zone')
         name = self.params.get('name')
         state = self.params.get('state')
+        ttl = self.params.get('ttl')
 
         recordsets = self.conn.search_recordsets(zone, name_or_id=name)
 
+        recordset = None
         if recordsets:
             recordset = recordsets[0]
-            try:
-                recordset_id = recordset['id']
-            except KeyError as e:
-                self.fail_json(msg=str(e))
-        else:
-            # recordsets is filtered by type and should never be more than 1 return
-            recordset = None
 
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(state, recordset))
+
+        changed = False
         if state == 'present':
-            recordset_type = self.params.get('recordset_type').upper()
-            records = self.params.get('records')
-            description = self.params.get('description')
-            ttl = self.params.get('ttl')
-
-            kwargs = {}
-            if description:
-                kwargs['description'] = description
-            kwargs['records'] = records
-
-            if self.ansible.check_mode:
-                self.exit_json(
-                    changed=self._system_state_change(
-                        state, records, description, ttl, recordset))
-
+            kwargs = self._build_params()
             if recordset is None:
-                if ttl:
-                    kwargs['ttl'] = ttl
-                else:
-                    kwargs['ttl'] = 300
-
-                recordset = self.conn.create_recordset(
-                    zone=zone, name=name, recordset_type=recordset_type,
-                    **kwargs)
+                kwargs['ttl'] = ttl or 300
+                type = kwargs.pop('type', None)
+                if type is not None:
+                    kwargs['recordset_type'] = type
+                recordset = self.conn.create_recordset(zone=zone, name=name,
+                                                       **kwargs)
                 changed = True
-            else:
-
-                if ttl:
-                    kwargs['ttl'] = ttl
-
-                pre_update_recordset = recordset
-                changed = self._system_state_change(
-                    state, records, description, ttl, pre_update_recordset)
-                if changed:
-                    recordset = self.conn.update_recordset(
-                        zone=zone, name_or_id=recordset_id, **kwargs)
-
+            elif self._needs_update(kwargs, recordset):
+                type = kwargs.pop('type', None)
+                recordset = self.conn.update_recordset(zone, recordset['id'],
+                                                       **kwargs)
+                changed = True
             self.exit_json(changed=changed, recordset=recordset)
-
-        elif state == 'absent':
-            if self.ansible.check_mode:
-                self.exit_json(changed=self._system_state_change(
-                    state, None, None, None, recordset))
-
-            if recordset is None:
-                changed = False
-            else:
-                self.conn.delete_recordset(zone, recordset_id)
-                changed = True
-            self.exit_json(changed=changed)
+        elif state == 'absent' and recordset is not None:
+            self.conn.delete_recordset(zone, recordset['id'])
+            changed = True
+        self.exit_json(changed=changed)
 
 
 def main():
