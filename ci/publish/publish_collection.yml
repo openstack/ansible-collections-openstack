@@ -1,7 +1,7 @@
 ---
 - hosts: all
   vars:
-    collection_path: "{{ ansible_user_dir }}/{{ zuul.projects['opendev.org/openstack/ansible-collections-openstack'].src_dir }}"
+    collection_path: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
     build_collection_path: /tmp/collection_built/
     ansible_galaxy_path: "~/.local/bin/ansible-galaxy"
 
@@ -63,12 +63,15 @@
               url = {{ ansible_galaxy_info.url }}
               token = {{ ansible_galaxy_info.token }}
 
+        - name: Include galaxy.yml as vars file
+          include_vars: "{{ collection_path }}/galaxy.yml"
+
         - name: Publish collection to Ansible Galaxy / Automation Hub
           environment:
             ANSIBLE_CONFIG: "{{ _ansiblecfg_tmp.path }}"
           shell: >-
             {{ ansible_galaxy_path }} collection publish -vvv
-            {{ build_collection_path }}/openstack-cloud-{{ version_tag }}.tar.gz
+            {{ build_collection_path }}/{{ namespace }}-{{ name }}-{{ version_tag }}.tar.gz
 
       always:
         - name: Shred ansible-galaxy credentials
