@@ -1,4 +1,11 @@
 ---
+- name: Ensure security group does not exist before tests
+  openstack.cloud.security_group:
+     cloud: "{{ cloud }}"
+     name: "{{ secgroup_name }}"
+     state: absent
+     description: Created from Ansible playbook
+
 - name: Create security group
   openstack.cloud.security_group:
      cloud: "{{ cloud }}"
@@ -13,6 +20,29 @@
      state: present
      protocol: icmp
      remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert return fields
+  assert:
+     that: item in rule.rule
+  loop: "{{ expected_fields }}"
+
+- name: Assert changed
+  assert:
+     that: rule is changed
+
+- name: Create empty ICMP rule again
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: icmp
+     remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert not changed
+  assert:
+     that: rule is not changed
 
 - name: Create -1 ICMP rule
   openstack.cloud.security_group_rule:
@@ -23,6 +53,26 @@
      port_range_min: -1
      port_range_max: -1
      remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert not changed
+  assert:
+     that: rule is not changed
+
+- name: Create -1 ICMP rule again
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: icmp
+     port_range_min: -1
+     port_range_max: -1
+     remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert not changed
+  assert:
+     that: rule is not changed
 
 - name: Create empty TCP rule
   openstack.cloud.security_group_rule:
@@ -31,6 +81,11 @@
      state: present
      protocol: tcp
      remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert changed
+  assert:
+     that: rule is changed
 
 - name: Create TCP rule again with port range (1, 65535)
   openstack.cloud.security_group_rule:
@@ -41,6 +96,11 @@
      port_range_min: 1
      port_range_max: 65535
      remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert changed
+  assert:
+     that: rule is not changed
 
 - name: Create TCP rule again with port range (-1, -1)
   openstack.cloud.security_group_rule:
@@ -51,6 +111,26 @@
      port_range_min: -1
      port_range_max: -1
      remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert changed
+  assert:
+     that: rule is not changed
+
+- name: Create TCP rule again with defined range
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: tcp
+     port_range_min: 8000
+     port_range_max: 9000
+     remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert changed
+  assert:
+     that: rule is changed
 
 - name: Create empty UDP rule
   openstack.cloud.security_group_rule:

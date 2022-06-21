@@ -38,13 +38,14 @@ options:
         - Name or ID of the Security group to link (exclusive with
           remote_ip_prefix)
       type: str
-   ethertype:
+   ether_type:
       description:
         - Must be IPv4 or IPv6, and addresses represented in CIDR must
           match the ingress or egress rules. Not all providers support IPv6.
       choices: ['IPv4', 'IPv6']
       default: IPv4
       type: str
+      aliases: [ethertype]
    direction:
       description:
         - The direction in which the security group rule is applied. Not
@@ -145,42 +146,98 @@ id:
   description: Unique rule UUID.
   type: str
   returned: state == present
-direction:
-  description: The direction in which the security group rule is applied.
-  type: str
-  sample: 'egress'
-  returned: state == present
-ethertype:
-  description: One of IPv4 or IPv6.
-  type: str
-  sample: 'IPv4'
-  returned: state == present
-port_range_min:
-  description: The minimum port number in the range that is matched by
-               the security group rule.
-  type: int
-  sample: 8000
-  returned: state == present
-port_range_max:
-  description: The maximum port number in the range that is matched by
-               the security group rule.
-  type: int
-  sample: 8000
-  returned: state == present
-protocol:
-  description: The protocol that is matched by the security group rule.
-  type: str
-  sample: 'tcp'
-  returned: state == present
-remote_ip_prefix:
-  description: The remote IP prefix to be associated with this security group rule.
-  type: str
-  sample: '0.0.0.0/0'
-  returned: state == present
-security_group_id:
-  description: The security group ID to associate with this security group rule.
-  type: str
-  returned: state == present
+rule:
+  description: Representation of the security group rule
+  type: dict
+  returned: when I(state) is present
+  contains:
+    created_at:
+      description: Timestamp when the resource was created
+      type: str
+      returned: always
+    description:
+      description: Description of the resource
+      type: str
+      returned: always
+    direction:
+      description: The direction in which the security group rule is applied.
+      type: str
+      sample: 'egress'
+      returned: always
+    ether_type:
+      description: Either IPv4 or IPv6
+      type: str
+      returned: always
+    id:
+      description: Unique rule UUID.
+      type: str
+      returned: always
+    name:
+      description: Name of the resource.
+      type: str
+      returned: always
+    port_range_max:
+      description: The maximum port number in the range that is matched by
+                   the security group rule.
+      type: int
+      sample: 8000
+      returned: always
+    port_range_min:
+      description: The minimum port number in the range that is matched by
+                   the security group rule.
+      type: int
+      sample: 8000
+      returned: always
+    project_id:
+      description: ID of the project the resource belongs to.
+      type: str
+      returned: always
+    protocol:
+      description: The protocol that is matched by the security group rule.
+      type: str
+      sample: 'tcp'
+      returned: always
+    remote_address_group_id:
+      description: The remote address group ID to be associated with this
+                   security group rule.
+      type: str
+      sample: '0.0.0.0/0'
+      returned: always
+    remote_group_id:
+      description: The remote security group ID to be associated with this
+                   security group rule.
+      type: str
+      sample: '0.0.0.0/0'
+      returned: always
+    remote_ip_prefix:
+      description: The remote IP prefix to be associated with this security
+                   group rule.
+      type: str
+      sample: '0.0.0.0/0'
+      returned: always
+    revision_number:
+      description: Revision number
+      type: int
+      sample: 0
+      returned: always
+    security_group_id:
+      description: The security group ID to associate with this security group
+                   rule.
+      type: str
+      returned: always
+    tags:
+      description: Tags associated with resource.
+      type: list
+      elements: str
+      returned: always
+    tenant_id:
+      description: ID of the project the resource belongs to. Deprecated.
+      type: str
+      returned: always
+    updated_at:
+      description: Timestamp when the security group rule was last updated.
+      type: str
+      returned: always
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
@@ -255,8 +312,9 @@ class SecurityGroupRuleModule(OpenStackModule):
         port_range_max=dict(required=False, type='int'),
         remote_ip_prefix=dict(required=False),
         remote_group=dict(required=False),
-        ethertype=dict(default='IPv4',
-                       choices=['IPv4', 'IPv6']),
+        ether_type=dict(default='IPv4',
+                        choices=['IPv4', 'IPv6'],
+                        aliases=['ethertype']),
         direction=dict(default='ingress',
                        choices=['egress', 'ingress']),
         state=dict(default='present',
@@ -271,111 +329,112 @@ class SecurityGroupRuleModule(OpenStackModule):
         ]
     )
 
-    def _find_matching_rule(self, secgroup, remotegroup):
+    def _build_kwargs(self, secgroup, remote_group, project):
+        kwargs = dict(
+            security_group_id=secgroup.id,
+            description=self.params['description'],
+            port_range_max=self.params['port_range_max'],
+            port_range_min=self.params['port_range_min'],
+            protocol=self.params['protocol'],
+            remote_ip_prefix=self.params['remote_ip_prefix'],
+            direction=self.params['direction'],
+            ether_type=self.params['ether_type'],
+        )
+        if self.params['port_range_min'] != -1:
+            kwargs['port_range_min'] = self.params['port_range_min']
+        if self.params['port_range_max'] != -1:
+            kwargs['port_range_max'] = self.params['port_range_max']
+        if project:
+            kwargs['project_id'] = project.id
+        if remote_group:
+            kwargs['remote_group_id'] = remote_group.id
+        return {k: v for k, v in kwargs.items() if v is not None}
+
+    def _find_matching_rule(self, kwargs, secgroup):
         """
         Find a rule in the group that matches the module parameters.
         :returns: The matching rule dict, or None if no matches.
         """
-        protocol = self.params['protocol']
-        remote_ip_prefix = self.params['remote_ip_prefix']
-        ethertype = self.params['ethertype']
-        direction = self.params['direction']
-        remote_group_id = remotegroup['id']
-
+        fields = ('protocol', 'remote_ip_prefix', 'direction',
+                  'remote_group_id')
         for rule in secgroup['security_group_rules']:
-            if (
-                protocol == rule['protocol']
-                and remote_ip_prefix == rule['remote_ip_prefix']
-                and ethertype == rule['ethertype']
-                and direction == rule['direction']
-                and remote_group_id == rule['remote_group_id']
-                and _ports_match(
-                    protocol,
+            if ('ether_type' in kwargs
+               and rule['ethertype'] != kwargs['ether_type']):
+                continue
+            if any(field in kwargs and rule[field] != kwargs[field]
+                   for field in fields):
+                continue
+            if _ports_match(
+                    self.params['protocol'],
                     self.params['port_range_min'],
                     self.params['port_range_max'],
                     rule['port_range_min'],
-                    rule['port_range_max'])
+                    rule['port_range_max']
             ):
                 return rule
         return None
 
-    def _system_state_change(self, secgroup, remotegroup):
+    def _system_state_change(self, secgroup, rule):
         state = self.params['state']
-        if secgroup:
-            rule_exists = self._find_matching_rule(secgroup, remotegroup)
-        else:
+        if not secgroup:
             return False
 
-        if state == 'present' and not rule_exists:
+        if state == 'present' and not rule:
             return True
-        if state == 'absent' and rule_exists:
+        if state == 'absent' and rule:
             return True
         return False
 
     def run(self):
-
         state = self.params['state']
         security_group = self.params['security_group']
-        remote_group = self.params['remote_group']
-        project = self.params['project']
-        changed = False
+        remote_group_name_or_id = self.params['remote_group']
+        project_name_or_id = self.params['project']
 
-        if project is not None:
-            proj = self.conn.get_project(project)
-            if proj is None:
-                self.fail_json(msg='Project %s could not be found' % project)
-            project_id = proj['id']
-        else:
-            project_id = self.conn.current_project_id
+        project = None
+        if project_name_or_id:
+            project = self.conn.identity.find_project(project_name_or_id,
+                                                      ignore_missing=False)
 
-        if project_id and not remote_group:
-            filters = {'tenant_id': project_id}
-        else:
-            filters = None
+        filters = {}
+        if project and not remote_group_name_or_id:
+            filters = {'project_id': project.id}
 
-        secgroup = self.conn.get_security_group(security_group, filters=filters)
+        secgroup = self.conn.network.find_security_group(
+            security_group, ignore_missing=(state == 'absent'), **filters)
 
-        if remote_group:
-            remotegroup = self.conn.get_security_group(remote_group, filters=filters)
-        else:
-            remotegroup = {'id': None}
+        remote_group = None
+        if remote_group_name_or_id:
+            remote_group = self.conn.network.find_security_group(
+                remote_group_name_or_id, ignore_missing=False, filters=filters)
+
+        kwargs = self._build_kwargs(secgroup, remote_group, project)
+
+        rule = None
+        if secgroup:
+            # TODO: Replace with self.conn.network.find_security_group_rule()?
+            rule = self._find_matching_rule(kwargs, secgroup)
+            if rule:
+                rule = self.conn.network.get_security_group_rule(rule['id'])
 
         if self.ansible.check_mode:
-            self.exit_json(changed=self._system_state_change(secgroup, remotegroup))
+            self.exit_json(changed=self._system_state_change(secgroup, rule))
 
+        changed = False
         if state == 'present':
             if self.params['protocol'] == 'any':
                 self.params['protocol'] = None
 
-            if not secgroup:
-                self.fail_json(msg='Could not find security group %s' % security_group)
-
-            rule = self._find_matching_rule(secgroup, remotegroup)
             if not rule:
-                kwargs = {}
-                if project_id:
-                    kwargs['project_id'] = project_id
-                if self.params["description"] is not None:
-                    kwargs["description"] = self.params['description']
-                rule = self.conn.network.create_security_group_rule(
-                    security_group_id=secgroup['id'],
-                    port_range_min=None if self.params['port_range_min'] == -1 else self.params['port_range_min'],
-                    port_range_max=None if self.params['port_range_max'] == -1 else self.params['port_range_max'],
-                    protocol=self.params['protocol'],
-                    remote_ip_prefix=self.params['remote_ip_prefix'],
-                    remote_group_id=remotegroup['id'],
-                    direction=self.params['direction'],
-                    ethertype=self.params['ethertype'],
-                    **kwargs
-                )
+                rule = self.conn.network.create_security_group_rule(**kwargs)
                 changed = True
+
+            rule = rule.to_dict(computed=False)
             self.exit_json(changed=changed, rule=rule, id=rule['id'])
 
-        if state == 'absent' and secgroup:
-            rule = self._find_matching_rule(secgroup, remotegroup)
-            if rule:
-                self.conn.delete_security_group_rule(rule['id'])
-                changed = True
+        if state == 'absent' and rule:
+            self.conn.network.delete_security_group_rule(rule['id'])
+            changed = True
 
         self.exit_json(changed=changed)
 
