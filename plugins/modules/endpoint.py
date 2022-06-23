@@ -10,8 +10,9 @@ short_description: Manage OpenStack Identity service endpoints
 author: OpenStack Ansible SIG
 description:
     - Create, update, or delete OpenStack Identity service endpoints. If a
-      service with the same combination of I(service), I(interface) and I(region)
-      exist, the I(url) and I(state) (C(present) or C(absent)) will be updated.
+      service with the same combination of I(service), I(interface) and
+      I(region) exist, the I(url), I(enabled) and I(state) (C(present) or
+      C(absent)) will be updated.
 options:
    service:
      description:
@@ -31,7 +32,8 @@ options:
      type: str
    region:
      description:
-        - Region that the service belongs to. Note that I(region_name) is used for authentication.
+        - ID of the region that the service belongs to.
+          Note that I(region) is used for authentication.
      type: str
    enabled:
      description:
@@ -151,7 +153,9 @@ class IdentityEndpointModule(OpenStackModule):
         service_name_or_id = self.params['service']
         interface = self.params['endpoint_interface']
         url = self.params['url']
-        region = self.params['region']
+        # Regions have IDs but do not have names
+        # Ref.: https://docs.openstack.org/api-ref/identity/v3/#regions
+        region_id = self.params['region']
         enabled = self.params['enabled']
         state = self.params['state']
 
@@ -164,46 +168,47 @@ class IdentityEndpointModule(OpenStackModule):
             self.fail_json(msg='Service %s does not exist' % service_name_or_id)
 
         filters = dict(service_id=service.id, interface=interface)
-        if region is not None:
-            filters['region_id'] = region
+        if region_id:
+            filters['region_id'] = region_id
         endpoints = list(self.conn.identity.endpoints(**filters))
 
         endpoint = None
         if len(endpoints) > 1:
             self.fail_json(msg='Service %s, interface %s and region %s are '
                            'not unique' %
-                           (service_name_or_id, interface, region))
+                           (service_name_or_id, interface, region_id))
         elif len(endpoints) == 1:
             endpoint = endpoints[0]
 
         if self.ansible.check_mode:
             self.exit_json(changed=self._system_state_change(endpoint))
 
+        changed = False
         if state == 'present':
-            if endpoint is None:
-                args = {'url': url, 'interface': interface,
-                        'service_id': service.id, 'enabled': enabled,
-                        'region_id': region}
-                endpoint = self.conn.identity.create_endpoint(**args)
+            if not endpoint:
+                args = {
+                    'url': url,
+                    'interface': interface,
+                    'service_id': service.id,
+                    'enabled': enabled,
+                    'region_id': region_id
+                }
 
+                endpoint = self.conn.identity.create_endpoint(**args)
                 changed = True
-            else:
-                if self._needs_update(endpoint):
-                    endpoint = self.conn.identity.update_endpoint(
-                        endpoint.id, url=url, enabled=enabled)
-                    changed = True
-                else:
-                    changed = False
+            elif self._needs_update(endpoint):
+                endpoint = self.conn.identity.update_endpoint(
+                    endpoint.id, url=url, enabled=enabled)
+                changed = True
+
             self.exit_json(changed=changed,
                            endpoint=endpoint.to_dict(computed=False))
 
-        elif state == 'absent':
-            if endpoint is None:
-                changed = False
-            else:
-                self.conn.identity.delete_endpoint(endpoint.id)
-                changed = True
-            self.exit_json(changed=changed)
+        elif state == 'absent' and endpoint:
+            self.conn.identity.delete_endpoint(endpoint.id)
+            changed = True
+
+        self.exit_json(changed=changed)
 
 
 def main():

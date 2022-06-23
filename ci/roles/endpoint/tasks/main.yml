@@ -1,5 +1,5 @@
 ---
-- name: Create a service for compute
+- name: Create a service endpoint for compute
   openstack.cloud.endpoint:
      cloud: "{{ cloud }}"
      service: nova
@@ -9,7 +9,7 @@
      state: present
   register: endpoint_test
 
-- name: Ensure service was created
+- name: Ensure service endpoint was created
   assert:
     that:
       - endpoint_test.endpoint.id is defined
@@ -19,7 +19,7 @@
     that:
       - endpoint_test.endpoint.url == "http://controller:9292"
 
-- name: Create service for compute again
+- name: Create service endpoint for compute again
   openstack.cloud.endpoint:
      cloud: "{{ cloud }}"
      service: nova
@@ -34,7 +34,7 @@
     that:
       - not endpoint_again.changed
 
-- name: Update endpoint url
+- name: Update service endpoint url
   openstack.cloud.endpoint:
     cloud: "{{ cloud }}"
     service: nova
@@ -44,12 +44,12 @@
     state: present
   register: endpoint_updated
 
-- name: Ensure endpoint was updated
+- name: Ensure service endpoint was updated
   assert:
     that:
       - endpoint_updated.endpoint.url == "http://controller:9393"
 
-- name: Delete endpoint
+- name: Delete service endpoint
   openstack.cloud.endpoint:
     cloud: "{{ cloud }}"
     service: nova
@@ -59,7 +59,7 @@
     state: absent
   register: endpoint_deleted
 
-- name: Ensure endpoint was deleted
+- name: Ensure service endpoint was deleted
   assert:
     that:
       - endpoint_deleted.changed
