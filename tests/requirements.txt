@@ -1,4 +1,8 @@
-ansible-core
+# ansible.builtin.user module in ansible-core 2.13.0 and 2.13.1 is affected by #78017
+# Ref.: https://github.com/ansible/ansible/issues/78017
+#
+# TODO: Remove ansible-core constraint once issue #78017 has been fixed.
+ansible-core!=2.13.0,!=2.13.1
 flake8
 galaxy-importer
 openstacksdk
