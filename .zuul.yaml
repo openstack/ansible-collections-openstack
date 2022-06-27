@@ -95,6 +95,7 @@
         object_container
         port
         project
+        project_info
         recordset
         role_assignment
         security_group

@@ -22,8 +22,9 @@ options:
      type: str
    filters:
      description:
-        - A dictionary of meta data to use for further filtering.  Elements of
-          this dictionary may be additional dictionaries.
+        - A dictionary of meta data to use for filtering projects. Elements of
+          this dictionary are parsed as queries for openstack identity api in
+          the new openstacksdk.
      type: dict
 requirements:
     - "python >= 3.6"
@@ -64,7 +65,7 @@ EXAMPLES = '''
     name: demoproject
     domain: admindomain
     filters:
-      enabled: False
+      is_enabled: False
   register: result
 - debug:
     msg: "{{ result.openstack_projects }}"
@@ -74,8 +75,9 @@ EXAMPLES = '''
 RETURN = '''
 openstack_projects:
     description: has all the OpenStack information about projects
-    returned: always, but can be null
-    type: complex
+    elements: dict
+    returned: always, but can be empty
+    type: list
     contains:
         id:
             description: Unique UUID.
@@ -89,7 +91,7 @@ openstack_projects:
             description: Description of the project
             returned: success
             type: str
-        enabled:
+        is_enabled:
             description: Flag to indicate if the project is enabled
             returned: success
             type: bool
@@ -97,6 +99,22 @@ openstack_projects:
             description: Domain ID containing the project (keystone v3 clouds only)
             returned: success
             type: bool
+        tags:
+            description: A list of simple strings assigned to a project
+            returned: success
+            type: list
+        parent_id:
+            description: The ID of the parent for the project
+            returned: success
+            type: str
+        is_domain:
+            description: Indicates whether the project also acts as a domain.
+            returned: success
+            type: bool
+        options:
+            description: Set of options for the project
+            returned: success
+            type: dict
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -117,34 +135,16 @@ class IdentityProjectInfoModule(OpenStackModule):
     def run(self):
         name = self.params['name']
         domain = self.params['domain']
-        filters = self.params['filters']
-        is_old_facts = self.module_name == 'openstack.cloud.project_facts'
+        filters = self.params['filters'] or {}
 
         if domain:
-            try:
-                # We assume admin is passing domain id
-                dom = self.conn.get_domain(domain)['id']
-                domain = dom
-            except Exception:
-                # If we fail, maybe admin is passing a domain name.
-                # Note that domains have unique names, just like id.
-                dom = self.conn.search_domains(filters={'name': domain})
-                if dom:
-                    domain = dom[0]['id']
-                else:
-                    self.fail_json(msg='Domain name or ID does not exist')
+            filters['domain_id'] = self.conn.identity.find_domain(
+                domain, ignore_missing=False).id
 
-            if not filters:
-                filters = {}
+        projects = self.conn.search_projects(name, filters=filters)
+        projects = [p.to_dict(computed=False) for p in projects]
 
-            filters['domain_id'] = domain
-
-        projects = self.conn.search_projects(name, filters)
-        if is_old_facts:
-            self.exit_json(changed=False, ansible_facts=dict(
-                openstack_projects=projects))
-        else:
-            self.exit_json(changed=False, openstack_projects=projects)
+        self.exit_json(changed=False, openstack_projects=projects)
 
 
 def main():
