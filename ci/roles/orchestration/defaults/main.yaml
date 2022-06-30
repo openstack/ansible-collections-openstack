@@ -1,2 +1,35 @@
 ---
 stack_name: "test-stack"
+expected_fields:
+  - added
+  - capabilities
+  - created_at
+  - deleted
+  - deleted_at
+  - description
+  - environment
+  - environment_files
+  - files
+  - files_container
+  - id
+  - is_rollback_disabled
+  - links
+  - name
+  - notification_topics
+  - outputs
+  - owner_id
+  - parameters
+  - parent_id
+  - replaced
+  - stack_name
+  - status
+  - status_reason
+  - tags
+  - template
+  - template_description
+  - template_url
+  - timeout_mins
+  - unchanged
+  - updated
+  - updated_at
+  - user_project_id
