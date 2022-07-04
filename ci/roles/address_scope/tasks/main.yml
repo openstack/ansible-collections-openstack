@@ -7,6 +7,12 @@
     ip_version: "4"
   register: create_address_scope
 
+- name: Verify returned values
+  assert:
+    that:
+      - item in create_address_scope.address_scope
+  loop: "{{ expected_fields }}"
+
 - name: Verify address scope
   assert:
     that:

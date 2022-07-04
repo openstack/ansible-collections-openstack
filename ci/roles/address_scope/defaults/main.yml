@@ -1,1 +1,8 @@
-address_scope_name: "adrdess_scope"
+address_scope_name: "address_scope"
+expected_fields:
+  - id
+  - ip_version
+  - is_shared
+  - name
+  - project_id
+  - tenant_id
