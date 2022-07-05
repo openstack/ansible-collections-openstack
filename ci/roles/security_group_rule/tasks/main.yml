@@ -1,0 +1,277 @@
+---
+- name: Ensure security group does not exist before tests
+  openstack.cloud.security_group:
+     cloud: "{{ cloud }}"
+     name: "{{ secgroup_name }}"
+     state: absent
+     description: Created from Ansible playbook
+
+- name: Create security group
+  openstack.cloud.security_group:
+     cloud: "{{ cloud }}"
+     name: "{{ secgroup_name }}"
+     state: present
+     description: Created from Ansible playbook
+
+- name: Create empty ICMP rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: icmp
+     remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert return fields
+  assert:
+     that: item in rule.rule
+  loop: "{{ expected_fields }}"
+
+- name: Assert changed
+  assert:
+     that: rule is changed
+
+- name: Create empty ICMP rule again
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: icmp
+     remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert not changed
+  assert:
+     that: rule is not changed
+
+- name: Create -1 ICMP rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: icmp
+     port_range_min: -1
+     port_range_max: -1
+     remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert not changed
+  assert:
+     that: rule is not changed
+
+- name: Create -1 ICMP rule again
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: icmp
+     port_range_min: -1
+     port_range_max: -1
+     remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert not changed
+  assert:
+     that: rule is not changed
+
+- name: Create empty TCP rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: tcp
+     remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert changed
+  assert:
+     that: rule is changed
+
+- name: Create TCP rule again with port range (1, 65535)
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: tcp
+     port_range_min: 1
+     port_range_max: 65535
+     remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert changed
+  assert:
+     that: rule is not changed
+
+- name: Create TCP rule again with port range (-1, -1)
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: tcp
+     port_range_min: -1
+     port_range_max: -1
+     remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert changed
+  assert:
+     that: rule is not changed
+
+- name: Create TCP rule again with defined range
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: tcp
+     port_range_min: 8000
+     port_range_max: 9000
+     remote_ip_prefix: 0.0.0.0/0
+  register: rule
+
+- name: Assert changed
+  assert:
+     that: rule is changed
+
+- name: Create empty UDP rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: udp
+     remote_ip_prefix: 0.0.0.0/0
+
+- name: Create UDP rule again with port range (1, 65535)
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: udp
+     port_range_min: 1
+     port_range_max: 65535
+     remote_ip_prefix: 0.0.0.0/0
+
+- name: Create UDP rule again with port range (-1, -1)
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: udp
+     port_range_min: -1
+     port_range_max: -1
+     remote_ip_prefix: 0.0.0.0/0
+
+- name: Create HTTP rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: tcp
+     port_range_min: 80
+     port_range_max: 80
+     remote_ip_prefix: 0.0.0.0/0
+
+- name: Create egress rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: present
+     protocol: tcp
+     port_range_min: 30000
+     port_range_max: 30001
+     remote_ip_prefix: 0.0.0.0/0
+     direction: egress
+
+- name: List all available rules of all security groups in a project
+  openstack.cloud.security_group_rule_info:
+     cloud: "{{ cloud }}"
+  when: sdk_version is version("0.32", '>=')
+  register: test_sec_rules
+
+- name: Check - List all available rules of all security groups in a project
+  assert:
+    that:
+      - test_sec_rules.security_group_rules | length > 0
+  when: sdk_version is version("0.32", '>=')
+
+- name: List all available rules of a specific security group
+  openstack.cloud.security_group_rule_info:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+  register: test_sec_rule1
+
+- name: Check - List all available rules of a specific security group
+  assert:
+    that:
+      - test_sec_rule1.security_group_rules | length > 0
+
+- name: List all available rules with filters
+  openstack.cloud.security_group_rule_info:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     protocol: tcp
+     port_range_min: 80
+     port_range_max: 80
+     remote_ip_prefix: 0.0.0.0/0
+  when: sdk_version is version("0.32", '>=')
+  register: test_sec_rule
+
+- name: Delete empty ICMP rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: absent
+     protocol: icmp
+     remote_ip_prefix: 0.0.0.0/0
+
+- name: Delete -1 ICMP rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: absent
+     protocol: icmp
+     port_range_min: -1
+     port_range_max: -1
+     remote_ip_prefix: 0.0.0.0/0
+
+- name: Delete empty TCP rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: absent
+     protocol: tcp
+     remote_ip_prefix: 0.0.0.0/0
+
+- name: Delete empty UDP rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: absent
+     protocol: udp
+     remote_ip_prefix: 0.0.0.0/0
+
+- name: Delete HTTP rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: absent
+     protocol: tcp
+     port_range_min: 80
+     port_range_max: 80
+     remote_ip_prefix: 0.0.0.0/0
+
+- name: Delete egress rule
+  openstack.cloud.security_group_rule:
+     cloud: "{{ cloud }}"
+     security_group: "{{ secgroup_name }}"
+     state: absent
+     protocol: tcp
+     port_range_min: 30000
+     port_range_max: 30001
+     remote_ip_prefix: 0.0.0.0/0
+     direction: egress
+
+- name: Delete security group
+  openstack.cloud.security_group:
+     cloud: "{{ cloud }}"
+     name: "{{ secgroup_name }}"
+     state: absent
