@@ -31,11 +31,6 @@ options:
      choices: [present, absent]
      default: present
      type: str
-   availability_zone:
-     description:
-       - Availability zone in which to create the snapshot.
-     required: false
-     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"

@@ -1,0 +1,66 @@
+boot_volume_size: 5
+expected_fields:
+  - access_ipv4
+  - access_ipv6
+  - addresses
+  - admin_password
+  - attached_volumes
+  - availability_zone
+  - block_device_mapping
+  - compute_host
+  - config_drive
+  - created_at
+  - description
+  - disk_config
+  - flavor
+  - flavor_id
+  - has_config_drive
+  - host_id
+  - host_status
+  - hostname
+  - hypervisor_hostname
+  - id
+  - image
+  - image_id
+  - instance_name
+  - is_locked
+  - kernel_id
+  - key_name
+  - launch_index
+  - launched_at
+  - links
+  - max_count
+  - metadata
+  - min_count
+  - name
+  - networks
+  - power_state
+  - progress
+  - project_id
+  - ramdisk_id
+  - reservation_id
+  - root_device_name
+  - scheduler_hints
+  - security_groups
+  - server_groups
+  - status
+  - tags
+  - task_state
+  - terminated_at
+  - trusted_image_certificates
+  - updated_at
+  - user_data
+  - user_id
+  - vm_state
+  - volumes
+flavor: m1.tiny
+floating_ip_pool_name: public
+server_alt_name: ansible_server_alt
+server_alt_network: ansible_server_network_alt
+server_alt_security_group: ansible_server_security_group_alt
+server_alt_subnet: ansible_server_subnet_alt
+server_name: ansible_server
+server_network: ansible_server_network
+server_port: ansible_server_port
+server_security_group: ansible_server_security_group
+server_subnet: ansible_server_subnet

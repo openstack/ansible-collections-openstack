@@ -103,6 +103,7 @@
         router
         security_group
         security_group_rule
+        server
         subnet
         subnet_pool
         user
@@ -113,7 +114,6 @@
       # floating_ip
       # orchestrate
       # neutron_rbac
-      # server
 
 - job:
     name: ansible-collections-openstack-functional-devstack-octavia-base

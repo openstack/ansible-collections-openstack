@@ -1,3 +1,20 @@
+---
+- name: Create network for server
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: "{{ server_network }}"
+    state: present
+  register: network
+
+- name: Create subnet for server
+  openstack.cloud.subnet:
+    cidr: 192.168.0.0/24
+    cloud: "{{ cloud }}"
+    name: "{{ server_subnet }}"
+    network_name: "{{ server_network }}"
+    state: present
+  register: subnet
+
 - name: Create server
   openstack.cloud.server:
      cloud: "{{ cloud }}"
@@ -19,7 +36,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info1.openstack_servers.0.status == 'ACTIVE'
+      - info1.servers.0.status == 'ACTIVE'
 
 - name: Stop server
   openstack.cloud.server_action:
@@ -38,7 +55,7 @@
 - name: Ensure status for server is SHUTOFF
   assert:
     that:
-      - info2.openstack_servers.0.status == 'SHUTOFF'
+      - info2.servers.0.status == 'SHUTOFF'
       - server is changed
 
 - name: Stop server again
@@ -58,7 +75,7 @@
 - name: Ensure status for server is SHUTOFF
   assert:
     that:
-      - info3.openstack_servers.0.status == 'SHUTOFF'
+      - info3.servers.0.status == 'SHUTOFF'
       - server is not changed
 
 - name: Start server
@@ -78,7 +95,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info4.openstack_servers.0.status == 'ACTIVE'
+      - info4.servers.0.status == 'ACTIVE'
       - server is changed
 
 - name: Start server again
@@ -98,7 +115,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info5.openstack_servers.0.status == 'ACTIVE'
+      - info5.servers.0.status == 'ACTIVE'
       - server is not changed
 
 - name: Pause server
@@ -118,7 +135,7 @@
 - name: Ensure status for server is PAUSED
   assert:
     that:
-      - info6.openstack_servers.0.status == 'PAUSED'
+      - info6.servers.0.status == 'PAUSED'
       - server is changed
 
 - name: Pause server again
@@ -138,7 +155,7 @@
 - name: Ensure status for server is PAUSED
   assert:
     that:
-      - info7.openstack_servers.0.status == 'PAUSED'
+      - info7.servers.0.status == 'PAUSED'
       - server is not changed
 
 - name: Unpause server
@@ -158,7 +175,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info8.openstack_servers.0.status == 'ACTIVE'
+      - info8.servers.0.status == 'ACTIVE'
       - server is changed
 
 - name: Unpause server again
@@ -178,7 +195,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info9.openstack_servers.0.status == 'ACTIVE'
+      - info9.servers.0.status == 'ACTIVE'
       - server is not changed
 
 - name: Lock server
@@ -198,7 +215,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info10.openstack_servers.0.status == 'ACTIVE'
+      - info10.servers.0.status == 'ACTIVE'
       # not in all versions 'locked' is supported
       - >-
         (info10.openstack_server[0]['locked'] is defined and
@@ -223,7 +240,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info11.openstack_servers.0.status == 'ACTIVE'
+      - info11.servers.0.status == 'ACTIVE'
       # not in all versions 'locked' is supported
       - >-
         (info11.openstack_server[0]['locked'] is defined and
@@ -248,7 +265,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info12.openstack_servers.0.status == 'ACTIVE'
+      - info12.servers.0.status == 'ACTIVE'
       # not in all versions 'locked' is supported
       - >-
         (info12.openstack_server[0]['locked'] is defined and
@@ -273,7 +290,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info13.openstack_servers.0.status == 'ACTIVE'
+      - info13.servers.0.status == 'ACTIVE'
       - server is changed  # no support for unlock idempotency
       # not in all versions 'locked' is supported
       - >-
@@ -298,7 +315,7 @@
 - name: Ensure status for server is SUSPENDED
   assert:
     that:
-      - info14.openstack_servers.0.status == 'SUSPENDED'
+      - info14.servers.0.status == 'SUSPENDED'
       - server is changed
 
 - name: Suspend server again
@@ -318,7 +335,7 @@
 - name: Ensure status for server is SUSPENDED
   assert:
     that:
-      - info15.openstack_servers.0.status == 'SUSPENDED'
+      - info15.servers.0.status == 'SUSPENDED'
       - server is not changed
 
 - name: Resume server
@@ -338,7 +355,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info16.openstack_servers.0.status == 'ACTIVE'
+      - info16.servers.0.status == 'ACTIVE'
       - server is changed
 
 - name: Resume server again
@@ -358,7 +375,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info17.openstack_servers.0.status == 'ACTIVE'
+      - info17.servers.0.status == 'ACTIVE'
       - server is not changed
 
 - name: Rebuild server - error
@@ -394,7 +411,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info18.openstack_servers.0.status in ('ACTIVE', 'REBUILD')
+      - info18.servers.0.status in ('ACTIVE', 'REBUILD')
       - server is changed
 
 - name: Rebuild server with admin password
@@ -416,7 +433,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info19.openstack_servers.0.status in ('ACTIVE', 'REBUILD')
+      - info19.servers.0.status in ('ACTIVE', 'REBUILD')
       - server is changed
 
 - name: Shelve server
@@ -436,7 +453,7 @@
 - name: Ensure status for server is SHELVED or SHELVED_OFFLOADED
   assert:
     that:
-      - info20.openstack_servers.0.status in ['SHELVED', 'SHELVED_OFFLOADED']
+      - info20.servers.0.status in ['SHELVED', 'SHELVED_OFFLOADED']
       - server is changed
 
 - name: Shelve offload server
@@ -457,7 +474,7 @@
   # no change if server has been offloaded automatically after first shelve command
   assert:
     that:
-      - info21.openstack_servers.0.status == 'SHELVED_OFFLOADED'
+      - info21.servers.0.status == 'SHELVED_OFFLOADED'
 
 - name: Shelve offload server again
   openstack.cloud.server_action:
@@ -476,7 +493,7 @@
 - name: Ensure status for server is SHELVED_OFFLOADED
   assert:
     that:
-      - info22.openstack_servers.0.status == 'SHELVED_OFFLOADED'
+      - info22.servers.0.status == 'SHELVED_OFFLOADED'
       - server is not changed
 
 - name: Unshelve server
@@ -496,7 +513,7 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info23.openstack_servers.0.status == 'ACTIVE'
+      - info23.servers.0.status == 'ACTIVE'
       - server is changed
 
 - name: Unshelve server again
@@ -516,8 +533,15 @@
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info24.openstack_servers.0.status == 'ACTIVE'
+      - info24.servers.0.status == 'ACTIVE'
       - server is not changed
+
+- name: Delete server
+  openstack.cloud.server:
+    cloud: "{{ cloud }}"
+    name: "{{ server_name }}"
+    state: absent
+    wait: true
 
 - name: Create network for alternate server
   openstack.cloud.network:
@@ -554,7 +578,7 @@
 - name: Ensure status for server in alternate project is ACTIVE
   assert:
     that:
-      - info25.openstack_servers.0.status == 'ACTIVE'
+      - info25.servers.0.status == 'ACTIVE'
 
 - name: Try to stop server in alternate project
   openstack.cloud.server_action:
@@ -589,7 +613,7 @@
 - name: Ensure status for server is SHUTOFF
   assert:
     that:
-      - info26.openstack_servers.0.status == 'SHUTOFF'
+      - info26.servers.0.status == 'SHUTOFF'
       - server_alt is changed
 
 - name: Delete server in alternate project
@@ -610,3 +634,15 @@
     cloud: "{{ cloud_alt }}"
     name: "{{ server_alt_network }}"
     state: absent
+
+- name: Delete subnet for server
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_subnet }}"
+
+- name: Delete network for server
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_network }}"

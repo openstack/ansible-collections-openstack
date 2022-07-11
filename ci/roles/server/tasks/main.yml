@@ -1,18 +1,78 @@
 ---
+- name: Create network for server
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: "{{ server_network }}"
+    state: present
+  register: network
+
+- name: Create subnet for server
+  openstack.cloud.subnet:
+    cidr: 192.168.0.0/24
+    cloud: "{{ cloud }}"
+    name: "{{ server_subnet }}"
+    network_name: "{{ server_network }}"
+    state: present
+  register: subnet
+
+- name: Create second network for server
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: "{{ server_alt_network }}"
+    state: present
+
+- name: Create second subnet for server
+  openstack.cloud.subnet:
+    cidr: 192.168.1.0/24
+    cloud: "{{ cloud }}"
+    name: "{{ server_alt_subnet }}"
+    network_name: "{{ server_alt_network }}"
+    state: present
+
+- name: Create security group for server
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ server_security_group }}"
+  register: security_group
+
+- name: Create second security group for server
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ server_alt_security_group }}"
+  register: security_group_alt
+
 - name: Create server with meta as CSV
   openstack.cloud.server:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ server_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
-     network: "{{ server_network }}"
-     auto_floating_ip: false
-     meta: "key1=value1,key2=value2"
-     wait: true
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ server_name }}"
+    image: "{{ image }}"
+    flavor: "{{ flavor }}"
+    network: "{{ server_network }}"
+    auto_ip: false
+    metadata: "key1=value1,key2=value2"
+    wait: true
   register: server
 
 - debug: var=server
+
+- name: assert return values of server module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(server.server.keys())|length == 0
+
+- name: Assert server
+  assert:
+    that:
+      - server.server.name == server_name
+      - server.server.metadata.keys()|sort == ['key1', 'key2']
+      - server.server.metadata['key1'] == 'value1'
+      - server.server.metadata['key2'] == 'value2'
+      - server_network in server.server.addresses
+      - server.server.security_groups|map(attribute='name')|list == ['default']
 
 - name: Get info about all servers
   openstack.cloud.server_info:
@@ -22,14 +82,16 @@
 - name: Check info about servers
   assert:
     that:
-      info.openstack_servers|length > 0
+      - info.servers|length > 0
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(info.servers[0].keys())|length == 0
 
 - name: Delete server with meta as CSV
   openstack.cloud.server:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ server_name }}"
-     wait: true
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_name }}"
+    wait: true
 
 - name: Get info about all servers
   openstack.cloud.server_info:
@@ -39,21 +101,21 @@
 - name: Check info about no servers
   assert:
     that:
-      info.openstack_servers|length == 0
+      - info.servers|length == 0
 
 - name: Create server with meta as dict
   openstack.cloud.server:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ server_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
-     auto_floating_ip: false
-     network: "{{ server_network }}"
-     meta:
-       key1: value1
-       key2: value2
-     wait: true
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ server_name }}"
+    image: "{{ image }}"
+    flavor: "{{ flavor }}"
+    auto_ip: false
+    network: "{{ server_network }}"
+    metadata:
+      key1: value1
+      key2: value2
+    wait: true
   register: server
 
 - debug: var=server
@@ -67,26 +129,66 @@
 - name: Check info about server name
   assert:
     that:
-      info.openstack_servers[0].name == "{{ server_name }}"
+      - info.servers[0].name == "{{ server_name }}"
+      - info.servers[0].id == server.server.id
+
+- name: Filter servers
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    filters:
+        id: "{{ server.server.id }}"
+        metadata:
+            key1: value1
+            key2: value2
+  register: info
+
+- name: Check filter results
+  assert:
+    that: info.servers|map(attribute='id')|list == [server.server.id]
+
+- name: Filter servers with partial data
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    filters:
+        id: "{{ server.server.id }}"
+        metadata:
+            key1: value1
+            # intentially left out parts of metadata here
+  register: info
+
+- name: Check filter results
+  assert:
+    that: info.servers|map(attribute='id')|list == [server.server.id]
+
+- name: Filter servers which should not return results
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    filters:
+        id: "THIS_IS_NOT_A_VALID_ID"
+  register: info
+
+- name: Check filter results
+  assert:
+    that: info.servers|length == 0
 
 - name: Delete server with meta as dict
   openstack.cloud.server:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ server_name }}"
-     wait: true
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_name }}"
+    wait: true
 
 - name: Create server (FIP from pool/network)
   openstack.cloud.server:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ server_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
-     network: "{{ server_network }}"
-     floating_ip_pools:
-       - "{{ floating_ip_pool_name }}"
-     wait: true
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ server_name }}"
+    image: "{{ image }}"
+    flavor: "{{ flavor }}"
+    network: "private"
+    floating_ip_pools:
+      - "{{ floating_ip_pool_name }}"
+    wait: true
   register: server
 
 - debug: var=server
@@ -97,52 +199,59 @@
     server: "{{ server_name }}"
     detailed: true
   register: info
+  # TODO: Drop ignore_errors once openstacksdk's bug #2010135 has been solved.
+  #       Ref.: https://storyboard.openstack.org/#!/story/2010135
+  ignore_errors: yes
 
 - name: Check info about server image name
   assert:
     that:
-      info.openstack_servers[0].image.name == "{{ image }}"
+      - info.servers[0].image.name == "{{ image }}"
+  # TODO: Drop ignore_errors once openstacksdk's bug #2010135 has been solved.
+  #       Ref.: https://storyboard.openstack.org/#!/story/2010135
+  ignore_errors: yes
 
 - name: Delete server (FIP from pool/network)
   openstack.cloud.server:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ server_name }}"
-     wait: true
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_name }}"
+    wait: true
 
 - name: Create server from volume
   openstack.cloud.server:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ server_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
-     network: "{{ server_network }}"
-     auto_floating_ip: false
-     boot_from_volume: true
-     volume_size: "{{ boot_volume_size }}"
-     terminate_volume: true
-     wait: true
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ server_name }}"
+    image: "{{ image }}"
+    flavor: "{{ flavor }}"
+    network: "{{ server_network }}"
+    auto_ip: false
+    boot_from_volume: true
+    volume_size: "{{ boot_volume_size }}"
+    terminate_volume: true
+    wait: true
   register: server
 
 - debug: var=server
 
 - name: Delete server with volume
   openstack.cloud.server:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ server_name }}"
-     wait: true
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_name }}"
+    wait: true
+
 - name: Create a minimal server
   openstack.cloud.server:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ server_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
-     network: "{{ server_network }}"
-     auto_floating_ip: false
-     wait: true
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ server_name }}"
+    image: "{{ image }}"
+    flavor: "{{ flavor }}"
+    network: "{{ server_network }}"
+    auto_ip: false
+    wait: true
   register: server
 
 - debug: var=server
@@ -155,8 +264,7 @@
 
 - name: Check info about servers in all projects
   assert:
-    that:
-      info.openstack_servers|length > 0
+    that: info.servers|length > 0
 
 - name: Get info about one server in all projects
   openstack.cloud.server_info:
@@ -167,14 +275,174 @@
 
 - name: Check info about one server in all projects
   assert:
-    that:
-      info.openstack_servers|length > 0
+    that: info.servers|length > 0
 
 - name: Delete minimal server
   openstack.cloud.server:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ server_name }}"
-     wait: true
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_name }}"
+    wait: true
 
-- include_tasks: server_actions.yml
+- name: Create port to be attached to server
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ server_port }}"
+    network: "{{ server_network }}"
+    no_security_groups: yes
+    fixed_ips:
+      - ip_address: 192.168.0.42
+  register: port
+
+- name: Create server which will be updated
+  openstack.cloud.server:
+    auto_ip: false
+    cloud: "{{ cloud }}"
+    # TODO: Uncomment once openstacksdk with support for
+    #       description parameter has been released to PyPI.
+    #       Ref.: https://review.opendev.org/c/openstack/openstacksdk/+/850671
+    #description: "This is a server"
+    flavor: "{{ flavor }}"
+    image: "{{ image }}"
+    metadata:
+      key1: value1
+      key2: value2
+    name: "{{ server_name }}"
+    nics:
+      - net-name: 'public'
+      - net-name: "{{ server_network }}"
+      - port-id: '{{ port.port.id }}'
+    state: present
+    wait: true
+  register: server
+
+- debug: var=server
+
+- name: Update server
+  openstack.cloud.server:
+    auto_ip: true
+    cloud: "{{ cloud }}"
+    description: "This server got updated"
+    # flavor cannot be updated but must be present
+    flavor: "{{ flavor }}"
+    # image cannot be updated but must be present
+    image: "{{ image }}"
+    metadata:
+      key2: value2
+      key3: value3
+    name: "{{ server_name }}"
+    # nics cannot be updated
+    nics:
+      - net-name: 'public'
+      - net-name: "{{ server_network }}"
+      - port-id: '{{ port.port.id }}'
+    security_groups:
+      - '{{ server_security_group }}'
+      - '{{ server_alt_security_group }}'
+    state: present
+    wait: true
+  register: server_updated
+
+- debug: var=server_updated
+
+- name: Assert updated server
+  assert:
+    that:
+      - server.server.id == server_updated.server.id
+      - server_updated is changed
+      - server_updated.server.description == "This server got updated"
+      - "'key1' not in server_updated.server.metadata"
+      - server_updated.server.metadata['key2'] == 'value2'
+      - server_updated.server.metadata['key3'] == 'value3'
+      - server_updated.server.addresses.keys()|sort == [server_network,'public']
+      - server_updated.server.addresses[server_network]|length == 2
+      - server_updated.server.addresses.public|length > 0
+      - port.port.fixed_ips[0].ip_address in
+        server_updated.server.addresses[server_network]|map(attribute='addr')
+      - server_updated.server.security_groups|map(attribute='name')|unique|length == 2
+      - security_group.secgroup.name in server_updated.server.security_groups|map(attribute='name')
+      - security_group_alt.secgroup.name in server_updated.server.security_groups|map(attribute='name')
+
+- name: Update server again
+  openstack.cloud.server:
+    auto_ip: true
+    cloud: "{{ cloud }}"
+    description: "This server got updated"
+    # flavor cannot be updated but must be present
+    flavor: "{{ flavor }}"
+    # image cannot be updated but must be present
+    image: "{{ image }}"
+    metadata:
+      key2: value2
+      key3: value3
+    name: "{{ server_name }}"
+    # nics cannot be updated
+    nics:
+      - net-name: 'public'
+      - net-name: "{{ server_network }}"
+      - port-id: '{{ port.port.id }}'
+    security_groups:
+      - '{{ server_security_group }}'
+      - '{{ server_alt_security_group }}'
+    state: present
+    wait: true
+  register: server_again
+
+- name: Assert server did not change
+  assert:
+    that:
+      - server.server.id == server_again.server.id
+      - server_again is not changed
+
+- name: Delete updated server
+  openstack.cloud.server:
+    cloud: "{{ cloud }}"
+    delete_ips: yes
+    name: "{{ server_name }}"
+    state: absent
+    wait: true
+
+- name: Delete port which was attached to server
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_port }}"
+
+- name: Delete second security group for server
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_alt_security_group }}"
+
+- name: Delete security group for server
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_security_group }}"
+
+- name: Delete second subnet for server
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_alt_subnet }}"
+
+- name: Delete second network for server
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_alt_network }}"
+
+- name: Delete subnet for server
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_subnet }}"
+
+- name: Delete network for server
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_network }}"
+
+- import_tasks: server_actions.yml

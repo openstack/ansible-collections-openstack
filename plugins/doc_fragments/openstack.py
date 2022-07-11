@@ -86,10 +86,6 @@ options:
     choices: [ admin, internal, public ]
     default: public
     aliases: [ endpoint_type ]
-  availability_zone:
-    description:
-      - Ignored. Present for backwards compatibility
-    type: str
   sdk_log_path:
     description:
       - Path to the logfile of the OpenStackSDK. If empty no log is written

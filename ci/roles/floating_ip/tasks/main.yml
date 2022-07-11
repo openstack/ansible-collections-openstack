@@ -162,11 +162,11 @@
   # that no floating ip on public network is associated with "10.7.7.100" before running this role
   assert:
     that:
-      - info.openstack_servers|length == 1
-      - info.openstack_servers.0.public_v4|length == 0
-      - info.openstack_servers.0.public_v6|length == 0
-      - info.openstack_servers.0.addresses.ansible_internal|length == 1
-      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="addr")|sort|list == ["10.7.7.100"]
+      - info.servers|length == 1
+      - info.servers.0.public_v4|length == 0
+      - info.servers.0.public_v6|length == 0
+      - info.servers.0.addresses.ansible_internal|length == 1
+      - info.servers.0.addresses.ansible_internal|map(attribute="addr")|sort|list == ["10.7.7.100"]
 
 - name: Create server with two nics
   openstack.cloud.server:
@@ -190,11 +190,11 @@
 - name: Assert two internal ports and no floating ips on server 2
   assert:
     that:
-      - info.openstack_servers|length == 1
-      - info.openstack_servers.0.public_v4|length == 0
-      - info.openstack_servers.0.public_v6|length == 0
-      - info.openstack_servers.0.addresses.ansible_internal|length == 2
-      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="addr")|sort|list ==
+      - info.servers|length == 1
+      - info.servers.0.public_v4|length == 0
+      - info.servers.0.public_v6|length == 0
+      - info.servers.0.addresses.ansible_internal|length == 2
+      - info.servers.0.addresses.ansible_internal|map(attribute="addr")|sort|list ==
         ["10.7.7.101", "10.7.7.102"]
 
 # Tests
@@ -214,8 +214,8 @@
 - name: Assert one internal port and one floating ip on server 1
   assert:
     that:
-      - info.openstack_servers.0.addresses.ansible_internal|length == 2
-      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="OS-EXT-IPS:type")|sort|list ==
+      - info.servers.0.addresses.ansible_internal|length == 2
+      - info.servers.0.addresses.ansible_internal|map(attribute="OS-EXT-IPS:type")|sort|list ==
         ["fixed", "floating"]
 
 - name: Detach floating IP from server
@@ -224,7 +224,7 @@
      state: absent
      server: ansible_server1
      network: public
-     floating_ip_address: "{{ (info.openstack_servers.0.addresses.ansible_internal|
+     floating_ip_address: "{{ (info.servers.0.addresses.ansible_internal|
                                selectattr('OS-EXT-IPS:type', '==', 'floating')|map(attribute='addr')|list)[0] }}"
 
 - name: Get info about server
@@ -233,16 +233,16 @@
     server: ansible_server1
   register: info
   # When detaching a floating ip from an instance there might be a delay until openstack.cloud.server_info
-  # does not list it any more in info.openstack_servers.0.addresses.ansible_internal, so retry if necessary.
+  # does not list it any more in info.servers.0.addresses.ansible_internal, so retry if necessary.
   retries: 10
   delay: 3
-  until: info.openstack_servers.0.addresses.ansible_internal|length == 1
+  until: info.servers.0.addresses.ansible_internal|length == 1
 
 - name: Assert one internal port on server 1
   assert:
     that:
-      - info.openstack_servers.0.addresses.ansible_internal|length == 1
-      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="addr")|list == ["10.7.7.100"]
+      - info.servers.0.addresses.ansible_internal|length == 1
+      - info.servers.0.addresses.ansible_internal|map(attribute="addr")|list == ["10.7.7.100"]
 
 - name: Assign floating IP to server
   openstack.cloud.floating_ip:
@@ -263,8 +263,8 @@
 - name: Assert two internal ports and one floating ip on server 2
   assert:
     that:
-      - info.openstack_servers.0.addresses.ansible_internal|length == 3
-      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="OS-EXT-IPS:type")|sort|list ==
+      - info.servers.0.addresses.ansible_internal|length == 3
+      - info.servers.0.addresses.ansible_internal|map(attribute="OS-EXT-IPS:type")|sort|list ==
         ["fixed", "fixed", "floating"]
 
 - name: Assign a second, specific floating IP to server
@@ -288,13 +288,13 @@
   # retry because we cannot wait for second floating ip
   retries: 10
   delay: 3
-  until: info.openstack_servers.0.addresses.ansible_internal|length == 4
+  until: info.servers.0.addresses.ansible_internal|length == 4
 
 - name: Assert two internal ports and two floating ips on server 2
   assert:
     that:
-      - info.openstack_servers.0.addresses.ansible_internal|length == 4
-      - ("10.6.6.150" in info.openstack_servers.0.addresses.ansible_internal|map(attribute="addr")|sort|list)
+      - info.servers.0.addresses.ansible_internal|length == 4
+      - ("10.6.6.150" in info.servers.0.addresses.ansible_internal|map(attribute="addr")|sort|list)
 
 - name: Detach second floating IP from server
   openstack.cloud.floating_ip:
@@ -310,15 +310,15 @@
     server: ansible_server2
   register: info
   # When detaching a floating ip from an instance there might be a delay until openstack.cloud.server_info
-  # does not list it any more in info.openstack_servers.0.addresses.ansible_internal, so retry if necessary.
+  # does not list it any more in info.servers.0.addresses.ansible_internal, so retry if necessary.
   retries: 10
   delay: 3
-  until: info.openstack_servers.0.addresses.ansible_internal|length == 3
+  until: info.servers.0.addresses.ansible_internal|length == 3
 
 - name: Assert two internal ports and one floating ip on server 2
   assert:
     that:
-      - info.openstack_servers.0.addresses.ansible_internal|length == 3
+      - info.servers.0.addresses.ansible_internal|length == 3
 
 - name: Detach remaining floating IP from server
   openstack.cloud.floating_ip:
@@ -326,7 +326,7 @@
      state: absent
      server: ansible_server2
      network: public
-     floating_ip_address: "{{ (info.openstack_servers.0.addresses.ansible_internal|
+     floating_ip_address: "{{ (info.servers.0.addresses.ansible_internal|
                                selectattr('OS-EXT-IPS:type', '==', 'floating')|map(attribute='addr')|list)[0] }}"
 
 - name: Get info about server
@@ -335,16 +335,16 @@
     server: ansible_server2
   register: info
   # When detaching a floating ip from an instance there might be a delay until openstack.cloud.server_info
-  # does not list it any more in info.openstack_servers.0.addresses.ansible_internal, so retry if necessary.
+  # does not list it any more in info.servers.0.addresses.ansible_internal, so retry if necessary.
   retries: 10
   delay: 3
-  until: info.openstack_servers.0.addresses.ansible_internal|length == 2
+  until: info.servers.0.addresses.ansible_internal|length == 2
 
 - name: Assert two internal ports on server 2
   assert:
     that:
-      - info.openstack_servers.0.addresses.ansible_internal|length == 2
-      - info.openstack_servers.0.addresses.ansible_internal|map(attribute="addr")|list == ["10.7.7.101", "10.7.7.102"]
+      - info.servers.0.addresses.ansible_internal|length == 2
+      - info.servers.0.addresses.ansible_internal|map(attribute="addr")|list == ["10.7.7.101", "10.7.7.102"]
 
 # Clean environment
 - name: Delete server with two nics

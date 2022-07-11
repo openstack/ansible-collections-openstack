@@ -12,6 +12,10 @@ author: OpenStack Ansible SIG
 description:
    - Create or Remove cinder block storage volumes
 options:
+   availability_zone:
+     description:
+       - The availability zone.
+     type: str
    size:
      description:
         - Size of volume in GB. This parameter is required when the
@@ -106,6 +110,7 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class VolumeModule(OpenStackModule):
 
     argument_spec = dict(
+        availability_zone=dict(type='str'),
         size=dict(type='int'),
         volume_type=dict(),
         display_name=dict(required=True, aliases=['name']),

@@ -46,7 +46,6 @@ import importlib
 import os
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.six import iteritems
 
 OVERRIDES = {}
 
@@ -73,7 +72,6 @@ def openstack_argument_spec():
         login_username=dict(default=OS_USERNAME),
         auth_url=dict(default=OS_AUTH_URL),
         region_name=dict(default=OS_REGION_NAME),
-        availability_zone=dict(),
     )
     if OS_PASSWORD:
         spec['login_password'] = dict(default=OS_PASSWORD)
@@ -86,26 +84,12 @@ def openstack_argument_spec():
     return spec
 
 
-def openstack_find_nova_addresses(addresses, ext_tag, key_name=None):
-
-    ret = []
-    for (k, v) in iteritems(addresses):
-        if key_name and k == key_name:
-            ret.extend([addrs['addr'] for addrs in v])
-        else:
-            for interface_spec in v:
-                if 'OS-EXT-IPS:type' in interface_spec and interface_spec['OS-EXT-IPS:type'] == ext_tag:
-                    ret.append(interface_spec['addr'])
-    return ret
-
-
 def openstack_full_argument_spec(**kwargs):
     spec = dict(
         cloud=dict(type='raw'),
         auth_type=dict(),
         auth=dict(type='dict', no_log=True),
         region_name=dict(),
-        availability_zone=dict(),
         validate_certs=dict(type='bool', aliases=['verify']),
         ca_cert=dict(aliases=['cacert']),
         client_cert=dict(aliases=['cert']),
