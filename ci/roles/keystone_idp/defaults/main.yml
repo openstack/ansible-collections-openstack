@@ -11,3 +11,11 @@ remote_ids_2:
 - 'https://auth.example.com/auth/realms/ExampleRealm'
 remote_ids_3:
 - 'https://auth.stage.example.com/auth/realms/ExampleRealm'
+
+idp_info_expected_fields:
+  - description
+  - domain_id
+  - id
+  - is_enabled
+  - name
+  - remote_ids

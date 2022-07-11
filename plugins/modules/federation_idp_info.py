@@ -11,18 +11,16 @@ short_description: Get the information about the available federation identity
                    providers
 author: OpenStack Ansible SIG
 description:
-  - Fetch a federation identity provider.
+  - Fetch available federation identity providers.
 options:
   name:
     description:
       - The name of the identity provider to fetch.
-      - If I(name) is specified, the module will return failed if the identity
-        provider doesn't exist.
     type: str
     aliases: ['id']
 requirements:
   - "python >= 3.6"
-  - "openstacksdk >= 0.44"
+  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''
@@ -39,6 +37,34 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
+identity_providers:
+    description: Dictionary describing the identity providers
+    returned: success
+    type: list
+    elements: dict
+    contains:
+        description:
+            description: Identity provider description
+            type: str
+            sample: "demodescription"
+        domain_id:
+            description: Domain to which the identity provider belongs
+            type: str
+            sample: "default"
+        id:
+            description: Identity provider ID
+            type: str
+            sample: "test-idp"
+        is_enabled:
+            description: Indicates wether the identity provider is enabled
+            type: bool
+        name:
+            description: Name of the identity provider, equals its ID.
+            type: str
+            sample: "test-idp"
+        remote_ids:
+            description: Remote IDs associated with the identity provider
+            type: list
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -52,34 +78,18 @@ class IdentityFederationIdpInfoModule(OpenStackModule):
         supports_check_mode=True
     )
 
-    def normalize_idp(self, idp):
-        """
-        Normalizes the IDP definitions so that the outputs are consistent with the
-        parameters
-
-        - "enabled" (parameter) == "is_enabled" (SDK)
-        - "name" (parameter) == "id" (SDK)
-        """
-        if idp is None:
-            return
-
-        _idp = idp.to_dict()
-        _idp['enabled'] = idp['is_enabled']
-        _idp['name'] = idp['id']
-        return _idp
-
     def run(self):
         """ Module entry point """
 
-        name = self.params.get('name')
+        name = self.params['name']
 
+        query = {}
         if name:
-            idp = self.normalize_idp(self.conn.identity.get_identity_provider(name))
-            self.exit_json(changed=False, identity_providers=[idp])
+            query["id"] = name
 
-        else:
-            providers = list(map(self.normalize_idp, self.conn.identity.identity_providers()))
-            self.exit_json(changed=False, identity_providers=providers)
+        idps = self.conn.identity.identity_providers(**query)
+        idps = [idp.to_dict(computed=False) for idp in idps]
+        self.exit_json(changed=False, identity_providers=idps)
 
 
 def main():

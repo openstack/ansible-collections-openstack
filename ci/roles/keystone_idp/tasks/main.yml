@@ -60,10 +60,9 @@
       openstack.cloud.federation_idp_info:
         name: '{{ idp_name }}'
       register: identity_provider_info
-      ignore_errors: yes
     - assert:
         that:
-        - identity_provider_info is failed
+        - identity_provider_info.identity_providers | length == 0
 
     - name: 'Create IDP'
       openstack.cloud.federation_idp:
@@ -80,14 +79,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - not idp.description
-        - idp.enabled == True
         - idp.is_enabled == True
         - idp.remote_ids == []
       vars:
@@ -99,47 +96,33 @@
       register: identity_provider_info
     - assert:
         that:
-        - identity_provider_info is successful
-        - '"identity_providers" in identity_provider_info'
         - idps | length == 1
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"enabled" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - not idp.description
-        - idp.enabled == True
         - idp.is_enabled == True
         - idp.remote_ids == []
       vars:
         idps: '{{ identity_provider_info.identity_providers }}'
         idp: '{{ identity_provider_info.identity_providers[0] }}'
 
+    - name: Verify returned values
+      assert:
+        that: item in identity_provider_info.identity_providers[0]
+      loop: "{{ idp_info_expected_fields }}"
+
     - name: 'Fetch identity_provider info - without name'
       openstack.cloud.federation_idp_info: {}
       register: identity_provider_info
     - assert:
         that:
-        - identity_provider_info is successful
         - '"identity_providers" in identity_provider_info'
         # In CI we generally have a clean slate, but this might
         # not be true for everyone...
         - idps | length >= 1
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"enabled" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
       vars:
         idps: '{{ identity_provider_info.identity_providers }}'
-        idp: '{{ identity_provider_info.identity_providers[0] }}'
 
     - name: 'Create identity_provider (retry - no change) - CHECK_MODE'
       check_mode: yes
@@ -168,14 +151,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - not idp.description
-        - idp.enabled == True
         - idp.is_enabled == True
         - idp.remote_ids == []
       vars:
@@ -211,14 +192,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - idp.description == idp_description
-        - idp.enabled == True
         - idp.is_enabled == True
         - idp.remote_ids == []
       vars:
@@ -251,14 +230,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - idp.description == idp_description
-        - idp.enabled == True
         - idp.is_enabled == True
         - idp.remote_ids == []
       vars:
@@ -292,14 +269,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - idp.description == idp_description
-        - idp.enabled == True
         - idp.is_enabled == True
         - idp.remote_ids == remote_ids_1
       vars:
@@ -332,14 +307,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - idp.description == idp_description
-        - idp.enabled == True
         - idp.is_enabled == True
         - idp.remote_ids == remote_ids_1
       vars:
@@ -373,14 +346,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - idp.description == idp_description
-        - idp.enabled == False
         - idp.is_enabled == False
         - idp.remote_ids == remote_ids_1
       vars:
@@ -413,14 +384,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - idp.description == idp_description
-        - idp.enabled == False
         - idp.is_enabled == False
         - idp.remote_ids == remote_ids_1
       vars:
@@ -452,14 +421,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - idp.description == idp_description
-        - idp.enabled == False
         - idp.is_enabled == False
         - idp.remote_ids == remote_ids_1
       vars:
@@ -499,14 +466,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - idp.description == idp_description_2
-        - idp.enabled == True
         - idp.is_enabled == True
         - idp.remote_ids == remote_ids_2
       vars:
@@ -543,14 +508,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
         - idp.description == idp_description_2
-        - idp.enabled == True
         - idp.is_enabled == True
         - idp.remote_ids == remote_ids_2
       vars:
@@ -592,14 +555,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name_2
         - idp.name == idp_name_2
         - idp.domain_id == domain_id
         - idp.description == idp_description
-        - idp.enabled == False
         - idp.is_enabled == False
         - idp.remote_ids == remote_ids_3
       vars:
@@ -638,14 +599,12 @@
         - '"name" in idp'
         - '"domain_id" in idp'
         - '"description" in idp'
-        - '"enabled" in idp'
         - '"is_enabled" in idp'
         - '"remote_ids" in idp'
         - idp.id == idp_name_2
         - idp.name == idp_name_2
         - idp.domain_id == domain_id
         - idp.description == idp_description
-        - idp.enabled == False
         - idp.is_enabled == False
         - idp.remote_ids == remote_ids_3
       vars:
@@ -658,21 +617,11 @@
       register: identity_provider_info
     - assert:
         that:
-        - identity_provider_info is successful
-        - '"identity_providers" in identity_provider_info'
         - identity_provider_info.identity_providers | length == 1
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"enabled" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name_2
         - idp.name == idp_name_2
         - idp.domain_id == domain_id
         - idp.description == idp_description
-        - idp.enabled == False
         - idp.is_enabled == False
         - idp.remote_ids == remote_ids_3
       vars:
@@ -684,25 +633,9 @@
       register: identity_provider_info
     - assert:
         that:
-        - identity_provider_info is successful
-        - '"identity_providers" in identity_provider_info'
         # In CI we generally have a clean slate, but this might
         # not be true for everyone...
         - identity_provider_info.identity_providers | length >= 2
-        - '"id" in idp_0'
-        - '"name" in idp_0'
-        - '"domain_id" in idp_0'
-        - '"description" in idp_0'
-        - '"enabled" in idp_0'
-        - '"is_enabled" in idp_0'
-        - '"remote_ids" in idp_0'
-        - '"id" in idp_1'
-        - '"name" in idp_1'
-        - '"domain_id" in idp_1'
-        - '"description" in idp_1'
-        - '"enabled" in idp_1'
-        - '"is_enabled" in idp_1'
-        - '"remote_ids" in idp_1'
         # In theory these could be attached to different IDPs but let's keep
         # things simple
         - idp_name in (identity_provider_info.identity_providers | map(attribute='id'))
@@ -712,13 +645,8 @@
         - domain_id in (identity_provider_info.identity_providers | map(attribute='domain_id'))
         - idp_description in (identity_provider_info.identity_providers | map(attribute='description'))
         - idp_description_2 in (identity_provider_info.identity_providers | map(attribute='description'))
-        - True in (identity_provider_info.identity_providers | map(attribute='enabled'))
-        - False in (identity_provider_info.identity_providers | map(attribute='enabled'))
         - True in (identity_provider_info.identity_providers | map(attribute='is_enabled'))
         - False in (identity_provider_info.identity_providers | map(attribute='is_enabled'))
-      vars:
-        idp_0: '{{ identity_provider_info.identity_providers[0] }}'
-        idp_1: '{{ identity_provider_info.identity_providers[1] }}'
 
     - name: 'Delete identity_provider - CHECK_MODE'
       check_mode: yes
@@ -766,10 +694,9 @@
       openstack.cloud.federation_idp_info:
         name: '{{ idp_name }}'
       register: identity_provider_info
-      ignore_errors: True
     - assert:
         that:
-        - identity_provider_info is failed
+        - identity_provider_info.identity_providers | length == 0
 
     - name: 'Delete second identity_provider'
       openstack.cloud.federation_idp:
