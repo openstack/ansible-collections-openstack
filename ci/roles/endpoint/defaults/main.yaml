@@ -1,0 +1,9 @@
+expected_fields:
+  - id
+  - interface
+  - is_enabled
+  - links
+  - name
+  - region_id
+  - service_id
+  - url

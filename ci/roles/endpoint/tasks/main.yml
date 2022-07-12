@@ -9,10 +9,13 @@
      state: present
   register: endpoint_test
 
-- name: Ensure service endpoint was created
+- debug: var=endpoint_test
+
+- name: Assert return values of endpoint module
   assert:
     that:
-      - endpoint_test.endpoint.id is defined
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(endpoint_test.endpoint.keys())|length == 0
 
 - name: Ensure service have the proper endpoint
   assert:
