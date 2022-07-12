@@ -163,8 +163,12 @@ class DnsRecordsetModule(OpenStackModule):
         zone = self.params.get('zone')
         name = self.params.get('name')
         state = self.params.get('state')
+        recordset_type = self.params.get('recordset_type').upper()
 
-        recordsets = self.conn.search_recordsets(zone, name_or_id=name)
+        filters = {}
+        filters['type'] = recordset_type
+
+        recordsets = self.conn.search_recordsets(zone, name_or_id=name, filters=filters)
 
         if recordsets:
             recordset = recordsets[0]
