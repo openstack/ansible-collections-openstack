@@ -1,0 +1,99 @@
+---
+- name: ensure aggregate doesn't exist before tests
+  openstack.cloud.host_aggregate:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: test_aggregate
+  register: aggregate
+
+- block:
+  - name: create aggregate
+    openstack.cloud.host_aggregate:
+      cloud: "{{ cloud }}"
+      state: present
+      name: test_aggregate
+      hosts:
+        - "{{ ansible_hostname }}"
+    register: aggregate
+
+  - name: assert aggregate is changed
+    assert:
+      that: aggregate is changed
+
+  - name: assert aggregate fields
+    assert:
+      that: item in aggregate.aggregate
+    loop: "{{ expected_fields }}"
+
+- block:
+  - name: recreate aggregate
+    openstack.cloud.host_aggregate:
+      cloud: "{{ cloud }}"
+      state: present
+      name: test_aggregate
+      hosts:
+        - "{{ ansible_hostname }}"
+    register: aggregate
+
+  - name: assert aggregate is not changed
+    assert:
+      that: aggregate is not changed
+
+  - name: assert aggregate fields
+    assert:
+      that: item in aggregate.aggregate
+    loop: "{{ expected_fields }}"
+
+- block:
+  - name: update aggregate
+    openstack.cloud.host_aggregate:
+      cloud: "{{ cloud }}"
+      state: present
+      name: test_aggregate
+      metadata:
+        ssd: "true"
+      hosts:
+        - "{{ ansible_hostname }}"
+    register: aggregate
+
+  - name: assert aggregate is changed
+    assert:
+      that: aggregate is changed
+
+  - name: assert aggregate fields
+    assert:
+      that: item in aggregate.aggregate
+    loop: "{{ expected_fields }}"
+
+- block:
+  - name: purge hosts
+    openstack.cloud.host_aggregate:
+      cloud: "{{ cloud }}"
+      state: present
+      name: test_aggregate
+      hosts: []
+      purge_hosts: true
+    register: aggregate
+
+  - name: assert hosts were purged
+    assert:
+      that:
+        - aggregate is changed
+        - aggregate.aggregate.hosts | length == 0
+
+  - name: assert aggregate fields
+    assert:
+      that: item in aggregate.aggregate
+    loop: "{{ expected_fields }}"
+
+- block:
+  - name: delete aggregate
+    openstack.cloud.host_aggregate:
+      cloud: "{{ cloud }}"
+      state: absent
+      name: test_aggregate
+    register: aggregate
+
+  - name: assert aggregate is changed
+    assert:
+      that: aggregate is changed

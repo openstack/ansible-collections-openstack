@@ -12,11 +12,11 @@ description:
 options:
    binary:
      description:
-        - Filter by service binary type
+        - Filter by service binary type. Requires openstacksdk>=0.53.
      type: str
    host:
      description:
-        - Filter by service host
+        - Filter by service host. Requires openstacksdk>=0.53.
      type: str
 requirements:
     - "python >= 3.6"
@@ -61,7 +61,11 @@ openstack_compute_services:
             type: str
         disabled_reason:
             description: The reason why the service is disabled
-            returned: success
+            returned: success and OpenStack SDK >= 0.53
+            type: str
+        disables_reason:
+            description: The reason why the service is disabled
+            returned: success and OpenStack SDK < 0.53
             type: str
         availability_zone:
             description: The availability zone name.
@@ -94,21 +98,16 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class ComputeServiceInfoModule(OpenStackModule):
     argument_spec = dict(
-        binary=dict(required=False, default=None),
-        host=dict(required=False, default=None),
+        binary=dict(required=False, default=None, min_ver='0.53.0'),
+        host=dict(required=False, default=None, min_ver='0.53.0'),
     )
     module_kwargs = dict(
         supports_check_mode=True
     )
 
     def run(self):
-        binary = self.params['binary']
-        host = self.params['host']
-        filters = {}
-        if binary:
-            filters['binary'] = binary
-        if host:
-            filters['host'] = host
+        filters = self.check_versioned(binary=self.params['binary'], host=self.params['host'])
+        filters = {k: v for k, v in filters.items() if v is not None}
         services = self.conn.compute.services(**filters)
         services = [service.to_dict(computed=True) for service in services]
         self.exit_json(changed=False, openstack_compute_services=services)

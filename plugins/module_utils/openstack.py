@@ -67,7 +67,8 @@ OVERRIDES = {'os_client_config': 'config',
 
 CUSTOM_VAR_PARAMS = ['min_ver', 'max_ver']
 
-MINIMUM_SDK_VERSION = '0.12.0'
+MINIMUM_SDK_VERSION = '0.36.0'
+MAXIMUM_SDK_VERSION = '0.98.999'
 
 
 def openstack_argument_spec():
@@ -152,7 +153,7 @@ def openstack_module_kwargs(**kwargs):
 
 
 # for compatibility with old versions
-def openstack_cloud_from_module(module, min_version=None):
+def openstack_cloud_from_module(module, min_version=None, max_version=None):
     try:
         # Due to the name shadowing we should import other way
         sdk = importlib.import_module('openstack')
@@ -160,17 +161,29 @@ def openstack_cloud_from_module(module, min_version=None):
     except ImportError:
         module.fail_json(msg='openstacksdk is required for this module')
 
-    if min_version:
+    if min_version and MINIMUM_SDK_VERSION:
         min_version = max(StrictVersion(MINIMUM_SDK_VERSION),
                           StrictVersion(min_version))
-    else:
+    elif MINIMUM_SDK_VERSION:
         min_version = StrictVersion(MINIMUM_SDK_VERSION)
 
-    if StrictVersion(sdk_version.__version__) < min_version:
+    if max_version and MAXIMUM_SDK_VERSION:
+        max_version = min(StrictVersion(MAXIMUM_SDK_VERSION),
+                          StrictVersion(max_version))
+    elif MAXIMUM_SDK_VERSION:
+        max_version = StrictVersion(MAXIMUM_SDK_VERSION)
+
+    if min_version and StrictVersion(sdk_version.__version__) < min_version:
         module.fail_json(
             msg="To utilize this module, the installed version of "
                 "the openstacksdk library MUST be >={min_version}.".format(
                     min_version=min_version))
+
+    if max_version and StrictVersion(sdk_version.__version__) > max_version:
+        module.fail_json(
+            msg="To utilize this module, the installed version of "
+                "the openstacksdk library MUST be <={max_version}.".format(
+                    max_version=max_version))
 
     cloud_config = module.params.pop('cloud', None)
     try:
@@ -244,6 +257,7 @@ class OpenStackModule:
     argument_spec = {}
     module_kwargs = {}
     module_min_sdk_version = None
+    module_max_sdk_version = None
 
     def __init__(self):
         """Initialize Openstack base class.
@@ -306,18 +320,35 @@ class OpenStackModule:
         except ImportError:
             self.fail_json(msg='openstacksdk is required for this module')
 
-        # Fail if the available SDK version doesn't meet the minimum version
-        # requirements
-        if self.module_min_sdk_version:
+        # Fail if the available SDK version doesn't meet the minimum
+        # and maximum version requirements
+        if self.module_min_sdk_version and MINIMUM_SDK_VERSION:
             min_version = max(StrictVersion(MINIMUM_SDK_VERSION),
                               StrictVersion(self.module_min_sdk_version))
-        else:
+        elif MINIMUM_SDK_VERSION:
             min_version = StrictVersion(MINIMUM_SDK_VERSION)
-        if StrictVersion(self.sdk_version) < min_version:
+        else:
+            min_version = None
+
+        if self.module_max_sdk_version and MAXIMUM_SDK_VERSION:
+            max_version = min(StrictVersion(MAXIMUM_SDK_VERSION),
+                              StrictVersion(self.module_max_sdk_version))
+        elif MAXIMUM_SDK_VERSION:
+            max_version = StrictVersion(MAXIMUM_SDK_VERSION)
+        else:
+            max_version = None
+
+        if min_version and StrictVersion(self.sdk_version) < min_version:
             self.fail(
                 msg="To utilize this module, the installed version of "
                 "the openstacksdk library MUST be >={min_version}.".format(
                     min_version=min_version))
+
+        if max_version and StrictVersion(self.sdk_version) > max_version:
+            self.fail(
+                msg="To utilize this module, the installed version of "
+                "the openstacksdk library MUST be <={max_version}.".format(
+                    max_version=max_version))
 
         # Fail if there are set unsupported for this version parameters
         # New parameters should NOT use 'default' but rely on SDK defaults

@@ -34,6 +34,14 @@
       - zone is not changed
       - zone.zones | length == 1
 
+- name: Assert keys exist
+  assert:
+    that:
+      - '["action", "attributes", "created_at", "description", "email",
+          "links", "masters", "name", "pool_id", "project_id", "serial",
+          "status", "ttl", "type", "updated_at", "id"] |
+          difference(zone.zones.0.keys()) | length == 0'
+
 - name: Drop created dns zone
   openstack.cloud.dns_zone:
     cloud: "{{ cloud }}"

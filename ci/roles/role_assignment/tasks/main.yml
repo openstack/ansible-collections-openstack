@@ -1,0 +1,47 @@
+---
+- name: Create project
+  openstack.cloud.project:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_project
+     description: dummy description
+     domain_id: default
+     enabled: True
+  register: project
+
+- name: Grant an admin role on the user admin in the project ansible_project
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud }}"
+    domain: default
+    project: ansible_project
+    role: admin
+    user: admin
+
+- name: Grant an admin role on the user admin in the project ansible_project again
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud }}"
+    domain: default
+    project: ansible_project
+    role: admin
+    user: admin
+  register: grant_again
+
+- name: Ensure grant again doesn't change anything
+  assert:
+    that:
+      - not grant_again.changed
+
+- name: Revoke the admin role on the user admin in the project ansible_project
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud }}"
+    domain: default
+    project: ansible_project
+    role: admin
+    state: absent
+    user: admin
+
+- name: Delete project
+  openstack.cloud.project:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_project

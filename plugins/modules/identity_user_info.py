@@ -74,35 +74,40 @@ EXAMPLES = '''
 RETURN = '''
 openstack_users:
     description: has all the OpenStack information about users
-    returned: always, but can be null
-    type: complex
+    returned: always
+    type: list
+    elements: dict
     contains:
         id:
             description: Unique UUID.
             returned: success
             type: str
         name:
-            description: Name given to the user.
-            returned: success
-            type: str
-        enabled:
-            description: Flag to indicate if the user is enabled
-            returned: success
-            type: bool
-        domain_id:
-            description: Domain ID containing the user
+            description: Username of the user.
             returned: success
             type: str
         default_project_id:
             description: Default project ID of the user
             returned: success
             type: str
+        description:
+            description: The description of this user
+            returned: success
+            type: str
+        domain_id:
+            description: Domain ID containing the user
+            returned: success
+            type: str
         email:
             description: Email of the user
             returned: success
             type: str
+        enabled:
+            description: Flag to indicate if the user is enabled
+            returned: success
+            type: bool
         username:
-            description: Username of the user
+            description: Username with Identity API v2 (OpenStack Pike or earlier) else Null
             returned: success
             type: str
 '''
@@ -127,21 +132,15 @@ class IdentityUserInfoModule(OpenStackModule):
         domain = self.params['domain']
         filters = self.params['filters']
 
+        args = {}
         if domain:
-            try:
-                # We assume admin is passing domain id
-                dom = self.conn.get_domain(domain)['id']
-                domain = dom
-            except Exception:
-                # If we fail, maybe admin is passing a domain name.
-                # Note that domains have unique names, just like id.
-                dom = self.conn.search_domains(filters={'name': domain})
-                if dom:
-                    domain = dom[0]['id']
-                else:
-                    self.fail_json(msg='Domain name or ID does not exist')
+            dom_obj = self.conn.identity.find_domain(domain)
+            if dom_obj is None:
+                self.fail_json(
+                    msg="Domain name or ID '{0}' does not exist".format(domain))
+            args['domain_id'] = dom_obj.id
 
-        users = self.conn.search_users(name, filters, domain_id=domain)
+        users = self.conn.search_users(name, filters, **args)
         self.exit_json(changed=False, openstack_users=users)
 
 

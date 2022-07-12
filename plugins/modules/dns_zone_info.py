@@ -161,12 +161,8 @@ class DnsZoneInfoModule(OpenStackModule):
         if ttl:
             kwargs['ttl'] = ttl
 
-        data = []
-
-        for raw in self.conn.dns.zones(**kwargs):
-            dt = raw.to_dict()
-            dt.pop('location')
-            data.append(dt)
+        data = [zone.to_dict(computed=False) for zone in
+                self.conn.dns.zones(**kwargs)]
 
         self.exit_json(zones=data, changed=False)
 

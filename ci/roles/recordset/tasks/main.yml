@@ -1,0 +1,112 @@
+- name: Ensure DNS zone not present before tests
+  openstack.cloud.dns_zone:
+    cloud: "{{ cloud }}"
+    name: "{{ dns_zone_name }}"
+    zone_type: "primary"
+    email: test@example.net
+    state: absent
+
+- name: Ensure dns zone
+  openstack.cloud.dns_zone:
+    cloud: "{{ cloud }}"
+    name: "{{ dns_zone_name }}"
+    zone_type: "primary"
+    email: test@example.net
+  register: dns_zone
+
+- name: Create a recordset
+  openstack.cloud.recordset:
+    cloud: "{{ cloud }}"
+    zone: "{{ dns_zone.zone.name }}"
+    name: "{{ recordset_name }}"
+    recordset_type: "a"
+    records: "{{ records }}"
+  register: recordset
+
+- name: Verify recordset info
+  assert:
+    that:
+      - recordset is changed
+      - recordset["recordset"].name == recordset_name
+      - recordset["recordset"].zone_name ==  dns_zone.zone.name
+      - recordset["recordset"].records == records
+
+- name: Assert recordset fields
+  assert:
+    that: item in recordset.recordset
+  loop: "{{ recordset_fields }}"
+
+- name: Create identical recordset
+  openstack.cloud.recordset:
+    cloud: "{{ cloud }}"
+    zone: "{{ dns_zone.zone.name }}"
+    name: "{{ recordset_name }}"
+    recordset_type: "a"
+    records: "{{ records }}"
+  register: recordset
+
+- name: Assert recordset not changed
+  assert:
+    that:
+      - recordset is not changed
+
+- name: Assert recordset fields
+  assert:
+    that: item in recordset.recordset
+  loop: "{{ recordset_fields }}"
+
+- name: Update a recordset
+  openstack.cloud.recordset:
+    cloud: "{{ cloud }}"
+    zone: "{{ dns_zone.zone.name }}"
+    name: "{{ recordset_name }}"
+    recordset_type: "a"
+    records: "{{ updated_records }}"
+    description: "new test recordset"
+  register: recordset
+
+- name: Verify recordset info
+  assert:
+    that:
+      - recordset is changed
+      - recordset["recordset"].zone_name == dns_zone.zone.name
+      - recordset["recordset"].name == recordset_name
+      - recordset["recordset"].records == updated_records
+
+- name: Assert recordset fields
+  assert:
+    that: item in recordset.recordset
+  loop: "{{ recordset_fields }}"
+
+- name: Delete recordset
+  openstack.cloud.recordset:
+    cloud: "{{ cloud }}"
+    zone: "{{ dns_zone.zone.name }}"
+    name: "{{ recordset.recordset.name }}"
+    state: absent
+  register: deleted_recordset
+
+- name: Verify recordset deletion
+  assert:
+    that:
+    - deleted_recordset is successful
+    - deleted_recordset is changed
+
+- name: Delete unexistent recordset
+  openstack.cloud.recordset:
+    cloud: "{{ cloud }}"
+    zone: "{{ dns_zone.zone.name }}"
+    name: "{{ recordset.recordset.name }}"
+    state: absent
+  register: deleted_recordset
+
+- name: Verify recordset deletion
+  assert:
+    that:
+    - deleted_recordset is not changed
+
+- name: Delete dns zone
+  openstack.cloud.dns_zone:
+    cloud: "{{ cloud }}"
+    name: "{{ dns_zone.zone.name }}"
+    state: absent

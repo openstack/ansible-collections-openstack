@@ -26,11 +26,13 @@ options:
         - Is the service enabled
      type: bool
      default: 'yes'
-   service_type:
+     aliases: ['is_enabled']
+   type:
      description:
         - The type of service
      required: true
      type: str
+     aliases: ['service_type']
    state:
      description:
        - Should the resource be present or absent.
@@ -51,14 +53,14 @@ EXAMPLES = '''
      cloud: mycloud
      state: present
      name: glance
-     service_type: image
+     type: image
      description: OpenStack Image Service
 # Delete a service
 - openstack.cloud.catalog_service:
      cloud: mycloud
      state: absent
      name: glance
-     service_type: image
+     type: image
 '''
 
 RETURN = '''
@@ -75,6 +77,10 @@ service:
             description: Service name.
             type: str
             sample: "glance"
+        type:
+            description: Service type.
+            type: str
+            sample: "image"
         service_type:
             description: Service type.
             type: str
@@ -100,9 +106,9 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class IdentityCatalogServiceModule(OpenStackModule):
     argument_spec = dict(
         description=dict(default=None),
-        enabled=dict(default=True, type='bool'),
+        enabled=dict(default=True, aliases=['is_enabled'], type='bool'),
         name=dict(required=True),
-        service_type=dict(required=True),
+        type=dict(required=True, aliases=['service_type']),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
@@ -111,11 +117,9 @@ class IdentityCatalogServiceModule(OpenStackModule):
     )
 
     def _needs_update(self, service):
-        if service.enabled != self.params['enabled']:
-            return True
-        if service.description is not None and \
-           service.description != self.params['description']:
-            return True
+        for parameter in ('enabled', 'description', 'type'):
+            if service[parameter] != self.params[parameter]:
+                return True
         return False
 
     def _system_state_change(self, service):
@@ -135,33 +139,34 @@ class IdentityCatalogServiceModule(OpenStackModule):
         enabled = self.params['enabled']
         name = self.params['name']
         state = self.params['state']
-        service_type = self.params['service_type']
+        type = self.params['type']
 
         services = self.conn.search_services(
-            name_or_id=name, filters=dict(type=service_type))
+            name_or_id=name, filters=(dict(type=type) if type else None))
 
+        service = None
         if len(services) > 1:
             self.fail_json(
                 msg='Service name %s and type %s are not unique'
-                % (name, service_type))
+                % (name, type))
         elif len(services) == 1:
             service = services[0]
-        else:
-            service = None
 
         if self.ansible.check_mode:
             self.exit_json(changed=self._system_state_change(service))
 
+        args = {'name': name, 'enabled': enabled, 'type': type}
+        if description:
+            args['description'] = description
+
         if state == 'present':
             if service is None:
-                service = self.conn.create_service(
-                    name=name, description=description, type=service_type, enabled=True)
+                service = self.conn.create_service(**args)
                 changed = True
             else:
                 if self._needs_update(service):
-                    service = self.conn.update_service(
-                        service.id, name=name, type=service_type, enabled=enabled,
-                        description=description)
+                    service = self.conn.update_service(service,
+                                                       **args)
                     changed = True
                 else:
                     changed = False
@@ -171,7 +176,7 @@ class IdentityCatalogServiceModule(OpenStackModule):
             if service is None:
                 changed = False
             else:
-                self.conn.delete_service(service.id)
+                self.conn.identity.delete_service(service.id)
                 changed = True
             self.exit_json(changed=changed)
 

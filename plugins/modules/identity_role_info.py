@@ -7,19 +7,19 @@
 DOCUMENTATION = '''
 ---
 module: identity_role_info
-short_description: Retrive information about roles
+short_description: Retrieve information about roles
 author: OpenStack Ansible SIG
 description:
   - Get information about identity roles in Openstack
 options:
   domain_id:
     description:
-      - List roles in specified domain only
+      - Domain ID which owns the role
     type: str
     required: false
   name:
     description:
-      - List role speficied by name
+      - Name or ID of the role
     type: str
     required: false
 
@@ -37,21 +37,19 @@ openstack_roles:
   returned: always
   type: list
   elements: dict
-  sample:
-  - domain_id: None
-    id: 19bf514fdda84f808ccee8463bd85c1a
-    location:
-      cloud: mycloud
-      project:
-        domain_id: None
-        domain_name: None
-        id: None
-        name: None
-      region_name: None
-      zone: None
-    name: member
-    properties:
-
+  contains:
+    id:
+      description: Unique ID for the role
+      returned: success
+      type: str
+    name:
+      description: Unique role name, within the owning domain.
+      returned: success
+      type: str
+    domain_id:
+      description: References the domain ID which owns the role.
+      returned: success
+      type: str
 '''
 
 EXAMPLES = '''
@@ -75,23 +73,24 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 
 class IdentityRoleInfoModule(OpenStackModule):
-
     argument_spec = dict(
         domain_id=dict(type='str', required=False),
         name=dict(type='str', required=False),
     )
+
     module_kwargs = dict(
         supports_check_mode=True,
     )
 
     def run(self):
-        roles = self.conn.list_roles(domain_id=self.params['domain_id'])
-        # Dictionaries are supported from Train release
-        roles = [item if isinstance(item, dict) else item.to_dict() for item in roles]
-        # Filtering by name is supported from Wallaby release
-        if self.params['name']:
-            roles = [item for item in roles if self.params['name'] in (item['id'], item['name'])]
-        self.results.update({'openstack_roles': roles})
+        params = {
+            'domain_id': self.params['domain_id'],
+            'name_or_id': self.params['name'],
+        }
+        params = {k: v for k, v in params.items() if v is not None}
+
+        roles = self.conn.search_roles(**params)
+        self.exit_json(changed=False, openstack_roles=roles)
 
 
 def main():

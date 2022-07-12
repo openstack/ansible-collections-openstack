@@ -1,1 +1,11 @@
 keypair_name: shade_keypair
+expected_fields:
+  - created_at
+  - fingerprint
+  - id
+  - is_deleted
+  - name
+  - private_key
+  - public_key
+  - type
+  - user_id

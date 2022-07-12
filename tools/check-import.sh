@@ -15,5 +15,10 @@
 
 set -e
 
+if python -c 'import sys; sys.exit(0 if sys.version_info[0:2] < (3, 6) else 1)'; then
+    echo "Skipped Ansible Galaxy content importer check because it requires Python 3.6 or later" 2>&1
+    exit
+fi
+
 TOXDIR="${1:-.}"
 python -m galaxy_importer.main "$TOXDIR/build_artifact/"*

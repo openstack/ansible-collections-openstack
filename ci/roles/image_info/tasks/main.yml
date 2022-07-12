@@ -1,0 +1,11 @@
+---
+- name: List all images  # This will list at least the default cirros image of devstack
+  openstack.cloud.image_info:
+    cloud: "{{ cloud }}"
+  register: image_list_result
+
+- name: Assert fields
+  assert:
+    that:
+      - item in image_list_result.openstack_images.0.keys()
+  loop: "{{ expected_fields }}"

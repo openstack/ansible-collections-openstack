@@ -6,6 +6,7 @@
   roles:
     - { role: address_scope, tags: address_scope }
     - { role: auth, tags: auth }
+    - { role: catalog_service, tags: catalog_service }
     - { role: client_config, tags: client_config }
     - { role: dns_zone_info, tags: dns_zone_info }
     - role: object_container
@@ -15,8 +16,16 @@
     - role: dns
       tags: dns
       when: sdk_version is version(0.28, '>=')
+    - { role: host_aggregate, tags: host_aggregate }
     - { role: floating_ip_info, tags: floating_ip_info }
+    - { role: identity_domain_info, tags: identity_domain_info }
+    - { role: identity_group_info, tags: identity_group_info }
+    - { role: identity_user, tags: identity_user }
+    - { role: identity_user_info, tags: identity_user_info }
+    - { role: identity_role, tags: identity_role }
+    - { role: identity_role_info, tags: identity_role_info }
     - { role: image, tags: image }
+    - { role: image_info, tags: image_info }
     - { role: keypair, tags: keypair }
     - { role: keystone_domain, tags: keystone_domain }
     - role: keystone_mapping
@@ -28,7 +37,6 @@
     - role: keystone_federation_protocol
       tags: keystone_federation_protocol
       when: sdk_version is version(0.44, '>=')
-    - { role: keystone_role, tags: keystone_role }
     - { role: network, tags: network }
     - role: neutron_rbac
       tags:
@@ -43,12 +51,13 @@
     - { role: object, tags: object }
     - { role: port, tags: port }
     - { role: project, tags: project }
+    - { role: recordset, tags: recordset }
+    - { role: role_assignment, tags: role_assignment }
     - { role: router, tags: router }
     - { role: security_group, tags: security_group }
     - { role: server, tags: server }
     - { role: subnet, tags: subnet }
     - { role: subnet_pool, tags: subnet_pool }
-    - { role: user, tags: user }
     - { role: user_group, tags: user_group }
     - { role: user_role, tags: user_role }
     - { role: volume, tags: volume }
