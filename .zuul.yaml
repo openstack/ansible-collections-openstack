@@ -405,78 +405,83 @@
 
 # TripleO jobs
 - job:
-    name: tripleo-ci-centos-8-standalone-osa
-    parent: tripleo-ci-base-standalone-centos-8
-    vars:
-      featureset: '052'
+    name: tripleo-ci-centos-8-standalone-osa-pre-zed
+    parent: tripleo-ci-centos-8-standalone-build
+    # Do not restrict branches in base jobs because else Zuul would not find a matching
+    # parent job variant during job freeze when child jobs are on other branches.
+    vars: &tripleo_vars
       consumer_job: false
-      build_container_images: true
+      # Define branch_override in child jobs, e.g. branch_override: stable/yoga
       force_non_periodic: true
-    required-projects:
-      - openstack/ansible-collections-openstack
+    required-projects: &tripleo_required_projects
+      - # Required for TripleO Quickstart to install current patchset of the collection
+        # Ref.: https://opendev.org/openstack/tripleo-quickstart/src/commit/b48d869e14de40444d69a107a0b718b5f721e912/quickstart.sh#L123
+        openstack/ansible-collections-openstack
       - # always use master branch when collecting parent job variants, refer to git blame for rationale.
         name: openstack/tripleo-ci
         override-checkout: master
-    irrelevant-files: &irr_files
+    irrelevant-files: &tripleo_irrelevant_files
       - .*molecule.*
       - ^.*\.md$
       - ^.*\.rst$
-      - ^docs/.*$
-      - ^contrib/.*$
       - ^changelogs/.*$
+      - ^contrib/.*$
+      - ^docs/.*$
       - ^meta/.*$
-      - ^tests/.*$
-      - ^tools/.*$
       - ^requirements.*$
       - ^setup.*$
+      - ^tests/.*$
+      - ^tools/.*$
       - tox.ini
     # Run only on files used in TripleO
-    files: &ooo_files
+    files: &tripleo_files
+      - ^.zuul.yaml$
+      - ^plugins/module_utils/openstack.*$
       - ^plugins/modules/catalog_service.*$
+      - ^plugins/modules/compute_flavor.*$
       - ^plugins/modules/endpoint.*$
       - ^plugins/modules/identity_domain.*$
       - ^plugins/modules/identity_domain_info.*$
       - ^plugins/modules/identity_role.*$
       - ^plugins/modules/identity_user.*$
+      - ^plugins/modules/image.*$
       - ^plugins/modules/keypair.*$
+      - ^plugins/modules/network.*$
       - ^plugins/modules/project.*$
       - ^plugins/modules/role_assignment.*$
+      - ^plugins/modules/router.*$
       - ^plugins/modules/stack.*$
-      - ^plugins/module_utils/openstack.*$
+      - ^plugins/modules/subnet.*$
 
 - job:
-    name: tripleo-ci-centos-9-standalone-osa
-    parent: tripleo-ci-centos-8-standalone-osa
-    nodeset: single-centos-9-node
-    branches: ^(stable/1.0.0|master).*$
-    override-checkout: master
-    vars:
-      containers_base_image: quay.io/centos/centos:stream9
-      consumer_job: false
-      build_container_images: true
-      branch_override: master
-    files: *ooo_files
-    irrelevant-files: *irr_files
+    name: tripleo-ci-centos-9-standalone-osa-pre-zed
+    parent: tripleo-ci-centos-9-standalone-build
+    # Do not restrict branches in base jobs because else Zuul would not find a matching
+    # parent job variant during job freeze when child jobs are on other branches.
+    vars: *tripleo_vars
+    required-projects: *tripleo_required_projects
+    irrelevant-files: *tripleo_irrelevant_files
+    files: *tripleo_files
 
 - job:
-    name: tripleo-ci-centos-8-standalone-train-osa
-    parent: tripleo-ci-centos-8-standalone-osa
+    name: tripleo-ci-centos-8-standalone-osa-train
+    parent: tripleo-ci-centos-8-standalone-osa-pre-zed
     branches: stable/1.0.0
     override-checkout: stable/train
     vars:
       branch_override: stable/train
 
 - job:
-    name: tripleo-ci-centos-8-standalone-wallaby-osa
-    parent: tripleo-ci-centos-8-standalone-osa
+    name: tripleo-ci-centos-8-standalone-osa-wallaby
+    parent: tripleo-ci-centos-8-standalone-osa-pre-zed
     branches: stable/1.0.0
     override-checkout: stable/wallaby
     vars:
       branch_override: stable/wallaby
 
 - job:
-    name: tripleo-ci-centos-9-standalone-wallaby-osa
-    parent: tripleo-ci-centos-9-standalone-osa
+    name: tripleo-ci-centos-9-standalone-osa-wallaby
+    parent: tripleo-ci-centos-9-standalone-osa-pre-zed
     branches: stable/1.0.0
     override-checkout: stable/wallaby
     vars:
@@ -539,18 +544,9 @@
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
 
-        - tripleo-ci-centos-8-standalone-wallaby-osa:
+        - tripleo-ci-centos-8-standalone-osa-wallaby:
             dependencies: *deps_unit_lint
-
-        - tripleo-ci-centos-8-standalone-train-osa:
-            voting: false
-            dependencies: *deps_unit_lint
-
-        - tripleo-ci-centos-9-standalone-osa:
-            voting: false
-            dependencies: *deps_unit_lint
-
-        - tripleo-ci-centos-9-standalone-wallaby-osa:
+        - tripleo-ci-centos-9-standalone-osa-wallaby:
             voting: false
             dependencies: *deps_unit_lint
 
@@ -565,7 +561,7 @@
         - ansible-collections-openstack-functional-devstack-xena-ansible-2.12
         - ansible-collections-openstack-functional-devstack-train-ansible-2.11
         - ansible-collections-openstack-functional-devstack-octavia
-        - tripleo-ci-centos-8-standalone-wallaby-osa
+        - tripleo-ci-centos-8-standalone-osa-wallaby
 
     periodic:
       jobs:
@@ -582,13 +578,12 @@
         - bifrost-collections-src
         - bifrost-keystone-collections-src
         - ansible-collections-openstack-functional-devstack-octavia
-        - tripleo-ci-centos-9-standalone-wallaby-osa
-        - tripleo-ci-centos-9-standalone-osa
-        - tripleo-ci-centos-8-standalone-train-osa
-        - tripleo-ci-centos-8-standalone-wallaby-osa
+        - tripleo-ci-centos-9-standalone-osa-wallaby
+        - tripleo-ci-centos-8-standalone-osa-wallaby
 
     experimental:
       jobs:
+        - tripleo-ci-centos-8-standalone-osa-train
         - ansible-collections-openstack-functional-devstack-ansible-2.11
         - ansible-collections-openstack-functional-devstack-victoria-ansible-2.12
         - ansible-collections-openstack-functional-devstack-ussuri-ansible-2.11
