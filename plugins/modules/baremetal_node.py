@@ -160,10 +160,7 @@ options:
         - As of Kilo, by default, passwords are always masked to API
           requests, which means the logic as a result always attempts to
           re-assert the password field.
-        - C(skip_update_of_driver_password) is deprecated alias and will be removed in openstack.cloud 2.0.0.
       type: bool
-      aliases:
-        - skip_update_of_driver_password
     wait:
       description:
         - A boolean value instructing the module to wait for the newly created
@@ -247,18 +244,6 @@ def _parse_properties(module):
             if p.get(from_key) is not None}
 
 
-def _parse_driver_info(sdk, module):
-    info = module.params['driver_info'].copy()
-    for deprecated in ('power', 'console', 'management', 'deploy'):
-        if deprecated in info:
-            info.update(info.pop(deprecated))
-            module.deprecate("Suboption %s of the driver_info parameter of "
-                             "'openstack.cloud.baremetal_node' is deprecated"
-                             % deprecated, version='2.0.0',
-                             collection_name='openstack.cloud')
-    return info
-
-
 def _choose_id_value(module):
     if module.params['uuid']:
         return module.params['uuid']
@@ -307,15 +292,7 @@ def main():
         nics=dict(type='list', required=True, elements="dict"),
         properties=dict(type='dict', default={}),
         chassis_uuid=dict(required=False),
-        skip_update_of_masked_password=dict(
-            required=False,
-            type='bool',
-            aliases=['skip_update_of_driver_password'],
-            deprecated_aliases=[dict(
-                name='skip_update_of_driver_password',
-                version='2.0.0',
-                collection_name='openstack.cloud')]
-        ),
+        skip_update_of_masked_password=dict(required=False, type='bool'),
         state=dict(required=False, default='present', choices=['present', 'absent']),
         wait=dict(type='bool', required=False, default=False),
         timeout=dict(required=False, type='int', default=1800),
@@ -337,7 +314,7 @@ def main():
                                      "to set a node to present.")
 
             properties = _parse_properties(module)
-            driver_info = _parse_driver_info(sdk, module)
+            driver_info = module.params['driver_info']
             kwargs = dict(
                 driver=module.params['driver'],
                 properties=properties,
