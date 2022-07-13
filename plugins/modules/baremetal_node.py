@@ -164,6 +164,18 @@ options:
       type: bool
       aliases:
         - skip_update_of_driver_password
+    wait:
+      description:
+        - A boolean value instructing the module to wait for the newly created
+          node to reach the available state.
+      type: bool
+      default: 'no'
+    timeout:
+      description:
+        - An integer value representing the number of seconds to
+          wait for the newly created node to reach the available state.
+      default: 1800
+      type: int
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -304,7 +316,9 @@ def main():
                 version='2.0.0',
                 collection_name='openstack.cloud')]
         ),
-        state=dict(required=False, default='present', choices=['present', 'absent'])
+        state=dict(required=False, default='present', choices=['present', 'absent']),
+        wait=dict(type='bool', required=False, default=False),
+        timeout=dict(required=False, type='int', default=1800),
     )
     module_kwargs = openstack_module_kwargs()
     module = IronicModule(argument_spec, **module_kwargs)
@@ -358,8 +372,11 @@ def main():
                 if module.params['uuid']:
                     kwargs['uuid'] = module.params['uuid']
 
-                server = cloud.register_machine(module.params['nics'],
-                                                **kwargs)
+                server = cloud.register_machine(
+                    module.params['nics'],
+                    wait=module.params['wait'],
+                    timeout=module.params['timeout'],
+                    **kwargs)
                 module.exit_json(changed=True, uuid=server['uuid'],
                                  provision_state=server['provision_state'])
             else:
