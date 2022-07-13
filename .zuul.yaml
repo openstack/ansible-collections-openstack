@@ -300,57 +300,65 @@
 # TripleO jobs
 - job:
     name: tripleo-ci-centos-8-standalone-osa
-    parent: tripleo-ci-base-standalone-centos-8
-    vars:
-      featureset: '052'
+    parent: tripleo-ci-centos-8-standalone-build
+    branches: master
+    vars: &tripleo_vars
       consumer_job: false
-      build_container_images: true
+      branch_override: master
       force_non_periodic: true
-    required-projects:
-      - openstack/ansible-collections-openstack
+      artg_change_list:
+        - host: "https://opendev.org"
+          project: "openstack/openstacksdk"
+          branch: "master"
+          refspec: "+refs/heads/*:refs/remotes/origin/*"
+    required-projects: &tripleo_required_projects
+      - # Required for TripleO Quickstart to install current patchset of the collection
+        # Ref.: https://opendev.org/openstack/tripleo-quickstart/src/commit/b48d869e14de40444d69a107a0b718b5f721e912/quickstart.sh#L123
+        openstack/ansible-collections-openstack
       - # always use master branch when collecting parent job variants, refer to git blame for rationale.
         name: openstack/tripleo-ci
         override-checkout: master
-    irrelevant-files: &irr_files
+    irrelevant-files: &tripleo_irrelevant_files
       - .*molecule.*
       - ^.*\.md$
       - ^.*\.rst$
-      - ^docs/.*$
-      - ^contrib/.*$
       - ^changelogs/.*$
+      - ^contrib/.*$
+      - ^docs/.*$
       - ^meta/.*$
-      - ^tests/.*$
-      - ^tools/.*$
       - ^requirements.*$
       - ^setup.*$
+      - ^tests/.*$
+      - ^tools/.*$
       - tox.ini
     # Run only on files used in TripleO
-    files: &ooo_files
+    files: &tripleo_files
+      - ^.zuul.yaml$
+      - ^plugins/module_utils/openstack.*$
       - ^plugins/modules/catalog_service.*$
+      - ^plugins/modules/compute_flavor.*$
       - ^plugins/modules/endpoint.*$
       - ^plugins/modules/identity_domain.*$
       - ^plugins/modules/identity_domain_info.*$
       - ^plugins/modules/identity_role.*$
       - ^plugins/modules/identity_user.*$
+      - ^plugins/modules/image.*$
       - ^plugins/modules/keypair.*$
+      - ^plugins/modules/network.*$
       - ^plugins/modules/project.*$
       - ^plugins/modules/role_assignment.*$
+      - ^plugins/modules/router.*$
       - ^plugins/modules/stack.*$
-      - ^plugins/module_utils/openstack.*$
+      - ^plugins/modules/subnet.*$
 
 - job:
     name: tripleo-ci-centos-9-standalone-osa
-    parent: tripleo-ci-centos-8-standalone-osa
-    nodeset: single-centos-9-node
-    branches: ^(stable/1.0.0|master).*$
-    override-checkout: master
-    vars:
-      containers_base_image: quay.io/centos/centos:stream9
-      consumer_job: false
-      build_container_images: true
-      branch_override: master
-    files: *ooo_files
-    irrelevant-files: *irr_files
+    parent: tripleo-ci-centos-9-standalone-build
+    branches: master
+    vars: *tripleo_vars
+    required-projects: *tripleo_required_projects
+    irrelevant-files: *tripleo_irrelevant_files
+    files: *tripleo_files
 
 - job:
     name: ansible-collections-openstack-release
@@ -436,6 +444,7 @@
 
     experimental:
       jobs:
+        - tripleo-ci-centos-8-standalone-osa
         - ansible-collections-openstack-functional-devstack-ansible-2.11
 
     tag:
