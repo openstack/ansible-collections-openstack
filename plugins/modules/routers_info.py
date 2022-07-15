@@ -202,23 +202,16 @@ class RouterInfoModule(OpenStackModule):
     )
 
     def run(self):
-        routers = self.conn.search_routers(name_or_id=self.params['name'],
-                                           filters=self.params['filters'])
+        routers = [
+            router.to_dict(computed=False)
+            for router in self.conn.search_routers(
+                name_or_id=self.params['name'],
+                filters=self.params['filters'])]
 
-        routers = [r.to_dict(computed=False) for r in routers]
-
-        # The following code replicates self.conn.list_router_interfaces()
-        # but only uses a single api call per router instead of four api
-        # calls as the former does.
-        allowed_device_owners = ('network:router_interface',
-                                 'network_router_interface_distributed',
-                                 'network:ha_router_replicated_interface',
-                                 'network:router_gateway')
+        # append interfaces_info attribute for backward compatibility
         for router in routers:
             interfaces_info = []
-            for port in self.conn.network.ports(device_id=router['id']):
-                if port.device_owner not in allowed_device_owners:
-                    continue
+            for port in self.conn.list_router_interfaces(router):
                 if port.device_owner != "network:router_gateway":
                     for ip_spec in port.fixed_ips:
                         int_info = {
