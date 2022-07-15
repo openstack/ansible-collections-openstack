@@ -1,0 +1,14 @@
+expected_fields:
+  - description
+  - disk
+  - ephemeral
+  - extra_specs
+  - id
+  - is_disabled
+  - is_public
+  - name
+  - original_name
+  - ram
+  - rxtx_factor
+  - swap
+  - vcpus

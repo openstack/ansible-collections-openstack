@@ -1,0 +1,254 @@
+---
+- name: Delete resources before tests
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ item }}"
+  loop:
+    - ansible_public_flavor
+    - ansible_private_flavor
+    - ansible_extra_specs_flavor
+    - ansible_defaults_flavor
+
+- name: Create public flavor
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_public_flavor
+    is_public: True
+    ram: 1024
+    vcpus: 1
+    disk: 10
+    ephemeral: 10
+    swap: 1
+    id: 12345
+  register: result
+
+- assert:
+    that: item in result.flavor
+  loop: "{{ expected_fields }}"
+
+- name: Assert changed
+  assert:
+    that: result is changed
+
+- name: Create public flavor again
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_public_flavor
+    is_public: True
+    ram: 1024
+    vcpus: 1
+    disk: 10
+    ephemeral: 10
+    swap: 1
+    id: 12345
+  register: result
+
+- name: Assert not changed
+  assert:
+    that: result is not changed
+
+- name: Delete public flavor
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_public_flavor
+  register: result
+
+- name: Assert changed
+  assert:
+    that: result is changed
+
+- name: Delete public flavor again
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_public_flavor
+  register: result
+
+- name: Assert not changed
+  assert:
+    that: result is not changed
+
+- name: Create private flavor
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_private_flavor
+    is_public: False
+    ram: 1024
+    vcpus: 1
+    disk: 10
+    ephemeral: 10
+    swap: 1
+    id: 12345
+
+- name: Delete private flavor
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_private_flavor
+
+- name: Create flavor (defaults)
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_defaults_flavor
+    ram: 1024
+    vcpus: 1
+    disk: 10
+  register: result
+
+- name: Assert changed
+  assert:
+    that: result is changed
+
+- name: Create flavor (defaults) again
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_defaults_flavor
+    ram: 1024
+    vcpus: 1
+    disk: 10
+  register: result
+
+- name: Assert not changed
+  assert:
+    that: result is not changed
+
+- name: Delete flavor (defaults)
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_defaults_flavor
+
+- name: Create flavor (extra_specs)
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_extra_specs_flavor
+    ram: 1024
+    vcpus: 1
+    disk: 10
+    extra_specs:
+      "os:secure_boot": "required"
+  register: result
+
+- name: Assert returned value
+  assert:
+    that:
+      - result is changed
+      - result.flavor.extra_specs['os:secure_boot'] == 'required'
+
+- name: Create flavor (extra_specs) again
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_extra_specs_flavor
+    ram: 1024
+    vcpus: 1
+    disk: 10
+    extra_specs:
+      "os:secure_boot": "required"
+  register: result
+
+- name: Assert not changed
+  assert:
+    that: result is not changed
+
+- name: Change extra_specs value
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_extra_specs_flavor
+    ram: 1024
+    vcpus: 1
+    disk: 10
+    extra_specs:
+      "os:secure_boot": "disabled"
+  register: result
+
+- name: Assert returned value
+  assert:
+    that:
+      - result is changed
+      - result.flavor.extra_specs['os:secure_boot'] == 'disabled'
+
+- name: Append extra_specs value
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_extra_specs_flavor
+    ram: 1024
+    vcpus: 1
+    disk: 10
+    extra_specs:
+      "os:secure_boot": "disabled"
+      "hw_video:ram_max_mb": 200
+  register: result
+
+- name: Assert returned value
+  assert:
+    that:
+      - result is changed
+      - result.flavor.extra_specs | length == 2
+      - "'os:secure_boot' in result.flavor.extra_specs"
+      - "'hw_video:ram_max_mb' in result.flavor.extra_specs"
+
+- name: Drop extra_specs value
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_extra_specs_flavor
+    ram: 1024
+    vcpus: 1
+    disk: 10
+    extra_specs:
+      "hw_video:ram_max_mb": 200
+  register: result
+
+- name: Assert returned value
+  assert:
+    that:
+      - result is changed
+      - result.flavor.extra_specs | length == 1
+      - "'hw_video:ram_max_mb' in result.flavor.extra_specs"
+
+- name: Assert changed
+  assert:
+    that: result is changed
+
+- name: Clean up
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ item }}"
+  loop:
+    - ansible_public_flavor
+    - ansible_private_flavor
+    - ansible_extra_specs_flavor
+    - ansible_defaults_flavor
+
+- name: List flavors
+  openstack.cloud.compute_flavor_info:
+    cloud: "{{ cloud }}"
+  register: flavor_info
+
+- assert:
+    that: item in flavor_info.openstack_flavors[0]
+  loop: "{{ expected_fields }}"
+
+- name: List flavors with filter
+  openstack.cloud.compute_flavor_info:
+    cloud: "{{ cloud }}"
+    name: "m1.tiny"
+  register: flavor_name
+
+- name: Check output of list flavors with filter
+  assert:
+    that:
+      - flavor_name.openstack_flavors | length == 1
+

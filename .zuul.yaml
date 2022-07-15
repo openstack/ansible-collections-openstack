@@ -67,6 +67,7 @@
         auth
         catalog_service
         client_config
+        compute_flavor
         dns
         dns_zone_info
         endpoint
@@ -89,7 +90,6 @@
         logging
         loadbalancer
         network
-        nova_flavor
         nova_services
         object
         object_container
