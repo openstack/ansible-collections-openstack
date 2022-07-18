@@ -72,6 +72,34 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
+identity_provider:
+    description: Dictionary describing the identity providers
+    returned: On success when I(state) is 'present'
+    type: dict
+    elements: dict
+    contains:
+        description:
+            description: Identity provider description
+            type: str
+            sample: "demodescription"
+        domain_id:
+            description: Domain to which the identity provider belongs
+            type: str
+            sample: "default"
+        id:
+            description: Identity provider ID
+            type: str
+            sample: "test-idp"
+        is_enabled:
+            description: Indicates whether the identity provider is enabled
+            type: bool
+        name:
+            description: Name of the identity provider, equals its ID.
+            type: str
+            sample: "test-idp"
+        remote_ids:
+            description: Remote IDs associated with the identity provider
+            type: list
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -89,22 +117,6 @@ class IdentityFederationIdpModule(OpenStackModule):
     module_kwargs = dict(
         supports_check_mode=True,
     )
-
-    def normalize_idp(self, idp):
-        """
-        Normalizes the IDP definitions so that the outputs are consistent with the
-        parameters
-
-        - "enabled" (parameter) == "is_enabled" (SDK)
-        - "name" (parameter) == "id" (SDK)
-        """
-        if idp is None:
-            return None
-
-        _idp = idp.to_dict()
-        _idp['enabled'] = idp['is_enabled']
-        _idp['name'] = idp['id']
-        return _idp
 
     def delete_identity_provider(self, idp):
         """
@@ -150,7 +162,7 @@ class IdentityFederationIdpModule(OpenStackModule):
             attributes['description'] = description
 
         idp = self.conn.identity.create_identity_provider(id=name, **attributes)
-        return (True, idp)
+        return (True, idp.to_dict(computed=False))
 
     def update_identity_provider(self, idp):
         """
@@ -176,13 +188,13 @@ class IdentityFederationIdpModule(OpenStackModule):
             attributes['remote_ids'] = remote_ids
 
         if not attributes:
-            return False, idp
+            return False, idp.to_dict(computed=False)
 
         if self.ansible.check_mode:
             return True, None
 
         new_idp = self.conn.identity.update_identity_provider(idp, **attributes)
-        return (True, new_idp)
+        return (True, new_idp.to_dict(computed=False))
 
     def run(self):
         """ Module entry point """
@@ -205,11 +217,9 @@ class IdentityFederationIdpModule(OpenStackModule):
                     self.fail_json(msg='A domain_id must be passed when creating'
                                    ' an identity provider')
                 (changed, idp) = self.create_identity_provider(name)
-                idp = self.normalize_idp(idp)
                 self.exit_json(changed=changed, identity_provider=idp)
 
             (changed, new_idp) = self.update_identity_provider(idp)
-            new_idp = self.normalize_idp(new_idp)
             self.exit_json(changed=changed, identity_provider=new_idp)
 
 

@@ -19,3 +19,11 @@ idp_info_expected_fields:
   - is_enabled
   - name
   - remote_ids
+
+idp_expected_fields:
+  - description
+  - domain_id
+  - id
+  - is_enabled
+  - name
+  - remote_ids

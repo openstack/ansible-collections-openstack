@@ -74,13 +74,6 @@
         that:
         - create_identity_provider is successful
         - create_identity_provider is changed
-        - '"identity_provider" in create_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
@@ -89,6 +82,11 @@
         - idp.remote_ids == []
       vars:
         idp: '{{ create_identity_provider.identity_provider }}'
+
+    - name: Verify returned values
+      assert:
+        that: item in create_identity_provider.identity_provider
+      loop: "{{ idp_expected_fields }}"
 
     - name: 'Fetch IDP info - with name'
       openstack.cloud.federation_idp_info:
@@ -146,13 +144,6 @@
         that:
         - create_identity_provider is successful
         - create_identity_provider is not changed
-        - '"identity_provider" in create_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
@@ -187,13 +178,6 @@
         that:
         - update_identity_provider is successful
         - update_identity_provider is changed
-        - '"identity_provider" in update_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
@@ -225,13 +209,6 @@
         that:
         - update_identity_provider is successful
         - update_identity_provider is not changed
-        - '"identity_provider" in update_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
@@ -264,13 +241,6 @@
         that:
         - update_identity_provider is successful
         - update_identity_provider is changed
-        - '"identity_provider" in update_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
@@ -302,13 +272,6 @@
         that:
         - update_identity_provider is successful
         - update_identity_provider is not changed
-        - '"identity_provider" in update_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
@@ -317,7 +280,6 @@
         - idp.remote_ids == remote_ids_1
       vars:
         idp: '{{ update_identity_provider.identity_provider }}'
-
 
     - name: 'Update IDP set Disabled - CHECK_MODE'
       check_mode: yes
@@ -341,13 +303,6 @@
         that:
         - update_identity_provider is successful
         - update_identity_provider is changed
-        - '"identity_provider" in update_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
@@ -379,13 +334,6 @@
         that:
         - update_identity_provider is successful
         - update_identity_provider is not changed
-        - '"identity_provider" in update_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
@@ -416,13 +364,6 @@
         that:
         - update_identity_provider is successful
         - update_identity_provider is not changed
-        - '"identity_provider" in update_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
@@ -461,13 +402,6 @@
         that:
         - update_identity_provider is successful
         - update_identity_provider is changed
-        - '"identity_provider" in update_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
@@ -503,13 +437,6 @@
         that:
         - update_identity_provider is successful
         - update_identity_provider is not changed
-        - '"identity_provider" in update_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name
         - idp.name == idp_name
         - idp.domain_id == domain_id
@@ -550,13 +477,6 @@
         that:
         - create_identity_provider is successful
         - create_identity_provider is changed
-        - '"identity_provider" in create_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name_2
         - idp.name == idp_name_2
         - idp.domain_id == domain_id
@@ -594,13 +514,6 @@
         that:
         - create_identity_provider is successful
         - create_identity_provider is not changed
-        - '"identity_provider" in create_identity_provider'
-        - '"id" in idp'
-        - '"name" in idp'
-        - '"domain_id" in idp'
-        - '"description" in idp'
-        - '"is_enabled" in idp'
-        - '"remote_ids" in idp'
         - idp.id == idp_name_2
         - idp.name == idp_name_2
         - idp.domain_id == domain_id
