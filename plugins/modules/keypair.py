@@ -84,7 +84,6 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
 
 
 class KeyPairModule(OpenStackModule):
-    deprecated_names = ('os_keypair', 'openstack.cloud.os_keypair')
 
     argument_spec = dict(
         name=dict(required=True),

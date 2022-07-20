@@ -36,34 +36,7 @@ import os
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.six import iteritems
 
-OVERRIDES = {'os_client_config': 'config',
-             'os_endpoint': 'catalog_endpoint',
-             'os_flavor': 'compute_flavor',
-             'os_flavor_info': 'compute_flavor_info',
-             'os_group': 'identity_group',
-             'os_group_info': 'identity_group_info',
-             'os_ironic': 'baremetal_node',
-             'os_ironic_inspect': 'baremetal_inspect',
-             'os_ironic_node': 'baremetal_node_action',
-             'os_keystone_domain': 'identity_domain',
-             'os_keystone_domain_info': 'identity_domain_info',
-             'os_keystone_endpoint': 'endpoint',
-             'os_keystone_identity_provider': 'federation_idp',
-             'os_keystone_identity_provider_info': 'federation_idp_info',
-             'os_keystone_mapping': 'federation_mapping',
-             'os_keystone_mapping_info': 'federation_mapping_info',
-             'os_keystone_role': 'identity_role',
-             'os_keystone_service': 'catalog_service',
-             'os_listener': 'lb_listener',
-             'os_member': 'lb_member',
-             'os_nova_flavor': 'compute_flavor',
-             'os_nova_host_aggregate': 'host_aggregate',
-             'os_pool': 'lb_pool',
-             'os_user': 'identity_user',
-             'os_user_group': 'group_assignment',
-             'os_user_info': 'identity_user_info',
-             'os_user_role': 'role_assignment',
-             'os_zone': 'dns_zone'}
+OVERRIDES = {}
 
 CUSTOM_VAR_PARAMS = ['min_ver', 'max_ver']
 
@@ -320,7 +293,7 @@ class OpenStackModule:
                 "The '%s' module has been renamed to '%s' in openstack "
                 "collection: openstack.cloud.%s" % (
                     self.module_name, new_module_name, new_module_name),
-                version='2.0.0', collection_name='openstack.cloud')
+                version='3.0.0', collection_name='openstack.cloud')
 
     def openstack_cloud_from_module(self):
         """Sets up connection to cloud using provided options. Checks if all

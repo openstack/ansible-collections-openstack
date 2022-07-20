@@ -303,7 +303,6 @@ def _ports_match(protocol, module_min, module_max, rule_min, rule_max):
 
 
 class SecurityGroupRuleModule(OpenStackModule):
-    deprecated_names = ('os_security_group_rule', 'openstack.cloud.os_security_group_rule')
 
     argument_spec = dict(
         security_group=dict(required=True),

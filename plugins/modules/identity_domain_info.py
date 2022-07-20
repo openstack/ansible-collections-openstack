@@ -9,8 +9,6 @@ short_description: Retrieve information about one or more OpenStack domains
 author: OpenStack Ansible SIG
 description:
     - Retrieve information about a one or more OpenStack domains
-    - This module was called C(openstack.cloud.identity_domain_facts) before Ansible 2.9, returning C(ansible_facts).
-      Note that the M(openstack.cloud.identity_domain_info) module no longer returns C(ansible_facts)!
 options:
    name:
      description:
@@ -98,8 +96,6 @@ class IdentityDomainInfoModule(OpenStackModule):
     module_kwargs = dict(
         supports_check_mode=True
     )
-
-    deprecated_names = ('openstack.cloud.identity_domain_facts')
 
     def run(self):
         name = self.params['name']

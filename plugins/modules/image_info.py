@@ -10,8 +10,6 @@ short_description: Retrieve information about an image within OpenStack.
 author: OpenStack Ansible SIG
 description:
     - Retrieve information about a image image from OpenStack.
-    - This module was called C(openstack.cloud.image_facts) before Ansible 2.9, returning C(ansible_facts).
-      Note that the M(openstack.cloud.image_info) module no longer returns C(ansible_facts)!
 options:
    image:
      description:
@@ -375,8 +373,6 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 
 class ImageInfoModule(OpenStackModule):
-
-    deprecated_names = ('openstack.cloud.os_image_facts', 'openstack.cloud.os_image_info')
 
     argument_spec = dict(
         image=dict(type='str', required=False),

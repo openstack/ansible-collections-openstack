@@ -10,8 +10,6 @@ short_description: Retrieve information about one or more compute instances
 author: OpenStack Ansible SIG
 description:
     - Retrieve information about server instances from OpenStack.
-    - This module was called C(os_server_facts) before Ansible 2.9, returning C(ansible_facts).
-      Note that the M(openstack.cloud.server_info) module no longer returns C(ansible_facts)!
 notes:
     - The result contains a list of servers.
 options:
@@ -61,8 +59,6 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 
 class ServerInfoModule(OpenStackModule):
-
-    deprecated_names = ('os_server_info', 'openstack.cloud.os_server_info')
 
     argument_spec = dict(
         server=dict(required=False),

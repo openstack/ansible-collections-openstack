@@ -481,7 +481,6 @@ def _parse_meta(meta):
 
 
 class ServerModule(OpenStackModule):
-    deprecated_names = ('os_server', 'openstack.cloud.os_server')
 
     argument_spec = dict(
         name=dict(required=True),

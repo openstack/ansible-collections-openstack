@@ -10,8 +10,6 @@ short_description: Retrieve information about one or more OpenStack subnets.
 author: OpenStack Ansible SIG
 description:
     - Retrieve information about one or more subnets from OpenStack.
-    - This module was called C(openstack.cloud.subnets_facts) before Ansible 2.9, returning C(ansible_facts).
-      Note that the M(openstack.cloud.subnets_info) module no longer returns C(ansible_facts)!
 options:
    name:
      description:
@@ -133,9 +131,6 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 
 class SubnetInfoModule(OpenStackModule):
-
-    deprecated_names = ('subnets_facts', 'openstack.cloud.subnets_facts')
-
     argument_spec = dict(
         name=dict(required=False, default=None, aliases=['subnet']),
         filters=dict(required=False, type='dict', default=None)

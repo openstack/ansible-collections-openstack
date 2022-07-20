@@ -116,8 +116,6 @@ _admin_actions = ['pause', 'unpause', 'suspend', 'resume', 'lock', 'unlock', 'sh
 
 
 class ServerActionModule(OpenStackModule):
-    deprecated_names = ('os_server_action', 'openstack.cloud.os_server_action')
-
     argument_spec = dict(
         server=dict(required=True, type='str'),
         action=dict(required=True, type='str',

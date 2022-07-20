@@ -9,8 +9,6 @@ short_description: Retrieve information about ports within OpenStack.
 author: OpenStack Ansible SIG
 description:
     - Retrieve information about ports from OpenStack.
-    - This module was called C(openstack.cloud.port_facts) before Ansible 2.9, returning C(ansible_facts).
-      Note that the M(openstack.cloud.port_info) module no longer returns C(ansible_facts)!
 options:
     port:
         description:

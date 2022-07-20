@@ -447,8 +447,6 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class ImageModule(OpenStackModule):
 
-    deprecated_names = ('os_image', 'openstack.cloud.os_image')
-
     argument_spec = dict(
         name=dict(required=True, type='str'),
         id=dict(type='str'),

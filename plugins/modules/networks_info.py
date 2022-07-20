@@ -10,8 +10,6 @@ short_description: Retrieve information about one or more OpenStack networks.
 author: OpenStack Ansible SIG
 description:
     - Retrieve information about one or more networks from OpenStack.
-    - This module was called C(openstack.cloud.networks_facts) before Ansible 2.9, returning C(ansible_facts).
-      Note that the M(openstack.cloud.networks_info) module no longer returns C(ansible_facts)!
 options:
    name:
      description:
@@ -174,9 +172,6 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 
 class NetworkInfoModule(OpenStackModule):
-
-    deprecated_names = ('networks_facts', 'openstack.cloud.networks_facts')
-
     argument_spec = dict(
         name=dict(required=False, default=None),
         filters=dict(required=False, type='dict', default=None)

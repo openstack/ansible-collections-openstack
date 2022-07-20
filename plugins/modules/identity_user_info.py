@@ -9,8 +9,6 @@ short_description: Retrieve information about one or more OpenStack users
 author: OpenStack Ansible SIG
 description:
     - Retrieve information about a one or more OpenStack users
-    - This module was called C(openstack.cloud.identity_user_facts) before Ansible 2.9, returning C(ansible_facts).
-      Note that the M(openstack.cloud.identity_user_info) module no longer returns C(ansible_facts)!
 options:
    name:
      description:
@@ -142,8 +140,6 @@ class IdentityUserInfoModule(OpenStackModule):
     module_kwargs = dict(
         supports_check_mode=True
     )
-
-    deprecated_names = ('openstack.cloud.identity_user_facts')
 
     def run(self):
         name = self.params['name']

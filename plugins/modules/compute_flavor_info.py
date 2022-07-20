@@ -16,8 +16,6 @@ description:
       available to the flavor, or both. When specifying multiple filters,
       *ALL* filters must match on a flavor before that flavor is returned as
       a fact.
-    - This module was called C(openstack.cloud.compute_flavor_facts) before Ansible 2.9, returning C(ansible_facts).
-      Note that the M(openstack.cloud.compute_flavor_info) module no longer returns C(ansible_facts)!
 notes:
     - The result contains a list of unsorted flavors.
 options:
@@ -205,8 +203,6 @@ class ComputeFlavorInfoModule(OpenStackModule):
         ],
         supports_check_mode=True
     )
-
-    deprecated_names = ('openstack.cloud.compute_flavor_facts')
 
     def run(self):
         name = self.params['name']

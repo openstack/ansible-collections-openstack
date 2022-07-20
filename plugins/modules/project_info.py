@@ -9,8 +9,6 @@ short_description: Retrieve information about one or more OpenStack projects
 author: OpenStack Ansible SIG
 description:
     - Retrieve information about a one or more OpenStack projects
-    - This module was called C(openstack.cloud.project_facts) before Ansible 2.9, returning C(ansible_facts).
-      Note that the M(openstack.cloud.project_info) module no longer returns C(ansible_facts)!
 options:
    name:
      description:
@@ -121,8 +119,6 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 
 class IdentityProjectInfoModule(OpenStackModule):
-    deprecated_names = ('project_facts', 'openstack.cloud.project_facts')
-
     argument_spec = dict(
         name=dict(required=False),
         domain=dict(required=False),
