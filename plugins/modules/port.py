@@ -10,128 +10,149 @@ module: port
 short_description: Add/Update/Delete ports from an OpenStack cloud.
 author: OpenStack Ansible SIG
 description:
-   - Add, Update or Remove ports from an OpenStack cloud. A I(state) of
-     'present' will ensure the port is created or updated if required.
+   - Add, Update or Remove ports from an OpenStack cloud.
 options:
-   network:
-     description:
-        - Network ID or name this port belongs to.
-        - Required when creating a new port.
-     type: str
-   name:
-     description:
-        - Name that has to be given to the port.
-     type: str
-   fixed_ips:
-     description:
-        - Desired IP and/or subnet for this port.  Subnet is referenced by
-          subnet_id and IP is referenced by ip_address.
-     type: list
-     elements: dict
-     suboptions:
-        ip_address:
-           description: The fixed IP address to attempt to allocate.
-           required: true
-           type: str
-        subnet_id:
-           description: The subnet to attach the IP address to.
-           type: str
-   admin_state_up:
-     description:
-        - Sets admin state.
-     type: bool
-   mac_address:
-     description:
-        - MAC address of this port.
-     type: str
-   security_groups:
-     description:
-        - Security group(s) ID(s) or name(s) associated with the port (comma
-          separated string or YAML list)
-     type: list
-     elements: str
-   no_security_groups:
-     description:
-        - Do not associate a security group with this port.
-     type: bool
-     default: 'no'
-   allowed_address_pairs:
-     description:
-        - "Allowed address pairs list.  Allowed address pairs are supported with
-          dictionary structure.
-          e.g.  allowed_address_pairs:
-                  - ip_address: 10.1.0.12
-                    mac_address: ab:cd:ef:12:34:56
-                  - ip_address: ..."
-     type: list
-     elements: dict
-     suboptions:
-        ip_address:
-           description: The IP address.
-           type: str
-        mac_address:
-           description: The MAC address.
-           type: str
-   extra_dhcp_opts:
-     description:
-        - "Extra dhcp options to be assigned to this port. Extra options are
-          supported with dictionary structure. Note that options cannot be removed
-          only updated.
-          e.g.  extra_dhcp_opts:
-                  - opt_name: opt name1
-                    opt_value: value1
-                    ip_version: 4
-                  - opt_name: ..."
-     type: list
-     elements: dict
-     suboptions:
-        opt_name:
-           description: The name of the DHCP option to set.
-           type: str
-           required: true
-        opt_value:
-           description: The value of the DHCP option to set.
-           type: str
-           required: true
-        ip_version:
-           description: The IP version this DHCP option is for.
-           type: int
-           required: true
-   device_owner:
-     description:
-        - The ID of the entity that uses this port.
-     type: str
-   device_id:
-     description:
-        - Device ID of device using this port.
-     type: str
-   state:
-     description:
-       - Should the resource be present or absent.
-     choices: [present, absent]
-     default: present
-     type: str
-   vnic_type:
-     description:
-       - The type of the port that should be created
-     choices: [normal, direct, direct-physical, macvtap, baremetal, virtio-forwarder]
-     type: str
-   port_security_enabled:
-     description:
-       - Whether to enable or disable the port security on the network.
-     type: bool
-   binding_profile:
-     description:
-       - Binding profile dict that the port should be created with.
-     type: dict
-   dns_name:
-     description:
-       - The dns name of the port ( only with dns-integration enabled )
-     type: str
-   dns_domain:
-     description:
-       - The dns domain of the port ( only with dns-integration enabled )
-     type: str
+    allowed_address_pairs:
+        description:
+          - "Allowed address pairs list. Allowed address pairs are supported
+            with dictionary structure.
+            e.g.  allowed_address_pairs:
+                    - ip_address: 10.1.0.12
+                      mac_address: ab:cd:ef:12:34:56
+                    - ip_address: ..."
+          - The port will change during update if not all suboptions are
+            specified, e.g. when ip_address is given but mac_address is not.
+        type: list
+        elements: dict
+        suboptions:
+            ip_address:
+                description: The IP address.
+                type: str
+            mac_address:
+                description: The MAC address.
+                type: str
+    binding_profile:
+        description:
+          - Binding profile dict that the port should be created with.
+        type: dict
+    binding_vnic_type:
+        description:
+          - The type of the port that should be created
+        choices: [normal,
+                  direct,
+                  direct-physical,
+                  macvtap,
+                  baremetal,
+                  virtio-forwarder]
+        type: str
+        aliases: ['vnic_type']
+    description:
+        description:
+          - Description of the port.
+        type: str
+    device_id:
+        description:
+          - Device ID of device using this port.
+        type: str
+    device_owner:
+        description:
+           - The ID of the entity that uses this port.
+        type: str
+    dns_domain:
+        description:
+          - The dns domain of the port ( only with dns-integration enabled )
+        type: str
+    dns_name:
+        description:
+          - The dns name of the port ( only with dns-integration enabled )
+        type: str
+    extra_dhcp_opts:
+        description:
+          - "Extra dhcp options to be assigned to this port. Extra options are
+            supported with dictionary structure. Note that options cannot be
+            removed only updated.
+            e.g.  extra_dhcp_opts:
+                    - ip_version: 4
+                      opt_name: bootfile-name
+                      opt_value: pxelinux.0
+                    - opt_name: ..."
+          - The port will change during update if not all suboptions are
+            specified, e.g. when opt_name is given but ip_version is not.
+        type: list
+        elements: dict
+        suboptions:
+            ip_version:
+                description: The IP version this DHCP option is for.
+                type: int
+                required: true
+            opt_name:
+                description: The name of the DHCP option to set.
+                type: str
+                required: true
+            opt_value:
+                description: The value of the DHCP option to set.
+                type: str
+                required: true
+    fixed_ips:
+        description:
+          - Desired IP and/or subnet for this port.  Subnet is referenced by
+            subnet_id and IP is referenced by ip_address.
+          - The port will change during update if not all suboptions are
+            specified, e.g. when ip_address is given but subnet_id is not.
+        type: list
+        elements: dict
+        suboptions:
+            ip_address:
+                description: The fixed IP address to attempt to allocate.
+                required: true
+                type: str
+            subnet_id:
+                description: The subnet to attach the IP address to.
+                type: str
+    is_admin_state_up:
+        description:
+          - Sets admin state.
+        type: bool
+        aliases: ['admin_state_up']
+    mac_address:
+        description:
+          - MAC address of this port.
+        type: str
+    name:
+        description:
+          - Name that has to be given to the port.
+          - This port attribute cannot be updated.
+        type: str
+        required: true
+    network:
+        description:
+          - ID or name of the network this port belongs to.
+          - Required when creating a new port.
+          - Must be a name when creating a port.
+          - This port attribute cannot be updated.
+        type: str
+    no_security_groups:
+        description:
+          - Do not associate a security group with this port.
+          - "Deprecated. Use I(security_groups): C([]) instead
+            of I(no_security_groups): C(yes)."
+        type: bool
+        default: 'no'
+    port_security_enabled:
+        description:
+          - Whether to enable or disable the port security on the network.
+        type: bool
+    security_groups:
+        description:
+          - Security group(s) ID(s) or name(s) associated with the port.
+        type: list
+        elements: str
+    state:
+        description:
+          - Should the resource be present or absent.
+        choices: [present, absent]
+        default: present
+        type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -211,7 +232,7 @@ EXAMPLES = '''
       project_name: admin
     name: port1
     network: foo
-    vnic_type: direct
+    binding_vnic_type: direct
 
 # Create a port with binding profile
 - openstack.cloud.port:
@@ -224,305 +245,457 @@ EXAMPLES = '''
     name: port1
     network: foo
     binding_profile:
-      "pci_slot": "0000:03:11.1"
-      "physical_network": "provider"
+      pci_slot: "0000:03:11.1"
+      physical_network: "provider"
 '''
 
 RETURN = '''
-id:
-    description: Unique UUID.
-    returned: success
-    type: str
-name:
-    description: Name given to the port.
-    returned: success
-    type: str
-network_id:
-    description: Network ID this port belongs in.
-    returned: success
-    type: str
-security_groups:
-    description: Security group(s) associated with this port.
-    returned: success
-    type: list
-status:
-    description: Port's status.
-    returned: success
-    type: str
-fixed_ips:
-    description: Fixed ip(s) associated with this port.
-    returned: success
-    type: list
-tenant_id:
-    description: Tenant id associated with this port.
-    returned: success
-    type: str
-allowed_address_pairs:
-    description: Allowed address pairs with this port.
-    returned: success
-    type: list
-admin_state_up:
-    description: Admin state up flag for this port.
-    returned: success
-    type: bool
-vnic_type:
-    description: Type of the created port
-    returned: success
-    type: str
-port_security_enabled:
-    description: Port security state on the network.
-    returned: success
-    type: bool
-binding:profile:
-    description: Port binded profile
-    returned: success
+port:
+    description: Dictionary describing the port.
     type: dict
+    returned: On success when I(state) is C(present).
+    contains:
+        allowed_address_pairs:
+            description: Allowed address pairs.
+            returned: success
+            type: list
+            sample: []
+        binding_host_id:
+            description: |
+                The ID of the host where the port is allocated. In some cases,
+                different implementations can run on different hosts.
+            returned: success
+            type: str
+            sample: "b4bd682d-234a-4091-aa5b-4b025a6a7759"
+        binding_profile:
+            description: |
+                A dictionary the enables the application running on the
+                specified host to pass and receive vif port-specific
+                information to the plug-in.
+            returned: success
+            type: dict
+            sample: {}
+        binding_vif_details:
+            description: |
+                A dictionary that enables the application to pass
+                information about functions that the Networking API provides.
+            returned: success
+            type: dict
+        binding_vif_type:
+            description: The VIF type for the port.
+            returned: success
+            type: dict
+        binding_vnic_type:
+            description: |
+                The virtual network interface card (vNIC) type that is
+                bound to the neutron port.
+            returned: success
+            type: str
+            sample: "normal"
+        created_at:
+            description: Timestamp when the port was created.
+            returned: success
+            type: str
+            sample: "2022-02-03T13:28:25Z"
+        data_plane_status:
+            description: Status of the underlying data plane of a port.
+            returned: success
+            type: str
+        description:
+            description: The port description.
+            returned: success
+            type: str
+        device_id:
+            description: Device ID of this port.
+            returned: success
+            type: str
+            sample: "b4bd682d-234a-4091-aa5b-4b025a6a7759"
+        device_owner:
+            description: Device owner of this port, e.g. C(network:dhcp).
+            returned: success
+            type: str
+            sample: "network:router_interface"
+        device_profile:
+            description: |
+                Device profile of this port, refers to Cyborg device-profiles:
+                https://docs.openstack.org/api-ref/accelerator/v2/index.html#
+                device-profiles.
+            returned: success
+            type: str
+        dns_assignment:
+            description: DNS assignment for the port.
+            returned: success
+            type: list
+        dns_domain:
+            description: DNS domain assigned to the port.
+            returned: success
+            type: str
+        dns_name:
+            description: DNS name for the port.
+            returned: success
+            type: str
+        extra_dhcp_opts:
+            description: |
+                A set of zero or more extra DHCP option pairs.
+                An option pair consists of an option value and name.
+            returned: success
+            type: list
+            sample: []
+        fixed_ips:
+            description: |
+                IP addresses for the port. Includes the IP address and subnet
+                ID.
+            returned: success
+            type: list
+        id:
+            description: The port ID.
+            returned: success
+            type: str
+            sample: "3ec25c97-7052-4ab8-a8ba-92faf84148de"
+        ip_allocation:
+            description: |
+                The ip_allocation indicates when ports use deferred,
+                immediate or no IP allocation.
+            returned: success
+            type: str
+        is_admin_state_up:
+            description: |
+                The administrative state of the port, which is up C(True) or
+                down C(False).
+            returned: success
+            type: bool
+            sample: true
+        is_port_security_enabled:
+            description: |
+                The port security status, which is enabled C(True) or disabled
+                C(False).
+            returned: success
+            type: bool
+            sample: false
+        mac_address:
+            description: The MAC address of an allowed address pair.
+            returned: success
+            type: str
+            sample: "00:00:5E:00:53:42"
+        name:
+            description: The port name.
+            returned: success
+            type: str
+            sample: "port_name"
+        network_id:
+            description: The ID of the attached network.
+            returned: success
+            type: str
+            sample: "dd1ede4f-3952-4131-aab6-3b8902268c7d"
+        numa_affinity_policy:
+            description: |
+                The NUMA affinity policy defined for this port.
+            returned: success
+            type: str
+            sample: "required"
+        project_id:
+            description: The ID of the project who owns the network.
+            returned: success
+            type: str
+            sample: "aa1ede4f-3952-4131-aab6-3b8902268c7d"
+        propagate_uplink_status:
+            description: Whether to propagate uplink status of the port.
+            returned: success
+            type: bool
+            sample: false
+        qos_network_policy_id:
+            description: |
+                The ID of the QoS policy attached to the network where the
+                port is bound.
+            returned: success
+            type: str
+            sample: "1e4f3958-c0c9-4dec-82fa-ed2dc1c5cb34"
+        qos_policy_id:
+            description: The ID of the QoS policy attached to the port.
+            returned: success
+            type: str
+            sample: "b20bb47f-5d6d-45a6-8fe7-2c1b44f0db73"
+        resource_request:
+            description: |
+                The port-resource-request exposes Placement resources
+                (i.e.: minimum-bandwidth) and traits (i.e.: vnic-type, physnet)
+                requested by a port to Nova and Placement.
+            returned: success
+            type: str
+        revision_number:
+            description: The revision number of the resource.
+            returned: success
+            type: int
+            sample: 0
+        security_group_ids:
+            description: The IDs of any attached security groups.
+            returned: success
+            type: list
+        status:
+            description: The port status. Value is C(ACTIVE) or C(DOWN).
+            returned: success
+            type: str
+            sample: "ACTIVE"
+        tags:
+            description: The list of tags on the resource.
+            returned: success
+            type: list
+            sample: []
+        tenant_id:
+            description: Same as I(project_id). Deprecated.
+            returned: success
+            type: str
+            sample: "51fce036d7984ba6af4f6c849f65ef00"
+        trunk_details:
+            description: |
+                The trunk referring to this parent port and its subports.
+                Present for trunk parent ports if C(trunk-details) extension
+                is loaded.
+            returned: success
+            type: dict
+        updated_at:
+            description: Timestamp when the port was last updated.
+            returned: success
+            type: str
+            sample: "2022-02-03T13:28:25Z"
 '''
 
-from ansible.module_utils.basic import missing_required_lib
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
-try:
-    from collections import OrderedDict
-    HAS_ORDEREDDICT = True
-except ImportError:
-    try:
-        from ordereddict import OrderedDict
-        HAS_ORDEREDDICT = True
-    except ImportError:
-        HAS_ORDEREDDICT = False
 
-
-class NetworkPortModule(OpenStackModule):
+class PortModule(OpenStackModule):
     argument_spec = dict(
-        network=dict(),
-        name=dict(),
-        fixed_ips=dict(type='list', elements='dict'),
-        admin_state_up=dict(type='bool'),
-        mac_address=dict(),
-        security_groups=dict(type='list', elements='str'),
-        no_security_groups=dict(default=False, type='bool'),
         allowed_address_pairs=dict(type='list', elements='dict'),
-        extra_dhcp_opts=dict(type='list', elements='dict'),
-        device_owner=dict(),
-        device_id=dict(),
-        state=dict(default='present', choices=['absent', 'present']),
-        vnic_type=dict(choices=['normal', 'direct', 'direct-physical',
-                                'macvtap', 'baremetal', 'virtio-forwarder']),
-        port_security_enabled=dict(type='bool'),
         binding_profile=dict(type='dict'),
+        binding_vnic_type=dict(choices=['normal', 'direct', 'direct-physical',
+                                        'macvtap', 'baremetal',
+                                        'virtio-forwarder'],
+                               aliases=['vnic_type']),
+        description=dict(),
+        device_id=dict(),
+        device_owner=dict(),
+        dns_domain=dict(),
         dns_name=dict(),
-        dns_domain=dict()
+        extra_dhcp_opts=dict(type='list', elements='dict'),
+        fixed_ips=dict(type='list', elements='dict'),
+        is_admin_state_up=dict(type='bool', aliases=['admin_state_up']),
+        mac_address=dict(),
+        name=dict(required=True),
+        network=dict(),
+        no_security_groups=dict(default=False, type='bool'),
+        port_security_enabled=dict(type='bool'),
+        security_groups=dict(type='list', elements='str'),
+        state=dict(default='present', choices=['absent', 'present']),
     )
 
     module_kwargs = dict(
         mutually_exclusive=[
             ['no_security_groups', 'security_groups'],
         ],
+        required_if=[
+            ('state', 'present', ('network',)),
+        ],
         supports_check_mode=True
     )
 
-    def _is_dns_integration_enabled(self):
-        """ Check if dns-integraton is enabled """
-        for ext in self.conn.network.extensions():
-            if ext.alias == 'dns-integration':
-                return True
-        return False
-
-    def _needs_update(self, port):
-        """Check for differences in the updatable values.
-
-        NOTE: We don't currently allow name updates.
-        """
-        compare_simple = ['admin_state_up',
-                          'mac_address',
-                          'device_owner',
-                          'device_id',
-                          'binding:vnic_type',
-                          'port_security_enabled',
-                          'binding:profile']
-        compare_dns = ['dns_name', 'dns_domain']
-        compare_list_dict = ['allowed_address_pairs',
-                             'extra_dhcp_opts']
-        compare_list = ['security_groups']
-
-        if self.conn.has_service('dns') and \
-           self._is_dns_integration_enabled():
-            for key in compare_dns:
-                if self.params[key] is not None and \
-                   self.params[key] != port[key]:
-                    return True
-
-        for key in compare_simple:
-            if self.params[key] is not None and self.params[key] != port[key]:
-                return True
-        for key in compare_list:
-            if (
-                self.params[key] is not None
-                and set(self.params[key]) != set(port[key])
-            ):
-                return True
-
-        for key in compare_list_dict:
-            if not self.params[key]:
-                if port.get(key):
-                    return True
-
-            if self.params[key]:
-                if not port.get(key):
-                    return True
-
-                # sort dicts in list
-                port_ordered = [OrderedDict(sorted(d.items())) for d in port[key]]
-                param_ordered = [OrderedDict(sorted(d.items())) for d in self.params[key]]
-
-                for d in param_ordered:
-                    if d not in port_ordered:
-                        return True
-
-                for d in port_ordered:
-                    if d not in param_ordered:
-                        return True
-
-        # NOTE: if port was created or updated with 'no_security_groups=True',
-        # subsequent updates without 'no_security_groups' flag or
-        # 'no_security_groups=False' and no specified 'security_groups', will not
-        # result in an update to the port where the default security group is
-        # applied.
-        if self.params['no_security_groups'] and port['security_groups'] != []:
-            return True
-
-        if self.params['fixed_ips'] is not None:
-            for item in self.params['fixed_ips']:
-                if 'ip_address' in item:
-                    # if ip_address in request does not match any in existing port,
-                    # update is required.
-                    if not any(match['ip_address'] == item['ip_address']
-                               for match in port['fixed_ips']):
-                        return True
-                if 'subnet_id' in item:
-                    return True
-            for item in port['fixed_ips']:
-                # if ip_address in existing port does not match any in request,
-                # update is required.
-                if not any(match.get('ip_address') == item['ip_address']
-                           for match in self.params['fixed_ips']):
-                    return True
-
-        return False
-
-    def _system_state_change(self, port):
-        state = self.params['state']
-        if state == 'present':
-            if not port:
-                return True
-            return self._needs_update(port)
-        if state == 'absent' and port:
-            return True
-        return False
-
-    def _compose_port_args(self):
-        port_kwargs = {}
-        optional_parameters = ['name',
-                               'fixed_ips',
-                               'admin_state_up',
-                               'mac_address',
-                               'security_groups',
-                               'allowed_address_pairs',
-                               'extra_dhcp_opts',
-                               'device_owner',
-                               'device_id',
-                               'binding:vnic_type',
-                               'port_security_enabled',
-                               'binding:profile']
-
-        if self.conn.has_service('dns') and \
-           self._is_dns_integration_enabled():
-            optional_parameters.extend(['dns_name', 'dns_domain'])
-
-        for optional_param in optional_parameters:
-            if self.params[optional_param] is not None:
-                port_kwargs[optional_param] = self.params[optional_param]
-
-        if self.params['no_security_groups']:
-            port_kwargs['security_groups'] = []
-
-        return port_kwargs
-
-    def get_security_group_id(self, security_group_name_or_id):
-        security_group = self.conn.get_security_group(security_group_name_or_id)
-        if not security_group:
-            self.fail_json(msg="Security group: %s, was not found"
-                           % security_group_name_or_id)
-        return security_group['id']
-
     def run(self):
-        if not HAS_ORDEREDDICT:
-            self.fail_json(msg=missing_required_lib('ordereddict'))
-
-        name = self.params['name']
+        network_name_or_id = self.params['network']
+        port_name_or_id = self.params['name']
         state = self.params['state']
 
-        if self.params['security_groups']:
-            # translate security_groups to UUID's if names where provided
-            self.params['security_groups'] = [
-                self.get_security_group_id(v)
-                for v in self.params['security_groups']
-            ]
+        network = None
+        if network_name_or_id:
+            network = self.conn.network.find_network(
+                network_name_or_id, ignore_missing=False)
 
-        # Neutron API accept 'binding:vnic_type' as an argument
-        # for the port type.
-        self.params['binding:vnic_type'] = self.params.pop('vnic_type')
-        # Neutron API accept 'binding:profile' as an argument
-        # for the port binding profile type.
-        self.params['binding:profile'] = self.params.pop('binding_profile')
-
-        port = None
-        network_id = None
-        if name:
-            port = self.conn.get_port(name)
+        port = self.conn.network.find_port(
+            port_name_or_id,
+            # use network id in query if network parameter was specified
+            **(dict(network_id=network.id) if network else dict()))
 
         if self.ansible.check_mode:
-            self.exit_json(changed=self._system_state_change(port))
+            self.exit_json(changed=self._will_change(network, port, state))
 
-        changed = False
-        if state == 'present':
-            if not port:
-                network = self.params['network']
-                if not network:
-                    self.fail_json(
-                        msg="Parameter 'network' is required in Port Create"
-                    )
-                port_kwargs = self._compose_port_args()
-                network_object = self.conn.get_network(network)
+        if state == 'present' and not port:
+            # create port
+            port = self._create(network)
+            self.exit_json(changed=True,
+                           port=port.to_dict(computed=False))
+        elif state == 'present' and port:
+            # update port
+            update = self._build_update(port)
+            if update:
+                port = self._update(port, update)
 
-                if network_object:
-                    network_id = network_object['id']
-                else:
-                    self.fail_json(
-                        msg="Specified network was not found."
-                    )
+            self.exit_json(changed=bool(update),
+                           port=port.to_dict(computed=False))
+        elif state == 'absent' and port:
+            # delete port
+            self._delete(port)
+            self.exit_json(changed=True)
+        elif state == 'absent' and not port:
+            # do nothing
+            self.exit_json(changed=False)
 
-                port_kwargs['network_id'] = network_id
-                port = self.conn.network.create_port(**port_kwargs)
-                changed = True
-            else:
-                if self._needs_update(port):
-                    port_kwargs = self._compose_port_args()
-                    port = self.conn.network.update_port(port['id'],
-                                                         **port_kwargs)
-                    changed = True
-            self.exit_json(changed=changed, id=port['id'], port=port)
+    def _build_update(self, port):
+        update = {}
 
-        if state == 'absent':
-            if port:
-                self.conn.delete_port(port['id'])
-                changed = True
-            self.exit_json(changed=changed)
+        # A port's name cannot be updated by this module because
+        # it is used to find ports by name or id.
+        # If name is an id, then we do not have a name to update.
+        # If name is a name actually, then it was used to find a
+        # matching port hence the name is the user defined one
+        # already.
+
+        # updateable port attributes in openstacksdk
+        # (OpenStack API names in braces):
+        # - allowed_address_pairs (allowed_address_pairs)
+        # - binding_host_id (binding:host_id)
+        # - binding_profile (binding:profile)
+        # - binding_vnic_type (binding:vnic_type)
+        # - data_plane_status (data_plane_status)
+        # - description (description)
+        # - device_id (device_id)
+        # - device_owner (device_owner)
+        # (- device_profile (device_profile))
+        # - dns_domain (dns_domain)
+        # - dns_name (dns_name)
+        # - extra_dhcp_opts (extra_dhcp_opts)
+        # - fixed_ips (fixed_ips)
+        # - is_admin_state_up (admin_state_up)
+        # - is_port_security_enabled (port_security_enabled)
+        # - mac_address (mac_address)
+        # - name (name)
+        # - numa_affinity_policy (numa_affinity_policy)
+        # - qos_policy_id (qos_policy_id)
+        # - security_group_ids (security_groups)
+        # Ref.: https://docs.openstack.org/api-ref/network/v2/index.html#update-port
+
+        # Update all known updateable attributes although
+        # our module might not support them yet
+
+        # Update attributes which can be compared straight away
+        port_attributes = dict(
+            (k, self.params[k])
+            for k in ['binding_host_id', 'binding_vnic_type',
+                      'data_plane_status', 'description', 'device_id',
+                      'device_owner', 'is_admin_state_up',
+                      'is_port_security_enabled', 'mac_address',
+                      'numa_affinity_policy']
+            if k in self.params and self.params[k] is not None
+            and self.params[k] != port[k])
+
+        # Compare dictionaries
+        for k in ['binding_profile']:
+            if self.params[k] is None:
+                continue
+
+            if (self.params[k] or port[k]) \
+               and self.params[k] != port[k]:
+                port_attributes[k] = self.params[k]
+
+        # Attribute qos_policy_id is not supported by this module and would
+        # need special handling using self.conn.network.find_qos_policy()
+
+        # Compare attributes which are lists of dictionaries
+        for k in ['allowed_address_pairs', 'extra_dhcp_opts', 'fixed_ips']:
+            if self.params[k] is None:
+                continue
+
+            if (self.params[k] or port[k]) \
+               and self.params[k] != port[k]:
+                port_attributes[k] = self.params[k]
+
+        # Compare security groups
+        if self.params['no_security_groups']:
+            security_group_ids = []
+        elif self.params['security_groups'] is not None:
+            security_group_ids = [
+                self.conn.network.find_security_group(
+                    security_group_name_or_id, ignore_missing=False).id
+                for security_group_name_or_id in self.params['security_groups']
+            ]
+        else:
+            security_group_ids = None
+
+        if security_group_ids is not None \
+           and set(security_group_ids) != set(port['security_group_ids']):
+            port_attributes['security_group_ids'] = security_group_ids
+
+        # Compare dns attributes
+        if self.conn.has_service('dns') and \
+           self.conn.network.find_extension('dns-integration'):
+            port_attributes.update(dict(
+                (k, self.params[k])
+                for k in ['dns_name', 'dns_domain']
+                if self.params[k] is not None and self.params[k] != port[k]
+            ))
+
+        if port_attributes:
+            update['port_attributes'] = port_attributes
+        return update
+
+    def _create(self, network):
+        args = {}
+        args['network_id'] = network.id
+
+        # Fetch IDs of security groups next to fail early
+        # if any security group does not exist
+        if self.params['no_security_groups']:
+            args['security_group_ids'] = []
+        elif self.params['security_groups'] is not None:
+            args['security_group_ids'] = [
+                self.conn.network.find_security_group(
+                    security_group_name_or_id, ignore_missing=False).id
+                for security_group_name_or_id in self.params['security_groups']
+            ]
+
+        for k in ['allowed_address_pairs',
+                  'binding_profile',
+                  'binding_vnic_type',
+                  'device_id',
+                  'device_owner',
+                  'description',
+                  'extra_dhcp_opts',
+                  'is_admin_state_up',
+                  'mac_address',
+                  'port_security_enabled',
+                  'fixed_ips',
+                  'name']:
+            if self.params[k] is not None:
+                args[k] = self.params[k]
+
+        if self.conn.has_service('dns') \
+           and self.conn.network.find_extension('dns-integration'):
+            for k in ['dns_domain', 'dns_name']:
+                if self.params[k] is not None:
+                    args[k] = self.params[k]
+
+        return self.conn.network.create_port(**args)
+
+    def _delete(self, port):
+        self.conn.network.delete_port(port.id)
+
+    def _update(self, port, update):
+        port_attributes = update.get('port_attributes')
+        if port_attributes:
+            port = self.conn.network.update_port(port, **port_attributes)
+        return port
+
+    def _will_change(self, port, state):
+        if state == 'present' and not port:
+            return True
+        elif state == 'present' and port:
+            return bool(self._build_update(port))
+        elif state == 'absent' and port:
+            return False
+        else:
+            # state == 'absent' and not port:
+            return True
 
 
 def main():
-    module = NetworkPortModule()
+    module = PortModule()
     module()
 
 

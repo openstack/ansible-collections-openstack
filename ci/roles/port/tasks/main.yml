@@ -1,145 +1,290 @@
 ---
 - name: Create network
   openstack.cloud.network:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ network_name }}"
-     external: "{{ network_external }}"
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ network_name }}"
+    external: "{{ network_external }}"
+  register: network
 
 - name: Create subnet
   openstack.cloud.subnet:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ subnet_name }}"
-     network_name: "{{ network_name }}"
-     cidr: 10.5.5.0/24
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ subnet_name }}"
+    network_name: "{{ network_name }}"
+    cidr: 10.5.5.0/24
+  register: subnet
 
 - name: Create port (no security group or default security group)
   openstack.cloud.port:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ port_name }}"
-     network: "{{ network_name }}"
-     no_security_groups: "{{ no_security_groups }}"
-     fixed_ips:
-       - ip_address: 10.5.5.69
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ port_name }}"
+    network: "{{ network_name }}"
+    no_security_groups: "{{ no_security_groups }}"
+    fixed_ips:
+      - ip_address: 10.5.5.69
   register: port
 
 - debug: var=port
 
+- name: assert return values of port module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(port.port.keys())|length == 0
+
+- name: List all ports
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+  register: info
+
+- name: Get info about all ports
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+  register: info
+
+- name: Check info about ports
+  assert:
+    that:
+      - info.ports|length > 0
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(info.ports[0].keys())|length == 0
+
+- name: Get port by id
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    name: "{{ info.ports[0].id }}"
+  register: info_id
+
+- name: Assert infos by id
+  assert:
+    that:
+      - info_id.ports|length == 1
+      - info_id.ports[0].id == info.ports[0].id
+
+- name: List port with device_id filter
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      device_id: "{{ info.ports[0].device_id }}"
+  register: info_filter
+
+- name: Assert port was returned
+  assert:
+    that:
+      - info_filter.ports | length >= 1
+
 - name: Delete port (no security group or default security group)
   openstack.cloud.port:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ port_name }}"
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ port_name }}"
 
 - name: Create security group
   openstack.cloud.security_group:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ secgroup_name }}"
-     description: Test group
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ secgroup_name }}"
+    description: Test group
+  register: security_group
 
 - name: Create port (with security group)
   openstack.cloud.port:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ port_name }}"
-     network: "{{ network_name }}"
-     fixed_ips:
-       - ip_address: 10.5.5.69
-     security_groups:
-       - "{{ secgroup_name }}"
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ port_name }}"
+    network: "{{ network_name }}"
+    fixed_ips:
+      - ip_address: 10.5.5.69
+    security_groups:
+      - "{{ secgroup_name }}"
   register: port
 
 - debug: var=port
 
 - name: Delete port (with security group)
   openstack.cloud.port:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ port_name }}"
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ port_name }}"
 
 - name: Create port (with dns_name, dns_domain)
   openstack.cloud.port:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ port_name }}"
-     network: "{{ network_name }}"
-     fixed_ips:
-       - ip_address: 10.5.5.69
-     dns_name: "dns-port-name"
-     dns_domain: "example.com."
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ port_name }}"
+    network: "{{ network_name }}"
+    fixed_ips:
+      - ip_address: 10.5.5.69
+    dns_name: "dns-port-name"
+    dns_domain: "example.com."
   register: port
 
 - debug: var=port
 
 - name: Delete port (with dns name,domain)
   openstack.cloud.port:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ port_name }}"
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ port_name }}"
 
 - name: Create port (with allowed_address_pairs and extra_dhcp_opts)
   openstack.cloud.port:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ port_name }}"
-     network: "{{ network_name }}"
-     no_security_groups: "{{ no_security_groups }}"
-     allowed_address_pairs:
-       - ip_address: 10.6.7.0/24
-     extra_dhcp_opts:
-       - opt_name: "bootfile-name"
-         opt_value: "testfile.1"
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ port_name }}"
+    network: "{{ network_name }}"
+    no_security_groups: "{{ no_security_groups }}"
+    allowed_address_pairs:
+      - ip_address: 10.6.7.0/24
+    extra_dhcp_opts:
+      - opt_name: "bootfile-name"
+        opt_value: "testfile.1"
   register: port
 
 - debug: var=port
 
 - name: Delete port (with allowed_address_pairs and extra_dhcp_opts)
   openstack.cloud.port:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ port_name }}"
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ port_name }}"
+
+- name: Create port which will be updated
+  openstack.cloud.port:
+    allowed_address_pairs:
+      - ip_address: 10.6.7.0/24
+        mac_address: "aa:bb:cc:dd:ee:ff"
+    cloud: "{{ cloud }}"
+    description: "What a great port"
+    extra_dhcp_opts:
+      - ip_version: 4
+        opt_name: "bootfile-name"
+        opt_value: "testfile.1"
+    dns_name: "dns-port-name"
+    dns_domain: "example.com."
+    fixed_ips:
+      - ip_address: 10.5.5.69
+    name: "{{ port_name }}"
+    network: "{{ network_name }}"
+    no_security_groups: yes
+    state: present
+  register: port
+
+- name: Create port which will be updated (again)
+  openstack.cloud.port:
+    allowed_address_pairs:
+      - ip_address: 10.6.7.0/24
+        mac_address: "aa:bb:cc:dd:ee:ff"
+    cloud: "{{ cloud }}"
+    description: "What a great port"
+    extra_dhcp_opts:
+      - ip_version: 4
+        opt_name: "bootfile-name"
+        opt_value: "testfile.1"
+    # We have no valid dns name configured
+    #dns_name: "dns-port-name"
+    #dns_domain: "example.com."
+    fixed_ips:
+      - ip_address: 10.5.5.69
+        subnet_id: "{{ subnet.subnet.id }}"
+    name: "{{ port_name }}"
+    network: "{{ network_name }}"
+    no_security_groups: yes
+    state: present
+  register: port_again
+
+- name: Assert port did not change
+  assert:
+    that:
+      - port.port.id == port_again.port.id
+      - port_again is not changed
+
+- name: Update port
+  openstack.cloud.port:
+    allowed_address_pairs:
+      - ip_address: 11.9.9.0/24
+        mac_address: "aa:aa:aa:bb:bb:bb"
+    cloud: "{{ cloud }}"
+    description: "This port got updated"
+    extra_dhcp_opts:
+      - opt_name: "bootfile-name"
+        opt_value: "testfile.2"
+    # We have no valid dns name configured
+    #dns_name: "dns-port-name-2"
+    #dns_domain: "another.example.com."
+    fixed_ips:
+      - ip_address: 10.5.5.70
+        subnet_id: "{{ subnet.subnet.id }}"
+    name: "{{ port_name }}"
+    network: "{{ network_name }}"
+    security_groups:
+      - "{{ secgroup_name }}"
+    state: present
+  register: port_updated
+
+- name: Assert updated port
+  assert:
+    that:
+      - port_updated.port.id == port.port.id
+      - port_updated.port.allowed_address_pairs|length == 1
+      - port_updated.port.allowed_address_pairs[0].ip_address == "11.9.9.0/24"
+      - port_updated.port.allowed_address_pairs[0].mac_address == "aa:aa:aa:bb:bb:bb"
+      - port_updated.port.description == "This port got updated"
+      - port_updated.port.extra_dhcp_opts|length == 1
+      - port_updated.port.extra_dhcp_opts[0].opt_value == "testfile.2"
+      # We have no valid dns name configured
+      #- port_updated.port.dns_name == "dns-port-name-2"
+      #- port_updated.port.dns_domain == "another.example.com."
+      - port_updated.port.fixed_ips|length == 1
+      - port_updated.port.fixed_ips[0].ip_address == "10.5.5.70"
+      - port_updated.port.fixed_ips[0].subnet_id == subnet.subnet.id
+      - port_updated.port.security_group_ids|length == 1
+      - port_updated.port.security_group_ids[0] == security_group.secgroup.id
+
+- name: Delete updated port
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ port_name }}"
 
 - name: Delete security group
   openstack.cloud.security_group:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ secgroup_name }}"
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ secgroup_name }}"
 
-- name: Test port binding config (runs from train release sdk > 0.28)
-  block:
-    - name: Create port (with binding profile)
-      openstack.cloud.port:
-        cloud: "{{ cloud }}"
-        state: present
-        name: "{{ port_name }}"
-        network: "{{ network_name }}"
-        binding_profile: "{{ binding_profile }}"
-      register: port
+- name: Create port (with binding profile)
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ port_name }}"
+    network: "{{ network_name }}"
+    binding_profile: "{{ binding_profile }}"
+  register: port
 
-    - name: Assert binding:profile exists in created port
-      assert:
-        that: "port.port['binding_profile']"
+- name: Assert binding_profile exists in created port
+  assert:
+    that: "port.port['binding_profile']"
 
-    - debug: var=port
+- debug: var=port
 
-    - name: Delete port (with binding profile)
-      openstack.cloud.port:
-        cloud: "{{ cloud }}"
-        state: absent
-        name: "{{ port_name }}"
-  when: sdk_version is version(0.28, '>')
+- name: Delete port (with binding profile)
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ port_name }}"
 
 - name: Delete subnet
   openstack.cloud.subnet:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ subnet_name }}"
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ subnet_name }}"
 
 - name: Delete network
   openstack.cloud.network:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ network_name }}"
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ network_name }}"
