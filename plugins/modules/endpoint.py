@@ -118,12 +118,12 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class IdentityEndpointModule(OpenStackModule):
     argument_spec = dict(
-        service=dict(type='str', required=True),
-        endpoint_interface=dict(type='str', required=True, choices=['admin', 'public', 'internal']),
-        url=dict(type='str', required=True),
-        region=dict(type='str'),
+        service=dict(required=True),
+        endpoint_interface=dict(required=True, choices=['admin', 'public', 'internal']),
+        url=dict(required=True),
+        region=dict(),
         enabled=dict(type='bool', default=True),
-        state=dict(type='str', default='present', choices=['absent', 'present']),
+        state=dict(default='present', choices=['absent', 'present']),
     )
 
     module_kwargs = dict(

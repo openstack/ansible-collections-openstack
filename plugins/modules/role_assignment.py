@@ -84,11 +84,11 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class IdentityRoleAssignmentModule(OpenStackModule):
     argument_spec = dict(
         role=dict(required=True),
-        user=dict(required=False),
-        group=dict(required=False),
-        project=dict(required=False),
-        domain=dict(required=False),
-        system=dict(required=False),
+        user=dict(),
+        group=dict(),
+        project=dict(),
+        domain=dict(),
+        system=dict(),
         state=dict(default='present', choices=['absent', 'present']),
     )
 

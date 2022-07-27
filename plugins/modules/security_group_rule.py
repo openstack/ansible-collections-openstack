@@ -306,11 +306,11 @@ class SecurityGroupRuleModule(OpenStackModule):
 
     argument_spec = dict(
         security_group=dict(required=True),
-        protocol=dict(type='str'),
-        port_range_min=dict(required=False, type='int'),
-        port_range_max=dict(required=False, type='int'),
-        remote_ip_prefix=dict(required=False),
-        remote_group=dict(required=False),
+        protocol=dict(),
+        port_range_min=dict(type='int'),
+        port_range_max=dict(type='int'),
+        remote_ip_prefix=dict(),
+        remote_group=dict(),
         ether_type=dict(default='IPv4',
                         choices=['IPv4', 'IPv6'],
                         aliases=['ethertype']),
@@ -318,8 +318,8 @@ class SecurityGroupRuleModule(OpenStackModule):
                        choices=['egress', 'ingress']),
         state=dict(default='present',
                    choices=['absent', 'present']),
-        description=dict(required=False, default=None),
-        project=dict(default=None),
+        description=dict(),
+        project=dict(),
     )
 
     module_kwargs = dict(

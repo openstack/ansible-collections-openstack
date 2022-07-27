@@ -96,11 +96,11 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class IdentityProjectAccess(OpenStackModule):
     argument_spec = dict(
-        state=dict(required=False, default='present',
+        state=dict(default='present',
                    choices=['absent', 'present']),
-        target_project_id=dict(required=True, type='str'),
-        resource_type=dict(required=True, type='str'),
-        resource_name=dict(required=True, type='str'),
+        target_project_id=dict(required=True),
+        resource_type=dict(required=True),
+        resource_name=dict(required=True),
     )
 
     module_kwargs = dict(

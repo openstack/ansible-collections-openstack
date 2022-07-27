@@ -127,15 +127,14 @@ class NetworkingFloatingIPModule(OpenStackModule):
     argument_spec = dict(
         server=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
-        network=dict(required=False, default=None),
-        floating_ip_address=dict(required=False, default=None),
-        reuse=dict(required=False, type='bool', default=False),
-        fixed_address=dict(required=False, default=None),
-        nat_destination=dict(required=False, default=None,
-                             aliases=['fixed_network', 'internal_network']),
-        wait=dict(required=False, type='bool', default=False),
-        timeout=dict(required=False, type='int', default=60),
-        purge=dict(required=False, type='bool', default=False),
+        network=dict(),
+        floating_ip_address=dict(),
+        reuse=dict(type='bool', default=False),
+        fixed_address=dict(),
+        nat_destination=dict(aliases=['fixed_network', 'internal_network']),
+        wait=dict(type='bool', default=False),
+        timeout=dict(type='int', default=60),
+        purge=dict(type='bool', default=False),
     )
 
     module_kwargs = dict(

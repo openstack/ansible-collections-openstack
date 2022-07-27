@@ -120,13 +120,13 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class DnsZoneModule(OpenStackModule):
 
     argument_spec = dict(
-        name=dict(required=True, type='str'),
-        zone_type=dict(required=False, choices=['primary', 'secondary'], type='str'),
-        email=dict(required=False, type='str'),
-        description=dict(required=False, type='str'),
-        ttl=dict(required=False, type='int'),
-        masters=dict(required=False, type='list', elements='str'),
-        state=dict(default='present', choices=['absent', 'present'], type='str'),
+        name=dict(required=True),
+        zone_type=dict(choices=['primary', 'secondary']),
+        email=dict(),
+        description=dict(),
+        ttl=dict(type='int'),
+        masters=dict(type='list', elements='str'),
+        state=dict(default='present', choices=['absent', 'present']),
     )
 
     def _system_state_change(self, state, email, description, ttl, masters, zone):

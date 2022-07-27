@@ -75,10 +75,10 @@ class StackInfoModule(OpenStackModule):
     module_min_sdk_version = '0.53.0'
 
     argument_spec = dict(
-        name=dict(required=False, type='str'),
-        status=dict(required=False, type='str'),
-        project_id=dict(required=False, type='str'),
-        owner_id=dict(required=False, type='str')
+        name=dict(),
+        status=dict(),
+        project_id=dict(),
+        owner_id=dict()
     )
     module_kwargs = dict(
         supports_check_mode=True

@@ -173,8 +173,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class NetworkInfoModule(OpenStackModule):
     argument_spec = dict(
-        name=dict(required=False, default=None),
-        filters=dict(required=False, type='dict', default=None)
+        name=dict(),
+        filters=dict(type='dict')
     )
     module_kwargs = dict(
         supports_check_mode=True

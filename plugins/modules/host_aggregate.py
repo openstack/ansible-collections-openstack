@@ -129,9 +129,9 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class ComputeHostAggregateModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True),
-        metadata=dict(required=False, default=None, type='dict'),
-        availability_zone=dict(required=False, default=None),
-        hosts=dict(required=False, default=None, type='list', elements='str'),
+        metadata=dict(type='dict'),
+        availability_zone=dict(),
+        hosts=dict(type='list', elements='str'),
         purge_hosts=dict(default=True, type='bool'),
         state=dict(default='present', choices=['absent', 'present']),
     )

@@ -220,10 +220,10 @@ class RouterModule(OpenStackModule):
         name=dict(required=True),
         admin_state_up=dict(type='bool', default=True),
         enable_snat=dict(type='bool'),
-        network=dict(default=None),
-        interfaces=dict(type='list', default=None, elements='raw'),
-        external_fixed_ips=dict(type='list', default=None, elements='dict'),
-        project=dict(default=None)
+        network=dict(),
+        interfaces=dict(type='list', elements='raw'),
+        external_fixed_ips=dict(type='list', elements='dict'),
+        project=dict()
     )
 
     def _get_subnet_ids_from_ports(self, ports):

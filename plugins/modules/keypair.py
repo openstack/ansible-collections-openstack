@@ -87,8 +87,8 @@ class KeyPairModule(OpenStackModule):
 
     argument_spec = dict(
         name=dict(required=True),
-        public_key=dict(default=None),
-        public_key_file=dict(default=None),
+        public_key=dict(),
+        public_key_file=dict(),
         state=dict(default='present',
                    choices=['absent', 'present', 'replace']),
     )

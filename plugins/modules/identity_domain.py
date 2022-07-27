@@ -91,7 +91,7 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class IdentityDomainModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True),
-        description=dict(default=None),
+        description=dict(),
         enabled=dict(default=True, type='bool'),
         state=dict(default='present', choices=['absent', 'present']),
     )

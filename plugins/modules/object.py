@@ -70,9 +70,9 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class SwiftObjectModule(OpenStackModule):
     argument_spec = dict(
-        name=dict(required=False, default=None),
+        name=dict(),
         container=dict(required=True),
-        filename=dict(required=False, default=None),
+        filename=dict(),
         container_access=dict(default='private', choices=['private', 'public']),
         state=dict(default='present', choices=['absent', 'present']),
     )

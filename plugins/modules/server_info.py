@@ -61,10 +61,10 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class ServerInfoModule(OpenStackModule):
 
     argument_spec = dict(
-        server=dict(required=False),
-        detailed=dict(required=False, type='bool', default=False),
-        filters=dict(required=False, type='dict', default=None),
-        all_projects=dict(required=False, type='bool', default=False),
+        server=dict(),
+        detailed=dict(type='bool', default=False),
+        filters=dict(type='dict'),
+        all_projects=dict(type='bool', default=False),
     )
     module_kwargs = dict(
         supports_check_mode=True

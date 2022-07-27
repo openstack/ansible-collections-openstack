@@ -73,7 +73,7 @@ class SecurityGroupModule(OpenStackModule):
         name=dict(required=True),
         description=dict(default=''),
         state=dict(default='present', choices=['absent', 'present']),
-        project=dict(default=None),
+        project=dict(),
     )
 
     def _needs_update(self, secgroup):

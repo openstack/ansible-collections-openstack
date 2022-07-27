@@ -254,8 +254,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class NetworkPortInfoModule(OpenStackModule):
     argument_spec = dict(
-        port=dict(type='str', required=False),
-        filters=dict(type='dict', required=False, default={}),
+        port=dict(),
+        filters=dict(type='dict', default={}),
     )
     module_kwargs = dict(
         supports_check_mode=True

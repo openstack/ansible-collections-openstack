@@ -212,13 +212,13 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class CoeClusterModule(OpenStackModule):
     argument_spec = dict(
         cluster_template_id=dict(required=True),
-        discovery_url=dict(default=None),
+        discovery_url=dict(),
         docker_volume_size=dict(type='int'),
-        flavor_id=dict(default=None),
-        keypair=dict(default=None, no_log=False),
-        labels=dict(default=None, type='raw'),
+        flavor_id=dict(),
+        keypair=dict(no_log=False),
+        labels=dict(type='raw'),
         master_count=dict(type='int', default=1),
-        master_flavor_id=dict(default=None),
+        master_flavor_id=dict(),
         name=dict(required=True),
         node_count=dict(type='int', default=1),
         state=dict(default='present', choices=['absent', 'present']),

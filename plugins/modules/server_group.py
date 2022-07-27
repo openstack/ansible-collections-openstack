@@ -102,7 +102,7 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class ServerGroupModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True),
-        policies=dict(required=False, type='list', elements='str'),
+        policies=dict(type='list', elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
     )
 

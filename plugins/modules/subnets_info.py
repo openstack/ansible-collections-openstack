@@ -132,8 +132,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class SubnetInfoModule(OpenStackModule):
     argument_spec = dict(
-        name=dict(required=False, default=None, aliases=['subnet']),
-        filters=dict(required=False, type='dict', default=None)
+        name=dict(aliases=['subnet']),
+        filters=dict(type='dict')
     )
     module_kwargs = dict(
         supports_check_mode=True

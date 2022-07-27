@@ -106,13 +106,13 @@ class VolumeModule(OpenStackModule):
 
     argument_spec = dict(
         size=dict(type='int'),
-        volume_type=dict(type='str'),
-        display_name=dict(required=True, aliases=['name'], type='str'),
-        display_description=dict(aliases=['description'], type='str'),
-        image=dict(type='str'),
-        snapshot_id=dict(type='str'),
-        volume=dict(type='str'),
-        state=dict(default='present', choices=['absent', 'present'], type='str'),
+        volume_type=dict(),
+        display_name=dict(required=True, aliases=['name']),
+        display_description=dict(aliases=['description']),
+        image=dict(),
+        snapshot_id=dict(),
+        volume=dict(),
+        state=dict(default='present', choices=['absent', 'present']),
         scheduler_hints=dict(type='dict'),
         metadata=dict(type='dict'),
         bootable=dict(type='bool', default=False)

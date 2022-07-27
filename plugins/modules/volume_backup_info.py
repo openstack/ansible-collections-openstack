@@ -87,8 +87,8 @@ class VolumeBackupInfoModule(OpenStackModule):
     module_min_sdk_version = '0.49.0'
 
     argument_spec = dict(
-        name=dict(required=False, type='str'),
-        volume=dict(required=False, type='str')
+        name=dict(),
+        volume=dict()
     )
     module_kwargs = dict(
         supports_check_mode=True

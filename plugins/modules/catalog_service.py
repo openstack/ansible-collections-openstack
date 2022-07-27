@@ -105,7 +105,7 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class IdentityCatalogServiceModule(OpenStackModule):
     argument_spec = dict(
-        description=dict(default=None),
+        description=dict(),
         is_enabled=dict(default=True, aliases=['enabled'], type='bool'),
         name=dict(required=True),
         type=dict(required=True, aliases=['service_type']),

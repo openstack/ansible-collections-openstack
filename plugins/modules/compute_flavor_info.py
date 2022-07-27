@@ -189,11 +189,11 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class ComputeFlavorInfoModule(OpenStackModule):
     argument_spec = dict(
-        name=dict(required=False, default=None),
-        ram=dict(required=False, default=None),
-        vcpus=dict(required=False, default=None),
-        limit=dict(required=False, default=None, type='int'),
-        ephemeral=dict(required=False, default=None),
+        name=dict(),
+        ram=dict(),
+        vcpus=dict(),
+        limit=dict(type='int'),
+        ephemeral=dict(),
     )
     module_kwargs = dict(
         mutually_exclusive=[

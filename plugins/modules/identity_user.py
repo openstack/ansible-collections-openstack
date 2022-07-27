@@ -166,11 +166,11 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class IdentityUserModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True),
-        password=dict(required=False, default=None, no_log=True),
-        email=dict(required=False, default=None),
-        default_project=dict(required=False, default=None),
-        description=dict(type='str'),
-        domain=dict(required=False, default=None),
+        password=dict(no_log=True),
+        email=dict(),
+        default_project=dict(),
+        description=dict(),
+        domain=dict(),
         enabled=dict(default=True, type='bool'),
         state=dict(default='present', choices=['absent', 'present']),
         update_password=dict(default='on_create', choices=['always', 'on_create']),

@@ -141,14 +141,14 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class FloatingIPInfoModule(OpenStackModule):
     argument_spec = dict(
-        description=dict(required=False),
-        fixed_ip_address=dict(required=False),
-        floating_ip_address=dict(required=False),
-        floating_network=dict(required=False),
-        port=dict(required=False),
-        project_id=dict(required=False),
-        router=dict(required=False),
-        status=dict(required=False, choices=['active', 'down']),
+        description=dict(),
+        fixed_ip_address=dict(),
+        floating_ip_address=dict(),
+        floating_network=dict(),
+        port=dict(),
+        project_id=dict(),
+        router=dict(),
+        status=dict(choices=['active', 'down']),
     )
     module_kwargs = dict(
         supports_check_mode=True

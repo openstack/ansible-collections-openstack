@@ -233,17 +233,17 @@ def _check_set_power_state(module, cloud, node):
 
 def main():
     argument_spec = ironic_argument_spec(
-        uuid=dict(required=False),
-        name=dict(required=False),
-        instance_info=dict(type='dict', required=False),
-        config_drive=dict(type='raw', required=False),
-        state=dict(required=False, default='present'),
-        maintenance=dict(required=False),
-        maintenance_reason=dict(required=False),
-        power=dict(required=False, default='present'),
-        deploy=dict(required=False, default='yes'),
-        wait=dict(type='bool', required=False, default=False),
-        timeout=dict(required=False, type='int', default=1800),
+        uuid=dict(),
+        name=dict(),
+        instance_info=dict(type='dict'),
+        config_drive=dict(type='raw'),
+        state=dict(default='present'),
+        maintenance=dict(),
+        maintenance_reason=dict(),
+        power=dict(default='present'),
+        deploy=dict(default='yes'),
+        wait=dict(type='bool', default=False),
+        timeout=dict(type='int', default=1800),
     )
     module_kwargs = openstack_module_kwargs()
     module = IronicModule(argument_spec, **module_kwargs)

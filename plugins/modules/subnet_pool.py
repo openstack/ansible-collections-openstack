@@ -211,15 +211,15 @@ class SubnetPoolModule(OpenStackModule):
         state=dict(default='present', choices=['absent', 'present']),
         name=dict(required=True),
         shared=dict(default=False, type='bool'),
-        minimum_prefix_length=dict(default=None, type='int'),
-        maximum_prefix_length=dict(default=None, type='int'),
-        default_prefix_length=dict(default=None, type='int'),
-        description=dict(default=None, type='str'),
-        default_quota=dict(default=None, type='int'),
+        minimum_prefix_length=dict(type='int'),
+        maximum_prefix_length=dict(type='int'),
+        default_prefix_length=dict(type='int'),
+        description=dict(),
+        default_quota=dict(type='int'),
         prefixes=dict(type='list', elements='str'),
         is_default=dict(default=False, type='bool'),
-        address_scope=dict(default=None),
-        project=dict(default=None),
+        address_scope=dict(),
+        project=dict(),
         extra_specs=dict(type='dict', default=dict())
     )
 

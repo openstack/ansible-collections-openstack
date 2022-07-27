@@ -154,24 +154,18 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
 
 class SecurityGroupRuleInfoModule(OpenStackModule):
     argument_spec = dict(
-        description=dict(required=False, type='str'),
-        direction=dict(required=False,
-                       type='str',
-                       choices=['egress', 'ingress']),
-        ethertype=dict(required=False,
-                       type='str',
-                       choices=['IPv4', 'IPv6']),
-        port_range_min=dict(required=False, type='int', min_ver="0.32.0"),
-        port_range_max=dict(required=False, type='int', min_ver="0.32.0"),
-        project=dict(required=False, type='str'),
-        protocol=dict(required=False,
-                      type='str',
-                      choices=['any', 'tcp', 'udp', 'icmp', '112', '132']),
-        remote_group=dict(required=False, type='str'),
-        remote_ip_prefix=dict(required=False, type='str', min_ver="0.32.0"),
-        revision_number=dict(required=False, type='int'),
-        rule=dict(required=False, type='str'),
-        security_group=dict(required=False, type='str')
+        description=dict(),
+        direction=dict(choices=['egress', 'ingress']),
+        ethertype=dict(choices=['IPv4', 'IPv6']),
+        port_range_min=dict(type='int', min_ver="0.32.0"),
+        port_range_max=dict(type='int', min_ver="0.32.0"),
+        project=dict(),
+        protocol=dict(choices=['any', 'tcp', 'udp', 'icmp', '112', '132']),
+        remote_group=dict(),
+        remote_ip_prefix=dict(min_ver="0.32.0"),
+        revision_number=dict(type='int'),
+        rule=dict(),
+        security_group=dict()
     )
 
     module_kwargs = dict(

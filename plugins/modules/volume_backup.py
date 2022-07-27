@@ -101,15 +101,14 @@ class VolumeBackupModule(OpenStackModule):
     module_min_sdk_version = '0.49.0'
 
     argument_spec = dict(
-        display_name=dict(required=True, aliases=['name'], type='str'),
-        display_description=dict(required=False, aliases=['description'],
-                                 type='str'),
-        volume=dict(required=False, type='str'),
-        snapshot=dict(required=False, type='str'),
-        state=dict(default='present', type='str', choices=['absent', 'present']),
+        display_name=dict(required=True, aliases=['name']),
+        display_description=dict(aliases=['description']),
+        volume=dict(),
+        snapshot=dict(),
+        state=dict(default='present', choices=['absent', 'present']),
         force=dict(default=False, type='bool'),
-        metadata=dict(required=False, type='dict'),
-        incremental=dict(required=False, default=False, type='bool')
+        metadata=dict(type='dict'),
+        incremental=dict(default=False, type='bool')
     )
     module_kwargs = dict(
         required_if=[

@@ -294,25 +294,24 @@ except ImportError:
 
 class NetworkPortModule(OpenStackModule):
     argument_spec = dict(
-        network=dict(required=False),
-        name=dict(required=False),
-        fixed_ips=dict(type='list', default=None, elements='dict'),
-        admin_state_up=dict(type='bool', default=None),
-        mac_address=dict(default=None),
-        security_groups=dict(default=None, type='list', elements='str'),
+        network=dict(),
+        name=dict(),
+        fixed_ips=dict(type='list', elements='dict'),
+        admin_state_up=dict(type='bool'),
+        mac_address=dict(),
+        security_groups=dict(type='list', elements='str'),
         no_security_groups=dict(default=False, type='bool'),
-        allowed_address_pairs=dict(type='list', default=None, elements='dict'),
-        extra_dhcp_opts=dict(type='list', default=None, elements='dict'),
-        device_owner=dict(default=None),
-        device_id=dict(default=None),
+        allowed_address_pairs=dict(type='list', elements='dict'),
+        extra_dhcp_opts=dict(type='list', elements='dict'),
+        device_owner=dict(),
+        device_id=dict(),
         state=dict(default='present', choices=['absent', 'present']),
-        vnic_type=dict(default=None,
-                       choices=['normal', 'direct', 'direct-physical',
+        vnic_type=dict(choices=['normal', 'direct', 'direct-physical',
                                 'macvtap', 'baremetal', 'virtio-forwarder']),
-        port_security_enabled=dict(default=None, type='bool'),
-        binding_profile=dict(default=None, type='dict'),
-        dns_name=dict(type='str', default=None),
-        dns_domain=dict(type='str', default=None)
+        port_security_enabled=dict(type='bool'),
+        binding_profile=dict(type='dict'),
+        dns_name=dict(),
+        dns_domain=dict()
     )
 
     module_kwargs = dict(

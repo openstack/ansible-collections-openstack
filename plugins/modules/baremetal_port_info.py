@@ -153,9 +153,9 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
 
 def main():
     argument_spec = ironic_argument_spec(
-        uuid=dict(required=False),
-        address=dict(required=False),
-        node=dict(required=False),
+        uuid=dict(),
+        address=dict(),
+        node=dict(),
     )
     module_kwargs = openstack_module_kwargs()
     module_kwargs['supports_check_mode'] = True

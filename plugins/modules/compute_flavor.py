@@ -165,21 +165,21 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class ComputeFlavorModule(OpenStackModule):
     argument_spec = dict(
-        state=dict(required=False, default='present',
+        state=dict(default='present',
                    choices=['absent', 'present']),
         name=dict(required=True),
 
         # required when state is 'present'
-        ram=dict(required=False, type='int'),
-        vcpus=dict(required=False, type='int'),
+        ram=dict(type='int'),
+        vcpus=dict(type='int'),
 
-        disk=dict(required=False, default=0, type='int'),
-        ephemeral=dict(required=False, default=0, type='int'),
-        swap=dict(required=False, default=0, type='int'),
-        rxtx_factor=dict(required=False, default=1.0, type='float'),
-        is_public=dict(required=False, default=True, type='bool'),
-        flavorid=dict(required=False, default="auto"),
-        extra_specs=dict(required=False, default=None, type='dict'),
+        disk=dict(default=0, type='int'),
+        ephemeral=dict(default=0, type='int'),
+        swap=dict(default=0, type='int'),
+        rxtx_factor=dict(default=1.0, type='float'),
+        is_public=dict(default=True, type='bool'),
+        flavorid=dict(default="auto"),
+        extra_specs=dict(type='dict'),
     )
 
     module_kwargs = dict(

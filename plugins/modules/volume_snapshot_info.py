@@ -89,10 +89,9 @@ class VolumeSnapshotInfoModule(OpenStackModule):
 
     argument_spec = dict(
         details=dict(default=True, type='bool'),
-        name=dict(required=False, type='str'),
-        volume=dict(required=False, type='str'),
-        status=dict(required=False, type='str',
-                    choices=['creating', 'available', 'error',
+        name=dict(),
+        volume=dict(),
+        status=dict(choices=['creating', 'available', 'error',
                              'deleting', 'error_deleting', 'rollbacking',
                              'backing-up']),
     )

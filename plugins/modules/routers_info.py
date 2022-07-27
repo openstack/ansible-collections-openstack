@@ -192,8 +192,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class RouterInfoModule(OpenStackModule):
 
     argument_spec = dict(
-        name=dict(required=False, default=None),
-        filters=dict(required=False, type='dict', default={})
+        name=dict(),
+        filters=dict(type='dict', default={})
     )
     module_kwargs = dict(
         supports_check_mode=True

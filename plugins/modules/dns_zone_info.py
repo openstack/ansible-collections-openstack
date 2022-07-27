@@ -130,11 +130,11 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class DnsZoneInfoModule(OpenStackModule):
 
     argument_spec = dict(
-        name=dict(required=False, type='str'),
-        type=dict(required=False, choices=['primary', 'secondary'], type='str'),
-        email=dict(required=False, type='str'),
-        description=dict(required=False, type='str'),
-        ttl=dict(required=False, type='int')
+        name=dict(),
+        type=dict(choices=['primary', 'secondary']),
+        email=dict(),
+        description=dict(),
+        ttl=dict(type='int')
     )
     module_kwargs = dict(
         supports_check_mode=True

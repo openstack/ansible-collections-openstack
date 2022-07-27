@@ -574,8 +574,8 @@ def get_ports_and_portgroups(cloud, machine):
 
 def main():
     argument_spec = ironic_argument_spec(
-        node=dict(required=False),
-        mac=dict(required=False),
+        node=dict(),
+        mac=dict(),
     )
     module_kwargs = openstack_module_kwargs()
     module_kwargs['supports_check_mode'] = True

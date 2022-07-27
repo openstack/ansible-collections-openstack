@@ -196,14 +196,14 @@ class NetworkModule(OpenStackModule):
         shared=dict(default=False, type='bool'),
         admin_state_up=dict(default=True, type='bool'),
         external=dict(default=False, type='bool'),
-        provider_physical_network=dict(required=False),
-        provider_network_type=dict(required=False),
-        provider_segmentation_id=dict(required=False, type='int'),
+        provider_physical_network=dict(),
+        provider_network_type=dict(),
+        provider_segmentation_id=dict(type='int'),
         state=dict(default='present', choices=['absent', 'present']),
-        project=dict(default=None),
+        project=dict(),
         port_security_enabled=dict(type='bool'),
-        mtu=dict(required=False, type='int', aliases=['mtu_size']),
-        dns_domain=dict(required=False)
+        mtu=dict(type='int', aliases=['mtu_size']),
+        dns_domain=dict()
     )
 
     def run(self):

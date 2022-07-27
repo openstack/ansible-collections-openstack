@@ -117,14 +117,14 @@ _admin_actions = ['pause', 'unpause', 'suspend', 'resume', 'lock', 'unlock', 'sh
 
 class ServerActionModule(OpenStackModule):
     argument_spec = dict(
-        server=dict(required=True, type='str'),
-        action=dict(required=True, type='str',
+        server=dict(required=True),
+        action=dict(required=True,
                     choices=['stop', 'start', 'pause', 'unpause',
                              'lock', 'unlock', 'suspend', 'resume',
                              'rebuild', 'shelve', 'shelve_offload', 'unshelve']),
-        image=dict(required=False, type='str'),
-        admin_password=dict(required=False, type='str', no_log=True),
-        all_projects=dict(required=False, type='bool', default=False),
+        image=dict(),
+        admin_password=dict(no_log=True),
+        all_projects=dict(type='bool', default=False),
     )
     module_kwargs = dict(
         required_if=[('action', 'rebuild', ['image'])],

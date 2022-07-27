@@ -76,7 +76,7 @@ class ServerVolumeModule(OpenStackModule):
     argument_spec = dict(
         server=dict(required=True),
         volume=dict(required=True),
-        device=dict(default=None),  # None == auto choose device name
+        device=dict(),  # None == auto choose device name
         state=dict(default='present', choices=['absent', 'present']),
     )
 

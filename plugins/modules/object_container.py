@@ -114,11 +114,11 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class ContainerModule(OpenStackModule):
 
     argument_spec = dict(
-        container=dict(type='str', required=True),
-        metadata=dict(type='dict', required=False),
-        keys=dict(type='list', required=False, elements='str', no_log=False),
-        state=dict(type='str', required=False, default='present', choices=['present', 'absent']),
-        delete_with_all_objects=dict(type='bool', default=False, required=False)
+        container=dict(required=True),
+        metadata=dict(type='dict'),
+        keys=dict(type='list', elements='str', no_log=False),
+        state=dict(default='present', choices=['present', 'absent']),
+        delete_with_all_objects=dict(type='bool', default=False)
     )
 
     def create(self, container):

@@ -183,9 +183,9 @@ class LoadbalancerListenerModule(OpenStackModule):
         loadbalancer=dict(required=True),
         protocol=dict(default='HTTP',
                       choices=['HTTP', 'HTTPS', 'TCP', 'TERMINATED_HTTPS', 'UDP', 'SCTP']),
-        protocol_port=dict(default=80, type='int', required=False),
-        timeout_client_data=dict(default=50000, type='int', required=False),
-        timeout_member_data=dict(default=50000, type='int', required=False),
+        protocol_port=dict(default=80, type='int'),
+        timeout_client_data=dict(default=50000, type='int'),
+        timeout_member_data=dict(default=50000, type='int'),
     )
     module_kwargs = dict()
 

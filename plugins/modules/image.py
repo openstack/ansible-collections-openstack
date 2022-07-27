@@ -448,26 +448,26 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class ImageModule(OpenStackModule):
 
     argument_spec = dict(
-        name=dict(required=True, type='str'),
-        id=dict(type='str'),
-        checksum=dict(type='str'),
+        name=dict(required=True),
+        id=dict(),
+        checksum=dict(),
         disk_format=dict(default='qcow2',
                          choices=['ami', 'ari', 'aki', 'vhd', 'vmdk', 'raw', 'qcow2', 'vdi', 'iso', 'vhdx', 'ploop']),
         container_format=dict(default='bare', choices=['ami', 'aki', 'ari', 'bare', 'ovf', 'ova', 'docker']),
-        owner=dict(type='str', aliases=['project']),
-        owner_domain=dict(type='str', aliases=['project_domain']),
+        owner=dict(aliases=['project']),
+        owner_domain=dict(aliases=['project_domain']),
         min_disk=dict(type='int', default=0),
         min_ram=dict(type='int', default=0),
         is_public=dict(type='bool', default=False),
         is_protected=dict(type='bool', aliases=['protected']),
-        filename=dict(type='str'),
-        ramdisk=dict(type='str'),
-        kernel=dict(type='str'),
+        filename=dict(),
+        ramdisk=dict(),
+        kernel=dict(),
         properties=dict(type='dict', default={}),
-        volume=dict(type='str'),
+        volume=dict(),
         tags=dict(type='list', default=[], elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
-        visibility=dict(type='str', choices=['public', 'private', 'shared', 'community']),
+        visibility=dict(choices=['public', 'private', 'shared', 'community']),
     )
 
     module_kwargs = dict(

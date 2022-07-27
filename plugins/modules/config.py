@@ -52,7 +52,7 @@ from ansible.module_utils.basic import AnsibleModule
 
 def main():
     module = AnsibleModule(argument_spec=dict(
-        clouds=dict(required=False, type='list', default=[], elements='str'),
+        clouds=dict(type='list', default=[], elements='str'),
     ))
 
     if not HAS_OPENSTACKSDK:

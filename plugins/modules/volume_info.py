@@ -119,10 +119,10 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class VolumeInfoModule(OpenStackModule):
 
     argument_spec = dict(
-        details=dict(type='bool', required=False),
-        all_projects=dict(type='bool', required=False, min_ver='0.19'),
-        name=dict(type='str', required=False),
-        status=dict(type='str', required=False),
+        details=dict(type='bool'),
+        all_projects=dict(type='bool', min_ver='0.19'),
+        name=dict(),
+        status=dict(),
     )
     module_kwargs = dict(
         supports_check_mode=True

@@ -146,11 +146,11 @@ class LoadbalancerMemberModule(OpenStackModule):
         name=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
         pool=dict(required=True),
-        address=dict(default=None),
+        address=dict(),
         protocol_port=dict(default=80, type='int'),
-        subnet_id=dict(default=None),
-        monitor_address=dict(default=None),
-        monitor_port=dict(default=None, type='int')
+        subnet_id=dict(),
+        monitor_address=dict(),
+        monitor_port=dict(type='int')
     )
     module_kwargs = dict()
 

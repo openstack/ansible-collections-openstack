@@ -290,30 +290,30 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class SubnetModule(OpenStackModule):
     ipv6_mode_choices = ['dhcpv6-stateful', 'dhcpv6-stateless', 'slaac']
     argument_spec = dict(
-        name=dict(type='str', required=True),
-        network=dict(type='str', aliases=['network_name']),
-        cidr=dict(type='str'),
-        description=dict(type='str'),
+        name=dict(required=True),
+        network=dict(aliases=['network_name']),
+        cidr=dict(),
+        description=dict(),
         ip_version=dict(type='int', default=4, choices=[4, 6]),
         is_dhcp_enabled=dict(type='bool', default=True,
                              aliases=['enable_dhcp']),
-        gateway_ip=dict(type='str'),
+        gateway_ip=dict(),
         disable_gateway_ip=dict(
             type='bool', default=False, aliases=['no_gateway_ip']),
-        dns_nameservers=dict(type='list', default=None, elements='str'),
-        allocation_pool_start=dict(type='str'),
-        allocation_pool_end=dict(type='str'),
-        host_routes=dict(type='list', default=None, elements='dict'),
-        ipv6_ra_mode=dict(type='str', choices=ipv6_mode_choices),
-        ipv6_address_mode=dict(type='str', choices=ipv6_mode_choices),
-        subnet_pool=dict(type='str'),
-        prefix_length=dict(type='str'),
+        dns_nameservers=dict(type='list', elements='str'),
+        allocation_pool_start=dict(),
+        allocation_pool_end=dict(),
+        host_routes=dict(type='list', elements='dict'),
+        ipv6_ra_mode=dict(choices=ipv6_mode_choices),
+        ipv6_address_mode=dict(choices=ipv6_mode_choices),
+        subnet_pool=dict(),
+        prefix_length=dict(),
         use_default_subnet_pool=dict(
             type='bool', aliases=['use_default_subnetpool']),
         extra_attrs=dict(type='dict', default=dict(), aliases=['extra_specs']),
-        state=dict(type='str', default='present',
+        state=dict(default='present',
                    choices=['absent', 'present']),
-        project=dict(type='str'),
+        project=dict(),
     )
 
     module_kwargs = dict(

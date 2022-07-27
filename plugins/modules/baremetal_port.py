@@ -339,16 +339,15 @@ def remove_port(module, cloud):
 
 def main():
     argument_spec = ironic_argument_spec(
-        uuid=dict(required=False),
-        node=dict(required=False),
-        address=dict(required=False),
-        portgroup=dict(required=False),
-        local_link_connection=dict(required=False, type='dict'),
-        is_pxe_enabled=dict(required=False, type='bool'),
-        physical_network=dict(required=False),
-        extra=dict(required=False, type='dict'),
-        state=dict(required=False,
-                   default='present',
+        uuid=dict(),
+        node=dict(),
+        address=dict(),
+        portgroup=dict(),
+        local_link_connection=dict(type='dict'),
+        is_pxe_enabled=dict(type='bool'),
+        physical_network=dict(),
+        extra=dict(type='dict'),
+        state=dict(default='present',
                    choices=['present', 'absent'])
     )
 

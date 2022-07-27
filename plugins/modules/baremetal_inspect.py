@@ -95,10 +95,10 @@ def _choose_id_value(module):
 
 def main():
     argument_spec = ironic_argument_spec(
-        uuid=dict(required=False),
-        name=dict(required=False),
-        mac=dict(required=False),
-        timeout=dict(default=1200, type='int', required=False),
+        uuid=dict(),
+        name=dict(),
+        mac=dict(),
+        timeout=dict(default=1200, type='int'),
     )
     module_kwargs = openstack_module_kwargs()
     module = IronicModule(argument_spec, **module_kwargs)

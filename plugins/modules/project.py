@@ -122,10 +122,10 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class IdentityProjectModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True),
-        description=dict(required=False),
-        domain=dict(required=False, aliases=['domain_id']),
+        description=dict(),
+        domain=dict(aliases=['domain_id']),
         is_enabled=dict(default=True, type='bool', aliases=['enabled']),
-        properties=dict(required=False, type='dict', min_ver='0.45.1'),
+        properties=dict(type='dict', min_ver='0.45.1'),
         state=dict(default='present', choices=['absent', 'present'])
     )
     module_kwargs = dict(

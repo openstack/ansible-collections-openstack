@@ -375,8 +375,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class ImageInfoModule(OpenStackModule):
 
     argument_spec = dict(
-        image=dict(type='str', required=False),
-        filters=dict(type='dict', required=False, aliases=['properties']),
+        image=dict(),
+        filters=dict(type='dict', aliases=['properties']),
     )
     module_kwargs = dict(
         supports_check_mode=True

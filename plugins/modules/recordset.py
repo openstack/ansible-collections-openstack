@@ -164,12 +164,12 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class DnsRecordsetModule(OpenStackModule):
     argument_spec = dict(
-        description=dict(required=False, default=None),
+        description=dict(),
         name=dict(required=True),
-        records=dict(required=False, type='list', elements='str'),
-        recordset_type=dict(required=False, choices=['a', 'aaaa', 'mx', 'cname', 'txt', 'ns', 'srv', 'ptr', 'caa']),
+        records=dict(type='list', elements='str'),
+        recordset_type=dict(choices=['a', 'aaaa', 'mx', 'cname', 'txt', 'ns', 'srv', 'ptr', 'caa']),
         state=dict(default='present', choices=['absent', 'present']),
-        ttl=dict(required=False, type='int'),
+        ttl=dict(type='int'),
         zone=dict(required=True),
     )
 

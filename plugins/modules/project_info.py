@@ -120,9 +120,9 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class IdentityProjectInfoModule(OpenStackModule):
     argument_spec = dict(
-        name=dict(required=False),
-        domain=dict(required=False),
-        filters=dict(required=False, type='dict'),
+        name=dict(),
+        domain=dict(),
+        filters=dict(type='dict'),
     )
     module_kwargs = dict(
         supports_check_mode=True

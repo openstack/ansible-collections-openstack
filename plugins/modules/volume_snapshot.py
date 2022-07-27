@@ -89,9 +89,9 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class VolumeSnapshotModule(OpenStackModule):
     argument_spec = dict(
         display_name=dict(required=True, aliases=['name']),
-        display_description=dict(default=None, aliases=['description']),
+        display_description=dict(aliases=['description']),
         volume=dict(required=True),
-        force=dict(required=False, default=False, type='bool'),
+        force=dict(default=False, type='bool'),
         state=dict(default='present', choices=['absent', 'present']),
     )
 

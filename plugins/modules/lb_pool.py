@@ -156,8 +156,8 @@ class LoadbalancerPoolModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
-        loadbalancer=dict(default=None),
-        listener=dict(default=None),
+        loadbalancer=dict(),
+        listener=dict(),
         protocol=dict(default='HTTP',
                       choices=['HTTP', 'HTTPS', 'TCP', 'UDP', 'PROXY']),
         lb_algorithm=dict(

@@ -152,9 +152,9 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class StackModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True),
-        tag=dict(required=False, default=None, min_ver='0.28.0'),
-        template=dict(default=None),
-        environment=dict(default=None, type='list', elements='str'),
+        tag=dict(min_ver='0.28.0'),
+        template=dict(),
+        environment=dict(type='list', elements='str'),
         parameters=dict(default={}, type='dict'),
         rollback=dict(default=False, type='bool'),
         timeout=dict(default=3600, type='int'),

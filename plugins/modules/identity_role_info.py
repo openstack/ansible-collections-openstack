@@ -82,8 +82,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class IdentityRoleInfoModule(OpenStackModule):
     argument_spec = dict(
-        domain_id=dict(type='str', required=False),
-        name=dict(type='str', required=False),
+        domain_id=dict(),
+        name=dict(),
     )
 
     module_kwargs = dict(

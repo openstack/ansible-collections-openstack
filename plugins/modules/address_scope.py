@@ -111,8 +111,8 @@ class AddressScopeModule(OpenStackModule):
         state=dict(default='present', choices=['absent', 'present']),
         name=dict(required=True),
         shared=dict(default=False, type='bool'),
-        ip_version=dict(type='str', default='4', choices=['4', '6']),
-        project=dict(default=None),
+        ip_version=dict(default='4', choices=['4', '6']),
+        project=dict(),
         extra_specs=dict(type='dict', default=dict())
     )
 

@@ -98,8 +98,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class ComputeServiceInfoModule(OpenStackModule):
     argument_spec = dict(
-        binary=dict(required=False, default=None, min_ver='0.53.0'),
-        host=dict(required=False, default=None, min_ver='0.53.0'),
+        binary=dict(min_ver='0.53.0'),
+        host=dict(min_ver='0.53.0'),
     )
     module_kwargs = dict(
         supports_check_mode=True

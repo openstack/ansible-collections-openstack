@@ -153,14 +153,14 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
 
 class SecurityGroupInfoModule(OpenStackModule):
     argument_spec = dict(
-        description=dict(required=False, type='str'),
-        name=dict(required=False, type='str'),
-        project_id=dict(required=False, type='str'),
-        revision_number=dict(required=False, type='int'),
-        tags=dict(required=False, type='list', elements='str'),
-        any_tags=dict(required=False, type='list', elements='str'),
-        not_tags=dict(required=False, type='list', elements='str'),
-        not_any_tags=dict(required=False, type='list', elements='str')
+        description=dict(),
+        name=dict(),
+        project_id=dict(),
+        revision_number=dict(type='int'),
+        tags=dict(type='list', elements='str'),
+        any_tags=dict(type='list', elements='str'),
+        not_tags=dict(type='list', elements='str'),
+        not_any_tags=dict(type='list', elements='str')
     )
     module_kwargs = dict(
         supports_check_mode=True

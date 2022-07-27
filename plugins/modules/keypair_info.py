@@ -111,10 +111,10 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
 
 class KeyPairInfoModule(OpenStackModule):
     argument_spec = dict(
-        name=dict(type='str', required=False),
-        user_id=dict(type='str', required=False),
-        limit=dict(type='int', required=False),
-        marker=dict(type='str', required=False)
+        name=dict(),
+        user_id=dict(),
+        limit=dict(type='int'),
+        marker=dict()
     )
     module_kwargs = dict(
         supports_check_mode=True

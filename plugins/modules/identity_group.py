@@ -92,8 +92,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class IdentityGroupModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True),
-        description=dict(required=False, default=None),
-        domain_id=dict(required=False, default=None),
+        description=dict(),
+        domain_id=dict(),
         state=dict(default='present', choices=['absent', 'present']),
     )
 

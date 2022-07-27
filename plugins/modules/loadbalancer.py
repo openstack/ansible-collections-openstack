@@ -362,17 +362,17 @@ class LoadBalancerModule(OpenStackModule):
 
     argument_spec = dict(
         name=dict(required=True),
-        flavor=dict(required=False),
+        flavor=dict(),
         state=dict(default='present', choices=['absent', 'present']),
-        vip_network=dict(required=False),
-        vip_subnet=dict(required=False),
-        vip_port=dict(required=False),
-        vip_address=dict(required=False),
+        vip_network=dict(),
+        vip_subnet=dict(),
+        vip_port=dict(),
+        vip_address=dict(),
         listeners=dict(type='list', default=[], elements='dict'),
-        public_ip_address=dict(required=False, default=None),
-        auto_public_ip=dict(required=False, default=False, type='bool'),
-        public_network=dict(required=False),
-        delete_public_ip=dict(required=False, default=False, type='bool'),
+        public_ip_address=dict(),
+        auto_public_ip=dict(default=False, type='bool'),
+        public_network=dict(),
+        delete_public_ip=dict(default=False, type='bool'),
     )
     module_kwargs = dict(supports_check_mode=True)
 

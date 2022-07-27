@@ -89,24 +89,24 @@ def openstack_find_nova_addresses(addresses, ext_tag, key_name=None):
 
 def openstack_full_argument_spec(**kwargs):
     spec = dict(
-        cloud=dict(default=None, type='raw'),
-        auth_type=dict(default=None),
-        auth=dict(default=None, type='dict', no_log=True),
-        region_name=dict(default=None),
-        availability_zone=dict(default=None),
-        validate_certs=dict(default=None, type='bool', aliases=['verify']),
-        ca_cert=dict(default=None, aliases=['cacert']),
-        client_cert=dict(default=None, aliases=['cert']),
-        client_key=dict(default=None, no_log=True, aliases=['key']),
+        cloud=dict(type='raw'),
+        auth_type=dict(),
+        auth=dict(type='dict', no_log=True),
+        region_name=dict(),
+        availability_zone=dict(),
+        validate_certs=dict(type='bool', aliases=['verify']),
+        ca_cert=dict(aliases=['cacert']),
+        client_cert=dict(aliases=['cert']),
+        client_key=dict(no_log=True, aliases=['key']),
         wait=dict(default=True, type='bool'),
         timeout=dict(default=180, type='int'),
-        api_timeout=dict(default=None, type='int'),
+        api_timeout=dict(type='int'),
         interface=dict(
             default='public', choices=['public', 'internal', 'admin'],
             aliases=['endpoint_type']),
-        sdk_log_path=dict(default=None, type='str'),
+        sdk_log_path=dict(),
         sdk_log_level=dict(
-            default='INFO', type='str', choices=['INFO', 'DEBUG']),
+            default='INFO', choices=['INFO', 'DEBUG']),
     )
     # Filter out all our custom parameters before passing to AnsibleModule
     kwargs_copy = copy.deepcopy(kwargs)
