@@ -56,7 +56,16 @@ import collections
 import os
 import sys
 import time
-from distutils.version import StrictVersion
+from ansible.module_utils.six import raise_from
+try:
+    from ansible.module_utils.compat.version import StrictVersion
+except ImportError:
+    try:
+        from distutils.version import StrictVersion
+    except ImportError as exc:
+        raise_from(ImportError('To use this plugin or module with ansible-core'
+                               ' < 2.11, you need to use Python < 3.12 with '
+                               'distutils.version present'), exc)
 from io import StringIO
 
 import json
