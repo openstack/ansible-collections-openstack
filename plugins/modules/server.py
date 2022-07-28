@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 # Copyright 2019 Red Hat, Inc.
 # Copyright (c) 2014 Hewlett-Packard Development Company, L.P.

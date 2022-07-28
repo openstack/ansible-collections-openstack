@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 # (c) 2016, Mathieu Bultel <mbultel@redhat.com>
 # (c) 2016, Steve Baker <sbaker@redhat.com>

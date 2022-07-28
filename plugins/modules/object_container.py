@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# coding: utf-8 -*-
-#
+# -*- coding: utf-8 -*-
+
 # Copyright (c) 2021 by Open Telekom Cloud, operated by T-Systems International GmbH
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 

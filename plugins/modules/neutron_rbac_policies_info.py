@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 # Copyright: Ansible Project
 # (c) 2021, Ashraf Hasson <ahasson@redhat.com>
