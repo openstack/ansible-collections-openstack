@@ -1,27 +1,27 @@
 ---
-# Regular user operation
-- name: Create internal network
-  openstack.cloud.network:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ network_name }}"
-     external: false
-  register: internal_net
-
+# Ensure clean environment
 - name: Ensure router doesn't exist before tests
   openstack.cloud.router:
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ router_name }}"
 
+- name: Find network
+  openstack.cloud.networks_info:
+     cloud: "{{ cloud }}"
+     name: "{{ network_name }}"
+  register: networks
+
 - name: Get ports in internal network
+  when: networks.networks|length > 0
   openstack.cloud.port_info:
     cloud: "{{ cloud }}"
     filters:
-      network_id: "{{ internal_net.id }}"
+      network_id: "{{ networks.networks.0.id }}"
   register: existing_ports
 
 - name: Ensure ports don't exist before tests
+  when: networks.networks|length > 0
   openstack.cloud.port:
     cloud: "{{ cloud }}"
     name: "{{ item.id }}"
@@ -35,22 +35,48 @@
     name: "{{ item.name }}"
   loop: "{{ test_subnets }}"
 
+# Regular user operation
+- name: Create internal network
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ network_name }}"
+     external: false
+
 - name: Create subnets 1-4
   openstack.cloud.subnet: "{{ item }}"
   loop: "{{ test_subnets }}"
+
+- name: Ensure router doesn't exist before tests
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ router_name }}"
 
 - name: Create router
   openstack.cloud.router:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ router_name }}"
-  register: result
+  register: router
 
 - name: Verify returned values
   assert:
-    that:
-      - item in result.router
+    that: item in router.router
   loop: "{{ expected_fields }}"
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+  register: info
+
+- name: Verify routers info
+  assert:
+    that:
+      - info.routers.0.name == router_name
+      - (info.routers.0.interfaces_info|length) == 0
+      - info.routers.0.is_admin_state_up
 
 - name: Update router (add interface)
   openstack.cloud.router:
@@ -67,45 +93,56 @@
      name: "{{ router_name }}"
      interfaces:
          - shade_subnet1
-  register: result
+  register: router
 
 - name: Assert idempotent module
   assert:
-    that: result is not changed
+    that: router is not changed
 
 - name: Gather routers info
   openstack.cloud.routers_info:
      cloud: "{{ cloud }}"
      name: "{{ router_name }}"
-     filters:
-       admin_state_up: true
-  register: result
+  register: info
 
 - name: Verify routers info
   assert:
     that:
-      - "result.routers.0.name == router_name"
-      - (result.routers.0.interfaces_info|length) == 1
+      - info.routers.0.name == router_name
+      - (info.routers.0.interfaces_info|length) == 1
+      - info.routers.0.is_admin_state_up
 
 - name: Verify existence of return values
   assert:
-    that:
-      - item in result.routers[0]
+    that: item in info.routers[0]
   loop: "{{ expected_fields + ['interfaces_info'] }}"
 
 - name: Gather routers info with filters
   openstack.cloud.routers_info:
       cloud: "{{ cloud }}"
       filters:
-        admin_state_up: true
+        is_admin_state_up: true
         name: "{{ router_name }}"
-  register: result_filter
+  register: info
 
-- name: Verify routers info with filter
+- name: Verify routers info with filters
   assert:
     that:
-      - "result_filter.routers.0.name == router_name"
-      - (result_filter.routers.0.interfaces_info|length) == 1
+      - info.routers.0.name == router_name
+      - info.routers.0.id == router.router.id
+      - (info.routers.0.interfaces_info|length) == 1
+
+- name: Gather routers info with other filters
+  openstack.cloud.routers_info:
+      cloud: "{{ cloud }}"
+      filters:
+        is_admin_state_up: false
+        name: "{{ router_name }}"
+  register: info
+
+- name: Verify routers info with other filters
+  assert:
+    that: info.routers == []
 
 - name: Update router (change interfaces)
   openstack.cloud.router:
@@ -132,52 +169,101 @@
          - net: '{{ network_name }}'
            subnet: shade_subnet3
          - shade_subnet4
-  register: result
+  register: router
 
 - name: Assert idempotent module
   assert:
-    that: result is not changed
+    that: router is not changed
 
 - name: Gather routers info
   openstack.cloud.routers_info:
      cloud: "{{ cloud }}"
      name: "{{ router_name }}"
-     filters:
-       is_admin_state_up: true
-  register: result
+  register: info
 
 - name: Verify routers info
   assert:
     that:
-      - "result.routers.0.name == router_name"
-      - (result.routers.0.interfaces_info|length) == 3
-      - result.routers.0.interfaces_info|map(attribute='ip_address')|sort|list ==
+      - info.routers.0.name == router_name
+      - info.routers.0.id == router.router.id
+      - (info.routers.0.interfaces_info|length) == 3
+      - info.routers.0.interfaces_info|map(attribute='ip_address')|sort|list ==
         ['10.10.10.1', '10.8.8.1', '10.9.9.1']
 
-- name: Update router (remove interface)
+- name: Update router (remove interfaces)
   openstack.cloud.router:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ router_name }}"
      interfaces:
-         - net: '{{ network_name }}'
-           subnet: shade_subnet1
-           portip: 10.7.7.1
+         - shade_subnet4
 
-- name: Update router (remove interface) again
+- name: Update router (remove interfaces) again
   openstack.cloud.router:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ router_name }}"
      interfaces:
-         - net: '{{ network_name }}'
-           subnet: shade_subnet1
-           portip: 10.7.7.1
-  register: result
+         - shade_subnet4
+  register: router
 
 - name: Assert idempotent module
   assert:
-    that: result is not changed
+    that: router is not changed
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+  register: info
+
+- name: Verify routers info
+  assert:
+    that:
+      - info.routers.0.name == router_name
+      - info.routers.0.id == router.router.id
+      - (info.routers.0.interfaces_info|length) == 1
+      - info.routers.0.interfaces_info|map(attribute='ip_address')|sort|list ==
+        ['10.10.10.1']
+
+- name: Update router (replace interfaces)
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - net: '{{ network_name }}'
+           subnet: shade_subnet1
+           portip: 10.7.7.1
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+  register: info
+
+- name: Verify routers info
+  assert:
+    that:
+      - info.routers.0.name == router_name
+      - (info.routers.0.interfaces_info|length) == 1
+      - info.routers.0.interfaces_info|map(attribute='ip_address')|sort|list ==
+        ['10.7.7.1']
+
+- name: Update router (replace interfaces) again
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     interfaces:
+         - net: '{{ network_name }}'
+           subnet: shade_subnet1
+           portip: 10.7.7.1
+  register: router
+
+- name: Assert idempotent module
+  assert:
+    that: router is not changed
 
 - name: Gather routers info
   openstack.cloud.routers_info:
@@ -185,14 +271,14 @@
      name: "{{ router_name }}"
      filters:
        is_admin_state_up: true
-  register: result
+  register: info
 
 - name: Verify routers info
   assert:
     that:
-      - "result.routers.0.name == router_name"
-      - (result.routers.0.interfaces_info|length) == 1
-      - result.routers.0.interfaces_info.0.ip_address == '10.7.7.1'
+      - info.routers.0.name == router_name
+      - (info.routers.0.interfaces_info|length) == 1
+      - info.routers.0.interfaces_info.0.ip_address == '10.7.7.1'
 
 # Admin operation
 - name: Create external network
@@ -230,14 +316,14 @@
      cloud: "{{ cloud }}"
      name: "{{ router_name }}"
      filters:
-       admin_state_up: true
-  register: result
+       is_admin_state_up: true
+  register: info
 
 - name: Verify routers info
   assert:
     that:
-      - "result.routers.0.name == router_name"
-      - (result.routers.0.interfaces_info|length) == 1
+      - info.routers.0.name == router_name
+      - (info.routers.0.interfaces_info|length) == 1
 
 - name: Update router (change external fixed ips)
   openstack.cloud.router:
@@ -258,15 +344,15 @@
      cloud: "{{ cloud }}"
      name: "{{ router_name }}"
      filters:
-       admin_state_up: true
-  register: result
+       is_admin_state_up: true
+  register: info
 
 - name: Verify routers info
   assert:
     that:
-      - "result.routers.0.name == router_name"
-      - (result.routers.0.external_gateway_info.external_fixed_ips|length) == 1
-      - result.routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.100"
+      - info.routers.0.name == router_name
+      - (info.routers.0.external_gateway_info.external_fixed_ips|length) == 1
+      - info.routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.100"
   when:
     - network_external
 
@@ -302,26 +388,26 @@
           ip: 10.6.6.101
   when:
     - network_external
-  register: result
+  register: router
 
 - name: Assert idempotent module
   assert:
-    that: result is not changed
+    that: router is not changed
 
 - name: Gather routers info
   openstack.cloud.routers_info:
      cloud: "{{ cloud }}"
      name: "{{ router_name }}"
      filters:
-       admin_state_up: true
-  register: result
+       is_admin_state_up: true
+  register: info
 
 - name: Verify routers info
   assert:
     that:
-      - "result.routers.0.name == router_name"
-      - (result.routers.0.external_gateway_info.external_fixed_ips|length) == 2
-      - result.routers.0.external_gateway_info.external_fixed_ips|map(attribute='ip_address')|sort|list ==
+      - info.routers.0.name == router_name
+      - (info.routers.0.external_gateway_info.external_fixed_ips|length) == 2
+      - info.routers.0.external_gateway_info.external_fixed_ips|map(attribute='ip_address')|sort|list ==
         ["10.6.6.100", "10.6.6.101"]
   when:
     - network_external
@@ -353,26 +439,26 @@
           ip: 10.6.6.101
   when:
     - network_external
-  register: result
+  register: router
 
 - name: Assert idempotent module
   assert:
-    that: result is not changed
+    that: router is not changed
 
 - name: Gather routers info
   openstack.cloud.routers_info:
      cloud: "{{ cloud }}"
      name: "{{ router_name }}"
      filters:
-       admin_state_up: true
-  register: result
+       is_admin_state_up: true
+  register: info
 
 - name: Verify routers info
   assert:
     that:
-      - "result.routers.0.name == router_name"
-      - (result.routers.0.external_gateway_info.external_fixed_ips|length) == 1
-      - result.routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.101"
+      - info.routers.0.name == router_name
+      - (info.routers.0.external_gateway_info.external_fixed_ips|length) == 1
+      - info.routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.101"
   when:
     - network_external
 
@@ -390,20 +476,20 @@
           ip: 10.6.6.101
   when:
     - network_external
-  register: result
 
 - name: Gather routers info
   openstack.cloud.routers_info:
      cloud: "{{ cloud }}"
      name: "{{ router_name }}"
      filters:
-       admin_state_up: true
-  register: result
+       is_admin_state_up: true
+  register: info
+
 - name: Verify routers info
   assert:
     that:
-      - "result.routers.0.name == router_name"
-      - "not result.routers.0.external_gateway_info.enable_snat"
+      - info.routers.0.name == router_name
+      - not info.routers.0.external_gateway_info.enable_snat
   when:
     - network_external
 
@@ -421,11 +507,11 @@
           ip: 10.6.6.101
   when:
     - network_external
-  register: result
+  register: router
 
 - name: Assert idempotent module
   assert:
-    that: result is not changed
+    that: router is not changed
 
 - name: Delete router
   openstack.cloud.router:
@@ -438,11 +524,11 @@
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ router_name }}"
-  register: result
+  register: router
 
 - name: Assert idempotent module
   assert:
-    that: result is not changed
+    that: router is not changed
 
 - name: Create router with simple interface
   openstack.cloud.router:
@@ -451,11 +537,11 @@
      name: "{{ router_name }}"
      interfaces:
          - shade_subnet1
-  register: result
+  register: router
 
 - name: Assert changed
   assert:
-    that: result is changed
+    that: router is changed
 
 - name: Set portip in already assigned subnet
   openstack.cloud.router:
@@ -466,21 +552,21 @@
          - subnet: shade_subnet1
            net: "{{ network_name }}"
            portip: 10.7.7.42
-  register: result
+  register: router
 
 - name: Assert changed
   assert:
-    that: result is changed
+    that: router is changed
 
 - name: Gather routers info
   openstack.cloud.routers_info:
      cloud: "{{ cloud }}"
      name: "{{ router_name }}"
-  register: result
+  register: info
 
 - name: Verify routers info
   assert:
-    that: "'10.7.7.42' in result.routers[0].interfaces_info|map(attribute='ip_address')"
+    that: "'10.7.7.42' in info.routers[0].interfaces_info|map(attribute='ip_address')"
 
 - name: Unset portip in already assigned subnet
   openstack.cloud.router:
@@ -488,13 +574,15 @@
      state: present
      name: "{{ router_name }}"
      interfaces:
-         - subnet: shade_subnet1
-           net: "{{ network_name }}"
-  register: result
+       - subnet: shade_subnet1
+         net: "{{ network_name }}"
+  register: router
 
 - name: Assert not changed
   assert:
-    that: result is not changed
+    that: router is not changed
+
+# Cleanup environment
 
 - name: Delete router
   openstack.cloud.router:
@@ -502,11 +590,17 @@
      state: absent
      name: "{{ router_name }}"
 
+- name: Find network
+  openstack.cloud.networks_info:
+     cloud: "{{ cloud }}"
+     name: "{{ network_name }}"
+  register: networks
+
 - name: Get ports in internal network
   openstack.cloud.port_info:
     cloud: "{{ cloud }}"
     filters:
-      network_id: "{{ internal_net.id }}"
+      network_id: "{{ networks.networks.0.id }}"
   register: existing_ports
 
 - name: Clean up ports

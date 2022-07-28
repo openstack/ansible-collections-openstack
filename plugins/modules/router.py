@@ -14,89 +14,63 @@ description:
      routers to share the same name, this module enforces name uniqueness
      to be more user friendly.
 options:
-   state:
-     description:
-        - Indicate desired state of the resource
-     choices: ['present', 'absent']
-     default: present
-     type: str
-   name:
-     description:
-        - Name to be give to the router
-     required: true
-     type: str
-   enable_snat:
-     description:
+    enable_snat:
+      description:
         - Enable Source NAT (SNAT) attribute.
-     type: bool
-   is_admin_state_up:
-     description:
-        - Desired admin state of the created or existing router.
-     type: bool
-     default: 'yes'
-     aliases: [admin_state_up]
-   network:
-     description:
-        - Unique name or ID of the external gateway network.
-        - required I(interfaces) or I(enable_snat) are provided.
-     type: str
-   project:
-     description:
-        - Unique name or ID of the project.
-     type: str
-   external_gateway_info:
-     description:
-       - Information about the router's external gateway
-     type: dict
-     suboptions:
-       network:
-         description:
-            - Unique name or ID of the external gateway network.
-            - required I(interfaces) or I(enable_snat) are provided.
-         type: str
-       enable_snat:
-         description:
-            - Unique name or ID of the external gateway network.
-            - required I(interfaces) or I(enable_snat) are provided.
-         type: bool
-       external_fixed_ips:
-         description:
-            - The IP address parameters for the external gateway network. Each
-              is a dictionary with the subnet name or ID (subnet) and the IP
-              address to assign on the subnet (ip). If no IP is specified,
-              one is automatically assigned from that subnet.
-         type: list
-         elements: dict
-         suboptions:
-            ip_address:
-               description: The fixed IP address to attempt to allocate.
-               type: str
-               aliases: [ip]
-            subnet_id:
-               description: The subnet to attach the IP address to.
-               required: true
-               type: str
-               aliases: [subnet]
-   external_fixed_ips:
-     description:
+      type: bool
+    external_fixed_ips:
+      description:
         - The IP address parameters for the external gateway network. Each
           is a dictionary with the subnet name or ID (subnet) and the IP
-          address to assign on the subnet (ip). If no IP is specified,
+          address to assign on the subnet (ip_address). If no IP is specified,
           one is automatically assigned from that subnet.
-     type: list
-     elements: dict
-     suboptions:
+      type: list
+      elements: dict
+      suboptions:
         ip_address:
            description: The fixed IP address to attempt to allocate.
            type: str
-           aliases: [ip]
+           aliases: ['ip']
         subnet_id:
            description: The subnet to attach the IP address to.
            required: true
            type: str
-           aliases: [subnet]
-   interfaces:
-     description:
+           aliases: ['subnet']
+    external_gateway_info:
+      description:
+       - Information about the router's external gateway
+      type: dict
+      suboptions:
+        network:
+          description:
+            - Unique name or ID of the external gateway network.
+            - required I(interfaces) or I(enable_snat) are provided.
+          type: str
+        enable_snat:
+          description:
+            - Unique name or ID of the external gateway network.
+            - required I(interfaces) or I(enable_snat) are provided.
+          type: bool
+        external_fixed_ips:
+          description:
+            - The IP address parameters for the external gateway network. Each
+              is a dictionary with the subnet name or ID (subnet) and the IP
+              address to assign on the subnet (ip_address). If no IP is
+              specified, one is automatically assigned from that subnet.
+          type: list
+          elements: dict
+          suboptions:
+            ip_address:
+               description: The fixed IP address to attempt to allocate.
+               type: str
+               aliases: ['ip']
+            subnet_id:
+               description: The subnet to attach the IP address to.
+               required: true
+               type: str
+               aliases: ['subnet']
+    interfaces:
+      description:
         - List of subnets to attach to the router internal interface. Default
           gateway associated with the subnet will be automatically attached
           with the router's internal interface.
@@ -107,8 +81,37 @@ options:
           User defined portip is often required when a multiple router need
           to be connected to a single subnet for which the default gateway has
           been already used.
-     type: list
-     elements: raw
+      type: list
+      elements: raw
+    is_admin_state_up:
+      description:
+        - Desired admin state of the created or existing router.
+      type: bool
+      default: 'yes'
+      aliases: ['admin_state_up']
+    name:
+      description:
+        - Name to be give to the router.
+        - This router attribute cannot be updated.
+      required: true
+      type: str
+    network:
+      description:
+        - Unique name or ID of the external gateway network.
+        - Required if I(external_fixed_ips) or I(enable_snat) are provided.
+        - This router attribute cannot be updated.
+      type: str
+    project:
+      description:
+        - Unique name or ID of the project.
+        - This router attribute cannot be updated.
+      type: str
+    state:
+      description:
+        - Indicate desired state of the resource
+      choices: ['present', 'absent']
+      default: present
+      type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -124,14 +127,14 @@ EXAMPLES = '''
     state: present
     name: simple_router
 
-# Create a simple router, not attached to a gateway or subnets for a given project.
+# Create a router, not attached to a gateway or subnets for a given project.
 - openstack.cloud.router:
     cloud: mycloud
     state: present
     name: simple_router
     project: myproj
 
-# Creates a router attached to ext_network1 on an IPv4 subnet and one
+# Creates a router attached to ext_network1 on an IPv4 subnet and with one
 # internal subnet interface.
 - openstack.cloud.router:
     cloud: mycloud
@@ -140,11 +143,11 @@ EXAMPLES = '''
     network: ext_network1
     external_fixed_ips:
       - subnet: public-subnet
-        ip: 172.24.4.2
+        ip_address: 172.24.4.2
     interfaces:
       - private-subnet
 
-# Create another router with two internal subnet interfaces.One with user defined port
+# Create a router with two internal subnet interfaces and a user defined port
 # ip and another with default gateway.
 - openstack.cloud.router:
     cloud: mycloud
@@ -157,8 +160,8 @@ EXAMPLES = '''
         portip: 10.1.1.10
       - project-subnet
 
-# Create another router with two internal subnet interface.One with user defined port
-# ip and and another with default gateway.
+# Create a router with two internal subnet interface. One with user defined
+# port ip and and another with default gateway.
 - openstack.cloud.router:
     cloud: mycloud
     state: present
@@ -170,8 +173,8 @@ EXAMPLES = '''
         portip: 10.1.1.10
       - project-subnet
 
-# Create another router with two internal subnet interface. one with  user defined port
-# ip and and another  with default gateway.
+# Create a router with two internal subnet interface. One with user defined
+# port ip and and another  with default gateway.
 - openstack.cloud.router:
     cloud: mycloud
     state: present
@@ -193,9 +196,9 @@ EXAMPLES = '''
     network: ext_network1
     external_fixed_ips:
       - subnet: public-subnet
-        ip: 172.24.4.2
+        ip_address: 172.24.4.2
       - subnet: ipv6-public-subnet
-        ip: 2001:db8::3
+        ip_address: 2001:db8::3
 
 # Delete router1
 - openstack.cloud.router:
@@ -210,69 +213,123 @@ router:
     returned: On success when I(state) is 'present'
     type: dict
     contains:
-        id:
-            description: Router ID.
+        availability_zones:
+            description: Availability zones
+            returned: success
+            type: list
+        availability_zone_hints:
+            description: Availability zone hints
+            returned: success
+            type: list
+        created_at:
+            description: Date and time when the router was created
+            returned: success
             type: str
-            sample: "474acfe5-be34-494c-b339-50f06aa143e4"
-        name:
-            description: Router name.
+        description:
+            description: Description notes of the router
+            returned: success
             type: str
-            sample: "router1"
-        admin_state_up:
-            description: Administrative state of the router.
-            type: bool
-            sample: true
-        status:
-            description: The router status.
-            type: str
-            sample: "ACTIVE"
-        tenant_id:
-            description: The tenant ID.
-            type: str
-            sample: "861174b82b43463c9edc5202aadc60ef"
         external_gateway_info:
-            description: The external gateway parameters.
+            description: The external gateway information of the router.
+            returned: success
             type: dict
-            sample: {
-                      "enable_snat": true,
-                      "external_fixed_ips": [
-                         {
+            sample: |
+                {
+                    "enable_snat": true,
+                    "external_fixed_ips": [
+                        {
                            "ip_address": "10.6.6.99",
                            "subnet_id": "4272cb52-a456-4c20-8f3c-c26024ecfa81"
-                         }
-                       ]
-                    }
+                        }
+                    ]
+                }
+        flavor_id:
+            description: ID of the flavor of the router
+            returned: success
+            type: str
+        id:
+            description: Unique UUID.
+            returned: success
+            type: str
+            sample: "474acfe5-be34-494c-b339-50f06aa143e4"
+        is_admin_state_up:
+            description: Network administrative state
+            returned: success
+            type: bool
+        is_distributed:
+            description: Indicates a distributed router.
+            returned: success
+            type: bool
+        is_ha:
+            description: Indicates a highly-available router.
+            returned: success
+            type: bool
+        name:
+            description: Name given to the router.
+            returned: success
+            type: str
+            sample: "router1"
+        project_id:
+            description: Project id associated with this router.
+            returned: success
+            type: str
+        revision_number:
+            description: Revision number
+            returned: success
+            type: int
         routes:
             description: The extra routes configuration for L3 router.
+            returned: success
             type: list
+        status:
+            description: Router status.
+            returned: success
+            type: str
+            sample: "ACTIVE"
+        tags:
+            description: List of tags
+            returned: success
+            type: list
+        tenant_id:
+            description: Owner tenant ID
+            returned: success
+            type: str
+        updated_at:
+            description: Date of last update on the router
+            returned: success
+            type: str
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 from collections import defaultdict
 
 
-ext_ips_spec = dict(type='list', elements='dict', options=dict(
-    ip_address=dict(aliases=["ip"]),
-    subnet_id=dict(required=True, aliases=["subnet"]),
-))
-
-
 class RouterModule(OpenStackModule):
+
+    external_fixed_ips_spec = dict(
+        type='list',
+        elements='dict',
+        options=dict(
+            ip_address=dict(aliases=["ip"]),
+            subnet_id=dict(required=True, aliases=["subnet"]),
+        ))
+
     argument_spec = dict(
-        state=dict(default='present', choices=['absent', 'present']),
-        name=dict(required=True),
-        is_admin_state_up=dict(type='bool', default=True,
-                               aliases=['admin_state_up']),
         enable_snat=dict(type='bool'),
-        network=dict(),
-        interfaces=dict(type='list', elements='raw'),
-        external_fixed_ips=ext_ips_spec,
+        external_fixed_ips=external_fixed_ips_spec,
         external_gateway_info=dict(type='dict', options=dict(
             network=dict(),
             enable_snat=dict(type='bool'),
-            external_fixed_ips=ext_ips_spec,
+            external_fixed_ips=external_fixed_ips_spec,
         )),
-        project=dict()
+        interfaces=dict(type='list', elements='raw'),
+        is_admin_state_up=dict(type='bool',
+                               default=True,
+                               aliases=['admin_state_up']),
+        name=dict(required=True),
+        network=dict(),
+        project=dict(),
+        state=dict(default='present', choices=['absent', 'present']),
     )
 
     module_kwargs = dict(
@@ -281,9 +338,10 @@ class RouterModule(OpenStackModule):
             ('external_gateway_info', 'external_fixed_ips'),
             ('external_gateway_info', 'enable_snat'),
         ],
-        required_by=dict(
-            external_fixed_ips='network',
-        ),
+        required_by={
+            'external_fixed_ips': 'network',
+            'enable_snat': 'network',
+        },
     )
 
     def _needs_update(self, router, kwargs, external_fixed_ips, to_add,
@@ -295,6 +353,7 @@ class RouterModule(OpenStackModule):
         cur_ext_gw_info = router['external_gateway_info']
         if 'external_gateway_info' in kwargs:
             if cur_ext_gw_info is None:
+                # added external gateway info
                 return True
             update = kwargs['external_gateway_info']
             for attr in ('enable_snat', 'network_id'):
@@ -304,6 +363,7 @@ class RouterModule(OpenStackModule):
         cur_ext_gw_info = router['external_gateway_info']
         cur_ext_fips = (cur_ext_gw_info or {}) \
             .get('external_fixed_ips', [])
+
         # map of external fixed ip subnets to addresses
         cur_fip_map = defaultdict(set)
         for p in cur_ext_fips:
@@ -320,26 +380,32 @@ class RouterModule(OpenStackModule):
             ip = fip.get('ip_address', None)
             if subnet in cur_fip_map:
                 if ip is not None and ip not in cur_fip_map[subnet]:
+                    # mismatching ip for subnet
                     return True
             else:
+                # adding ext ip with subnet 'subnet'
                 return True
+
         # Check if external ip addresses need to be removed
         for fip in cur_ext_fips:
             subnet = fip['subnet_id']
             ip = fip['ip_address']
             if subnet in req_fip_map:
                 if ip not in req_fip_map[subnet]:
+                    # removing ext ip with subnet (ip clash)
                     return True
             else:
+                # removing ext ip with subnet
                 return True
 
         if not external_fixed_ips and len(cur_ext_fips) > 1:
-            # no external fixed ips requested but router has several external
-            # fixed ips
+            # No external fixed ips requested but
+            # router has several external fixed ips
             return True
 
-        # check if internal interfaces need update
+        # Check if internal interfaces need update
         if to_add or to_remove or missing_port_ids:
+            # need to change interfaces
             return True
 
         return False
@@ -351,13 +417,9 @@ class RouterModule(OpenStackModule):
 
         if not router:
             kwargs['name'] = self.params['name']
-
-        curr_ext_gw_info = None
-        if router:
-            curr_ext_gw_info = router['external_gateway_info']
-        curr_ext_fixed_ips = []
-        if curr_ext_gw_info:
-            curr_ext_fixed_ips = curr_ext_gw_info.get('external_fixed_ips', [])
+        # We cannot update a router name because name is used to find routers
+        # by name so only any router with an already matching name will be
+        # considered for updates
 
         external_gateway_info = {}
         if network:
@@ -372,15 +434,24 @@ class RouterModule(OpenStackModule):
             kwargs['external_gateway_info'] = external_gateway_info
 
         if 'external_fixed_ips' not in external_gateway_info:
+            # no external fixed ips requested
+
+            # get current external fixed ips
+            curr_ext_gw_info = \
+                router['external_gateway_info'] if router else None
+            curr_ext_fixed_ips = \
+                curr_ext_gw_info.get('external_fixed_ips', []) \
+                if curr_ext_gw_info else []
+
             if len(curr_ext_fixed_ips) > 1:
-                fip = curr_ext_fixed_ips[0]
-                external_gateway_info['external_fixed_ips'] = [fip]
+                # but router has several external fixed ips
+                # keep first external fixed ip only
+                external_gateway_info['external_fixed_ips'] = [
+                    curr_ext_fixed_ips[0]]
 
         return kwargs
 
-    def _build_router_interface_config(self, filters=None):
-        if filters is None:
-            filters = {}
+    def _build_router_interface_config(self, filters):
         external_fixed_ips = []
         internal_ports_missing = []
         internal_ifaces = []
@@ -394,9 +465,7 @@ class RouterModule(OpenStackModule):
         if ext_fixed_ips:
             for iface in ext_fixed_ips:
                 subnet = self.conn.network.find_subnet(
-                    iface['subnet'], **filters)
-                if not subnet:
-                    self.fail(msg='subnet %s not found' % iface['subnet'])
+                    iface['subnet'], ignore_missing=False, **filters)
                 fip = dict(subnet_id=subnet.id)
                 if 'ip_address' in iface:
                     fip['ip_address'] = iface['ip_address']
@@ -407,16 +476,13 @@ class RouterModule(OpenStackModule):
             internal_ips = []
             for iface in self.params['interfaces']:
                 if isinstance(iface, str):
-                    subnet = self.conn.network.find_subnet(iface, **filters)
-                    if not subnet:
-                        self.fail(msg='subnet %s not found' % iface)
+                    subnet = self.conn.network.find_subnet(
+                        iface, ignore_missing=False, **filters)
                     internal_ifaces.append(dict(subnet_id=subnet.id))
 
                 elif isinstance(iface, dict):
-                    subnet = self.conn.network.find_subnet(iface['subnet'],
-                                                           **filters)
-                    if not subnet:
-                        self.fail(msg='subnet %s not found' % iface['subnet'])
+                    subnet = self.conn.network.find_subnet(
+                        iface['subnet'], ignore_missing=False, **filters)
 
                     # TODO: We allow passing a subnet without specifing a
                     #       network in case iface is a string, hence we
@@ -424,7 +490,8 @@ class RouterModule(OpenStackModule):
                     if 'net' not in iface:
                         self.fail(
                             "Network name missing from interface definition")
-                    net = self.conn.network.find_network(iface['net'])
+                    net = self.conn.network.find_network(iface['net'],
+                                                         ignore_missing=False)
 
                     if 'portip' not in iface:
                         # portip not set, add any ip from subnet
@@ -444,15 +511,17 @@ class RouterModule(OpenStackModule):
                         for port in existing_ports:
                             for fip in port['fixed_ips']:
                                 if (fip['subnet_id'] != subnet.id
-                                        or fip['ip_address'] != portip):
+                                   or fip['ip_address'] != portip):
                                     continue
+                                # portip exists in net already
                                 internal_ips.append(fip['ip_address'])
                                 internal_ifaces.append(
                                     dict(port_id=port.id,
                                          subnet_id=subnet.id,
                                          ip_address=portip))
                         if portip not in internal_ips:
-                            # no port with portip exists hence create a new port
+                            # No port with portip exists
+                            # hence create a new port
                             internal_ports_missing.append({
                                 'network_id': subnet.network_id,
                                 'fixed_ips': [{'ip_address': portip,
@@ -467,8 +536,8 @@ class RouterModule(OpenStackModule):
 
     def _update_ifaces(self, router, to_add, to_remove, missing_ports):
         for port in to_remove:
-            self.conn.network.remove_interface_from_router(router,
-                                                           port_id=port.id)
+            self.conn.network.remove_interface_from_router(
+                router, port_id=port.id)
         # create ports that are missing
         for port in missing_ports:
             p = self.conn.network.create_port(**port)
@@ -542,10 +611,8 @@ class RouterModule(OpenStackModule):
         project = None
         project_id = None
         if project_name_or_id is not None:
-            project = self.conn.identity.find_project(project_name_or_id)
-            if project is None:
-                self.fail(
-                    msg='Project %s could not be found' % project_name_or_id)
+            project = self.conn.identity.find_project(project_name_or_id,
+                                                      ignore_missing=False)
             project_id = project['id']
             query_filters['project_id'] = project_id
 
@@ -553,9 +620,8 @@ class RouterModule(OpenStackModule):
         network = None
         if network_name_or_id:
             network = self.conn.network.find_network(network_name_or_id,
+                                                     ignore_missing=False,
                                                      **query_filters)
-            if not network:
-                self.fail(msg='network %s not found' % network_name_or_id)
 
         # Validate and cache the subnet IDs so we can avoid duplicate checks
         # and expensive API calls.
@@ -595,12 +661,14 @@ class RouterModule(OpenStackModule):
 
             if not router:
                 changed = True
+
                 if project_id:
                     kwargs['project_id'] = project_id
                 router = self.conn.network.create_router(**kwargs)
 
                 self._update_ifaces(router, internal_ifaces, [],
                                     missing_internal_ports)
+
             else:
 
                 if self._needs_update(router, kwargs, external_fixed_ips,
@@ -625,10 +693,10 @@ class RouterModule(OpenStackModule):
                 # still fail if e.g. floating ips are attached to the
                 # router.
                 for port in router_ifs_internal:
-                    self.conn.network.remove_interface_from_router(router,
-                                                                   port_id=port['id'])
+                    self.conn.network.remove_interface_from_router(
+                        router, port_id=port['id'])
                 self.conn.network.delete_router(router)
-                self.exit_json(changed=True, router=router)
+                self.exit_json(changed=True)
 
 
 def main():
