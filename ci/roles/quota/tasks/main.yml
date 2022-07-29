@@ -1,0 +1,131 @@
+---
+- name: Create test project
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ test_project }}"
+
+- name: Clear quotas before tests
+  openstack.cloud.quota:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ test_project }}"
+  register: default_quotas
+
+- name: Set network quota
+  openstack.cloud.quota: "{{ test_network_quota | combine(quota_name_frag)}}"
+  register: quotas
+
+- name: Assert changed
+  assert:
+    that: quotas is changed
+
+- name: Assert field values
+  assert:
+    that: quotas.quotas.network[item.key] == item.value
+  loop: "{{ test_network_quota | dict2items }}"
+
+- name: Set network quota again
+  openstack.cloud.quota: "{{ test_network_quota | combine(quota_name_frag)}}"
+  register: quotas
+
+- name: Assert not changed
+  assert:
+    that: quotas is not changed
+
+- name: Set volume quotas
+  openstack.cloud.quota: "{{ test_volume_quota | combine(quota_name_frag)}}"
+  register: quotas
+
+- name: Assert changed
+  assert:
+    that: quotas is changed
+
+- name: Assert field values
+  assert:
+    that: quotas.quotas.volume[item.key] == item.value
+  loop: "{{ test_volume_quota | dict2items }}"
+
+- name: Set volume quotas again
+  openstack.cloud.quota: "{{ test_volume_quota | combine(quota_name_frag)}}"
+  register: quotas
+
+- name: Assert not changed
+  assert:
+    that: quotas is not changed
+
+- name: Set compute quotas
+  openstack.cloud.quota: "{{ test_compute_quota | combine(quota_name_frag)}}"
+  register: quotas
+
+- name: Assert changed
+  assert:
+    that: quotas is changed
+
+- name: Assert field values
+  assert:
+    that: quotas.quotas.compute[item.key] == item.value
+  loop: "{{ test_compute_quota | dict2items }}"
+
+- name: Set compute quotas again
+  openstack.cloud.quota: "{{ test_compute_quota | combine(quota_name_frag)}}"
+  register: quotas
+
+- name: Unset all quotas
+  openstack.cloud.quota:
+    cloud: "{{ cloud }}"
+    name: "{{ test_project }}"
+    state: absent
+  register: quotas
+
+- name: Assert defaults restore
+  assert:
+    that: quotas.quotas == default_quotas.quotas
+
+- name: Set all quotas at once
+  openstack.cloud.quota:
+    "{{ [test_network_quota, test_volume_quota, test_compute_quota,
+         quota_name_frag] | combine }}"
+  register: quotas
+
+- name: Assert changed
+  assert:
+    that: quotas is changed
+
+- name: Assert volume values
+  assert:
+    that: quotas.quotas.volume[item.key] == item.value
+  loop: "{{ test_volume_quota | dict2items }}"
+
+- name: Assert network values
+  assert:
+    that: quotas.quotas.network[item.key] == item.value
+  loop: "{{ test_network_quota | dict2items }}"
+
+- name: Assert compute values
+  assert:
+    that: quotas.quotas.compute[item.key] == item.value
+  loop: "{{ test_compute_quota | dict2items }}"
+
+- name: Set all quotas at once again
+  openstack.cloud.quota:
+    "{{ [test_network_quota, test_volume_quota, test_compute_quota,
+         quota_name_frag] | combine }}"
+  register: quotas
+
+- name: Assert not changed
+  assert:
+    that: quotas is not changed
+
+- name: Unset all quotas
+  openstack.cloud.quota:
+    cloud: "{{ cloud }}"
+    name: "{{ test_project }}"
+    state: absent
+  register: quotas
+
+- name: Delete test project
+  openstack.cloud.project:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ test_project }}"

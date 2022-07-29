@@ -14,17 +14,6 @@ description:
       updated or deleted using this module. A quota will be updated
       if matches an existing project and is present.
 options:
-    name:
-        description:
-            - Name of the OpenStack Project to manage.
-        required: true
-        type: str
-    state:
-        description:
-            - A value of present sets the quota and a value of absent resets the quota to system defaults.
-        default: present
-        type: str
-        choices: ['absent', 'present']
     backup_gigabytes:
         description: Maximum size of backups in GB's.
         type: int
@@ -35,75 +24,89 @@ options:
         description: Maximum number of CPU's per project.
         type: int
     fixed_ips:
-        description: Number of fixed IP's to allow.
+        description:
+          - Number of fixed IP's to allow.
+          - Available until Nova API version 2.35.
         type: int
     floating_ips:
-        description: Number of floating IP's to allow in Compute.
-        aliases: ['compute_floating_ips']
-        type: int
-    floatingip:
-        description: Number of floating IP's to allow in Network.
-        aliases: ['network_floating_ips']
+        description: Number of floating IP's to allow.
+        aliases: [compute_floating_ips, floatingip, network_floating_ips]
         type: int
     gigabytes:
         description: Maximum volume storage allowed for project.
         type: int
-    gigabytes_types:
+    groups:
+        description: Number of groups that are allowed for the project
+        type: int
+    injected_file_content_bytes:
         description:
-            - Per driver volume storage quotas.  Keys should be
-              prefixed with C(gigabytes_) values should be ints.
-        type: dict
-    injected_file_size:
-        description: Maximum file size in bytes.
+          - Maximum file size in bytes.
+          - Available until Nova API version 2.56.
         type: int
+        aliases: [injected_file_size]
     injected_files:
-        description: Number of injected files to allow.
+        description:
+          - Number of injected files to allow.
+          - Available until Nova API version 2.56.
         type: int
-    injected_path_size:
-        description: Maximum path size.
+    injected_file_path_bytes:
+        description:
+          - Maximum path size.
+          - Available until Nova API version 2.56.
         type: int
+        aliases: [injected_path_size]
     instances:
         description: Maximum number of instances allowed.
         type: int
     key_pairs:
         description: Number of key pairs to allow.
         type: int
-    loadbalancer:
-        description: Number of load balancers to allow.
+    load_balancers:
+        description: The maximum amount of load balancers you can create
         type: int
+        aliases: [loadbalancer]
     metadata_items:
        description: Number of metadata items allowed per instance.
        type: int
-    network:
+    name:
+        description: Name of the OpenStack Project to manage.
+        required: true
+        type: str
+    networks:
         description: Number of networks to allow.
         type: int
+        aliases: [network]
     per_volume_gigabytes:
         description: Maximum size in GB's of individual volumes.
         type: int
-    pool:
-        description: Number of load balancer pools to allow.
+    pools:
+        description: The maximum number of pools you can create
         type: int
-    port:
-        description: Number of Network ports to allow, this needs to be greater than the instances limit.
+        aliases: [pool]
+    ports:
+        description: Number of Network ports to allow, this needs to be greater
+                     than the instances limit.
         type: int
-    properties:
-        description: Number of properties to allow.
-        type: int
+        aliases: [port]
     ram:
         description: Maximum amount of ram in MB to allow.
         type: int
-    rbac_policy:
+    rbac_policies:
         description: Number of policies to allow.
         type: int
-    router:
+        aliases: [rbac_policy]
+    routers:
         description: Number of routers to allow.
         type: int
-    security_group_rule:
+        aliases: [router]
+    security_group_rules:
         description: Number of rules per security group to allow.
         type: int
-    security_group:
+        aliases: [security_group_rule]
+    security_groups:
         description: Number of security groups to allow.
         type: int
+        aliases: [security_group]
     server_group_members:
         description: Number of server group members to allow.
         type: int
@@ -113,112 +116,190 @@ options:
     snapshots:
         description: Number of snapshots to allow.
         type: int
-    snapshots_types:
-        description:
-            - Per-driver volume snapshot quotas.  Keys should be
-              prefixed with C(snapshots_) values should be ints.
-        type: dict
-    subnet:
+    state:
+        description: A value of C(present) sets the quota and a value of
+                     C(absent) resets the quota to defaults.
+        default: present
+        type: str
+        choices: [absent, present]
+    subnets:
         description: Number of subnets to allow.
         type: int
-    subnetpool:
+        aliases: [subnet]
+    subnet_pools:
         description: Number of subnet pools to allow.
         type: int
+        aliases: [subnetpool]
     volumes:
         description: Number of volumes to allow.
-        type: int
-    volumes_types:
-        description:
-            - Per-driver volume count quotas.  Keys should be
-              prefixed with C(volumes_) values should be ints.
-        type: dict
-    project:
-        description: Unused, kept for compatability
         type: int
 
 requirements:
     - "python >= 3.6"
-    - "openstacksdk >= 0.13.0"
-    - "keystoneauth1 >= 3.4.0"
+    - openstacksdk
 
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
 
 EXAMPLES = '''
-# List a Project Quota
-- openstack.cloud.quota:
+- name: Fetch current project quota
+  openstack.cloud.quota:
     cloud: mycloud
     name: demoproject
 
-# Set a Project back to the defaults
-- openstack.cloud.quota:
+- name: Reset project quota back to defaults
+  openstack.cloud.quota:
     cloud: mycloud
     name: demoproject
     state: absent
 
-# Update a Project Quota for cores
-- openstack.cloud.quota:
+- name: Change number of cores and volumes
+  openstack.cloud.quota:
     cloud: mycloud
     name: demoproject
     cores: 100
-
-# Update a Project Quota
-- openstack.cloud.quota:
-    name: demoproject
-    cores: 1000
     volumes: 20
-    volumes_type:
-      - volume_lvm: 10
 
-# Complete example based on list of projects
-- name: Update quotas
+- name: Update quota again
   openstack.cloud.quota:
-    name: "{{ item.name }}"
-    backup_gigabytes: "{{ item.backup_gigabytes }}"
-    backups: "{{ item.backups }}"
-    cores: "{{ item.cores }}"
-    fixed_ips: "{{ item.fixed_ips }}"
-    floating_ips: "{{ item.floating_ips }}"
-    floatingip: "{{ item.floatingip }}"
-    gigabytes: "{{ item.gigabytes }}"
-    injected_file_size: "{{ item.injected_file_size }}"
-    injected_files: "{{ item.injected_files }}"
-    injected_path_size: "{{ item.injected_path_size }}"
-    instances: "{{ item.instances }}"
-    key_pairs: "{{ item.key_pairs }}"
-    loadbalancer: "{{ item.loadbalancer }}"
-    metadata_items: "{{ item.metadata_items }}"
-    per_volume_gigabytes: "{{ item.per_volume_gigabytes }}"
-    pool: "{{ item.pool }}"
-    port: "{{ item.port }}"
-    properties: "{{ item.properties }}"
-    ram: "{{ item.ram }}"
-    security_group_rule: "{{ item.security_group_rule }}"
-    security_group: "{{ item.security_group }}"
-    server_group_members: "{{ item.server_group_members }}"
-    server_groups: "{{ item.server_groups }}"
-    snapshots: "{{ item.snapshots }}"
-    volumes: "{{ item.volumes }}"
-    volumes_types:
-      volumes_lvm: "{{ item.volumes_lvm }}"
-    snapshots_types:
-      snapshots_lvm: "{{ item.snapshots_lvm }}"
-    gigabytes_types:
-      gigabytes_lvm: "{{ item.gigabytes_lvm }}"
-  with_items:
-    - "{{ projects }}"
-  when: item.state == "present"
+    cloud: mycloud
+    name: demo_project
+    floating_ips: 5
+    networks: 50
+    ports: 300
+    rbac_policies: 5
+    routers: 5
+    subnets: 5
+    subnet_pools: 5
+    security_group_rules: 5
+    security_groups: 5
+    backup_gigabytes: 500
+    backups: 5
+    gigabytes: 500
+    groups: 1
+    pools: 5
+    per_volume_gigabytes: 10
+    snapshots: 5
+    volumes: 5
+    cores: 5
+    instances: 5
+    key_pairs: 5
+    metadata_items: 5
+    ram: 5
+    server_groups: 5
+    server_group_members: 5
+
 '''
 
 RETURN = '''
-openstack_quotas:
+quotas:
     description: Dictionary describing the project quota.
     returned: Regardless if changes where made or not
     type: dict
+    contains:
+        compute:
+            description: Compute service quotas
+            type: dict
+            contains:
+                cores:
+                    description: Maximum number of CPU's per project.
+                    type: int
+                injected_file_content_bytes:
+                    description: Maximum file size in bytes.
+                    type: int
+                injected_files:
+                    description: Number of injected files to allow.
+                    type: int
+                injected_file_path_bytes:
+                    description: Maximum path size.
+                    type: int
+                instances:
+                    description: Maximum number of instances allowed.
+                    type: int
+                key_pairs:
+                    description: Number of key pairs to allow.
+                    type: int
+                metadata_items:
+                   description: Number of metadata items allowed per instance.
+                   type: int
+                ram:
+                    description: Maximum amount of ram in MB to allow.
+                    type: int
+                server_group_members:
+                    description: Number of server group members to allow.
+                    type: int
+                server_groups:
+                    description: Number of server groups to allow.
+                    type: int
+        network:
+            description: Network service quotas
+            type: dict
+            contains:
+                floating_ips:
+                    description: Number of floating IP's to allow.
+                    type: int
+                load_balancers:
+                    description: The maximum amount of load balancers one can
+                                 create
+                    type: int
+                networks:
+                    description: Number of networks to allow.
+                    type: int
+                pools:
+                    description: The maximum amount of pools one can create.
+                    type: int
+                ports:
+                    description: Number of Network ports to allow, this needs
+                        to be greater than the instances limit.
+                    type: int
+                rbac_policies:
+                    description: Number of policies to allow.
+                    type: int
+                routers:
+                    description: Number of routers to allow.
+                    type: int
+                security_group_rules:
+                    description: Number of rules per security group to allow.
+                    type: int
+                security_groups:
+                    description: Number of security groups to allow.
+                    type: int
+                subnet_pools:
+                    description: Number of subnet pools to allow.
+                    type: int
+                subnets:
+                    description: Number of subnets to allow.
+                    type: int
+        volume:
+            description: Block storage service quotas
+            type: dict
+            contains:
+                backup_gigabytes:
+                    description: Maximum size of backups in GB's.
+                    type: int
+                backups:
+                    description: Maximum number of backups allowed.
+                    type: int
+                gigabytes:
+                    description: Maximum volume storage allowed for project.
+                    type: int
+                groups:
+                    description: Number of groups that are allowed for the
+                                 project
+                    type: int
+                per_volume_gigabytes:
+                    description: Maximum size in GB's of individual volumes.
+                    type: int
+                snapshots:
+                    description: Number of snapshots to allow.
+                    type: int
+                volumes:
+                    description: Number of volumes to allow.
+                    type: int
     sample:
-        openstack_quotas: {
-            compute: {
+        quotas:
+            compute:
                 cores: 150,
                 fixed_ips: -1,
                 floating_ips: 10,
@@ -228,146 +309,134 @@ openstack_quotas:
                 instances: 100,
                 key_pairs: 100,
                 metadata_items: 128,
+                networks: -1,
                 ram: 153600,
-                security_group_rules: 20,
-                security_groups: 10,
+                security_group_rules: -1,
+                security_groups: -1,
                 server_group_members: 10,
-                server_groups: 10
-            },
-            network: {
-                floatingip: 50,
-                loadbalancer: 10,
-                network: 10,
-                pool: 10,
-                port: 160,
-                rbac_policy: 10,
-                router: 10,
-                security_group: 10,
-                security_group_rule: 100,
-                subnet: 10,
-                subnetpool: -1
-            },
-            volume: {
+                server_groups: 10,
+            network:
+                floating_ips: 50,
+                load_balancers: 10,
+                networks: 10,
+                pools: 10,
+                ports: 160,
+                rbac_policies: 10,
+                routers: 10,
+                security_group_rules: 100,
+                security_groups: 10,
+                subnet_pools: -1,
+                subnets: 10,
+            volume:
                 backup_gigabytes: 1000,
                 backups: 10,
                 gigabytes: 1000,
-                gigabytes_lvm: -1,
+                groups: 10,
                 per_volume_gigabytes: -1,
                 snapshots: 10,
-                snapshots_lvm: -1,
                 volumes: 10,
-                volumes_lvm: -1
-            }
-        }
-
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
+from collections import defaultdict
 
 
 class QuotaModule(OpenStackModule):
+    # TODO: Add missing network quota options 'check_limit', 'health_monitors',
+    #       'l7_policies', 'listeners' to argument_spec, DOCUMENTATION and
+    #       RETURN docstrings
     argument_spec = dict(
-        name=dict(required=True),
-        state=dict(default='present', choices=['absent', 'present']),
         backup_gigabytes=dict(type='int'),
         backups=dict(type='int'),
         cores=dict(type='int'),
         fixed_ips=dict(type='int'),
-        floating_ips=dict(type='int', aliases=['compute_floating_ips']),
-        floatingip=dict(type='int', aliases=['network_floating_ips']),
+        floating_ips=dict(
+            type='int', aliases=['floatingip', 'compute_floating_ips',
+                                 'network_floating_ips']),
         gigabytes=dict(type='int'),
-        gigabytes_types=dict(type='dict', default={}),
-        injected_file_size=dict(type='int'),
+        groups=dict(type='int'),
+        injected_file_content_bytes=dict(type='int',
+                                         aliases=['injected_file_size']),
+        injected_file_path_bytes=dict(type='int',
+                                      aliases=['injected_path_size']),
         injected_files=dict(type='int'),
-        injected_path_size=dict(type='int'),
         instances=dict(type='int'),
         key_pairs=dict(type='int', no_log=False),
-        loadbalancer=dict(type='int'),
+        load_balancers=dict(type='int', aliases=['loadbalancer']),
         metadata_items=dict(type='int'),
-        network=dict(type='int'),
+        name=dict(required=True),
+        networks=dict(type='int', aliases=['network']),
         per_volume_gigabytes=dict(type='int'),
-        pool=dict(type='int'),
-        port=dict(type='int'),
-        project=dict(type='int'),
-        properties=dict(type='int'),
+        pools=dict(type='int', aliases=['pool']),
+        ports=dict(type='int', aliases=['port']),
         ram=dict(type='int'),
-        rbac_policy=dict(type='int'),
-        router=dict(type='int'),
-        security_group_rule=dict(type='int'),
-        security_group=dict(type='int'),
+        rbac_policies=dict(type='int', aliases=['rbac_policy']),
+        routers=dict(type='int', aliases=['router']),
+        security_group_rules=dict(type='int', aliases=['security_group_rule']),
+        security_groups=dict(type='int', aliases=['security_group']),
         server_group_members=dict(type='int'),
         server_groups=dict(type='int'),
         snapshots=dict(type='int'),
-        snapshots_types=dict(type='dict', default={}),
-        subnet=dict(type='int'),
-        subnetpool=dict(type='int'),
+        state=dict(default='present', choices=['absent', 'present']),
+        subnet_pools=dict(type='int', aliases=['subnetpool']),
+        subnets=dict(type='int', aliases=['subnet']),
         volumes=dict(type='int'),
-        volumes_types=dict(type='dict', default={})
     )
 
     module_kwargs = dict(
         supports_check_mode=True
     )
 
-    def _get_volume_quotas(self, project):
-        return self.conn.get_volume_quotas(project)
-
-    def _get_network_quotas(self, project):
-        return self.conn.get_network_quotas(project)
-
-    def _get_compute_quotas(self, project):
-        return self.conn.get_compute_quotas(project)
+    # Some attributes in quota resources don't exist in the api anymore, mostly
+    # compute quotas that were simply network proxies. This map allows marking
+    # them to be skipped.
+    exclusion_map = {
+        'compute': {
+            # 'fixed_ips',  # Available until Nova API version 2.35
+            'floating_ips',  # Available until Nova API version 2.35
+            'name',
+            'networks',  # Available until Nova API version 2.35
+            'security_group_rules',  # Available until Nova API version 2.35
+            'security_groups',  # Available until Nova API version 2.35
+            # 'injected_file_content_bytes',  # Available until
+            # 'injected_file_path_bytes',     # Nova API
+            # 'injected_files',               # version 2.56
+        },
+        'network': {'name'},
+        'volume': {'name'},
+    }
 
     def _get_quotas(self, project):
         quota = {}
-        try:
-            quota['volume'] = self._get_volume_quotas(project)
-        except Exception:
-            self.warn("No public endpoint for volumev2 service was found. Ignoring volume quotas.")
+        if self.conn.has_service('block-storage'):
+            quota['volume'] = self.conn.block_storage.get_quota_set(project)
+        else:
+            self.warn('Block storage service aka volume service is not'
+                      ' supported by your cloud. Ignoring volume quotas.')
 
-        try:
-            quota['network'] = self._get_network_quotas(project)
-        except Exception:
-            self.warn("No public endpoint for network service was found. Ignoring network quotas.")
+        if self.conn.has_service('network'):
+            quota['network'] = self.conn.network.get_quota(project.id)
+        else:
+            self.warn('Network service is not supported by your cloud.'
+                      ' Ignoring network quotas.')
 
-        quota['compute'] = self._get_compute_quotas(project)
-
-        for quota_type in quota.keys():
-            quota[quota_type] = self._scrub_results(quota[quota_type])
-
-        return quota
-
-    def _scrub_results(self, quota):
-        filter_attr = [
-            'HUMAN_ID',
-            'NAME_ATTR',
-            'human_id',
-            'request_ids',
-            'x_openstack_request_ids',
-        ]
-
-        for attr in filter_attr:
-            if attr in quota:
-                del quota[attr]
+        quota['compute'] = self.conn.compute.get_quota_set(project.id)
 
         return quota
 
-    def _system_state_change_details(self, project_quota_output):
-        quota_change_request = {}
-        changes_required = False
+    def _build_update(self, quotas):
+        changes = defaultdict(dict)
 
-        for quota_type in project_quota_output.keys():
-            for quota_option in project_quota_output[quota_type].keys():
-                if quota_option in self.params and self.params[quota_option] is not None:
-                    if project_quota_output[quota_type][quota_option] != self.params[quota_option]:
-                        changes_required = True
+        for quota_type in quotas.keys():
+            exclusions = self.exclusion_map[quota_type]
+            for attr in quotas[quota_type].keys():
+                if attr in exclusions:
+                    continue
+                if (attr in self.params and self.params[attr] is not None
+                        and quotas[quota_type][attr] != self.params[attr]):
+                    changes[quota_type][attr] = self.params[attr]
 
-                        if quota_type not in quota_change_request:
-                            quota_change_request[quota_type] = {}
-
-                        quota_change_request[quota_type][quota_option] = self.params[quota_option]
-
-        return (changes_required, quota_change_request)
+        return changes
 
     def _system_state_change(self, project_quota_output):
         """
@@ -377,86 +446,54 @@ class QuotaModule(OpenStackModule):
         the desired quota settings set on the module params.
         """
 
-        changes_required, quota_change_request = self._system_state_change_details(
-            project_quota_output
-        )
-
-        if changes_required:
+        if self.params['state'] == 'absent':
             return True
-        else:
-            return False
+
+        return bool(self._build_update(project_quota_output))
 
     def run(self):
-        cloud_params = dict(self.params)
-
-        # In order to handle the different volume types we update module params after.
-        dynamic_types = [
-            'gigabytes_types',
-            'snapshots_types',
-            'volumes_types',
-        ]
-
-        for dynamic_type in dynamic_types:
-            for k, v in self.params[dynamic_type].items():
-                self.params[k] = int(v)
+        project = self.conn.identity.find_project(
+            self.params['name'], ignore_missing=False)
 
         # Get current quota values
-        project_quota_output = self._get_quotas(cloud_params['name'])
-        changes_required = False
+        quotas = self._get_quotas(project)
 
-        if self.params['state'] == "absent":
-            # If a quota state is set to absent we should assume there will be changes.
-            # The default quota values are not accessible so we can not determine if
-            # no changes will occur or not.
-            if self.ansible.check_mode:
-                self.exit_json(changed=True)
+        changed = False
 
-            # Calling delete_network_quotas when a quota has not been set results
-            # in an error, according to the sdk docs it should return the
-            # current quota.
-            # The following error string is returned:
-            # network client call failed: Quota for tenant 69dd91d217e949f1a0b35a4b901741dc could not be found.
-            neutron_msg1 = "network client call failed: Quota for tenant"
-            neutron_msg2 = "could not be found"
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._system_state_change(quotas))
 
-            for quota_type in project_quota_output.keys():
-                quota_call = getattr(self.conn, 'delete_%s_quotas' % (quota_type))
-                try:
-                    quota_call(cloud_params['name'])
-                except Exception as e:
-                    error_msg = str(e)
-                    if error_msg.find(neutron_msg1) > -1 and error_msg.find(neutron_msg2) > -1:
-                        pass
-                    else:
-                        self.fail_json(msg=str(e), extra_data=e.extra_data)
+        if self.params['state'] == 'absent':
+            # If a quota state is set to absent we should assume there will be
+            # changes. The default quota values are not accessible so we can
+            # not determine if no changes will occur or not.
+            changed = True
+            self.conn.compute.revert_quota_set(project)
+            if 'network' in quotas:
+                self.conn.network.delete_quota(project.id)
+            if 'volume' in quotas:
+                self.conn.block_storage.revert_quota_set(project)
 
-            project_quota_output = self._get_quotas(cloud_params['name'])
-            changes_required = True
+            # Necessary since we can't tell what the default quotas are
+            quotas = self._get_quotas(project)
 
-        elif self.params['state'] == "present":
-            if self.ansible.check_mode:
-                self.exit_json(changed=self._system_state_change(
-                    project_quota_output))
+        elif self.params['state'] == 'present':
+            changes = self._build_update(quotas)
 
-            changes_required, quota_change_request = self._system_state_change_details(
-                project_quota_output
-            )
+            if changes:
+                if 'volume' in changes:
+                    self.conn.block_storage.update_quota_set(
+                        quotas['volume'], **changes['volume'])
+                if 'compute' in changes:
+                    self.conn.compute.update_quota_set(
+                        quotas['compute'], **changes['compute'])
+                if 'network' in changes:
+                    quotas['network'] = self.conn.network.update_quota(
+                        project.id, **changes['network'])
+                changed = True
 
-            if changes_required:
-                for quota_type in quota_change_request.keys():
-                    quota_call = getattr(self.conn, 'set_%s_quotas' % (quota_type))
-                    quota_call(cloud_params['name'], **quota_change_request[quota_type])
-
-                # Get quota state post changes for validation
-                project_quota_update = self._get_quotas(cloud_params['name'])
-
-                if project_quota_output == project_quota_update:
-                    self.fail_json(msg='Could not apply quota update')
-
-                project_quota_output = project_quota_update
-
-        self.exit_json(
-            changed=changes_required, openstack_quotas=project_quota_output)
+        quotas = {k: v.to_dict(computed=False) for k, v in quotas.items()}
+        self.exit_json(changed=changed, quotas=quotas)
 
 
 def main():

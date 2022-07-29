@@ -1,0 +1,33 @@
+test_project: ansible_project
+quota_name_frag:
+  cloud: "{{ cloud }}"
+  name: "{{ test_project }}"
+test_network_quota:
+  floating_ips: 5
+  networks: 50
+  ports: 300
+  rbac_policies: 5
+  routers: 5
+  security_group_rules: 5
+  security_groups: 5
+  subnet_pools: 5
+  subnets: 5
+test_volume_quota:
+  backup_gigabytes: 500
+  backups: 5
+  gigabytes: 500
+  groups: 1
+  per_volume_gigabytes: 10
+  snapshots: 5
+  volumes: 5
+test_compute_quota:
+  cores: 5
+  injected_file_content_bytes: 5
+  injected_file_path_bytes: 5
+  injected_files: 5
+  instances: 5
+  key_pairs: 5
+  metadata_items: 5
+  ram: 5
+  server_group_members: 5
+  server_groups: 5

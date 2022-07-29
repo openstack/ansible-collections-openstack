@@ -69,3 +69,4 @@
     - role: loadbalancer
       tags: loadbalancer
     - { role: floating_ip, tags: floating_ip }
+    - { role: quota, tags: quota }

@@ -96,6 +96,7 @@
         port
         project
         project_info
+        quota
         recordset
         role_assignment
         router
