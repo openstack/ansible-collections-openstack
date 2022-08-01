@@ -104,7 +104,7 @@ class TestNetworkArgs(object):
             nics: net-id=1234
         '''
         args = os_server._network_args(self.module, self.cloud)
-        assert(args[0]['net-id'] == '1234')
+        assert args[0]['net-id'] == '1234'
 
     def test_nics_string_net_id_list(self):
         '''
@@ -112,8 +112,8 @@ class TestNetworkArgs(object):
             nics: net-id=1234,net-id=4321
         '''
         args = os_server._network_args(self.module, self.cloud)
-        assert(args[0]['net-id'] == '1234')
-        assert(args[1]['net-id'] == '4321')
+        assert args[0]['net-id'] == '1234'
+        assert args[1]['net-id'] == '4321'
 
     def test_nics_string_port_id(self):
         '''
@@ -121,7 +121,7 @@ class TestNetworkArgs(object):
             nics: port-id=1234
         '''
         args = os_server._network_args(self.module, self.cloud)
-        assert(args[0]['port-id'] == '1234')
+        assert args[0]['port-id'] == '1234'
 
     def test_nics_string_net_name(self):
         '''
@@ -129,7 +129,7 @@ class TestNetworkArgs(object):
             nics: net-name=network1
         '''
         args = os_server._network_args(self.module, self.cloud)
-        assert(args[0]['net-id'] == '5678')
+        assert args[0]['net-id'] == '5678'
 
     def test_nics_string_port_name(self):
         '''
@@ -137,7 +137,7 @@ class TestNetworkArgs(object):
             nics: port-name=port1
         '''
         args = os_server._network_args(self.module, self.cloud)
-        assert(args[0]['port-id'] == '1234')
+        assert args[0]['port-id'] == '1234'
 
     def test_nics_structured_net_id(self):
         '''
@@ -146,7 +146,7 @@ class TestNetworkArgs(object):
                 - net-id: '1234'
         '''
         args = os_server._network_args(self.module, self.cloud)
-        assert(args[0]['net-id'] == '1234')
+        assert args[0]['net-id'] == '1234'
 
     def test_nics_structured_mixed(self):
         '''
@@ -157,10 +157,10 @@ class TestNetworkArgs(object):
                 - 'net-name=network1,port-id=4321'
         '''
         args = os_server._network_args(self.module, self.cloud)
-        assert(args[0]['net-id'] == '1234')
-        assert(args[1]['port-id'] == '1234')
-        assert(args[2]['net-id'] == '5678')
-        assert(args[3]['port-id'] == '4321')
+        assert args[0]['net-id'] == '1234'
+        assert args[1]['port-id'] == '1234'
+        assert args[2]['net-id'] == '5678'
+        assert args[3]['port-id'] == '4321'
 
 
 class TestCreateServer(object):
@@ -190,10 +190,10 @@ class TestCreateServer(object):
         with pytest.raises(AnsibleExit):
             os_server._create_server(self.module, self.cloud)
 
-        assert(self.cloud.create_server.call_count == 1)
-        assert(self.cloud.create_server.call_args[1]['image'] == self.cloud.get_image_id('cirros'))
-        assert(self.cloud.create_server.call_args[1]['flavor'] == self.cloud.get_flavor('m1.tiny')['id'])
-        assert(self.cloud.create_server.call_args[1]['nics'][0]['net-id'] == self.cloud.get_network('network1')['id'])
+        assert self.cloud.create_server.call_count == 1
+        assert self.cloud.create_server.call_args[1]['image'] == self.cloud.get_image_id('cirros')
+        assert self.cloud.create_server.call_args[1]['flavor'] == self.cloud.get_flavor('m1.tiny')['id']
+        assert self.cloud.create_server.call_args[1]['nics'][0]['net-id'] == self.cloud.get_network('network1')['id']
 
     def test_create_server_bad_flavor(self):
         '''
@@ -206,8 +206,7 @@ class TestCreateServer(object):
         with pytest.raises(AnsibleFail):
             os_server._create_server(self.module, self.cloud)
 
-        assert('missing_flavor' in
-               self.module.fail_json.call_args[1]['msg'])
+        assert 'missing_flavor' in self.module.fail_json.call_args[1]['msg']
 
     def test_create_server_bad_nic(self):
         '''
@@ -220,5 +219,4 @@ class TestCreateServer(object):
         with pytest.raises(AnsibleFail):
             os_server._create_server(self.module, self.cloud)
 
-        assert('missing_network' in
-               self.module.fail_json.call_args[1]['msg'])
+        assert 'missing_network' in self.module.fail_json.call_args[1]['msg']
