@@ -1,10 +1,8 @@
 
 import munch
 
-from mock import patch
-
 from ansible_collections.openstack.cloud.plugins.modules import routers_info
-from ansible_collections.openstack.cloud.tests.unit.modules.utils import set_module_args, ModuleTestCase, AnsibleExitJson
+from ansible_collections.openstack.cloud.tests.unit.modules.utils import ModuleTestCase
 
 
 def openstack_cloud_from_module(module, **kwargs):
@@ -108,64 +106,17 @@ class FakeCloud(object):
         ]
 
         if name_or_id is not None:
-            return [munch.Munch(router) for router in test_routers if router["name"] == name_or_id]
+            return [munch.Munch(router) for router in test_routers
+                    if router["name"] == name_or_id]
         else:
             return [munch.Munch(router) for router in test_routers]
-
-    def list_router_interfaces(self, router):
-        test_ports = [
-            {
-                "device_id": "d3f70ce4-7ab1-46a7-9bec-498c9d8a2483",
-                "device_owner": "network:router_interface",
-                "fixed_ips": [
-                    {
-                        "ip_address": "192.168.1.254",
-                        "subnet_id": "0624c75f-0574-41b5-a8d1-92e6e3a9e51d"
-                    }
-                ],
-                "id": "92eeeca3-225d-46b8-a857-ede6c4f05484",
-            },
-            {
-                "device_id": "b869307c-a1f9-4956-a993-8a90fc7cc01d",
-                "device_owner": "network:router_gateway",
-                "fixed_ips": [
-                    {
-                        "ip_address": "172.24.4.10",
-                        "subnet_id": "b42b8057-5b3b-4aa3-949a-eaaee2032462"
-                    },
-                ],
-                "id": "ab45060c-98fd-42a3-a1aa-8d5a03554bef",
-            },
-            {
-                "device_id": "98bce30e-c912-4490-85eb-b22d650721e6",
-                "device_owner": "network:router_interface",
-                "fixed_ips": [
-                    {
-                        "ip_address": "192.168.1.1",
-                        "subnet_id": "0624c75f-0574-41b5-a8d1-92e6e3a9e51d"
-                    }
-                ],
-                "id": "c9fb53f1-d43e-4588-a223-0e8bf8a79715",
-            },
-            {
-                "device_id": "98bce30e-c912-4490-85eb-b22d650721e6",
-                "device_owner": "network:router_gateway",
-                "fixed_ips": [
-                    {
-                        "ip_address": "172.24.4.234",
-                        "subnet_id": "b42b8057-5b3b-4aa3-949a-eaaee2032462"
-                    },
-                ],
-                "id": "0271878e-4be8-433c-acdc-52823b41bcbf",
-            },
-        ]
-        return [munch.Munch(port) for port in test_ports if port["device_id"] == router.id]
 
 
 class TestRoutersInfo(ModuleTestCase):
     '''This class calls the main function of the
     openstack.cloud.routers_info module.
     '''
+
     def setUp(self):
         super(TestRoutersInfo, self).setUp()
         self.module = routers_info
@@ -174,33 +125,3 @@ class TestRoutersInfo(ModuleTestCase):
         with self.assertRaises(exit_exc) as exc:
             self.module.main()
         return exc.exception.args[0]
-
-    @patch('ansible_collections.openstack.cloud.plugins.modules.routers_info.openstack_cloud_from_module', side_effect=openstack_cloud_from_module)
-    def test_main_with_router_interface(self, *args):
-
-        set_module_args({'name': 'router1'})
-        result = self.module_main(AnsibleExitJson)
-        self.assertIs(type(result.get('openstack_routers')[0].get('interfaces_info')), list)
-        self.assertEqual(len(result.get('openstack_routers')[0].get('interfaces_info')), 1)
-        self.assertEqual(result.get('openstack_routers')[0].get('interfaces_info')[0].get('port_id'), '92eeeca3-225d-46b8-a857-ede6c4f05484')
-        self.assertEqual(result.get('openstack_routers')[0].get('interfaces_info')[0].get('ip_address'), '192.168.1.254')
-        self.assertEqual(result.get('openstack_routers')[0].get('interfaces_info')[0].get('subnet_id'), '0624c75f-0574-41b5-a8d1-92e6e3a9e51d')
-
-    @patch('ansible_collections.openstack.cloud.plugins.modules.routers_info.openstack_cloud_from_module', side_effect=openstack_cloud_from_module)
-    def test_main_with_router_gateway(self, *args):
-
-        set_module_args({'name': 'router2'})
-        result = self.module_main(AnsibleExitJson)
-        self.assertIs(type(result.get('openstack_routers')[0].get('interfaces_info')), list)
-        self.assertEqual(len(result.get('openstack_routers')[0].get('interfaces_info')), 0)
-
-    @patch('ansible_collections.openstack.cloud.plugins.modules.routers_info.openstack_cloud_from_module', side_effect=openstack_cloud_from_module)
-    def test_main_with_router_interface_and_router_gateway(self, *args):
-
-        set_module_args({'name': 'router3'})
-        result = self.module_main(AnsibleExitJson)
-        self.assertIs(type(result.get('openstack_routers')[0].get('interfaces_info')), list)
-        self.assertEqual(len(result.get('openstack_routers')[0].get('interfaces_info')), 1)
-        self.assertEqual(result.get('openstack_routers')[0].get('interfaces_info')[0].get('port_id'), 'c9fb53f1-d43e-4588-a223-0e8bf8a79715')
-        self.assertEqual(result.get('openstack_routers')[0].get('interfaces_info')[0].get('ip_address'), '192.168.1.1')
-        self.assertEqual(result.get('openstack_routers')[0].get('interfaces_info')[0].get('subnet_id'), '0624c75f-0574-41b5-a8d1-92e6e3a9e51d')

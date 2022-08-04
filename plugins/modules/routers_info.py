@@ -19,14 +19,15 @@ options:
      type: str
    filters:
      description:
-        - A dictionary of meta data to use for further filtering.  Elements of
+        - A dictionary of meta data to use for further filtering. Elements of
           this dictionary may be additional dictionaries.
      required: false
      type: dict
      suboptions:
        project_id:
          description:
-           - Filter the list result by the ID of the project that owns the resource.
+           - Filter the list result by the ID of the project that owns the
+             resource.
          type: str
          aliases:
            - tenant_id
@@ -36,11 +37,13 @@ options:
          type: str
        description:
          description:
-           - Filter the list result by the human-readable description of the resource.
+           - Filter the list result by the human-readable description of the
+             resource.
          type: str
        is_admin_state_up:
          description:
-           - Filter the list result by the administrative state of the resource, which is up (true) or down (false).
+           - Filter the list result by the administrative state of the
+             resource, which is up (true) or down (false).
          type: bool
        revision_number:
          description:
@@ -48,7 +51,8 @@ options:
          type: int
        tags:
          description:
-           - A list of tags to filter the list result by. Resources that match all tags in this list will be returned.
+           - A list of tags to filter the list result by. Resources that match
+             all tags in this list will be returned.
          type: list
          elements: str
 requirements:
@@ -100,6 +104,68 @@ EXAMPLES = '''
 - name: Show openstack routers
   debug:
     msg: "{{ result.routers }}"
+
+- name: List all routers
+  openstack.cloud.routers_info:
+     cloud: devstack
+  register: routers
+
+- name: List ports of first router
+  openstack.cloud.port_info:
+    cloud: devstack
+    filters:
+      device_id: "{{ routers[0].router.id }}"
+  register: ports
+
+- name: Show first router's fixed ips
+  debug:
+    msg: "{{ ports.ports
+        |rejectattr('device_owner', 'equalto', 'network:router_gateway')
+        |sum(attribute='fixed_ips', start=[])
+        |map(attribute='ip_address')
+        |sort|list }}"
+
+- name: List ports of all routers
+  loop: "{{ routers.routers }}"
+  openstack.cloud.port_info:
+    cloud: devstack
+    filters:
+      device_id: "{{ item['id'] }}"
+  register: ports
+
+- name: Transform ports for interfaces_info entries
+  loop: "{{ ports.results|map(attribute='ports')|list }}"
+  set_fact:
+    interfaces_info: |-
+        {% for port in item %}
+        {% if port.device_owner != "network:router_gateway" %}
+        {% for fixed_ip in port['fixed_ips'] %}
+        - port_id: {{ port.id }}
+          ip_address: {{ fixed_ip.ip_address }}
+          subnet_id: {{ fixed_ip.subnet_id }}
+        {% endfor %}
+        {% endif %}
+        {% endfor %}
+  register: interfaces
+
+- name: Combine router and interfaces_info entries
+  loop: "{{
+      routers.routers|zip(interfaces.results|map(attribute='ansible_facts'))|list
+  }}"
+  set_fact:
+    # underscore prefix to prevent overwriting facts outside of loop
+    _router: "{{
+        item.0|combine({'interfaces_info': item.1.interfaces_info|from_yaml})
+    }}"
+  register: routers
+
+- name: Remove set_fact artifacts from routers
+  set_fact:
+    routers: "{{ {
+        'routers': routers.results|map(attribute='ansible_facts._router')|list
+    } }}"
+
+- debug: var=routers
 '''
 
 RETURN = '''
@@ -137,10 +203,6 @@ routers:
             description: Unique UUID.
             returned: success
             type: str
-        interfaces_info:
-            description: List of connected interfaces.
-            returned: success
-            type: list
         is_admin_state_up:
             description: Network administrative state
             returned: success
@@ -206,21 +268,6 @@ class RouterInfoModule(OpenStackModule):
             for router in self.conn.search_routers(
                 name_or_id=self.params['name'],
                 filters=self.params['filters'])]
-
-        # append interfaces_info attribute for backward compatibility
-        for router in routers:
-            interfaces_info = []
-            for port in self.conn.list_router_interfaces(router):
-                if port.device_owner != "network:router_gateway":
-                    for ip_spec in port.fixed_ips:
-                        int_info = {
-                            'port_id': port.id,
-                            'ip_address': ip_spec.get('ip_address'),
-                            'subnet_id': ip_spec.get('subnet_id')
-                        }
-                        interfaces_info.append(int_info)
-            router['interfaces_info'] = interfaces_info
-
         self.exit(changed=False, routers=routers)
 
 

@@ -74,9 +74,20 @@
 - name: Verify routers info
   assert:
     that:
+      - info.routers|length == 1
       - info.routers.0.name == router_name
-      - (info.routers.0.interfaces_info|length) == 0
       - info.routers.0.is_admin_state_up
+
+- name: List ports of router
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      device_id: "{{ router.router.id }}"
+  register: ports
+
+- name: Verify router ports
+  assert:
+    that: ports.ports|length == 0
 
 - name: Update router (add interface)
   openstack.cloud.router:
@@ -109,13 +120,26 @@
   assert:
     that:
       - info.routers.0.name == router_name
-      - (info.routers.0.interfaces_info|length) == 1
       - info.routers.0.is_admin_state_up
+
+- name: List ports of router
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      device_id: "{{ router.router.id }}"
+  register: ports
+
+- name: Verify router ports
+  assert:
+    that:
+      - ports.ports|length == 1
+      - (ports.ports.0.fixed_ips|map(attribute='ip_address')|sort|list == ['10.7.7.1']) or
+        ports.ports.0.fixed_ips|length > 0
 
 - name: Verify existence of return values
   assert:
     that: item in info.routers[0]
-  loop: "{{ expected_fields + ['interfaces_info'] }}"
+  loop: "{{ expected_fields }}"
 
 - name: Gather routers info with filters
   openstack.cloud.routers_info:
@@ -130,7 +154,6 @@
     that:
       - info.routers.0.name == router_name
       - info.routers.0.id == router.router.id
-      - (info.routers.0.interfaces_info|length) == 1
 
 - name: Gather routers info with other filters
   openstack.cloud.routers_info:
@@ -184,10 +207,22 @@
 - name: Verify routers info
   assert:
     that:
+      - info.routers|length == 1
       - info.routers.0.name == router_name
       - info.routers.0.id == router.router.id
-      - (info.routers.0.interfaces_info|length) == 3
-      - info.routers.0.interfaces_info|map(attribute='ip_address')|sort|list ==
+
+- name: List ports of router
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      device_id: "{{ router.router.id }}"
+  register: ports
+
+- name: Verify router ports
+  assert:
+    that:
+      - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|list|length == 3
+      - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|sort|list ==
         ['10.10.10.1', '10.8.8.1', '10.9.9.1']
 
 - name: Update router (remove interfaces)
@@ -222,8 +257,19 @@
     that:
       - info.routers.0.name == router_name
       - info.routers.0.id == router.router.id
-      - (info.routers.0.interfaces_info|length) == 1
-      - info.routers.0.interfaces_info|map(attribute='ip_address')|sort|list ==
+
+- name: List ports of router
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      device_id: "{{ router.router.id }}"
+  register: ports
+
+- name: Verify router ports
+  assert:
+    that:
+      - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|list|length == 1
+      - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|sort|list ==
         ['10.10.10.1']
 
 - name: Update router (replace interfaces)
@@ -236,18 +282,18 @@
            subnet: shade_subnet1
            portip: 10.7.7.1
 
-- name: Gather routers info
-  openstack.cloud.routers_info:
-     cloud: "{{ cloud }}"
-     name: "{{ router_name }}"
-  register: info
+- name: List ports of router
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      device_id: "{{ router.router.id }}"
+  register: ports
 
-- name: Verify routers info
+- name: Verify router ports
   assert:
     that:
-      - info.routers.0.name == router_name
-      - (info.routers.0.interfaces_info|length) == 1
-      - info.routers.0.interfaces_info|map(attribute='ip_address')|sort|list ==
+      - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|list|length == 1
+      - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|sort|list ==
         ['10.7.7.1']
 
 - name: Update router (replace interfaces) again
@@ -265,20 +311,19 @@
   assert:
     that: router is not changed
 
-- name: Gather routers info
-  openstack.cloud.routers_info:
-     cloud: "{{ cloud }}"
-     name: "{{ router_name }}"
-     filters:
-       is_admin_state_up: true
-  register: info
+- name: List ports of router
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      device_id: "{{ router.router.id }}"
+  register: ports
 
-- name: Verify routers info
+- name: Verify router ports
   assert:
     that:
-      - info.routers.0.name == router_name
-      - (info.routers.0.interfaces_info|length) == 1
-      - info.routers.0.interfaces_info.0.ip_address == '10.7.7.1'
+      - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|list|length == 1
+      - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|sort|list ==
+        ['10.7.7.1']
 
 # Admin operation
 - name: Create external network
@@ -323,7 +368,18 @@
   assert:
     that:
       - info.routers.0.name == router_name
-      - (info.routers.0.interfaces_info|length) == 1
+
+- name: List ports of router
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      device_id: "{{ router.router.id }}"
+  register: ports
+
+- name: Verify router ports
+  assert:
+    that:
+      - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|list|length == 1
 
 - name: Update router (change external fixed ips)
   openstack.cloud.router:
@@ -558,15 +614,19 @@
   assert:
     that: router is changed
 
-- name: Gather routers info
-  openstack.cloud.routers_info:
-     cloud: "{{ cloud }}"
-     name: "{{ router_name }}"
-  register: info
+- name: List ports of router
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      device_id: "{{ router.router.id }}"
+  register: ports
 
-- name: Verify routers info
+- name: Verify router ports
   assert:
-    that: "'10.7.7.42' in info.routers[0].interfaces_info|map(attribute='ip_address')"
+    that:
+      - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|list|length == 1
+      - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|sort|list ==
+        ['10.7.7.42']
 
 - name: Unset portip in already assigned subnet
   openstack.cloud.router:
@@ -581,6 +641,58 @@
 - name: Assert not changed
   assert:
     that: router is not changed
+
+- name: List all routers
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+  register: routers
+
+- name: List ports of all routers
+  loop: "{{ routers.routers }}"
+  openstack.cloud.port_info:
+    cloud: "{{ cloud }}"
+    filters:
+      device_id: "{{ item['id'] }}"
+  register: ports
+
+- name: Transform ports for interfaces_info entries
+  loop: "{{ ports.results|map(attribute='ports')|list }}"
+  set_fact:
+    interfaces_info: |-
+        {% for port in item %}
+        {% if port.device_owner != "network:router_gateway" %}
+        {% for fixed_ip in port['fixed_ips'] %}
+        - port_id: {{ port.id }}
+          ip_address: {{ fixed_ip.ip_address }}
+          subnet_id: {{ fixed_ip.subnet_id }}
+        {% endfor %}
+        {% endif %}
+        {% endfor %}
+  register: interfaces
+
+- name: Combine router and interfaces_info entries
+  loop: "{{
+      routers.routers|zip(interfaces.results|map(attribute='ansible_facts'))|list
+  }}"
+  set_fact:
+    # underscore prefix to prevent overwriting facts outside of loop
+    _router: "{{
+        item.0|combine({'interfaces_info': (item.1.interfaces_info|from_yaml) })
+    }}"
+  register: routers
+
+- name: Remove set_fact artifacts from routers
+  set_fact:
+    routers: "{{ {
+        'routers': routers.results|map(attribute='ansible_facts._router')|list
+    } }}"
+
+- debug: var=routers
+
+- name: Assert our router's interfaces_info
+  assert:
+    that:
+      - routers.routers|selectattr('id', 'equalto', router.router.id)|list|length == 1
 
 # Cleanup environment
 
