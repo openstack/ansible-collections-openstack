@@ -18,6 +18,10 @@ options:
     auto_ip:
       description:
         - Ensure instance has public ip however the cloud wants to do that.
+        - For example, the cloud could add a floating ip for the server or
+          attach the server to a public network.
+        - Requires I(wait) to be C(True) during server creation.
+        - Floating IP support is unstable in this module, use with caution.
       type: bool
       default: 'yes'
       aliases: ['auto_floating_ip', 'public_ip']
@@ -50,6 +54,7 @@ options:
       description:
         - When I(state) is C(absent) and this option is true, any floating IP
           address associated with this server will be deleted along with it.
+        - Floating IP support is unstable in this module, use with caution.
       type: bool
       aliases: ['delete_fip']
       default: 'no'
@@ -84,11 +89,15 @@ options:
     floating_ip_pools:
       description:
         - Name of floating IP pool from which to choose a floating IP.
+        - Requires I(wait) to be C(True) during server creation.
+        - Floating IP support is unstable in this module, use with caution.
       type: list
       elements: str
     floating_ips:
       description:
         - list of valid floating IPs that pre-exist to assign to this node.
+        - Requires I(wait) to be C(True) during server creation.
+        - Floating IP support is unstable in this module, use with caution.
       type: list
       elements: str
     image:
@@ -158,6 +167,7 @@ options:
           concurrent server creation, it is highly recommended to set this to
           false and to delete the floating ip associated with a server when
           the server is deleted using I(delete_ips).
+        - Floating IP support is unstable in this module, use with caution.
         - This server attribute cannot be updated.
       type: bool
       default: 'yes'
@@ -777,6 +787,7 @@ server:
             type: list
 '''
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
+import copy
 
 
 class ServerModule(OpenStackModule):
@@ -831,10 +842,10 @@ class ServerModule(OpenStackModule):
     def run(self):
         state = self.params['state']
 
-        # self.conn.get_server is required for server.addresses and
-        # server.interface_ip which self.conn.compute.find_server
-        # does not return
-        server = self.conn.get_server(self.params['name'])
+        server = self.conn.compute.find_server(self.params['name'])
+        if server:
+            # fetch server details such as server['addresses']
+            server = self.conn.compute.get_server(server)
 
         if self.ansible.check_mode:
             self.exit_json(changed=self._will_change(state, server))
@@ -850,16 +861,6 @@ class ServerModule(OpenStackModule):
             update = self._build_update(server)
             if update:
                 server = self._update(server, update)
-            else:
-                # drop attributes added in function
-                # openstacksdk.meta.add_server_interfaces()
-                # because all other branches do not return them
-                #
-                # addresses will be expanded by get_server's call to
-                # openstacksdk.meta.add_server_interfaces() but we
-                # cannot easily undo this so we ignore it
-                for k in ['public_v4', 'public_v6', 'interface_ip']:
-                    del server[k]
 
             self.exit_json(changed=bool(update),
                            server=server.to_dict(computed=False))
@@ -893,19 +894,17 @@ class ServerModule(OpenStackModule):
             # do not add or remove any floating ip.
             return {}
 
-        if (auto_ip and server['interface_ip']
-           and not (floating_ip_pools or floating_ips)):
+        # Get floating ip addresses attached to the server
+        ips = [interface_spec['addr']
+               for v in server['addresses'].values()
+               for interface_spec in v
+               if interface_spec.get('OS-EXT-IPS:type', None) == 'floating']
+
+        if (auto_ip and ips and not floating_ip_pools and not floating_ips):
             # Server has a floating ip address attached and
             # no specific floating ip has been requested,
             # so nothing to change.
             return {}
-
-        # Get floating ip addresses attached to the server
-        ips = [interface_spec['addr']
-               for v in server.addresses.values()
-               for interface_spec in v
-               if ('OS-EXT-IPS:type' in interface_spec
-                   and interface_spec['OS-EXT-IPS:type'] == 'floating')]
 
         if not ips:
             # One or multiple floating ips have been requested,
@@ -1024,6 +1023,15 @@ class ServerModule(OpenStackModule):
         return update
 
     def _create(self):
+        for k in ['auto_ip', 'floating_ips', 'floating_ip_pools']:
+            if self.params[k] is not None \
+               and self.params['wait'] is False:
+                # floating ip addresses will only be added if
+                # we wait until the server has been created
+                # Ref.: https://opendev.org/openstack/openstacksdk/src/commit/3f81d0001dd994cde990d38f6e2671ee0694d7d5/openstack/cloud/_compute.py#L945
+                self.fail_json(
+                    msg="Option '{0}' requires 'wait: yes'".format(k))
+
         flavor_name_or_id = self.params['flavor']
 
         image_id = None
@@ -1063,7 +1071,12 @@ class ServerModule(OpenStackModule):
 
         server = self.conn.create_server(**args)
 
-        return server
+        # openstacksdk's create_server() might call meta.add_server_interfaces(
+        # ) which alters server attributes such as server['addresses']. So we
+        # do an extra call to compute.get_server() to return a clean server
+        # resource.
+        # Ref.: https://opendev.org/openstack/openstacksdk/src/commit/3f81d0001dd994cde990d38f6e2671ee0694d7d5/openstack/cloud/_compute.py#L942
+        return self.conn.compute.get_server(server)
 
     def _delete(self, server):
         self.conn.delete_server(
@@ -1077,15 +1090,15 @@ class ServerModule(OpenStackModule):
         server = self._update_server(server, update)
         # Refresh server attributes after security groups etc. have changed
         #
-        # self.conn.get_server() is unnecessary because server.addresses and
-        # server.interface_ip are computed and hence not returned anyway
-        return self.conn.compute.find_server(name_or_id=server.id)
+        # Use compute.get_server() instead of compute.find_server()
+        # to include server details
+        return self.conn.compute.get_server(server)
 
     def _update_ips(self, server, update):
         args = dict((k, self.params[k]) for k in ['wait', 'timeout'])
         ips = update.get('ips')
         if ips:
-            return self.conn.add_ips_to_server(server, **ips, **args)
+            server = self.conn.add_ips_to_server(server, **ips, **args)
 
         add_ips = update.get('add_ips')
         if add_ips:
@@ -1182,6 +1195,10 @@ class ServerModule(OpenStackModule):
                     net['net-name'], ignore_missing=False).id
                 # Replace net-name with net-id and keep optional nic args
                 # Ref.: https://github.com/ansible/ansible/pull/20969
+                #
+                # Delete net-name from a copy else it will
+                # disappear from Ansible's debug output
+                net = copy.deepcopy(net)
                 del net['net-name']
                 net['net-id'] = network_id
                 nics.append(net)
@@ -1192,6 +1209,10 @@ class ServerModule(OpenStackModule):
                     net['port-name'], ignore_missing=False).id
                 # Replace net-name with net-id and keep optional nic args
                 # Ref.: https://github.com/ansible/ansible/pull/20969
+                #
+                # Delete net-name from a copy else it will
+                # disappear from Ansible's debug output
+                net = copy.deepcopy(net)
                 del net['port-name']
                 net['port-id'] = port_id
                 nics.append(net)

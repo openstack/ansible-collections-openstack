@@ -29,6 +29,18 @@
     network_name: "{{ server_alt_network }}"
     state: present
 
+- name: Create router 1 (for attaching floating ips)
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_router1
+    network: public
+    interfaces:
+        - net: "{{ server_network }}"
+          subnet: "{{ server_subnet }}"
+        - net: "{{ server_alt_network }}"
+          subnet: "{{ server_alt_subnet }}"
+
 - name: Create security group for server
   openstack.cloud.security_group:
     cloud: "{{ cloud }}"
@@ -284,6 +296,68 @@
     name: "{{ server_name }}"
     wait: true
 
+- name: Create server on private network with auto_ip
+  openstack.cloud.server:
+    auto_ip: true
+    cloud: "{{ cloud }}"
+    flavor: "{{ flavor }}"
+    image: "{{ image }}"
+    name: "{{ server_name }}"
+    nics:
+      - net-name: "{{ server_network }}"
+    reuse_ips: false
+    state: present
+    wait: true
+  register: server
+
+- name: Assert server on private network with auto_ip
+  assert:
+    that:
+    - server.server.addresses.values()
+      |flatten(levels=1)
+      |selectattr('OS-EXT-IPS:type', 'equalto', 'floating')
+      |map(attribute='addr')
+      |list|length == 1
+
+- name: Delete server on private network with auto_ip
+  openstack.cloud.server:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_name }}"
+    wait: true
+
+- name: Create server on public network
+  openstack.cloud.server:
+    auto_ip: false
+    cloud: "{{ cloud }}"
+    flavor: "{{ flavor }}"
+    image: "{{ image }}"
+    name: "{{ server_name }}"
+    nics:
+      - net-name: 'public'
+    reuse_ips: false
+    state: present
+    wait: true
+  register: server
+
+- debug: var=server
+
+- name: Assert server on public network
+  assert:
+    that:
+    - server.server.addresses.values()
+      |flatten(levels=1)
+      |selectattr('OS-EXT-IPS:type', 'equalto', 'floating')
+      |map(attribute='addr')
+      |list|length == 0
+
+- name: Delete server on public network
+  openstack.cloud.server:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_name }}"
+    wait: true
+
 - name: Create port to be attached to server
   openstack.cloud.port:
     cloud: "{{ cloud }}"
@@ -310,18 +384,46 @@
       key2: value2
     name: "{{ server_name }}"
     nics:
-      - net-name: 'public'
       - net-name: "{{ server_network }}"
-      - port-id: '{{ port.port.id }}'
+      - port-id: "{{ port.port.id }}"
+    reuse_ips: false
     state: present
     wait: true
   register: server
 
 - debug: var=server
 
+- name: Assert server is not on public network and does not have a floating ip
+  assert:
+    that:
+      - server.server.addresses.keys()|sort == [server_network]|sort
+      - server.server.addresses.values()
+        |flatten(levels=1)
+        |selectattr('OS-EXT-IPS:type', 'equalto', 'floating')
+        |map(attribute='addr')
+        |list|length == 0
+
+- name: Find all floating ips for debugging
+  openstack.cloud.floating_ip_info:
+    cloud: "{{ cloud }}"
+  register: fips
+
+- name: Print all floating ips for debugging
+  debug: var=fips
+
+- name: Find all servers for debugging
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+  register: servers
+
+- name: Print all servers for debugging
+  debug: var=servers
+
 - name: Update server
   openstack.cloud.server:
-    auto_ip: true
+    # TODO: Change auto_ip to true once openstacksdk's issue #2010352 has been solved
+    # Ref.: https://storyboard.openstack.org/#!/story/2010352
+    auto_ip: false
     cloud: "{{ cloud }}"
     description: "This server got updated"
     # flavor cannot be updated but must be present
@@ -334,9 +436,9 @@
     name: "{{ server_name }}"
     # nics cannot be updated
     nics:
-      - net-name: 'public'
       - net-name: "{{ server_network }}"
-      - port-id: '{{ port.port.id }}'
+      - port-id: "{{ port.port.id }}"
+    reuse_ips: false
     security_groups:
       - '{{ server_security_group }}'
       - '{{ server_alt_security_group }}'
@@ -355,16 +457,59 @@
       - "'key1' not in server_updated.server.metadata"
       - server_updated.server.metadata['key2'] == 'value2'
       - server_updated.server.metadata['key3'] == 'value3'
-      - server_updated.server.addresses.keys()|sort == [server_network,'public']
-      - server_updated.server.addresses[server_network]|length == 2
-      - server_updated.server.addresses.public|length > 0
-      - port.port.fixed_ips[0].ip_address in
-        server_updated.server.addresses[server_network]|map(attribute='addr')
       - server_updated.server.security_groups|map(attribute='name')|unique|length == 2
       - security_group.secgroup.name in server_updated.server.security_groups|map(attribute='name')
       - security_group_alt.secgroup.name in server_updated.server.security_groups|map(attribute='name')
+      - server_network in server_updated.server.addresses.keys()|list|sort
+      - server_updated.server.addresses[server_network]|length == 2
+      - port.port.fixed_ips[0].ip_address in
+        server_updated.server.addresses[server_network]|map(attribute='addr')
+      # TODO: Verify networks once openstacksdk's issue #2010352 has been solved
+      # Ref.: https://storyboard.openstack.org/#!/story/2010352
+      #- server_updated.server.addresses.public|length > 0
+      #- (server_updated.server.addresses.keys()|sort == ([server_network, 'public']|sort))
+      #  or (server_updated.server.addresses.values()
+      #      |flatten(levels=1)
+      #      |selectattr('OS-EXT-IPS:type', 'equalto', 'floating')
+      #      |map(attribute='addr')
+      #      |list|length > 0)
 
 - name: Update server again
+  openstack.cloud.server:
+    # TODO: Change auto_ip to true once openstacksdk's issue #2010352 has been solved
+    # Ref.: https://storyboard.openstack.org/#!/story/2010352
+    auto_ip: false
+    cloud: "{{ cloud }}"
+    description: "This server got updated"
+    # flavor cannot be updated but must be present
+    flavor: "{{ flavor }}"
+    # image cannot be updated but must be present
+    image: "{{ image }}"
+    metadata:
+      key2: value2
+      key3: value3
+    name: "{{ server_name }}"
+    # nics cannot be updated
+    nics:
+      - net-name: "{{ server_network }}"
+      - port-id: "{{ port.port.id }}"
+    reuse_ips: false
+    security_groups:
+      - '{{ server_security_group }}'
+      - '{{ server_alt_security_group }}'
+    state: present
+    wait: true
+  register: server_updated_again
+
+- name: Assert server did not change
+  assert:
+    that:
+      - server.server.id == server_updated_again.server.id
+      - server_updated_again is not changed
+
+# TODO: Drop failure test once openstacksdk's issue #2010352 has been solved
+# Ref.: https://storyboard.openstack.org/#!/story/2010352
+- name: Update server again with auto_ip set to true
   openstack.cloud.server:
     auto_ip: true
     cloud: "{{ cloud }}"
@@ -379,21 +524,22 @@
     name: "{{ server_name }}"
     # nics cannot be updated
     nics:
-      - net-name: 'public'
       - net-name: "{{ server_network }}"
-      - port-id: '{{ port.port.id }}'
+      - port-id: "{{ port.port.id }}"
+    reuse_ips: false
     security_groups:
       - '{{ server_security_group }}'
       - '{{ server_alt_security_group }}'
     state: present
     wait: true
-  register: server_again
+  register: server_updated_again
+  ignore_errors: true
 
-- name: Assert server did not change
+- name: Assert server update succeeded or failed with expected error
   assert:
     that:
-      - server.server.id == server_again.server.id
-      - server_again is not changed
+      - not server_updated_again.failed
+        or ('was found matching your NAT destination network' in server_updated_again.msg)
 
 - name: Delete updated server
   openstack.cloud.server:
@@ -420,6 +566,12 @@
     cloud: "{{ cloud }}"
     state: absent
     name: "{{ server_security_group }}"
+
+- name: Delete router 1
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_router1
 
 - name: Delete second subnet for server
   openstack.cloud.subnet:
