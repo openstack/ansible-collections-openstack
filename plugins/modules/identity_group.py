@@ -13,11 +13,6 @@ description:
     - Manage OpenStack Identity Groups. Groups can be created, deleted or
       updated. Only the I(description) value can be updated.
 options:
-   name:
-     description:
-        - Group name
-     required: true
-     type: str
    description:
      description:
         - Group description
@@ -25,6 +20,11 @@ options:
    domain_id:
      description:
         - Domain id to create the group in if the cloud supports domains.
+     type: str
+   name:
+     description:
+        - Group name
+     required: true
      type: str
    state:
      description:
@@ -68,16 +68,8 @@ RETURN = '''
 group:
     description: Dictionary describing the group.
     returned: On success when I(state) is 'present'.
-    type: complex
+    type: dict
     contains:
-        id:
-            description: Unique group ID
-            type: str
-            sample: "ee6156ff04c645f481a6738311aea0b0"
-        name:
-            description: Group name
-            type: str
-            sample: "demo"
         description:
             description: Group description
             type: str
@@ -86,6 +78,14 @@ group:
             description: Domain for the group
             type: str
             sample: "default"
+        id:
+            description: Unique group ID
+            type: str
+            sample: "ee6156ff04c645f481a6738311aea0b0"
+        name:
+            description: Group name
+            type: str
+            sample: "demo"
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -103,51 +103,57 @@ class IdentityGroupModule(OpenStackModule):
         supports_check_mode=True
     )
 
-    def _system_state_change(self, state, description, group):
+    def _system_state_change(self, state, group):
         if state == 'present' and not group:
             return True
-        if state == 'present' and description is not None and group.description != description:
+        if state == 'present' and self._build_update(group):
             return True
         if state == 'absent' and group:
             return True
         return False
 
+    def _build_update(self, group):
+        update = {}
+        desc = self.params['description']
+        if desc is not None and desc != group.description:
+            update['description'] = desc
+        return update
+
     def run(self):
-        name = self.params.get('name')
-        description = self.params.get('description')
-        state = self.params.get('state')
+        name = self.params['name']
+        description = self.params['description']
+        state = self.params['state']
+        domain_id = self.params['domain_id']
 
-        domain_id = self.params.pop('domain_id')
+        group_filters = {}
+        if domain_id is not None:
+            group_filters['domain_id'] = domain_id
 
-        if domain_id:
-            group = self.conn.get_group(name, filters={'domain_id': domain_id})
-        else:
-            group = self.conn.get_group(name)
+        group = self.conn.identity.find_group(name, **group_filters)
 
         if self.ansible.check_mode:
-            self.exit_json(changed=self._system_state_change(state, description, group))
+            self.exit_json(changed=self._system_state_change(state, group))
 
+        changed = False
         if state == 'present':
             if group is None:
-                group = self.conn.create_group(
-                    name=name, description=description, domain=domain_id)
+                kwargs = dict(description=description, domain_id=domain_id)
+                kwargs = {k: v for k, v in kwargs.items() if v is not None}
+                group = self.conn.identity.create_group(
+                    name=name, **kwargs)
                 changed = True
             else:
-                if description is not None and group.description != description:
-                    group = self.conn.update_group(
-                        group.id, description=description)
+                update = self._build_update(group)
+                if update:
+                    group = self.conn.identity.update_group(group, **update)
                     changed = True
-                else:
-                    changed = False
+            group = group.to_dict(computed=False)
             self.exit_json(changed=changed, group=group)
 
-        elif state == 'absent':
-            if group is None:
-                changed = False
-            else:
-                self.conn.delete_group(group.id)
-                changed = True
-            self.exit_json(changed=changed)
+        elif state == 'absent' and group is not None:
+            self.conn.identity.delete_group(group)
+            changed = True
+        self.exit_json(changed=changed)
 
 
 def main():

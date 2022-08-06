@@ -71,11 +71,10 @@
         dns_zone_info
         endpoint
         floating_ip_info
-        group
         host_aggregate
         identity_domain_info
+        identity_group
         identity_group_info
-        identity_role
         identity_user
         identity_user_info
         identity_role

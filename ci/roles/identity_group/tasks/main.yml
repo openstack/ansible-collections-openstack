@@ -1,0 +1,138 @@
+---
+- name: Create domain
+  openstack.cloud.identity_domain:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ domain_name }}"
+  register: domain
+
+- name: Create group
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ group_name }}"
+  register: group_result
+
+- name: Assert changed
+  assert:
+    that: group_result is changed
+
+- name: Assert returned fields
+  assert:
+    that: item in group_result.group
+  loop: "{{ expected_fields }}"
+
+- name: Create group again
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ group_name }}"
+  register: group_result
+
+- name: Assert not changed
+  assert:
+    that: group_result is not changed
+
+- name: Update group
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ group_name }}"
+     description: "updated description"
+  register: group_result
+
+- name: Assert changed
+  assert:
+    that:
+      - group_result is changed
+      - group_result.group.description == "updated description"
+
+- name: Create group in specific domain
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ group_name }}"
+     domain_id: "{{ domain.id }}"
+  register: group_result
+
+- name: Assert results
+  assert:
+    that:
+      - group_result is changed
+      - group_result.group.domain_id == domain.id
+
+- name: Create group in specific domain again
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ group_name }}"
+     domain_id: "{{ domain.id }}"
+  register: group_result
+
+- name: Assert not changed
+  assert:
+    that: group_result is not changed
+
+- name: Delete ambiguous domain
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ group_name }}"
+  ignore_errors: true
+  register: group_result
+
+- name: Assert failed
+  assert:
+    that: group_result is failed
+
+- name: Delete group in specific domain
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ group_name }}"
+     domain_id: "{{ domain.id }}"
+  register: group_result
+
+- name: Assert changed
+  assert:
+    that: group_result is changed
+
+- name: Delete group in specific domain again
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ group_name }}"
+     domain_id: "{{ domain.id }}"
+  register: group_result
+
+- name: Assert not changed
+  assert:
+    that: group_result is not changed
+
+- name: Delete group
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ group_name }}"
+  register: group_result
+
+- name: Assert changed
+  assert:
+    that: group_result is changed
+
+- name: Delete group again
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ group_name }}"
+  register: group_result
+
+- name: Assert not changed
+  assert:
+    that: group_result is not changed
+
+- name: Delete domain
+  openstack.cloud.identity_domain:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ domain_name }}"
