@@ -358,13 +358,14 @@
 - job:
     name: openstack-tox-linters-ansible-devel
     parent: openstack-tox-linters-ansible
+    nodeset: ubuntu-jammy
     description: |
       Run openstack collections linter tests using the devel branch of ansible
     # non-voting because we can't prevent ansible devel from breaking us
     voting: false
     vars:
-      python_version: 3.8
-      bindep_profile: test py38
+      python_version: '3.10'
+      bindep_profile: test py310
 
 - job:
     name: openstack-tox-linters-ansible-2.12
