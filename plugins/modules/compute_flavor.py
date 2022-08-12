@@ -227,7 +227,6 @@ class ComputeFlavorModule(OpenStackModule):
                   'is_public']
         for k in fields:
             if self.params[k] is not None and self.params[k] != flavor[k]:
-                self.debug['diff'] = (k, self.params[k], flavor[k])
                 return True
 
     def _build_flavor_specs_diff(self, extra_specs, old_extra_specs):
