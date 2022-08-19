@@ -3,153 +3,126 @@
     cloud: "{{ cloud }}"
     details: true
     all_projects: true
-  register: all_sdk
-  ignore_errors: true
 
-- name: Check info for all projects
-  assert:
-    that:
-      # Rocky SDK doesn't have all_projects attribute
-      - >-
-        (all_sdk is failed and sdk_version is version(0.19, '<')) or
-        all_sdk is success
+- name: Get info about volumes
+  openstack.cloud.volume_info:
+    cloud: "{{ cloud }}"
+    all_projects: true
+  register: delete
 
-- name: Get info about volumes for all SDK
+- name: Clean up volumes before the test
+  openstack.cloud.volume:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ vol.name }}"
+  loop: "{{ delete.volumes }}"
+  loop_control:
+    loop_var: vol
+
+- name: Create volume
+  openstack.cloud.volume:
+    cloud: "{{ cloud }}"
+    state: present
+    size: 1
+    name: ansible_test
+    description: testci
+  register: vol
+
+- name: Get info about volumes
   openstack.cloud.volume_info:
     cloud: "{{ cloud }}"
     details: true
-  register: all_sdk1
-  ignore_errors: true
+    all_projects: true
+  register: info
 
-- name: Check info for all SDK
+- name: Check info
   assert:
     that:
-      - all_sdk1 is success
-      - all_sdk1.volumes is defined
+      - info.volumes | selectattr("description", "equalto", "testci") | list | length == 1
+      - info.volumes.0.name == 'ansible_test'
+      - info.volumes.0.status == 'available'
 
-- name: Run tests for SDK > 0.28 (from train)
-  when: sdk_version is version(0.28, '>')
-  block:
+- name: Get not detailed info about volumes
+  openstack.cloud.volume_info:
+    cloud: "{{ cloud }}"
+    details: false
+    all_projects: true
+  register: info1
 
-    - name: Get info about volumes
-      openstack.cloud.volume_info:
-        cloud: "{{ cloud }}"
-        all_projects: true
-      register: delete
+- name: Check info
+  assert:
+    that:
+      - info1.volumes | selectattr("id", "equalto", "{{ info.volumes.0.id }}") | list | length == 1
+      - info1.volumes.0.name == 'ansible_test'
+      - info1.volumes.0.status == None
 
-    - name: Clean up volumes before the test
-      openstack.cloud.volume:
-        cloud: "{{ cloud }}"
-        state: absent
-        display_name: "{{ vol.name }}"
-      loop: "{{ delete.volumes }}"
-      loop_control:
-        loop_var: vol
+- name: Get info about volumes with name
+  openstack.cloud.volume_info:
+    cloud: "{{ cloud }}"
+    details: false
+    name: ansible_test
+    all_projects: true
+  register: info2
 
-    - name: Create volume
-      openstack.cloud.volume:
-        cloud: "{{ cloud }}"
-        state: present
-        size: 1
-        display_name: ansible_test
-        display_description: testci
-      register: vol
+- name: Check info
+  assert:
+    that:
+      - info2.volumes | length == 1
+      - info2.volumes.0.name == 'ansible_test'
 
-    - name: Get info about volumes
-      openstack.cloud.volume_info:
-        cloud: "{{ cloud }}"
-        details: true
-        all_projects: true
-      register: info
+- name: Get info about volumes with non-existent name
+  openstack.cloud.volume_info:
+    cloud: "{{ cloud }}"
+    details: false
+    name: nothing_here
+    all_projects: true
+  register: info3
 
-    - name: Check info
-      assert:
-        that:
-          - info.volumes | selectattr("description", "equalto", "testci") | list | length == 1
-          - info.volumes.0.name == 'ansible_test'
-          - info.volumes.0.status == 'available'
+- name: Check info
+  assert:
+    that:
+      - info3.volumes | length == 0
 
-    - name: Get not detailed info about volumes
-      openstack.cloud.volume_info:
-        cloud: "{{ cloud }}"
-        details: false
-        all_projects: true
-      register: info1
+- name: Get info about volumes
+  openstack.cloud.volume_info:
+    cloud: "{{ cloud }}"
+    details: false
+    name: ansible_test
+    all_projects: true
+  register: info4
 
-    - name: Check info
-      assert:
-        that:
-          - info1.volumes | selectattr("id", "equalto", "{{ info.volumes.0.id }}") | list | length == 1
-          - info1.volumes.0.name == 'ansible_test'
-          - info1.volumes.0.status == None
+- name: Check info
+  assert:
+    that:
+      - info4.volumes | length == 1
+      - info4.volumes.0.name == 'ansible_test'
 
-    - name: Get info about volumes with name
-      openstack.cloud.volume_info:
-        cloud: "{{ cloud }}"
-        details: false
-        name: ansible_test
-        all_projects: true
-      register: info2
+- name: Get info about volumes not from all projects
+  openstack.cloud.volume_info:
+    cloud: "{{ cloud }}"
+    details: false
+    name: ansible_test
+  register: info4a
 
-    - name: Check info
-      assert:
-        that:
-          - info2.volumes | length == 1
-          - info2.volumes.0.name == 'ansible_test'
+- name: Check info
+  assert:
+    that:
+      - info4a.volumes | length == 1
+      - info4a.volumes.0.name == 'ansible_test'
 
-    - name: Get info about volumes with non-existent name
-      openstack.cloud.volume_info:
-        cloud: "{{ cloud }}"
-        details: false
-        name: nothing_here
-        all_projects: true
-      register: info3
+- name: Delete volume
+  openstack.cloud.volume:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_test
 
-    - name: Check info
-      assert:
-        that:
-          - info3.volumes | length == 0
+- name: Get info when no volumes
+  openstack.cloud.volume_info:
+    cloud: "{{ cloud }}"
+    all_projects: true
+  register: info5
 
-    - name: Get info about volumes
-      openstack.cloud.volume_info:
-        cloud: "{{ cloud }}"
-        details: false
-        name: ansible_test
-        all_projects: true
-      register: info4
-
-    - name: Check info
-      assert:
-        that:
-          - info4.volumes | length == 1
-          - info4.volumes.0.name == 'ansible_test'
-
-    - name: Get info about volumes not from all projects
-      openstack.cloud.volume_info:
-        cloud: "{{ cloud }}"
-        details: false
-        name: ansible_test
-      register: info4a
-
-    - name: Check info
-      assert:
-        that:
-          - info4a.volumes | length == 1
-          - info4a.volumes.0.name == 'ansible_test'
-
-    - name: Delete volume
-      openstack.cloud.volume:
-        cloud: "{{ cloud }}"
-        state: absent
-        display_name: ansible_test
-
-    - name: Get info when no volumes
-      openstack.cloud.volume_info:
-        cloud: "{{ cloud }}"
-        all_projects: true
-      register: info5
-
-    - name: Check info
-      assert:
-        that:
-          - info5.volumes | selectattr("name", "equalto", "ansible_test") | list | length == 0
+- name: Check info
+  assert:
+    that:
+      - info5.volumes | selectattr("name", "equalto", "ansible_test") | list | length == 0

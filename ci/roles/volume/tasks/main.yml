@@ -4,15 +4,29 @@
      cloud: "{{ cloud }}"
      state: present
      size: 1
-     display_name: ansible_volume
-     display_description: Test volume
+     name: ansible_volume
+     description: Test volume
+  register: vol
+
+- assert:
+    that: item in vol.volume
+  loop: "{{ expected_fields }}"
+
+- name: Create volume from existing volume
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: present
+     size: 1
+     volume: "{{ vol.volume.id }}"
+     name: ansible_volume1
+     description: Test volume
   register: vol
 
 - name: Create volume snapshot
   openstack.cloud.volume_snapshot:
     cloud: "{{ cloud }}"
     state: present
-    display_name: ansible_volume_snapshot
+    name: ansible_volume_snapshot
     volume: ansible_volume
   register: vol_snap
 
@@ -21,23 +35,30 @@
     cloud: "{{ cloud }}"
     name: ansible_volume_snapshot
   register: snap_info
-  ignore_errors: sdk_version is version('0.49', '<')
+
+- name: Create volume from snapshot
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: present
+     size: 1
+     snapshot: ansible_volume_snapshot
+     name: ansible_volume2
+     description: Test volume
+  register: vol
 
 - name: Create volume backup
   openstack.cloud.volume_backup:
     cloud: "{{ cloud }}"
     state: present
-    display_name: ansible_volume_backup
+    name: ansible_volume_backup
     volume: ansible_volume
   register: vol_backup
-  ignore_errors: sdk_version is version('0.49', '<')
 
 - name: Get backup info
   openstack.cloud.volume_backup_info:
     cloud: "{{ cloud }}"
     name: ansible_volume_backup
   register: backup_info
-  ignore_errors: sdk_version is version('0.49', '<')
 
 - debug: var=vol
 
@@ -50,14 +71,14 @@
 - name: Delete volume backup
   openstack.cloud.volume_backup:
     cloud: "{{ cloud }}"
-    display_name: ansible_volume_backup
+    name: ansible_volume_backup
+    wait: false
     state: absent
-  ignore_errors: sdk_version is version(0.49, '<')
 
 - name: Delete volume snapshot
   openstack.cloud.volume_snapshot:
     cloud: "{{ cloud }}"
-    display_name: ansible_volume_snapshot
+    name: ansible_volume_snapshot
     volume: ansible_volume
     state: absent
 
@@ -65,6 +86,71 @@
   openstack.cloud.volume:
      cloud: "{{ cloud }}"
      state: absent
-     display_name: ansible_volume
+     name: ansible_volume
+
+- name: Clean up
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ item }}"
+  loop:
+    - ansible_volume1
+    - ansible_volume2
+
+- name: Create a test image file
+  shell: mktemp
+  register: tmp_file
+
+- name: Fill test image file to 1MB
+  shell: truncate -s 1048576 {{ tmp_file.stdout }}
+
+- name: Create test image
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ test_volume_image }}"
+     filename: "{{ tmp_file.stdout }}"
+     disk_format: raw
+     tags: "{{ image_tags }}"
+  register: returned_image
+
+- name: Create volume from image
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: present
+     size: 1
+     image: "{{ test_volume_image }}"
+     name: ansible_volume2
+     description: Test volume
+  register: vol
+
+- name: Delete volume from image
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     name: ansible_volume2
+     state: absent
+  register: vol
+
+- name: Create test shared image
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ image_name }}"
+     filename: "{{ tmp_file.stdout }}"
+     is_public: true
+     disk_format: raw
+     tags: "{{ image_tags }}"
+  register: returned_image
+
+- name: Delete test shared image
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ image_name }}"
+     filename: "{{ tmp_file.stdout }}"
+     is_public: true
+     disk_format: raw
+     tags: "{{ image_tags }}"
+  register: returned_image
 
 - include_tasks: volume_info.yml

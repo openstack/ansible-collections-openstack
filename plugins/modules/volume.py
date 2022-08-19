@@ -16,57 +16,62 @@ options:
      description:
        - The availability zone.
      type: str
+   description:
+     description:
+       - String describing the volume
+     type: str
+     aliases: [display_description]
+   image:
+     description:
+       - Image name or id for boot from volume
+       - Mutually exclusive with I(snapshot) and I(volume)
+     type: str
+   is_bootable:
+     description:
+       - Bootable flag for volume.
+     type: bool
+     default: False
+     aliases: [bootable]
+   metadata:
+     description:
+       - Metadata for the volume
+     type: dict
+   name:
+     description:
+        - Name of volume
+     required: true
+     type: str
+     aliases: [display_name]
+   scheduler_hints:
+     description:
+       - Scheduler hints passed to volume API in form of dict
+     type: dict
    size:
      description:
         - Size of volume in GB. This parameter is required when the
           I(state) parameter is 'present'.
      type: int
-   display_name:
+   snapshot:
      description:
-        - Name of volume
-     required: true
+       - Volume snapshot name or id to create from
+       - Mutually exclusive with I(image) and I(volume)
      type: str
-     aliases: [name]
-   display_description:
-     description:
-       - String describing the volume
-     type: str
-     aliases: [description]
-   volume_type:
-     description:
-       - Volume type for volume
-     type: str
-   image:
-     description:
-       - Image name or id for boot from volume
-     type: str
-   snapshot_id:
-     description:
-       - Volume snapshot id to create from
-     type: str
-   volume:
-     description:
-       - Volume name or id to create from
-     type: str
-   bootable:
-     description:
-       - Bootable flag for volume.
-     type: bool
-     default: False
+     aliases: [snapshot_id]
    state:
      description:
        - Should the resource be present or absent.
      choices: [present, absent]
      default: present
      type: str
-   scheduler_hints:
+   volume:
      description:
-       - Scheduler hints passed to volume API in form of dict
-     type: dict
-   metadata:
+       - Volume name or id to create from
+       - Mutually exclusive with I(image) and I(snapshot)
+     type: str
+   volume_type:
      description:
-       - Metadata for the volume
-     type: dict
+       - Volume type for volume
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -77,187 +82,255 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 # Creates a new volume
-- name: create a volume
-  hosts: localhost
-  tasks:
-  - name: create 40g test volume
-    openstack.cloud.volume:
-      state: present
-      cloud: mordred
-      availability_zone: az2
-      size: 40
-      display_name: test_volume
-      scheduler_hints:
-        same_host: 243e8d3c-8f47-4a61-93d6-7215c344b0c0
+- name: create 40g test volume
+  openstack.cloud.volume:
+    state: present
+    cloud: mordred
+    availability_zone: az2
+    size: 40
+    name: test_volume
+    scheduler_hints:
+      same_host: 243e8d3c-8f47-4a61-93d6-7215c344b0c0
 '''
 
-RETURNS = '''
-id:
-  description: Cinder's unique ID for this volume
-  returned: always
-  type: str
-  sample: fcc4ac1c-e249-4fe7-b458-2138bfb44c06
-
+RETURN = '''
 volume:
   description: Cinder's representation of the volume object
   returned: always
   type: dict
-  sample: {'...'}
+  contains:
+    attachments:
+      description: Instance attachment information. If this volume is attached
+                   to a server instance, the attachments list includes the UUID
+                   of the attached server, an attachment UUID, the name of the
+                   attached host, if any, the volume UUID, the device, and the
+                   device UUID. Otherwise, this list is empty.
+      type: list
+    availability_zone:
+      description: The name of the availability zone.
+      type: str
+    consistency_group_id:
+      description: The UUID of the consistency group.
+      type: str
+    created_at:
+      description: The date and time when the resource was created.
+      type: str
+    description:
+      description: The volume description.
+      type: str
+    extended_replication_status:
+      description: Extended replication status on this volume.
+      type: str
+    group_id:
+      description: The ID of the group.
+      type: str
+    host:
+      description: The volume's current back-end.
+      type: str
+    id:
+      description: The UUID of the volume.
+      type: str
+    image_id:
+      description: Image on which the volume was based
+      type: str
+    is_bootable:
+      description: Enables or disables the bootable attribute. You can boot an
+                   instance from a bootable volume.
+      type: str
+    is_encrypted:
+      description: If true, this volume is encrypted.
+      type: bool
+    metadata:
+      description: A metadata object. Contains one or more metadata key and
+                   value pairs that are associated with the volume.
+      type: dict
+    migration_id:
+      description: The volume ID that this volume name on the backend is
+                   based on.
+      type: str
+    migration_status:
+      description: The status of this volume migration (None means that a
+                   migration is not currently in progress).
+      type: str
+    name:
+      description: The volume name.
+      type: str
+    project_id:
+      description: The project ID which the volume belongs to.
+      type: str
+    replication_driver_data:
+      description: Data set by the replication driver
+      type: str
+    replication_status:
+      description: The volume replication status.
+      type: str
+    scheduler_hints:
+      description: Scheduler hints for the volume
+      type: dict
+    size:
+      description: The size of the volume, in gibibytes (GiB).
+      type: int
+    snapshot_id:
+      description: To create a volume from an existing snapshot, specify the
+                   UUID of the volume snapshot. The volume is created in same
+                   availability zone and with same size as the snapshot.
+      type: str
+    source_volume_id:
+      description: The UUID of the source volume. The API creates a new volume
+                   with the same size as the source volume unless a larger size
+                   is requested.
+      type: str
+    status:
+      description: The volume status.
+      type: str
+    updated_at:
+      description: The date and time when the resource was updated.
+      type: str
+    user_id:
+      description: The UUID of the user.
+      type: str
+    volume_image_metadata:
+      description: List of image metadata entries. Only included for volumes
+                   that were created from an image, or from a snapshot of a
+                   volume originally created from an image.
+      type: dict
+    volume_type:
+      description: The associated volume type name for the volume.
+      type: str
 '''
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
 class VolumeModule(OpenStackModule):
-
     argument_spec = dict(
-        availability_zone=dict(type='str'),
-        size=dict(type='int'),
-        volume_type=dict(),
-        display_name=dict(required=True, aliases=['name']),
-        display_description=dict(aliases=['description']),
+        availability_zone=dict(),
+        description=dict(aliases=['display_description']),
         image=dict(),
-        snapshot_id=dict(),
-        volume=dict(),
-        state=dict(default='present', choices=['absent', 'present']),
-        scheduler_hints=dict(type='dict'),
+        is_bootable=dict(type='bool', default=False, aliases=['bootable']),
         metadata=dict(type='dict'),
-        bootable=dict(type='bool', default=False)
+        name=dict(required=True, aliases=['display_name']),
+        scheduler_hints=dict(type='dict'),
+        size=dict(type='int'),
+        snapshot=dict(aliases=['snapshot_id']),
+        state=dict(default='present', choices=['absent', 'present'], type='str'),
+        volume=dict(),
+        volume_type=dict(),
     )
 
     module_kwargs = dict(
+        supports_check_mode=True,
         mutually_exclusive=[
-            ['image', 'snapshot_id', 'volume'],
+            ['image', 'snapshot', 'volume'],
         ],
         required_if=[
             ['state', 'present', ['size']],
         ],
     )
 
-    def _needs_update(self, volume):
-        '''
-        check for differences in updatable values, at the moment
-        openstacksdk only supports extending the volume size, this
-        may change in the future.
-        :returns: bool
-        '''
-        compare_simple = ['size']
+    def _build_update(self, volume):
+        keys = ('size',)
+        return {k: self.params[k] for k in keys if self.params[k] is not None
+                and self.params[k] != volume[k]}
 
-        for k in compare_simple:
-            if self.params[k] is not None and self.params[k] != volume.get(k):
-                return True
-
-        return False
-
-    def _modify_volume(self, volume):
+    def _update(self, volume):
         '''
         modify volume, the only modification to an existing volume
         available at the moment is extending the size, this is
         limited by the openstacksdk and may change whenever the
         functionality is extended.
         '''
-        volume = self.conn.get_volume(self.params['display_name'])
-        diff = {'before': volume, 'after': ''}
-        size = self.params['size']
+        diff = {'before': volume.to_dict(computed=False), 'after': ''}
+        diff['after'] = diff['before']
 
-        if size < volume.get('size'):
-            self.fail_json(
-                msg='Cannot shrink volumes, size: {0} < {1}'.format(size, volume.get('size'))
-            )
+        update = self._build_update(volume)
 
-        if not self._needs_update(volume):
-            diff['after'] = volume
-            self.exit_json(changed=False, id=volume['id'], volume=volume, diff=diff)
+        if not update:
+            self.exit_json(changed=False,
+                           volume=volume.to_dict(computed=False), diff=diff)
 
         if self.ansible.check_mode:
-            diff['after'] = volume
-            self.exit_json(changed=True, id=volume['id'], volume=volume, diff=diff)
+            volume.size = update['size']
+            self.exit_json(changed=False,
+                           volume=volume.to_dict(computed=False), diff=diff)
 
-        self.conn.volume.extend_volume(
-            volume.id,
-            size
-        )
-        diff['after'] = self.conn.get_volume(self.params['display_name'])
-        self.exit_json(changed=True, id=volume['id'], volume=volume, diff=diff)
+        if 'size' in update and update['size'] != volume.size:
+            size = update['size']
+            self.conn.volume.extend_volume(volume.id, size)
+            volume = self.conn.block_storage.get_volume(volume)
 
-    def _present_volume(self):
+        volume = volume.to_dict(computed=False)
+        diff['after'] = volume
+        self.exit_json(changed=True, volume=volume, diff=diff)
 
-        diff = {'before': '', 'after': ''}
+    def _build_create_kwargs(self):
+        keys = ('availability_zone', 'size', 'name', 'description',
+                'volume_type', 'scheduler_hints', 'metadata')
+        kwargs = {k: self.params[k] for k in keys
+                  if self.params[k] is not None}
 
-        volume_args = dict(
-            size=self.params['size'],
-            volume_type=self.params['volume_type'],
-            display_name=self.params['display_name'],
-            display_description=self.params['display_description'],
-            snapshot_id=self.params['snapshot_id'],
-            bootable=self.params['bootable'],
-            availability_zone=self.params['availability_zone'],
-        )
+        find_filters = {}
+
+        if self.params['snapshot']:
+            snapshot = self.conn.block_storage.find_snapshot(
+                self.params['snapshot'], ignore_missing=False, **find_filters)
+            kwargs['snapshot_id'] = snapshot.id
+
         if self.params['image']:
-            image_id = self.conn.get_image_id(self.params['image'])
-            if not image_id:
-                self.fail_json(msg="Failed to find image '%s'" % self.params['image'])
-            volume_args['imageRef'] = image_id
+            image = self.conn.image.find_image(
+                self.params['image'], ignore_missing=False)
+            kwargs['image_id'] = image.id
 
         if self.params['volume']:
-            volume_id = self.conn.get_volume_id(self.params['volume'])
-            if not volume_id:
-                self.fail_json(msg="Failed to find volume '%s'" % self.params['volume'])
-            volume_args['source_volid'] = volume_id
+            volume = self.conn.block_storage.find_volume(
+                self.params['volume'], ignore_missing=False, **find_filters)
+            kwargs['source_volume_id'] = volume.id
 
-        if self.params['scheduler_hints']:
-            volume_args['scheduler_hints'] = self.params['scheduler_hints']
+        return kwargs
 
-        if self.params['metadata']:
-            volume_args['metadata'] = self.params['metadata']
+    def _create(self):
+        diff = {'before': '', 'after': ''}
+        volume_args = self._build_create_kwargs()
 
         if self.ansible.check_mode:
             diff['after'] = volume_args
-            self.exit_json(changed=True, id=None, volume=volume_args, diff=diff)
+            self.exit_json(changed=True, volume=volume_args, diff=diff)
 
-        volume = self.conn.create_volume(
-            wait=self.params['wait'], timeout=self.params['timeout'],
-            **volume_args)
+        volume = self.conn.block_storage.create_volume(**volume_args)
+        if self.params['wait']:
+            self.conn.block_storage.wait_for_status(
+                volume, wait=self.params['timeout'])
+
+        volume = volume.to_dict(computed=False)
         diff['after'] = volume
-        self.exit_json(changed=True, id=volume['id'], volume=volume, diff=diff)
+        self.exit_json(changed=True, volume=volume, diff=diff)
 
-    def _absent_volume(self, volume):
-        changed = False
+    def _delete(self, volume):
         diff = {'before': '', 'after': ''}
+        if volume is None:
+            self.exit_json(changed=False, diff=diff)
 
-        if self.conn.volume_exists(self.params['display_name']):
-            volume = self.conn.get_volume(self.params['display_name'])
-            diff['before'] = volume
+        diff['before'] = volume.to_dict(computed=False)
 
-            if self.ansible.check_mode:
-                self.exit_json(changed=True, diff=diff)
+        if self.ansible.check_mode:
+            self.exit_json(changed=True, diff=diff)
 
-            try:
-                changed = self.conn.delete_volume(name_or_id=self.params['display_name'],
-                                                  wait=self.params['wait'],
-                                                  timeout=self.params['timeout'])
-            except self.sdk.exceptions.ResourceTimeout:
-                diff['after'] = volume
-                self.exit_json(changed=changed, diff=diff)
-
-        self.exit_json(changed=changed, diff=diff)
+        self.conn.block_storage.delete_volume(volume)
+        if self.params['wait']:
+            self.conn.block_storage.wait_for_delete(
+                volume, wait=self.params['timeout'])
+        self.exit_json(changed=True, diff=diff)
 
     def run(self):
-
         state = self.params['state']
-        if self.conn.volume_exists(self.params['display_name']):
-            volume = self.conn.get_volume(self.params['display_name'])
-        else:
-            volume = None
+        volume = self.conn.block_storage.find_volume(self.params['name'])
 
         if state == 'present':
             if not volume:
-                self._present_volume()
-            elif self._needs_update(volume):
-                self._modify_volume(volume)
+                self._create()
             else:
-                self.exit_json(changed=False, id=volume['id'], volume=volume)
+                self._update(volume)
         if state == 'absent':
-            self._absent_volume(volume)
+            self._delete(volume)
 
 
 def main():
