@@ -24,9 +24,7 @@
     - { role: identity_role, tags: identity_role }
     - { role: image, tags: image }
     - { role: keypair, tags: keypair }
-    - role: keystone_idp
-      tags: keystone_idp
-      when: sdk_version is version(0.44, '>=')
+    - { role: keystone_idp, tags: keystone_idp }
     - role: keystone_federation_protocol
       tags: keystone_federation_protocol
       when: sdk_version is version(0.44, '>=')

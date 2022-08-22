@@ -18,136 +18,133 @@
   block:
     # ========================================================================
     #   Initial setup
+
     - name: 'Create test domain'
       openstack.cloud.identity_domain:
-        name: '{{ domain_name }}'
-      register: create_domain
-    - name: 'Store domain ID as fact'
-      set_fact:
-        domain_id: '{{ create_domain.domain.id }}'
+        name: ansible_domain
+      register: domain
 
-    # We *should* have a blank slate to start with, but we also shouldn't
-    # explode if I(state=absent) and the IDP doesn't exist
+    # We *should* have a blank slate to start with, but we also should not
+    # explode if state is absent and the identity provider does not exist
     - name: "Ensure IDP doesn't exist to start"
       openstack.cloud.federation_idp:
-        state: 'absent'
-        name: '{{ idp_name }}'
-      register: delete_idp
-    - assert:
-        that:
-        - delete_idp is successful
+        state: absent
+        name: 'ansible_identity_provider'
 
     # ========================================================================
     #   Creation (simple case)
 
     - name: 'Create IDP - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        domain_id: '{{ domain_id }}'
-      register: create_idp
+        state: present
+        id: 'ansible_identity_provider'
+        domain_id: '{{ domain.domain.id }}'
+      register: idp
+
     - assert:
         that:
-        - create_idp is successful
-        - create_idp is changed
+        - idp is changed
 
     - name: 'Fetch identity_provider info (provider should be absent)'
       openstack.cloud.federation_idp_info:
-        name: '{{ idp_name }}'
-      register: identity_provider_info
+        name: 'ansible_identity_provider'
+      register: idps
+
     - assert:
         that:
-        - identity_provider_info.identity_providers | length == 0
+        - idps.identity_providers | length == 0
 
     - name: 'Create IDP'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        domain_id: '{{ domain_id }}'
-      register: create_identity_provider
+        state: present
+        name: 'ansible_identity_provider'
+        domain_id: '{{ domain.domain.id }}'
+      register: idp
+
     - assert:
         that:
-        - create_identity_provider is successful
-        - create_identity_provider is changed
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - not idp.description
-        - idp.is_enabled == True
-        - idp.remote_ids == []
+        - idp is changed
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - not _idp.description
+        - _idp.is_enabled == False
+        - _idp.remote_ids == []
       vars:
-        idp: '{{ create_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
-    - name: Verify returned values
+    - name: Assert return values of federation_idp module
       assert:
-        that: item in create_identity_provider.identity_provider
-      loop: "{{ idp_expected_fields }}"
+        that:
+          # allow new fields to be introduced but prevent fields from being removed
+          - expected_fields|difference(idp.identity_provider.keys())|length == 0
 
     - name: 'Fetch IDP info - with name'
       openstack.cloud.federation_idp_info:
-        name: '{{ idp_name }}'
-      register: identity_provider_info
+        name: 'ansible_identity_provider'
+      register: idps
     - assert:
         that:
-        - idps | length == 1
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - not idp.description
-        - idp.is_enabled == True
-        - idp.remote_ids == []
+        - _idps | length == 1
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - not _idp.description
+        - _idp.is_enabled == False
+        - _idp.remote_ids == []
       vars:
-        idps: '{{ identity_provider_info.identity_providers }}'
-        idp: '{{ identity_provider_info.identity_providers[0] }}'
+        _idps: '{{ idps.identity_providers }}'
+        _idp: '{{ idps.identity_providers[0] }}'
 
-    - name: Verify returned values
+    - name: Assert return values of federation_idp_info module
       assert:
-        that: item in identity_provider_info.identity_providers[0]
-      loop: "{{ idp_info_expected_fields }}"
+        that:
+          # allow new fields to be introduced but prevent fields from being removed
+          - expected_fields|difference(idps.identity_providers.0.keys())|length == 0
 
     - name: 'Fetch identity_provider info - without name'
       openstack.cloud.federation_idp_info: {}
-      register: identity_provider_info
+      register: idps
+
     - assert:
         that:
-        - '"identity_providers" in identity_provider_info'
         # In CI we generally have a clean slate, but this might
         # not be true for everyone...
-        - idps | length >= 1
+        - _idps | length >= 1
       vars:
-        idps: '{{ identity_provider_info.identity_providers }}'
+        _idps: '{{ idps.identity_providers }}'
 
     - name: 'Create identity_provider (retry - no change) - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        domain_id: '{{ domain_id }}'
-      register: create_identity_provider
+        state: present
+        name: 'ansible_identity_provider'
+        domain_id: '{{ domain.domain.id }}'
+      register: idp
+
     - assert:
         that:
-        - create_identity_provider is successful
-        - create_identity_provider is not changed
+        - idp is not changed
 
     - name: 'Create identity_provider (retry - no change)'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        domain_id: '{{ domain_id }}'
-      register: create_identity_provider
+        state: present
+        name: 'ansible_identity_provider'
+        domain_id: '{{ domain.domain.id }}'
+      register: idp
+
     - assert:
         that:
-        - create_identity_provider is successful
-        - create_identity_provider is not changed
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - not idp.description
-        - idp.is_enabled == True
-        - idp.remote_ids == []
+        - idp is not changed
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - not _idp.description
+        - _idp.is_enabled == False
+        - _idp.remote_ids == []
       vars:
-        idp: '{{ create_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
     # ========================================================================
     #   Update (simple cases)
@@ -155,219 +152,220 @@
     - name: 'Update IDP set description - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        description: '{{ idp_description }}'
-      register: update_identity_provider
+        state: present
+        name: 'ansible_identity_provider'
+        description: 'ansible idp 1'
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is changed
+        - idp is changed
 
     - name: 'Update IDP set description'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        description: '{{ idp_description }}'
-      register: update_identity_provider
+        state: present
+        name: 'ansible_identity_provider'
+        description: 'ansible idp 1'
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is changed
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - idp.description == idp_description
-        - idp.is_enabled == True
-        - idp.remote_ids == []
+        - idp is changed
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 1'
+        - _idp.is_enabled == False
+        - _idp.remote_ids == []
       vars:
-        idp: '{{ update_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
     - name: 'Update IDP set description (retry - no change) - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        description: '{{ idp_description }}'
-      register: update_identity_provider
+        state: present
+        name: 'ansible_identity_provider'
+        description: 'ansible idp 1'
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is not changed
+        - idp is not changed
 
     - name: 'Update IDP set description (retry - no change)'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        description: '{{ idp_description }}'
-      register: update_identity_provider
+        state: present
+        name: 'ansible_identity_provider'
+        description: 'ansible idp 1'
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is not changed
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - idp.description == idp_description
-        - idp.is_enabled == True
-        - idp.remote_ids == []
+        - idp is not changed
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 1'
+        - _idp.is_enabled == False
+        - _idp.remote_ids == []
       vars:
-        idp: '{{ update_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
 
     - name: 'Update IDP set Remote IDs - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
+        state: present
+        name: 'ansible_identity_provider'
         remote_ids: '{{ remote_ids_1 }}'
-      register: update_identity_provider
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is changed
+        - idp is changed
 
     - name: 'Update IDP set Remote IDs'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
+        state: present
+        name: 'ansible_identity_provider'
         remote_ids: '{{ remote_ids_1 }}'
-      register: update_identity_provider
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is changed
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - idp.description == idp_description
-        - idp.is_enabled == True
-        - idp.remote_ids == remote_ids_1
+        - idp is changed
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 1'
+        - _idp.is_enabled == False
+        - _idp.remote_ids == remote_ids_1
       vars:
-        idp: '{{ update_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
     - name: 'Update IDP set Remote IDs (retry - no change) - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
+        state: present
+        name: 'ansible_identity_provider'
         remote_ids: '{{ remote_ids_1 }}'
-      register: update_identity_provider
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is not changed
+        - idp is not changed
 
     - name: 'Update IDP set Remote IDs (retry - no change)'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
+        state: present
+        name: 'ansible_identity_provider'
         remote_ids: '{{ remote_ids_1 }}'
-      register: update_identity_provider
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is not changed
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - idp.description == idp_description
-        - idp.is_enabled == True
-        - idp.remote_ids == remote_ids_1
+        - idp is not changed
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 1'
+        - _idp.is_enabled == False
+        - _idp.remote_ids == remote_ids_1
       vars:
-        idp: '{{ update_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
-    - name: 'Update IDP set Disabled - CHECK_MODE'
+    - name: 'Update IDP set Enabled - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        enabled: False
-      register: update_identity_provider
+        state: present
+        name: 'ansible_identity_provider'
+        is_enabled: True
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is changed
+        - idp is changed
 
     - name: 'Update IDP set Disabled'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        enabled: False
-      register: update_identity_provider
+        state: present
+        name: 'ansible_identity_provider'
+        is_enabled: True
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is changed
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - idp.description == idp_description
-        - idp.is_enabled == False
-        - idp.remote_ids == remote_ids_1
+        - idp is changed
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 1'
+        - _idp.is_enabled == True
+        - _idp.remote_ids == remote_ids_1
       vars:
-        idp: '{{ update_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
-    - name: 'Update IDP set Disabled (retry - no change) - CHECK_MODE'
+    - name: 'Update IDP set Enabled (retry - no change) - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        enabled: False
-      register: update_identity_provider
-    - assert:
-        that:
-        - update_identity_provider is successful
-        - update_identity_provider is not changed
+        state: present
+        name: 'ansible_identity_provider'
+        is_enabled: True
+      register: idp
 
-    - name: 'Update IDP set Disabled (retry - no change)'
-      openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        enabled: False
-      register: update_identity_provider
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is not changed
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - idp.description == idp_description
-        - idp.is_enabled == False
-        - idp.remote_ids == remote_ids_1
+        - idp is not changed
+
+    - name: 'Update IDP set Enabled (retry - no change)'
+      openstack.cloud.federation_idp:
+        state: present
+        name: 'ansible_identity_provider'
+        is_enabled: True
+      register: idp
+
+    - assert:
+        that:
+        - idp is not changed
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 1'
+        - _idp.is_enabled == True
+        - _idp.remote_ids == remote_ids_1
       vars:
-        idp: '{{ update_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
     # If we don't specify anything to change, then nothing should change...
     - name: 'Minimal call to IDP (no change) - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-      register: update_identity_provider
+        state: present
+        name: 'ansible_identity_provider'
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is not changed
+        - idp is not changed
 
     - name: 'Minimal call to IDP (no change)'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-      register: update_identity_provider
+        state: present
+        name: 'ansible_identity_provider'
+        is_enabled: True
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is not changed
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - idp.description == idp_description
-        - idp.is_enabled == False
-        - idp.remote_ids == remote_ids_1
+        - idp is not changed
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 1'
+        - _idp.is_enabled == True
+        - _idp.remote_ids == remote_ids_1
       vars:
-        idp: '{{ update_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
     # ========================================================================
     #   Update (mass-update)
@@ -375,72 +373,72 @@
     - name: 'Update all updatable IDP parameters - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        description: '{{ idp_description_2 }}'
-        enabled: True
+        state: present
+        name: 'ansible_identity_provider'
+        description: 'ansible idp 2'
+        is_enabled: True
         remote_ids: '{{ remote_ids_2 }}'
-      register: update_identity_provider
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is changed
+        - idp is changed
 
     - name: 'Update all updatable IDP parameters'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        description: '{{ idp_description_2 }}'
-        enabled: True
+        state: present
+        name: 'ansible_identity_provider'
+        description: 'ansible idp 2'
+        is_enabled: True
         remote_ids: '{{ remote_ids_2 }}'
-      register: update_identity_provider
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is changed
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - idp.description == idp_description_2
-        - idp.is_enabled == True
-        - idp.remote_ids == remote_ids_2
+        - idp is changed
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 2'
+        - _idp.is_enabled == True
+        - _idp.remote_ids == remote_ids_2
       vars:
-        idp: '{{ update_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
     - name: 'Update all updatable IDP parameters (no change) - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        description: '{{ idp_description_2 }}'
-        enabled: True
+        state: present
+        name: 'ansible_identity_provider'
+        description: 'ansible idp 2'
+        is_enabled: True
         remote_ids: '{{ remote_ids_2 }}'
-      register: update_identity_provider
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is not changed
+        - idp is not changed
 
     - name: 'Update all updatable IDP parameters (no change)'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        description: '{{ idp_description_2 }}'
-        enabled: True
+        state: present
+        name: 'ansible_identity_provider'
+        description: 'ansible idp 2'
+        is_enabled: True
         remote_ids: '{{ remote_ids_2 }}'
-      register: update_identity_provider
+      register: idp
+
     - assert:
         that:
-        - update_identity_provider is successful
-        - update_identity_provider is not changed
-        - idp.id == idp_name
-        - idp.name == idp_name
-        - idp.domain_id == domain_id
-        - idp.description == idp_description_2
-        - idp.is_enabled == True
-        - idp.remote_ids == remote_ids_2
+        - idp is not changed
+        - _idp.id == 'ansible_identity_provider'
+        - _idp.name == 'ansible_identity_provider'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 2'
+        - _idp.is_enabled == True
+        - _idp.remote_ids == remote_ids_2
       vars:
-        idp: '{{ update_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
     # ========================================================================
     #   Create complex IDP
@@ -448,190 +446,190 @@
     - name: 'Create complex IDP - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name_2 }}'
-        domain_id: '{{ domain_id }}'
-        description: '{{ idp_description }}'
-        enabled: False
+        state: present
+        name: 'ansible_identity_provider2'
+        domain_id: '{{ domain.domain.id }}'
+        description: 'ansible idp 1'
+        is_enabled: False
         remote_ids: '{{ remote_ids_3 }}'
-      register: create_identity_provider
+      register: idp
+
     - assert:
         that:
-        - create_identity_provider is successful
-        - create_identity_provider is changed
+        - idp is changed
 
     - name: 'Create complex IDP'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name_2 }}'
-        domain_id: '{{ domain_id }}'
-        description: '{{ idp_description }}'
-        enabled: False
+        state: present
+        name: 'ansible_identity_provider2'
+        domain_id: '{{ domain.domain.id }}'
+        description: 'ansible idp 1'
+        is_enabled: False
         remote_ids: '{{ remote_ids_3 }}'
-      register: create_identity_provider
+      register: idp
+
     - assert:
         that:
-        - create_identity_provider is successful
-        - create_identity_provider is changed
-        - idp.id == idp_name_2
-        - idp.name == idp_name_2
-        - idp.domain_id == domain_id
-        - idp.description == idp_description
-        - idp.is_enabled == False
-        - idp.remote_ids == remote_ids_3
+        - idp is changed
+        - _idp.id == 'ansible_identity_provider2'
+        - _idp.name == 'ansible_identity_provider2'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 1'
+        - _idp.is_enabled == False
+        - _idp.remote_ids == remote_ids_3
       vars:
-        idp: '{{ create_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
     - name: 'Create complex IDP (retry - no change) - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name_2 }}'
-        domain_id: '{{ domain_id }}'
-        description: '{{ idp_description }}'
-        enabled: False
+        state: present
+        name: 'ansible_identity_provider2'
+        domain_id: '{{ domain.domain.id }}'
+        description: 'ansible idp 1'
+        is_enabled: False
         remote_ids: '{{ remote_ids_3 }}'
-      register: create_identity_provider
+      register: idp
+
     - assert:
         that:
-        - create_identity_provider is successful
-        - create_identity_provider is not changed
+        - idp is not changed
 
     - name: 'Create complex IDP'
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name_2 }}'
-        domain_id: '{{ domain_id }}'
-        description: '{{ idp_description }}'
-        enabled: False
+        state: present
+        name: 'ansible_identity_provider2'
+        domain_id: '{{ domain.domain.id }}'
+        description: 'ansible idp 1'
+        is_enabled: False
         remote_ids: '{{ remote_ids_3 }}'
-      register: create_identity_provider
+      register: idp
+
     - assert:
         that:
-        - create_identity_provider is successful
-        - create_identity_provider is not changed
-        - idp.id == idp_name_2
-        - idp.name == idp_name_2
-        - idp.domain_id == domain_id
-        - idp.description == idp_description
-        - idp.is_enabled == False
-        - idp.remote_ids == remote_ids_3
+        - idp is not changed
+        - _idp.id == 'ansible_identity_provider2'
+        - _idp.name == 'ansible_identity_provider2'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 1'
+        - _idp.is_enabled == False
+        - _idp.remote_ids == remote_ids_3
       vars:
-        idp: '{{ create_identity_provider.identity_provider }}'
+        _idp: '{{ idp.identity_provider }}'
 
     # Attempt to ensure that if we search we only get the one we expect
     - name: 'Fetch Complex IDP info - with name'
       openstack.cloud.federation_idp_info:
-        name: '{{ idp_name_2 }}'
-      register: identity_provider_info
+        name: 'ansible_identity_provider2'
+      register: idps
+
     - assert:
         that:
-        - identity_provider_info.identity_providers | length == 1
-        - idp.id == idp_name_2
-        - idp.name == idp_name_2
-        - idp.domain_id == domain_id
-        - idp.description == idp_description
-        - idp.is_enabled == False
-        - idp.remote_ids == remote_ids_3
+        - idps.identity_providers | length == 1
+        - _idp.id == 'ansible_identity_provider2'
+        - _idp.name == 'ansible_identity_provider2'
+        - _idp.domain_id == domain.domain.id
+        - _idp.description == 'ansible idp 1'
+        - _idp.is_enabled == False
+        - _idp.remote_ids == remote_ids_3
       vars:
-        idp: '{{ identity_provider_info.identity_providers[0] }}'
+        _idp: '{{ idps.identity_providers[0] }}'
 
     # Ensure that if we do search we get both of the results we expect
     - name: 'Fetch multiple IDP info - without name'
       openstack.cloud.federation_idp_info: {}
-      register: identity_provider_info
+      register: idps
+
     - assert:
         that:
         # In CI we generally have a clean slate, but this might
         # not be true for everyone...
-        - identity_provider_info.identity_providers | length >= 2
+        - idps.identity_providers | length >= 2
         # In theory these could be attached to different IDPs but let's keep
         # things simple
-        - idp_name in (identity_provider_info.identity_providers | map(attribute='id'))
-        - idp_name in (identity_provider_info.identity_providers | map(attribute='name'))
-        - idp_name_2 in (identity_provider_info.identity_providers | map(attribute='id'))
-        - idp_name_2 in (identity_provider_info.identity_providers | map(attribute='name'))
-        - domain_id in (identity_provider_info.identity_providers | map(attribute='domain_id'))
-        - idp_description in (identity_provider_info.identity_providers | map(attribute='description'))
-        - idp_description_2 in (identity_provider_info.identity_providers | map(attribute='description'))
-        - True in (identity_provider_info.identity_providers | map(attribute='is_enabled'))
-        - False in (identity_provider_info.identity_providers | map(attribute='is_enabled'))
+        - "'ansible_identity_provider' in (idps.identity_providers | map(attribute='id'))"
+        - "'ansible_identity_provider' in (idps.identity_providers | map(attribute='name'))"
+        - "'ansible_identity_provider2' in (idps.identity_providers | map(attribute='id'))"
+        - "'ansible_identity_provider2' in (idps.identity_providers | map(attribute='name'))"
+        - domain.domain.id in (idps.identity_providers | map(attribute='domain_id'))
+        - "'ansible idp 1' in (idps.identity_providers | map(attribute='description'))"
+        - "'ansible idp 2' in (idps.identity_providers | map(attribute='description'))"
+        - True in (idps.identity_providers | map(attribute='is_enabled'))
+        - False in (idps.identity_providers | map(attribute='is_enabled'))
 
     - name: 'Delete identity_provider - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'absent'
-        name: '{{ idp_name }}'
-      register: delete_identity_provider
+        state: absent
+        name: 'ansible_identity_provider'
+      register: idp
+
     - assert:
         that:
-        - delete_identity_provider is successful
-        - delete_identity_provider is changed
+        - idp is changed
 
     - name: 'Delete identity_provider'
       openstack.cloud.federation_idp:
-        state: 'absent'
-        name: '{{ idp_name }}'
-      register: delete_identity_provider
+        state: absent
+        name: 'ansible_identity_provider'
+      register: idp
+
     - assert:
         that:
-        - delete_identity_provider is successful
-        - delete_identity_provider is changed
+        - idp is changed
 
     - name: 'Delete identity_provider (retry - no change) - CHECK_MODE'
       check_mode: yes
       openstack.cloud.federation_idp:
-        state: 'absent'
-        name: '{{ idp_name }}'
-      register: delete_identity_provider
+        state: absent
+        name: 'ansible_identity_provider'
+      register: idp
+
     - assert:
         that:
-        - delete_identity_provider is successful
-        - delete_identity_provider is not changed
+        - idp is not changed
 
     - name: 'Delete identity_provider (retry - no change) '
       openstack.cloud.federation_idp:
-        state: 'absent'
-        name: '{{ idp_name }}'
-      register: delete_identity_provider
+        state: absent
+        name: 'ansible_identity_provider'
+      register: idp
+
     - assert:
         that:
-        - delete_identity_provider is successful
-        - delete_identity_provider is not changed
+        - idp is not changed
 
     - name: 'Fetch identity_provider info after deletion'
       openstack.cloud.federation_idp_info:
-        name: '{{ idp_name }}'
-      register: identity_provider_info
+        name: 'ansible_identity_provider'
+      register: idps
+
     - assert:
         that:
-        - identity_provider_info.identity_providers | length == 0
+        - idps.identity_providers | length == 0
 
     - name: 'Delete second identity_provider'
       openstack.cloud.federation_idp:
-        state: 'absent'
-        name: '{{ idp_name_2 }}'
-      register: delete_identity_provider
+        state: absent
+        name: 'ansible_identity_provider2'
+      register: idp
+
     - assert:
         that:
-        - delete_identity_provider is successful
-        - delete_identity_provider is changed
+        - idp is changed
 
   always:
     - name: 'Delete idp'
       openstack.cloud.federation_idp:
-         state: 'absent'
-         name: '{{ idp_name }}'
-      ignore_errors: yes
+         state: absent
+         name: 'ansible_identity_provider'
 
     - name: 'Delete second identity_provider'
       openstack.cloud.federation_idp:
-         state: 'absent'
-         name: '{{ idp_name_2 }}'
-      ignore_errors: yes
+         state: absent
+         name: 'ansible_identity_provider2'
 
     - name: 'Delete domain'
       openstack.cloud.identity_domain:
-         state: 'absent'
-         name: '{{ domain_name }}'
-      ignore_errors: yes
+         state: absent
+         name: ansible_domain
