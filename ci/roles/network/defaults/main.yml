@@ -31,5 +31,6 @@ mtu: 1250
 network_external: false
 network_name: shade_network
 network_name_newparams: newparams_network
+network_name_updates: update_network
 network_shared: false
 port_security_enabled: false

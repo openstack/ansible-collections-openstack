@@ -105,3 +105,66 @@
   assert:
     that:
       - result_nonet.networks == []
+
+- name: Create network - updates
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     name: "{{ network_name_updates }}"
+     state: present
+     shared: "{{ network_shared }}"
+     external: "{{ network_external }}"
+     mtu: "{{ mtu }}"
+     port_security_enabled: "{{ port_security_enabled }}"
+  register: result_create_nw_for_updates
+
+- name: Update network - update failure
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     name: "{{ network_name_updates }}"
+     state: present
+     shared: "{{ network_shared }}"
+     external: "{{ network_external }}"
+     mtu: "{{ mtu }}"
+     port_security_enabled: "{{ port_security_enabled }}"
+     # You cannot update this property.
+     provider_physical_network: cannot_be_updated
+  ignore_errors: true
+  register: result_nw_update_failure
+
+- name: Verify networks info - update fail
+  assert:
+    that:
+      - result_nw_update_failure is failed
+
+- name: Update network - update success
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     name: "{{ network_name_updates }}"
+     state: present
+     shared: "{{ network_shared }}"
+     external: "{{ network_external }}"
+     # NOTE: This property should be updated
+     mtu: "{{ mtu - 50 }}"
+     # NOTE: This property should be updated
+     port_security_enabled: "{{ not port_security_enabled }}"
+  register: result_nw_update_success
+
+- name: Gather networks info - updates
+  openstack.cloud.networks_info:
+     cloud: "{{ cloud }}"
+     name: "{{ network_name_updates }}"
+  register: result_network_updates_info
+
+- name: Verify networks info - update success
+  assert:
+    that:
+      - result_nw_update_success is changed
+      - result_network_updates_info.networks.0.name == network_name_updates
+      - result_network_updates_info.networks.0.mtu == mtu - 50
+      - result_network_updates_info.networks.0['is_port_security_enabled'] == (not port_security_enabled)
+
+- name: Delete network - updates
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     name: "{{ network_name_updates }}"
+     state: absent
