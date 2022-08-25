@@ -5,6 +5,50 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.9.0
+======
+
+Release Summary
+---------------
+
+This release will enforce openstacksdk<0.99.0, has a dozen modules refactored and several bugs fixed.
+
+
+Bugfixes
+--------
+
+- Added support for specifying a maximum version of the OpenStack SDK
+- Constrain filters in compute_service_info to SDK >= 0.53.0
+- Drop username from return values of identity_user_info
+- Fix logic in routers_info
+- Fixed return value disable{d,s}_reason in compute_service_info module
+- Fixed return values in compute_service_info module again
+- Follow up to bump of minimum required OpenStack SDK release to SDK 0.36.0 (Train)
+- Lowered maximum OpenStack SDK version to 0.98.999
+- Move dns zone info to use proxy layer
+- Refactored catalog_service module
+- Refactored endpoint module
+- Refactored host_aggregate module
+- Refactored identity_domain_info module
+- Refactored identity_group_info module
+- Refactored identity_role module
+- Refactored identity_role_info module
+- Refactored identity_user module
+- Refactored identity_user_info module
+- Refactored image_info module
+- Refactored keypair_info module
+- Refactored recordset module
+- Refactored role_assignment module
+- Set owner in image module
+- Support description in sg-rule creation
+- Warn users about us breaking backward compatibility
+
+Known Issues
+------------
+
+- For compatibility with OpenStack SDK >= 0.99.0 use Ansible OpenStack collection 2.0.0 or later which is currently under development.
+- Release series 1.x.x of this collection is compatible to OpenStack SDK prior to 0.99.0 only.
+
 v1.8.0
 ======
 
