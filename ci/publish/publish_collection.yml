@@ -63,15 +63,21 @@
               url = {{ ansible_galaxy_info.url }}
               token = {{ ansible_galaxy_info.token }}
 
-        - name: Include galaxy.yml as vars file
-          include_vars: "{{ collection_path }}/galaxy.yml"
+        - name: Get content of galaxy.yml
+          slurp:
+            src: "{{ collection_path }}/galaxy.yml"
+          register: galaxy_vars
+
+        - name: Parse yaml into variable
+          set_fact:
+            galaxy_yaml: "{{ galaxy_vars['content'] | b64decode | from_yaml }}"
 
         - name: Publish collection to Ansible Galaxy / Automation Hub
           environment:
             ANSIBLE_CONFIG: "{{ _ansiblecfg_tmp.path }}"
           shell: >-
             {{ ansible_galaxy_path }} collection publish -vvv
-            {{ build_collection_path }}/{{ namespace }}-{{ name }}-{{ version_tag }}.tar.gz
+            {{ build_collection_path }}/{{ galaxy_yaml.namespace }}-{{ galaxy_yaml.name }}-{{ version_tag }}.tar.gz
 
       always:
         - name: Shred ansible-galaxy credentials
