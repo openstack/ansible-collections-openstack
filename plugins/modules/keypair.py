@@ -139,7 +139,7 @@ class KeyPairModule(OpenStackModule):
 
         if self.params['public_key_file']:
             with open(self.params['public_key_file']) as public_key_fh:
-                public_key = public_key_fh.read().rstrip()
+                public_key = public_key_fh.read()
 
         keypair = self.conn.compute.find_keypair(name)
 
