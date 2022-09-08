@@ -5,6 +5,25 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.9.1
+======
+
+Release Summary
+---------------
+
+Bugfix in keypair module
+
+Bugfixes
+--------
+
+- Do not remove trailing spaces when reading public key in keypair module
+
+Known Issues
+------------
+
+- For compatibility with OpenStack SDK >= 0.99.0 use Ansible OpenStack collection 2.0.0 or later which is currently under development.
+- Release series 1.x.x of this collection is compatible to OpenStack SDK prior to 0.99.0 only.
+
 v1.9.0
 ======
 
@@ -12,7 +31,6 @@ Release Summary
 ---------------
 
 This release will enforce openstacksdk<0.99.0, has a dozen modules refactored and several bugs fixed.
-
 
 Bugfixes
 --------

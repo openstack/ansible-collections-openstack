@@ -378,3 +378,14 @@ releases:
       release_summary: 'This release will enforce openstacksdk<0.99.0, has a dozen
         modules refactored and several bugs fixed.'
     release_date: '2022-08-25'
+  1.9.1:
+    changes:
+      bugfixes:
+      - Do not remove trailing spaces when reading public key in keypair module
+      known_issues:
+      - For compatibility with OpenStack SDK >= 0.99.0 use Ansible OpenStack collection
+        2.0.0 or later which is currently under development.
+      - Release series 1.x.x of this collection is compatible to OpenStack SDK prior
+        to 0.99.0 only.
+      release_summary: Bugfix in keypair module
+    release_date: '2022-09-08'
