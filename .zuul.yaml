@@ -226,6 +226,7 @@
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
     parent: ansible-collections-openstack-functional-devstack-base
+    nodeset: openstack-single-node-jammy
     branches: master
     description: |
       Run openstack collections functional tests against a master devstack
