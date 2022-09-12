@@ -45,7 +45,7 @@ EXAMPLES = '''
 
 - name: Show openstack subnets
   debug:
-    msg: "{{ result.openstack_subnets }}"
+    msg: "{{ result.subnets }}"
 
 - name: Gather information about a previously created subnet by name
   openstack.cloud.subnets_info:
@@ -59,7 +59,7 @@ EXAMPLES = '''
 
 - name: Show openstack subnets
   debug:
-    msg: "{{ result.openstack_subnets }}"
+    msg: "{{ result.subnets }}"
 
 - name: Gather information about a previously created subnet with filter
   # Note: name and filters parameters are not mutually exclusive
@@ -70,62 +70,98 @@ EXAMPLES = '''
       password: password
       project_name: someproject
     filters:
-      tenant_id: 55e2ce24b2a245b09f181bf025724cbe
+      project_id: 55e2ce24b2a245b09f181bf025724cbe
   register: result
 
 - name: Show openstack subnets
   debug:
-    msg: "{{ result.openstack_subnets }}"
+    msg: "{{ result.subnets }}"
 '''
 
 RETURN = '''
-openstack_subnets:
+subnets:
     description: has all the openstack information about the subnets
-    returned: always, but can be null
-    type: complex
+    returned: always, but can be empty list
+    type: list
+    elements: dict
     contains:
         id:
-            description: Unique UUID.
-            returned: success
+            description: The ID of the subnet.
             type: str
         name:
             description: Name given to the subnet.
-            returned: success
+            type: str
+        description:
+            description: Description of the subnet.
             type: str
         network_id:
             description: Network ID this subnet belongs in.
-            returned: success
             type: str
         cidr:
             description: Subnet's CIDR.
-            returned: success
             type: str
         gateway_ip:
             description: Subnet's gateway ip.
-            returned: success
             type: str
-        enable_dhcp:
-            description: DHCP enable flag for this subnet.
-            returned: success
+        is_dhcp_enabled:
+            description: Is DHCP enabled.
             type: bool
         ip_version:
             description: IP version for this subnet.
-            returned: success
             type: int
-        tenant_id:
-            description: Tenant id associated with this subnet.
-            returned: success
-            type: str
         dns_nameservers:
             description: DNS name servers for this subnet.
-            returned: success
             type: list
             elements: str
         allocation_pools:
             description: Allocation pools associated with this subnet.
-            returned: success
             type: list
             elements: dict
+        created_at:
+            description: Date and time when the resource was created.
+            type: str
+        updated_at:
+            description: Date and time when the resource was updated.
+            type: str
+        dns_publish_fixed_ip:
+            description: Whether to publish DNS records for IPs from this subnet.
+            type: str
+        host_routes:
+            description: Additional routes for the subnet.
+            type: list
+            elements: dict
+        ipv6_address_mode:
+            description: The IPv6 address modes specifies mechanisms for assigning IP addresses.
+            type: str
+        ipv6_ra_mode:
+            description: The IPv6 router advertisement specifies whether the networking service should transmit ICMPv6 packets, for a subnet.
+            type: str
+        project_id:
+            description: The ID of the project.
+            type: str
+        revision_number:
+            description: The revision number of the resource.
+            type: str
+        segment_id:
+            description: The ID of a network segment the subnet is associated with.
+            type: str
+        service_types:
+            description: The service types associated with the subnet.
+            type: list
+            elements: str
+        subnet_pool_id:
+            description: The ID of the subnet pool associated with the subnet.
+            type: str
+        tags:
+            description: The list of tags on the resource.
+            type: list
+            elements: str
+        prefix_length:
+            description: The prefix length to use for subnet allocation from a subnet pool.
+            type: str
+        use_default_subnet_pool:
+            description: Whether to use the default subnet pool to obtain a CIDR.
+            type: bool
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -141,14 +177,23 @@ class SubnetInfoModule(OpenStackModule):
     )
 
     def run(self):
-        kwargs = self.check_versioned(
-            filters=self.params['filters']
-        )
+        kwargs = {}
+        subnets = []
         if self.params['name']:
-            kwargs['name_or_id'] = self.params['name']
-        subnets = self.conn.search_subnets(**kwargs)
-
-        self.exit(changed=False, openstack_subnets=subnets)
+            kwargs['name'] = self.params['name']
+            # Try to get subnet by ID
+            try:
+                raw = self.conn.network.get_subnet(self.params['name'])
+                raw = raw.to_dict(computed=False)
+                subnets.append(raw)
+                self.exit(changed=False, subnets=subnets)
+            except self.sdk.exceptions.ResourceNotFound:
+                pass
+        if self.params['filters']:
+            kwargs.update(self.params['filters'])
+        subnets = self.conn.network.subnets(**kwargs)
+        subnets = [i.to_dict(computed=False) for i in subnets]
+        self.exit(changed=False, subnets=subnets)
 
 
 def main():

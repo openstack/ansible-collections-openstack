@@ -5,6 +5,7 @@ expected_fields:
   - created_at
   - description
   - dns_nameservers
+  - dns_publish_fixed_ip
   - gateway_ip
   - host_routes
   - id

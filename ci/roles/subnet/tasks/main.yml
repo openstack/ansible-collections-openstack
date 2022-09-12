@@ -62,6 +62,49 @@
   assert:
     that: subnet is not changed
 
+- name: Get Subnet Info with name
+  openstack.cloud.subnets_info:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_name }}"
+  register: subnet
+
+- name: assert subnet fields
+  assert:
+    that: item in subnet.subnets[0]
+  loop: "{{ expected_fields }}"
+
+- name: Get Subnet Info with filters
+  openstack.cloud.subnets_info:
+    cloud: "{{ cloud }}"
+    filters:
+      enable_dhcp: "{{ enable_subnet_dhcp }}"
+      gateway_ip: 192.168.0.1
+      cidr: 192.168.0.0/24
+  register: subnet
+
+- name: Verify Subnet info result
+  assert:
+    that:
+      - subnet is not changed
+      - subnet.subnets is defined
+      - subnet.subnets | length > 0
+
+- name: Get Subnet Info with name and improper filter values
+  openstack.cloud.subnets_info:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_name }}"
+    filters:
+      gateway_ip: 192.168.16.1
+      cidr: 192.168.16.0/24
+  register: subnet
+
+- name: Verify Subnet info result
+  assert:
+    that:
+      - subnet is not changed
+      - subnet.subnets is defined
+      - subnet.subnets | length == 0
+
 - name: Update subnet
   openstack.cloud.subnet:
     cloud: "{{ cloud }}"

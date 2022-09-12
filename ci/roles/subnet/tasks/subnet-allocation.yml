@@ -51,16 +51,16 @@
   assert:
     that:
       - idem1 is not changed
-      - subnet_result.openstack_subnets is defined
-      - subnet_result.openstack_subnets | length == 1
-      - subnet_result.openstack_subnets[0].allocation_pools is defined
-      - subnet_result.openstack_subnets[0].allocation_pools | length == 1
+      - subnet_result.subnets is defined
+      - subnet_result.subnets | length == 1
+      - subnet_result.subnets[0].allocation_pools is defined
+      - subnet_result.subnets[0].allocation_pools | length == 1
 
 - name: Verify Subnet Allocation Pools
   assert:
     that:
-      - subnet_result.openstack_subnets[0].allocation_pools.0.start ==  '192.168.0.2'
-      - subnet_result.openstack_subnets[0].allocation_pools.0.end == '192.168.0.8'
+      - subnet_result.subnets[0].allocation_pools.0.start ==  '192.168.0.2'
+      - subnet_result.subnets[0].allocation_pools.0.end == '192.168.0.8'
 
 - name: Delete subnet {{ subnet_name }}
   openstack.cloud.subnet:
