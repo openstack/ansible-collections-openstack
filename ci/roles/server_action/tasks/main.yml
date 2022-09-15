@@ -1,8 +1,19 @@
 ---
+- name: List all images
+  openstack.cloud.image_info:
+    cloud: "{{ cloud }}"
+  register: images
+
+- name: Identify CirrOS image name
+  set_fact:
+    image_name: "{{ images.images|community.general.json_query(query)|first }}"
+  vars:
+    query: "[?starts_with(name, 'cirros')].name"
+
 - name: Create network for server
   openstack.cloud.network:
     cloud: "{{ cloud }}"
-    name: "{{ server_network }}"
+    name: ansible_server_network
     state: present
   register: network
 
@@ -10,8 +21,8 @@
   openstack.cloud.subnet:
     cidr: 192.168.0.0/24
     cloud: "{{ cloud }}"
-    name: "{{ server_subnet }}"
-    network_name: "{{ server_network }}"
+    name: ansible_server_subnet
+    network_name: ansible_server_network
     state: present
   register: subnet
 
@@ -19,10 +30,10 @@
   openstack.cloud.server:
      cloud: "{{ cloud }}"
      state: present
-     name: "{{ server_name }}"
+     name: ansible_server
      image: "{{ image_name }}"
-     flavor: "{{ flavor_name }}"
-     network: "{{ server_network }}"
+     flavor: m1.tiny
+     network: ansible_server_network
      auto_floating_ip: false
      wait: true
   register: server
@@ -30,18 +41,18 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info1
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info1.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
 
 - name: Stop server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: stop
     wait: true
   register: server
@@ -49,19 +60,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info2
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is SHUTOFF
   assert:
     that:
-      - info2.servers.0.status == 'SHUTOFF'
+      - servers.servers.0.status == 'SHUTOFF'
       - server is changed
 
 - name: Stop server again
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: stop
     wait: true
   register: server
@@ -69,19 +80,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info3
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is SHUTOFF
   assert:
     that:
-      - info3.servers.0.status == 'SHUTOFF'
+      - servers.servers.0.status == 'SHUTOFF'
       - server is not changed
 
 - name: Start server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: start
     wait: true
   register: server
@@ -89,19 +100,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info4
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info4.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
       - server is changed
 
 - name: Start server again
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: start
     wait: true
   register: server
@@ -109,19 +120,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info5
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info5.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
       - server is not changed
 
 - name: Pause server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: pause
     wait: true
   register: server
@@ -129,19 +140,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info6
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is PAUSED
   assert:
     that:
-      - info6.servers.0.status == 'PAUSED'
+      - servers.servers.0.status == 'PAUSED'
       - server is changed
 
 - name: Pause server again
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: pause
     wait: true
   register: server
@@ -149,19 +160,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info7
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is PAUSED
   assert:
     that:
-      - info7.servers.0.status == 'PAUSED'
+      - servers.servers.0.status == 'PAUSED'
       - server is not changed
 
 - name: Unpause server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: unpause
     wait: true
   register: server
@@ -169,19 +180,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info8
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info8.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
       - server is changed
 
 - name: Unpause server again
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: unpause
     wait: true
   register: server
@@ -189,19 +200,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info9
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info9.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
       - server is not changed
 
 - name: Lock server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: lock
     wait: true
   register: server
@@ -209,20 +220,20 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info10
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info10.servers.0.status == 'ACTIVE'
-      - info10.servers.0.is_locked
+      - servers.servers.0.status == 'ACTIVE'
+      - servers.servers.0.is_locked
       - server is changed
 
 - name: Lock server again
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: lock
     wait: true
   register: server
@@ -230,20 +241,20 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info11
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info11.servers.0.status == 'ACTIVE'
-      - info11.servers.0.is_locked
-      - server is changed  # no support for lock idempotency
+      - servers.servers.0.status == 'ACTIVE'
+      - servers.servers.0.is_locked
+      - server is not changed
 
 - name: Unock server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: unlock
     wait: true
   register: server
@@ -251,20 +262,20 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info12
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info12.servers.0.status == 'ACTIVE'
-      - not info12.servers.0.is_locked
+      - servers.servers.0.status == 'ACTIVE'
+      - not servers.servers.0.is_locked
       - server is changed
 
 - name: Unlock server again
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: unlock
     wait: true
   register: server
@@ -272,20 +283,20 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info13
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info13.servers.0.status == 'ACTIVE'
-      - server is changed  # no support for unlock idempotency
-      - not info13.servers.0.is_locked
+      - servers.servers.0.status == 'ACTIVE'
+      - server is not changed
+      - not servers.servers.0.is_locked
 
 - name: Suspend server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: suspend
     wait: true
   register: server
@@ -293,19 +304,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info14
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is SUSPENDED
   assert:
     that:
-      - info14.servers.0.status == 'SUSPENDED'
+      - servers.servers.0.status == 'SUSPENDED'
       - server is changed
 
 - name: Suspend server again
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: suspend
     wait: true
   register: server
@@ -313,19 +324,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info15
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is SUSPENDED
   assert:
     that:
-      - info15.servers.0.status == 'SUSPENDED'
+      - servers.servers.0.status == 'SUSPENDED'
       - server is not changed
 
 - name: Resume server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: resume
     wait: true
   register: server
@@ -333,19 +344,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info16
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info16.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
       - server is changed
 
 - name: Resume server again
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: resume
     wait: true
   register: server
@@ -353,19 +364,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info17
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info17.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
       - server is not changed
 
 - name: Rebuild server - error
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: rebuild
     wait: true
   register: server
@@ -380,7 +391,7 @@
 - name: Rebuild server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     image: "{{ image_name }}"
     action: rebuild
     wait: true
@@ -389,19 +400,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info18
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info18.servers.0.status in ('ACTIVE', 'REBUILD')
+      - servers.servers.0.status in ('ACTIVE', 'REBUILD')
       - server is changed
 
 - name: Rebuild server with admin password
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     image: "{{ image_name }}"
     action: rebuild
     wait: true
@@ -411,19 +422,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info19
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info19.servers.0.status in ('ACTIVE', 'REBUILD')
+      - servers.servers.0.status in ('ACTIVE', 'REBUILD')
       - server is changed
 
 - name: Shelve server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: shelve
     wait: true
   register: server
@@ -431,39 +442,48 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info20
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is SHELVED or SHELVED_OFFLOADED
   assert:
     that:
-      - info20.servers.0.status in ['SHELVED', 'SHELVED_OFFLOADED']
+      - servers.servers.0.status in ['SHELVED', 'SHELVED_OFFLOADED']
       - server is changed
 
 - name: Shelve offload server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: shelve_offload
     wait: true
   register: server
+  ignore_errors: true
+
+- name: Assert shelve offload server
+  assert:
+    that:
+      - ((server is success)
+         or (server is not success
+             and "Cannot 'shelveOffload' instance" in server.msg
+             and "while it is in vm_state shelved_offloaded" in server.msg))
 
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info21
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is SHELVED_OFFLOADED
   # no change if server has been offloaded automatically after first shelve command
   assert:
     that:
-      - info21.servers.0.status == 'SHELVED_OFFLOADED'
+      - servers.servers.0.status == 'SHELVED_OFFLOADED'
 
 - name: Shelve offload server again
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: shelve_offload
     wait: true
   register: server
@@ -471,19 +491,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info22
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is SHELVED_OFFLOADED
   assert:
     that:
-      - info22.servers.0.status == 'SHELVED_OFFLOADED'
+      - servers.servers.0.status == 'SHELVED_OFFLOADED'
       - server is not changed
 
 - name: Unshelve server
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: unshelve
     wait: true
   register: server
@@ -491,19 +511,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info23
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info23.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
       - server is changed
 
 - name: Unshelve server again
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: unshelve
     wait: true
   register: server
@@ -511,19 +531,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info24
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info24.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
       - server is not changed
 
 - name: Reboot server (SOFT)
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: reboot_soft
     wait: true
   register: server
@@ -531,19 +551,19 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info25
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info25.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
       - server is not changed
 
 - name: Reboot server (HARD)
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
+    server: ansible_server
     action: reboot_hard
     wait: true
   register: server
@@ -551,33 +571,33 @@
 - name: Get info about server
   openstack.cloud.server_info:
     cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info26
+    server: ansible_server
+  register: servers
 
 - name: Ensure status for server is ACTIVE
   assert:
     that:
-      - info26.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
       - server is not changed
 
 - name: Delete server
   openstack.cloud.server:
     cloud: "{{ cloud }}"
-    name: "{{ server_name }}"
+    name: ansible_server
     state: absent
     wait: true
 
 - name: Create network for alternate server
   openstack.cloud.network:
     cloud: "{{ cloud_alt }}"
-    name: "{{ server_alt_network }}"
+    name: ansible_server_network2
     state: present
 
 - name: Create subnet for alternate server
   openstack.cloud.subnet:
     cloud: "{{ cloud_alt }}"
-    network_name: "{{ server_alt_network }}"
-    name: "{{ server_alt_subnet }}"
+    network_name: ansible_server_network2
+    name: ansible_server_subnet2
     state: present
     cidr: 192.168.0.0/24
 
@@ -585,88 +605,88 @@
   openstack.cloud.server:
      cloud: "{{ cloud_alt }}"
      state: present
-     name: "{{ server_alt_name }}"
+     name: ansible_server2
      image: "{{ image_name }}"
-     flavor: "{{ flavor_name }}"
-     network: "{{ server_alt_network }}"
+     flavor: m1.tiny
+     network: ansible_server_network2
      auto_floating_ip: false
      wait: true
-  register: server_alt
+  register: server
 
 - name: Get info about server in alternate project
   openstack.cloud.server_info:
     cloud: "{{ cloud_alt }}"
-    server: "{{ server_alt_name }}"
-  register: info27
+    server: ansible_server2
+  register: servers
 
 - name: Ensure status for server in alternate project is ACTIVE
   assert:
     that:
-      - info27.servers.0.status == 'ACTIVE'
+      - servers.servers.0.status == 'ACTIVE'
 
 - name: Try to stop server in alternate project
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_alt_name }}"
+    server: ansible_server2
     action: stop
     wait: true
   ignore_errors: true
-  register: server_alt
+  register: server
 
 - name: Ensure server was not stopped
   assert:
     that:
-      - server_alt is failed
-      - server_alt.msg == "Could not find server {{ server_alt_name }}"
+      - server is failed
+      - server.msg == "No Server found for ansible_server2"
 
 - name: Stop server in alternate project with all_projects=true
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
-    server: "{{ server_alt_name }}"
+    server: ansible_server2
     action: stop
     wait: true
     all_projects: True
-  register: server_alt
+  register: server
 
 - name: Get info about server in alternate project
   openstack.cloud.server_info:
     cloud: "{{ cloud_alt }}"
-    server: "{{ server_alt_name }}"
-  register: info26
+    server: ansible_server2
+  register: servers
 
 - name: Ensure status for server is SHUTOFF
   assert:
     that:
-      - info26.servers.0.status == 'SHUTOFF'
-      - server_alt is changed
+      - servers.servers.0.status == 'SHUTOFF'
+      - server is changed
 
 - name: Delete server in alternate project
   openstack.cloud.server:
      cloud: "{{ cloud_alt }}"
      state: absent
-     name: "{{ server_alt_name }}"
+     name: ansible_server2
      wait: true
 
 - name: Delete subnet for alternate server
   openstack.cloud.subnet:
     cloud: "{{ cloud_alt }}"
-    name: "{{ server_alt_subnet }}"
+    name: ansible_server_subnet2
     state: absent
 
 - name: Delete network for alternate server
   openstack.cloud.network:
     cloud: "{{ cloud_alt }}"
-    name: "{{ server_alt_network }}"
+    name: ansible_server_network2
     state: absent
 
 - name: Delete subnet for server
   openstack.cloud.subnet:
     cloud: "{{ cloud }}"
     state: absent
-    name: "{{ server_subnet }}"
+    name: ansible_server_subnet
 
 - name: Delete network for server
   openstack.cloud.network:
     cloud: "{{ cloud }}"
     state: absent
-    name: "{{ server_network }}"
+    name: ansible_server_network

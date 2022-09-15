@@ -607,5 +607,3 @@
     cloud: "{{ cloud }}"
     state: absent
     name: "{{ server_network }}"
-
-- import_tasks: server_actions.yml
