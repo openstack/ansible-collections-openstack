@@ -58,6 +58,7 @@
     - { role: security_group, tags: security_group }
     - { role: security_group_rule, tags: security_group_rule }
     - { role: server, tags: server }
+    - { role: server_volume, tags: server_volume }
     - { role: stack, tags: stack }
     - { role: subnet, tags: subnet }
     - { role: subnet_pool, tags: subnet_pool }

@@ -1,0 +1,90 @@
+- name: Create server
+  openstack.cloud.server:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ server_name }}"
+    image: "cirros-0.5.2-x86_64-disk"
+    flavor: "{{ flavor }}"
+    network: "{{ server_network }}"
+    auto_ip: false
+    wait: true
+  register: server
+
+- name: Create volume
+  openstack.cloud.volume:
+    cloud: "{{ cloud }}"
+    state: present
+    size: 1
+    name: ansible_volume
+    wait: true
+  register: volume
+
+- name: Attach volume to server
+  openstack.cloud.server_volume:
+    cloud: "{{ cloud }}"
+    server: "{{ server.server.id }}"
+    volume: "{{ volume.volume.id }}"
+    wait: true
+  register: server_volume
+
+- name: Assert changed
+  assert:
+    that: server_volume is changed
+
+- name: Assert return values of server_volume module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(server_volume.volume.keys())|length == 0
+
+- name: Attach volume to server again
+  openstack.cloud.server_volume:
+    cloud: "{{ cloud }}"
+    server: "{{ server.server.id }}"
+    volume: "{{ volume.volume.id }}"
+    wait: true
+  register: server_volume
+
+- name: Assert not changed
+  assert:
+    that: server_volume is not changed
+
+- name: Detach volume to server
+  openstack.cloud.server_volume:
+    cloud: "{{ cloud }}"
+    state: absent
+    server: "{{ server.server.id }}"
+    volume: "{{ volume.volume.id }}"
+    wait: true
+  register: server_volume
+
+- name: Assert changed
+  assert:
+    that: server_volume is changed
+
+- name: Detach volume to server again
+  openstack.cloud.server_volume:
+    cloud: "{{ cloud }}"
+    state: absent
+    server: "{{ server.server.id }}"
+    volume: "{{ volume.volume.id }}"
+    wait: true
+  register: server_volume
+
+- name: Assert not changed
+  assert:
+    that: server_volume is not changed
+
+- name: Delete volume
+  openstack.cloud.volume:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_volume
+    wait: true
+
+- name: Delete server
+  openstack.cloud.server:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_name }}"
+    wait: true

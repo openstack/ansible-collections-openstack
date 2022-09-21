@@ -1,0 +1,32 @@
+expected_fields:
+  - attachments
+  - availability_zone
+  - consistency_group_id
+  - created_at
+  - description
+  - extended_replication_status
+  - group_id
+  - host
+  - id
+  - image_id
+  - is_bootable
+  - is_encrypted
+  - metadata
+  - migration_id
+  - migration_status
+  - name
+  - project_id
+  - replication_driver_data
+  - replication_status
+  - scheduler_hints
+  - size
+  - snapshot_id
+  - source_volume_id
+  - status
+  - updated_at
+  - user_id
+  - volume_image_metadata
+  - volume_type
+flavor: m1.tiny
+server_name: ansible_server
+server_network: private
