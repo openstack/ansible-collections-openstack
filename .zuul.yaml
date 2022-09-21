@@ -437,7 +437,18 @@
         - bifrost-collections-src
         - bifrost-keystone-collections-src
         - ansible-collections-openstack-functional-devstack-octavia
-        - tripleo-ci-centos-9-standalone-osa
+        - tripleo-ci-centos-9-standalone-osa:
+            vars:
+              artg_change_list:
+                - host: "https://opendev.org"
+                  project: "openstack/openstacksdk"
+                  branch: "master"
+                  refspec: "+refs/heads/*:refs/remotes/origin/*"
+                # needed so build-test-packages builds master version
+                - host: "https://opendev.org"
+                  project: "openstack/ansible-collections-openstack"
+                  branch: "master"
+                  refspec: "+refs/heads/*:refs/remotes/origin/*"
 
     experimental:
       jobs:
