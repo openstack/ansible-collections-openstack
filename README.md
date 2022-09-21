@@ -12,7 +12,7 @@ Dear contributors and users of the Ansible OpenStack collection!
 Our codebase has been split into two separate release series:
 
 * `2.x.x` releases of Ansible OpenStack collection are compatible with OpenStack SDK `1.x.x` and its release candidates
-  `0.99.x` *only* (OpenStack Zed and later). Our `master` branch tracks our `2.x.x` releases.
+  `0.99.0` and later *only* (OpenStack Zed and later). Our `master` branch tracks our `2.x.x` releases.
 * `1.x.x` releases of Ansible OpenStack collection are compatible with OpenStack SDK `0.x.x` prior to `0.99.0` *only*
   (OpenStack Yoga and earlier). Our `stable/1.0.0` branch tracks our `1.x.x` releases.
 
@@ -24,7 +24,7 @@ module parameters backward compatible by offering aliases but e.g. the semantics
 modules have changed due to updates in the OpenStack SDK.
 
 Our decision to break backward compatibility was not taken lightly. OpenStack SDK's first major release (`1.0.0` and its
-release candidates `0.99.x`) has streamlined and improved large parts of its codebase. For example, its Connection
+release candidates >=`0.99.0`) has streamlined and improved large parts of its codebase. For example, its Connection
 interface now consistently uses the Resource interfaces under the hood. This required breaking changes from older SDK
 releases though. The Ansible OpenStack collection is heavily based on OpenStack SDK. With OpenStack SDK becoming
 backward incompatible, so does our Ansible OpenStack collection. We simply lack the devpower to maintain a backward
@@ -48,7 +48,7 @@ For using the Openstack Cloud collection firstly you need to install `ansible` a
 For example with pip:
 
 ```bash
-pip install "ansible>=2.9" "openstacksdk>=0.99.0"
+pip install "ansible>=2.9" "openstacksdk>=0.101.0"
 ```
 
 OpenStackSDK has to be available to Ansible and to the Python interpreter on the host, where Ansible executes the module (target host).
