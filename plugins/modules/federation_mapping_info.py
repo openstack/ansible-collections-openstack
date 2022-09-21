@@ -10,18 +10,16 @@ module: federation_mapping_info
 short_description: Get the information about the available federation mappings
 author: OpenStack Ansible SIG
 description:
-  - Fetch a federation mapping.
+  - Fetch federation mappings.
 options:
   name:
     description:
       - The name of the mapping to fetch.
-      - If I(name) is specified, the module will return failed if the mapping
-        doesn't exist.
     type: str
     aliases: ['id']
 requirements:
   - "python >= 3.6"
-  - "openstacksdk >= 0.44"
+  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''
@@ -38,6 +36,27 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
+mappings:
+  description:
+    - List of federation mappings
+  type: list
+  elements: dict
+  returned: always
+  contains:
+    id:
+      description:
+        - The id of the mapping
+      type: str
+      sample: "ansible-test-mapping"
+    name:
+      description:
+        - The name of the mapping
+      type: str
+      sample: "ansible-test-mapping"
+    rules:
+      description:
+        - List of rules for the mapping
+      type: list
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -47,38 +66,29 @@ class IdentityFederationMappingInfoModule(OpenStackModule):
     argument_spec = dict(
         name=dict(aliases=['id']),
     )
+
     module_kwargs = dict(
         supports_check_mode=True
     )
 
-    module_min_sdk_version = "0.44"
-
-    def normalize_mapping(self, mapping):
-        """
-        Normalizes the mapping definitions so that the outputs are consistent with the
-        parameters
-
-        - "name" (parameter) == "id" (SDK)
-        """
-        if mapping is None:
-            return None
-
-        _mapping = mapping.to_dict()
-        _mapping['name'] = mapping['id']
-        return _mapping
-
     def run(self):
-        """ Module entry point """
-        name = self.params.get('name')
+        # name is defined as id for mappings
+        id = self.params['name']
 
-        if name:
-            mapping = self.normalize_mapping(
-                self.conn.identity.get_mapping(name))
-            self.exit_json(changed=False, mappings=[mapping])
+        if id:
+            # handle id parameter separately because self.conn.identity.\
+            # mappings() does not allow to filter by id
+            # Ref.: https://review.opendev.org/c/openstack/
+            #       openstacksdk/+/858522
+            mapping = self.conn.identity.find_mapping(name_or_id=id,
+                                                      ignore_missing=True)
+            mappings = [mapping] if mapping else []
         else:
-            mappings = list(map(
-                self.normalize_mapping, self.conn.identity.mappings()))
-            self.exit_json(changed=False, mappings=mappings)
+            mappings = self.conn.identity.mappings()
+
+        self.exit_json(changed=False,
+                       mappings=[mapping.to_dict(computed=False)
+                                 for mapping in mappings])
 
 
 def main():
