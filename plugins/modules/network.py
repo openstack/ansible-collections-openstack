@@ -11,7 +11,7 @@ module: network
 short_description: Creates/removes networks from OpenStack
 author: OpenStack Ansible SIG
 description:
-   - Add or remove network from OpenStack (doesn't update network properties).
+   - Add, update or remove network from OpenStack.
 options:
    name:
      description:
@@ -225,7 +225,8 @@ class NetworkModule(OpenStackModule):
                 kwargs[arg] = self.params[arg]
 
         if project is not None:
-            proj = self.conn.identity.find_project(project, ignore_missing=False)
+            proj = self.conn.identity.find_project(project,
+                                                   ignore_missing=False)
             project_id = proj['id']
             net_kwargs = {'project_id': project_id}
         else:
@@ -255,7 +256,8 @@ class NetworkModule(OpenStackModule):
                 changed = False
                 update_kwargs = {}
 
-                # Check we are not trying to update an properties that cannot be modified
+                # Check we are not trying to update an properties that cannot
+                # be modified
                 non_updatables = [
                     "provider_network_type",
                     "provider_physical_network",
