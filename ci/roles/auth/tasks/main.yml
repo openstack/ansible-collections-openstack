@@ -2,5 +2,10 @@
 - name: Authenticate to the cloud
   openstack.cloud.auth:
     cloud={{ cloud }}
+  register: auth
 
-- debug: var=service_catalog
+- name: Assert return values of auth module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(auth.keys())|length == 0

@@ -23,15 +23,8 @@
 
 - name: Verify returned values
   assert:
-    that:
-      - item in service_test.service
-  loop:
-    - description
-    - id
-    - is_enabled
-    - links
-    - name
-    - type
+    that: item in service_test.service
+  loop: "{{ expected_fields }}"
 
 - name: Check if the service test was created successfully
   openstack.cloud.catalog_service:
@@ -42,15 +35,8 @@
 
 - name: Verify returned values
   assert:
-    that:
-      - item in service_created.service
-  loop:
-    - description
-    - id
-    - is_enabled
-    - links
-    - name
-    - type
+    that: item in service_created.service
+  loop: "{{ expected_fields }}"
 
 - name: Update service test
   openstack.cloud.catalog_service:
@@ -61,11 +47,34 @@
     name: test
   register: service_test
 
-- name: Check if description and enabled were updated
+- name: Check if description and is_enabled were updated
   assert:
     that:
       - service_test.service.description == "A new description"
       - not (service_test.service.is_enabled|bool)
+
+- name: Get all services
+  openstack.cloud.catalog_service_info:
+    cloud: "{{ cloud }}"
+  register: services
+
+- name: Assert return values of catalog_service_info module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(services.services[0].keys())|length == 0
+
+- name: Get service by name
+  openstack.cloud.catalog_service_info:
+    cloud: "{{ cloud }}"
+    name: test
+  register: services
+
+- name: Assert services returned by catalog_service_info module
+  assert:
+    that:
+      - services.services|length == 1
+      - services.services[0].id == service_test.service.id
 
 - name: Delete service test
   openstack.cloud.catalog_service:

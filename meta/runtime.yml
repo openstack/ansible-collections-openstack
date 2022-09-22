@@ -10,6 +10,7 @@ action_groups:
     - baremetal_port
     - baremetal_port_info
     - catalog_service
+    - catalog_service_info
     - coe_cluster
     - coe_cluster_template
     - compute_flavor
