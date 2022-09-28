@@ -71,7 +71,7 @@
         dns
         dns_zone_info
         endpoint
-        floating_ip_info
+        floating_ip
         host_aggregate
         identity_domain_info
         identity_group
@@ -112,7 +112,6 @@
         user_role
         volume
       # failing tags
-      # floating_ip
       # neutron_rbac
 
 - job:

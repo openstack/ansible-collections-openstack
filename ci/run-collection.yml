@@ -17,7 +17,7 @@
       tags: dns
       when: sdk_version is version(0.28, '>=')
     - { role: endpoint, tags: endpoint }
-    - { role: floating_ip_info, tags: floating_ip_info }
+    - { role: floating_ip, tags: floating_ip }
     - { role: host_aggregate, tags: host_aggregate }
     - { role: identity_domain_info, tags: identity_domain_info }
     - { role: identity_group, tags: identity_group }
@@ -67,5 +67,4 @@
     - { role: volume, tags: volume }
     - role: loadbalancer
       tags: loadbalancer
-    - { role: floating_ip, tags: floating_ip }
     - { role: quota, tags: quota }

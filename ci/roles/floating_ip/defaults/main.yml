@@ -1,0 +1,21 @@
+---
+expected_fields:
+  - created_at
+  - description
+  - dns_domain
+  - dns_name
+  - fixed_ip_address
+  - floating_ip_address
+  - floating_network_id
+  - id
+  - name
+  - port_details
+  - port_id
+  - project_id
+  - qos_policy_id
+  - revision_number
+  - router_id
+  - status
+  - subnet_id
+  - tags
+  - updated_at

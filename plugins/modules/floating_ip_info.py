@@ -32,17 +32,18 @@ options:
     description:
       - The name or id of the port to which a floating IP is associated.
     type: str
-  project_id:
+  project:
     description:
-      - The ID of the project a floating IP is associated with.
+      - The name or ID of the project a floating IP is associated with.
     type: str
+    aliases: ['project_id']
   router:
     description:
       - The name or id of an associated router.
     type: str
   status:
     description:
-      - The status of a floating IP, which can be ``ACTIVE``or ``DOWN``.
+      - The status of a floating IP.
     choices: ['active', 'down']
     type: str
 requirements:
@@ -56,8 +57,9 @@ extends_documentation_fragment:
 RETURN = '''
 floating_ips:
   description: The floating ip objects list.
-  type: complex
-  returned: On Success.
+  type: list
+  elements: dict
+  returned: success
   contains:
     created_at:
       description: Timestamp at which the floating IP was assigned.
@@ -87,9 +89,10 @@ floating_ips:
       description: Name of the floating ip.
       type: str
     port_details:
-      description: The details of the port that this floating IP associates \
-        with. Present if ``fip-port-details`` extension is loaded.
-      type: str
+      description: |
+        The details of the port that this floating IP associates
+        with. Present if C(fip-port-details) extension is loaded.
+      type: dict
     port_id:
       description: The port ID floating ip associated with.
       type: str
@@ -106,15 +109,16 @@ floating_ips:
       description: The id of the router floating ip associated with.
       type: str
     status:
-      description: The status of a floating IP, which can be ``ACTIVE``or ``DOWN``.\
-        Can be 'ACTIVE' and 'DOWN'.
+      description: |
+        The status of a floating IP, which can be 'ACTIVE' or 'DOWN'.
       type: str
     subnet_id:
       description: The id of the subnet the floating ip associated with.
       type: str
     tags:
       description: List of tags.
-      type: str
+      type: list
+      elements: str
     updated_at:
       description: Timestamp at which the floating IP was last updated.
       type: str
@@ -146,7 +150,7 @@ class FloatingIPInfoModule(OpenStackModule):
         floating_ip_address=dict(),
         floating_network=dict(),
         port=dict(),
-        project_id=dict(),
+        project=dict(aliases=['project_id']),
         router=dict(),
         status=dict(choices=['active', 'down']),
     )
@@ -155,46 +159,42 @@ class FloatingIPInfoModule(OpenStackModule):
     )
 
     def run(self):
+        query = dict((k, self.params[k])
+                     for k in ['description', 'fixed_ip_address',
+                               'floating_ip_address']
+                     if self.params[k] is not None)
 
-        description = self.params['description']
-        fixed_ip_address = self.params['fixed_ip_address']
-        floating_ip_address = self.params['floating_ip_address']
-        floating_network = self.params['floating_network']
-        port = self.params['port']
-        project_id = self.params['project_id']
-        router = self.params['router']
+        for k in ['port', 'router']:
+            if self.params[k]:
+                k_id = '{0}_id'.format(k)
+                find_name = 'find_{0}'.format(k)
+                query[k_id] = getattr(self.conn.network, find_name)(
+                    name_or_id=self.params[k], ignore_missing=False)['id']
+
+        floating_network_name_or_id = self.params['floating_network']
+        if floating_network_name_or_id:
+            query['floating_network_id'] = self.conn.network.find_network(
+                name_or_id=floating_network_name_or_id,
+                ignore_missing=False)['id']
+
+        project_name_or_id = self.params['project']
+        if project_name_or_id:
+            project = self.conn.identity.find_project(project_name_or_id)
+            if project:
+                query['project_id'] = project['id']
+            else:
+                # caller might not have permission to query projects
+                # so assume she gave a project id
+                query['project_id'] = project_name_or_id
+
         status = self.params['status']
-
-        query = {}
-        if description:
-            query['description'] = description
-        if fixed_ip_address:
-            query['fixed_ip_address'] = fixed_ip_address
-        if floating_ip_address:
-            query['floating_ip_address'] = floating_ip_address
-        if floating_network:
-            try:
-                query['floating_network_id'] = self.conn.network.find_network(name_or_id=floating_network,
-                                                                              ignore_missing=False).id
-            except self.sdk.exceptions.ResourceNotFound:
-                self.fail_json(msg="floating_network not found")
-        if port:
-            try:
-                query['port_id'] = self.conn.network.find_port(name_or_id=port, ignore_missing=False).id
-            except self.sdk.exceptions.ResourceNotFound:
-                self.fail_json(msg="port not found")
-        if project_id:
-            query['project_id'] = project_id
-        if router:
-            try:
-                query['router_id'] = self.conn.network.find_router(name_or_id=router, ignore_missing=False).id
-            except self.sdk.exceptions.ResourceNotFound:
-                self.fail_json(msg="router not found")
         if status:
             query['status'] = status.upper()
 
-        ips = [ip.to_dict(computed=False) for ip in self.conn.network.ips(**query)]
-        self.exit_json(changed=False, floating_ips=ips)
+        self.exit_json(
+            changed=False,
+            floating_ips=[ip.to_dict(computed=False)
+                          for ip in self.conn.network.ips(**query)])
 
 
 def main():
