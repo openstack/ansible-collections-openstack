@@ -4,37 +4,33 @@
 # Copyright (c) 2021 by Red Hat, Inc.
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 module: baremetal_port
 short_description: Create/Delete Bare Metal port Resources from OpenStack
 author: OpenStack Ansible SIG
 description:
     - Create, Update and Remove ironic ports from OpenStack.
 options:
-    state:
-      description:
-        - Indicates desired state of the resource
-      choices: ['present', 'absent']
-      default: present
-      type: str
-    uuid:
-      description:
-        - globally unique identifier (UUID) to be given to the resource. Will
-          be auto-generated if not specified.
-      type: str
-    node:
-      description:
-        - UUID or Name of the Node this resource belongs to.
-      type: str
     address:
       description:
         - Physical hardware address of this network Port, typically the
           hardware MAC address.
       type: str
-    portgroup:
+    extra:
       description:
-        - UUID or Name of the Portgroup this resource belongs to.
+        - A set of one or more arbitrary metadata key and value pairs.
+      type: dict
+    id:
+      description:
+        - ID of the Port.
+        - Will be auto-generated if not specified.
       type: str
+      aliases: ['uuid']
+    is_pxe_enabled:
+      description:
+        - Whether PXE should be enabled or disabled on the Port.
+      type: bool
+      aliases: ['pxe_enabled']
     local_link_connection:
       description:
         - The Port binding profile.
@@ -54,25 +50,25 @@ options:
             - An optional string field to be used to store any vendor-specific
               information.
           type: str
-    is_pxe_enabled:
+    node:
       description:
-        - Whether PXE should be enabled or disabled on the Port.
-      type: bool
+        - ID or Name of the Node this resource belongs to.
+      type: str
     physical_network:
       description:
         - The name of the physical network to which a port is connected.
       type: str
-    extra:
+    port_group:
       description:
-        - A set of one or more arbitrary metadata key and value pairs.
-      type: dict
-    ironic_url:
-      description:
-        - If noauth mode is utilized, this is required to be set to the
-          endpoint URL for the Ironic API.  Use with "auth" and "auth_type"
-          settings set to None.
+        - ID or Name of the portgroup this resource belongs to.
       type: str
-
+      aliases: ['portgroup']
+    state:
+      description:
+        - Indicates desired state of the resource
+      choices: ['present', 'absent']
+      default: present
+      type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -80,15 +76,14 @@ extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
-# Create Bare Metal port
+EXAMPLES = r'''
 - name: Create Bare Metal port
   openstack.cloud.baremetal_port:
     cloud: devstack
     state: present
     node: bm-0
     address: fa:16:3e:aa:aa:aa
-    pxe_enabled: True
+    is_pxe_enabled: True
     local_link_connection:
       switch_id: 0a:1b:2c:3d:4e:5f
       port_id: Ethernet3/1
@@ -97,45 +92,32 @@ EXAMPLES = '''
       something: extra
     physical_network: datacenter
   register: result
-# Delete Bare Metal port
+
 - name: Delete Bare Metal port
   openstack.cloud.baremetal_port:
     cloud: devstack
     state: absent
     address: fa:16:3e:aa:aa:aa
   register: result
-# Update Bare Metal port
+
 - name: Update Bare Metal port
   openstack.cloud.baremetal_port:
     cloud: devstack
     state: present
-    uuid: 1a85ebca-22bf-42eb-ad9e-f640789b8098
-    pxe_enabled: False
+    id: 1a85ebca-22bf-42eb-ad9e-f640789b8098
+    is_pxe_enabled: False
     local_link_connection:
       switch_id: a0:b1:c2:d3:e4:f5
       port_id: Ethernet4/12
       switch_info: switch2
 '''
 
-RETURN = '''
-id:
-    description: Unique UUID of the port.
-    returned: always, but can be null
-    type: str
-result:
-    description: A short text describing the result.
-    returned: success
-    type: str
-changes:
-    description: Map showing from -> to values for properties that was changed
-                 after port update.
-    returned: success
-    type: dict
+RETURN = r'''
 port:
     description: A port dictionary, subset of the dictionary keys listed below
                  may be returned, depending on your cloud provider.
     returned: success
-    type: complex
+    type: dict
     contains:
         address:
             description: Physical hardware address of this network Port,
@@ -164,6 +146,11 @@ port:
             description: Whether PXE is enabled or disabled on the Port.
             returned: success
             type: bool
+        links:
+            description: A list of relative links, including the self and
+                         bookmark links.
+            returned: success
+            type: list
         local_link_connection:
             description: The Port binding profile. If specified, must contain
                          switch_id (only a MAC address or an OpenFlow based
@@ -202,171 +189,113 @@ port:
             type: str
 '''
 
-from ansible_collections.openstack.cloud.plugins.module_utils.ironic import (
-    IronicModule,
-    ironic_argument_spec,
-)
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    openstack_module_kwargs,
-    openstack_cloud_from_module
+    OpenStackModule
 )
 
-_PROP_TO_ATTR_MAP = {
-    'pxe_enabled': 'is_pxe_enabled',
-    'address': 'address',
-    'extra': 'extra',
-    'local_link_connection': 'local_link_connection',
-    'physical_network': 'physical_network',
-    'node_uuid': 'node_id',
-    'portgroup_uuid': 'port_group_id',
-    'uuid': 'id',
-}
 
+class BaremetalPortModule(OpenStackModule):
+    argument_spec = dict(
+        address=dict(),
+        extra=dict(type='dict'),
+        id=dict(aliases=['uuid']),
+        is_pxe_enabled=dict(type='bool', aliases=['pxe_enabled']),
+        local_link_connection=dict(type='dict'),
+        node=dict(),
+        physical_network=dict(),
+        port_group=dict(aliases=['portgroup']),
+        state=dict(default='present', choices=['present', 'absent']),
+    )
 
-def find_port(module, cloud):
-    port = None
-    if module.params['uuid']:
-        port = cloud.baremetal.find_port(module.params['uuid'])
-    elif module.params['address']:
-        ports = list(cloud.baremetal.ports(address=module.params['address'],
-                                           details=True))
-        if ports and len(ports) == 1:
-            port = ports[0]
-        elif len(ports) > 1:
-            module.fail_json(
-                msg="Multiple ports with address {address} found. A uuid must "
-                    "be defined in order to identify the correct port"
-                    .format(address=module.params['address']))
+    module_kwargs = dict(
+        required_one_of=[
+            ('id', 'address'),
+        ],
+        required_if=[
+            ('state', 'present', ('node', 'address',), False),
+        ],
+    )
 
-    return port
+    def run(self):
+        port = self._find_port()
+        state = self.params['state']
+        if state == 'present':
+            # create or update port
 
+            kwargs = {}
+            id = self.params['id']
+            if id:
+                kwargs['id'] = id
 
-def add_port(module, cloud):
-    port = find_port(module, cloud)
-    if port:
-        update_port(module, cloud, port=port)
+            node_name_or_id = self.params['node']
+            # assert node_name_or_id
+            node = self.conn.baremetal.find_node(node_name_or_id,
+                                                 ignore_missing=False)
+            kwargs['node_id'] = node['id']
 
-    if not module.params['node'] or not module.params['address']:
-        module.fail_json(
-            msg="A Bare Metal node (name or uuid) and an address is required "
-                "to create a port")
+            port_group_name_or_id = self.params['port_group']
+            if port_group_name_or_id:
+                port_group = self.conn.baremetal.find_port_group(
+                    port_group_name_or_id, ignore_missing=False)
+                kwargs['port_group_id'] = port_group['id']
 
-    machine = cloud.get_machine(module.params['node'])
-    if not machine:
-        module.fail_json(
-            msg="Bare Metal node {node} could not be found".format(
-                node=module.params['node']))
+            for k in ['address', 'extra', 'is_pxe_enabled',
+                      'local_link_connection', 'physical_network']:
+                if self.params[k] is not None:
+                    kwargs[k] = self.params[k]
 
-    module.params['node_uuid'] = machine.id
-    props = {k: module.params[k] for k in _PROP_TO_ATTR_MAP.keys()
-             if k in module.params}
-    port = cloud.baremetal.create_port(**props)
-    port_dict = port.to_dict()
-    port_dict.pop('links', None)
-    module.exit_json(
-        changed=True,
-        result="Port successfully created",
-        changes=None,
-        port=port_dict,
-        id=port_dict['id'])
+            changed = True
+            if not port:
+                # create port
+                port = self.conn.baremetal.create_port(**kwargs)
+            else:
+                # update port
+                updates = dict((k, v)
+                               for k, v in kwargs.items()
+                               if v != port[k])
 
+                if updates:
+                    port = \
+                        self.conn.baremetal.update_port(port['id'], **updates)
+                else:
+                    changed = False
 
-def update_port(module, cloud, port=None):
-    if not port:
-        port = find_port(module, cloud)
+            self.exit_json(changed=changed, port=port.to_dict(computed=False))
 
-    if module.params['node']:
-        machine = cloud.get_machine(module.params['node'])
-        if machine:
-            module.params['node_uuid'] = machine.id
+        if state == 'absent':
+            # remove port
+            if not port:
+                self.exit_json(changed=False)
 
-    old_props = {k: port[v] for k, v in _PROP_TO_ATTR_MAP.items()}
-    new_props = {k: module.params[k] for k in _PROP_TO_ATTR_MAP.keys()
-                 if k in module.params and module.params[k] is not None}
-    prop_diff = {k: new_props[k] for k in _PROP_TO_ATTR_MAP.keys()
-                 if k in new_props and old_props[k] != new_props[k]}
+            port = self.conn.baremetal.delete_port(port['id'])
+            self.exit_json(changed=True)
 
-    if not prop_diff:
-        port_dict = port.to_dict()
-        port_dict.pop('links', None)
-        module.exit_json(
-            changed=False,
-            result="No port update required",
-            changes=None,
-            port=port_dict,
-            id=port_dict['id'])
+    def _find_port(self):
+        id = self.params['id']
+        if id:
+            return self.conn.baremetal.get_port(id)
 
-    port = cloud.baremetal.update_port(port.id, **prop_diff)
-    port_dict = port.to_dict()
-    port_dict.pop('links', None)
-    module.exit_json(
-        changed=True,
-        result="Port successfully updated",
-        changes={k: {'to': new_props[k], 'from': old_props[k]}
-                 for k in prop_diff},
-        port=port_dict,
-        id=port_dict['id'])
+        address = self.params['address']
+        if address:
+            ports = list(self.conn.baremetal.ports(address=address,
+                                                   details=True))
 
+            if len(ports) == 1:
+                return ports[0]
+            elif len(ports) > 1:
+                raise ValueError(
+                    'Multiple ports with address {address} found. A ID'
+                    ' must be defined in order to identify a unique'
+                    ' port.'.format(address=address))
+            else:
+                return None
 
-def remove_port(module, cloud):
-    if not module.params['uuid'] and not module.params['address']:
-        module.fail_json(
-            msg="A uuid or an address value must be defined in order to "
-                "remove a port.")
-    if module.params['uuid']:
-        port = cloud.baremetal.delete_port(module.params['uuid'])
-        if not port:
-            module.exit_json(
-                changed=False,
-                result="Port not found",
-                changes=None,
-                id=module.params['uuid'])
-    else:
-        port = find_port(module, cloud)
-        if not port:
-            module.exit_json(
-                changed=False,
-                result="Port not found",
-                changes=None,
-                id=None)
-        port = cloud.baremetal.delete_port(port.id)
-
-    module.exit_json(
-        changed=True,
-        result="Port successfully removed",
-        changes=None,
-        id=port.id)
+        raise AssertionError("id or address must be specified")
 
 
 def main():
-    argument_spec = ironic_argument_spec(
-        uuid=dict(),
-        node=dict(),
-        address=dict(),
-        portgroup=dict(),
-        local_link_connection=dict(type='dict'),
-        is_pxe_enabled=dict(type='bool'),
-        physical_network=dict(),
-        extra=dict(type='dict'),
-        state=dict(default='present',
-                   choices=['present', 'absent'])
-    )
-
-    module_kwargs = openstack_module_kwargs()
-    module = IronicModule(argument_spec, **module_kwargs)
-
-    module.params['pxe_enabled'] = module.params.pop('is_pxe_enabled', None)
-
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        if module.params['state'] == 'present':
-            add_port(module, cloud)
-
-        if module.params['state'] == 'absent':
-            remove_port(module, cloud)
-
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+    module = BaremetalPortModule()
+    module()
 
 
 if __name__ == "__main__":

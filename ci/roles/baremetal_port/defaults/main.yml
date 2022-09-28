@@ -1,0 +1,14 @@
+expected_fields:
+  - address
+  - created_at
+  - extra
+  - id
+  - internal_info
+  - is_pxe_enabled
+  - links
+  - local_link_connection
+  - name
+  - node_id
+  - physical_network
+  - port_group_id
+  - updated_at

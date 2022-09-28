@@ -4,32 +4,26 @@
 # Copyright (c) 2021 by Red Hat, Inc.
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 module: baremetal_port_info
 short_description: Retrieve information about Bare Metal ports from OpenStack
 author: OpenStack Ansible SIG
 description:
     - Retrieve information about Bare Metal ports from OpenStack.
 options:
-    uuid:
-      description:
-        - Name or globally unique identifier (UUID) to identify the port.
-      type: str
     address:
       description:
         - Physical hardware address of this network Port, typically the
           hardware MAC address.
       type: str
+    name:
+      description:
+        - Name or ID of the Bare Metal port.
+      type: str
+      aliases: ['uuid']
     node:
       description:
-        - Name or globally unique identifier (UUID) to identify a Baremetal
-          Node.
-      type: str
-    ironic_url:
-      description:
-        - If noauth mode is utilized, this is required to be set to the
-          endpoint URL for the Ironic API.  Use with "auth" and "auth_type"
-          settings set to None.
+        - Name or ID of a Bare Metal node.
       type: str
 requirements:
     - "python >= 3.6"
@@ -38,34 +32,31 @@ extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
-# Gather information about all baremetal ports
-- openstack.cloud.baremetal_port_info:
+EXAMPLES = r'''
+- name: Gather information about all baremetal ports
+  openstack.cloud.baremetal_port_info:
     cloud: devstack
-  register: result
-# Gather information about a baremetal port by address
-- openstack.cloud.baremetal_port_info:
+
+- name: Gather information about a baremetal port by address
+  openstack.cloud.baremetal_port_info:
     cloud: devstack
     address: fa:16:3e:aa:aa:aa
-  register: result
-# Gather information about a baremetal port by address
-- openstack.cloud.baremetal_port_info:
+
+- name: Gather information about a baremetal port by address
+  openstack.cloud.baremetal_port_info:
     cloud: devstack
-    uuid: a2b6bd99-77b9-43f0-9ddc-826568e68dec
-  register: result
-# Gather information about a baremetal ports associated with a baremetal node
-- openstack.cloud.baremetal_port_info:
+    name: a2b6bd99-77b9-43f0-9ddc-826568e68dec
+
+- name: Gather information about a baremetal ports associated with a node
+  openstack.cloud.baremetal_port_info:
     cloud: devstack
     node: bm-0
-  register: result
 '''
 
-RETURN = '''
-baremetal_ports:
-    description: Bare Metal port list. A subset of the dictionary keys
-                 listed below may be returned, depending on your cloud
-                 provider.
-    returned: always, but can be null
+RETURN = r'''
+ports:
+    description: Bare Metal port list.
+    returned: always
     type: list
     elements: dict
     contains:
@@ -96,6 +87,11 @@ baremetal_ports:
             description: Whether PXE is enabled or disabled on the Port.
             returned: success
             type: bool
+        links:
+            description: A list of relative links, including the self and
+                         bookmark links.
+            returned: success
+            type: list
         local_link_connection:
             description: The Port binding profile.
             returned: success
@@ -141,68 +137,58 @@ baremetal_ports:
             type: str
 '''
 
-
-from ansible_collections.openstack.cloud.plugins.module_utils.ironic import (
-    IronicModule,
-    ironic_argument_spec,
-)
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    openstack_module_kwargs,
-    openstack_cloud_from_module
+    OpenStackModule
 )
+
+
+class BaremetalPortInfoModule(OpenStackModule):
+    argument_spec = dict(
+        address=dict(),
+        name=dict(aliases=['uuid']),
+        node=dict(),
+    )
+
+    module_kwargs = dict(
+        supports_check_mode=True,
+    )
+
+    def _fetch_ports(self):
+        name_or_id = self.params['name']
+
+        if name_or_id:
+            port = self.conn.baremetal.find_port(name_or_id)
+            return [port] if port else []
+
+        kwargs = {}
+        address = self.params['address']
+        if address:
+            kwargs['address'] = address
+
+        node_name_or_id = self.params['node']
+        if node_name_or_id:
+            node = self.conn.baremetal.find_node(node_name_or_id)
+            if node:
+                kwargs['node_uuid'] = node['id']
+            else:
+                # node does not exist so no port could possibly be found
+                return []
+
+        return self.conn.baremetal.ports(details=True, **kwargs)
+
+    def run(self):
+        ports = [port.to_dict(computed=False)
+                 for port in self._fetch_ports()]
+
+        self.exit_json(changed=False,
+                       ports=ports,
+                       # keep for backward compatibility
+                       baremetal_ports=ports)
 
 
 def main():
-    argument_spec = ironic_argument_spec(
-        uuid=dict(),
-        address=dict(),
-        node=dict(),
-    )
-    module_kwargs = openstack_module_kwargs()
-    module_kwargs['supports_check_mode'] = True
-    module = IronicModule(argument_spec, **module_kwargs)
-
-    ports = list()
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        if module.params['uuid']:
-            port = cloud.baremetal.find_port(module.params['uuid'])
-            if not port:
-                module.fail_json(
-                    msg='Baremetal port with uuid {uuid} was not found'
-                        .format(uuid=module.params['uuid']))
-            ports.append(port)
-
-        elif module.params['address']:
-            ports = list(
-                cloud.baremetal.ports(address=module.params['address'],
-                                      details=True))
-            if not ports:
-                module.fail_json(
-                    msg='Baremetal port with address {address} was not found'
-                        .format(address=module.params['address']))
-
-        elif module.params['node']:
-            machine = cloud.get_machine(module.params['node'])
-            if not machine:
-                module.fail_json(
-                    msg='Baremetal node {node} was not found'
-                        .format(node=module.params['node']))
-            ports = list(
-                cloud.baremetal.ports(node_uuid=machine.uuid, details=True))
-
-        else:
-            ports = list(cloud.baremetal.ports(details=True))
-
-        # Convert ports to dictionaries and cleanup properties
-        ports = [port.to_dict() for port in ports]
-        for port in ports:
-            # links are not useful
-            port.pop('links', None)
-
-        module.exit_json(changed=False, baremetal_ports=ports)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+    module = BaremetalPortInfoModule()
+    module()
 
 
 if __name__ == "__main__":

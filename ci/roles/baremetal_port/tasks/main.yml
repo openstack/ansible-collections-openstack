@@ -1,0 +1,112 @@
+---
+# TODO: Actually run this role in CI. Atm we do not have DevStack's ironic plugin enabled.
+- name: Create baremetal node
+  openstack.cloud.baremetal_node:
+    cloud: "{{ cloud }}"
+    driver_info:
+      ipmi_address: "1.2.3.4"
+      ipmi_username: "admin"
+      ipmi_password: "secret"
+    name: ansible_baremetal_node
+    nics:
+      - mac: "aa:bb:cc:aa:bb:cc"
+    state: present
+  register: node
+
+- name: Create baremetal port
+  openstack.cloud.baremetal_port:
+    cloud: "{{ cloud }}"
+    state: present
+    node: ansible_baremetal_node
+    address: fa:16:3e:aa:aa:aa
+    is_pxe_enabled: False
+  register: port
+
+- debug: var=port
+
+- name: Assert return values of baremetal_port module
+  assert:
+    that:
+      - not port.port.is_pxe_enabled
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(port.port.keys())|length == 0
+
+- name: Fetch baremetal ports
+  openstack.cloud.baremetal_port_info:
+    cloud: "{{ cloud }}"
+  register: ports
+
+- name: Assert module results of baremetal_port_info module
+  assert:
+    that:
+      - ports.ports|list|length > 0
+
+- name: assert return values of baremetal_port_info module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(ports.ports.0.keys())|length == 0
+
+- name: Fetch baremetal port by id
+  openstack.cloud.baremetal_port_info:
+    cloud: "{{ cloud }}"
+    id: "{{ port.port.id }}"
+  register: ports
+
+- name: assert module results of baremetal_port_info module
+  assert:
+    that:
+      - ports.ports|list|length == 1
+      - ports.ports.0.id == port.port.id
+
+- name: Update baremetal port
+  openstack.cloud.baremetal_port:
+    cloud: "{{ cloud }}"
+    state: present
+    id: "{{ port.port.id }}"
+    is_pxe_enabled: True
+  register: updated_port
+
+- name: Assert return values of updated baremetal port
+  assert:
+    that:
+      - update_port is changed
+      - update_port.port.id == port.port.id
+      - update_port.port.address == port.port.address
+      - update_port.port.is_pxe_enabled
+
+- name: Update baremetal port again
+  openstack.cloud.baremetal_port:
+    cloud: "{{ cloud }}"
+    state: present
+    id: "{{ port.port.id }}"
+    is_pxe_enabled: True
+  register: updated_port
+
+- name: Assert return values of updated baremetal port
+  assert:
+    that:
+      - update_port is not changed
+      - update_port.port.id == port.port.id
+
+- name: Delete Bare Metal port
+  openstack.cloud.baremetal_port:
+    cloud: "{{ cloud }}"
+    state: absent
+    id: "{{ port.port.id }}"
+
+- name: Fetch baremetal ports
+  openstack.cloud.baremetal_port_info:
+    cloud: "{{ cloud }}"
+  register: ports
+
+- name: Assert no baremetal port is left
+  assert:
+    that:
+      - ports.ports|list|length == 0
+
+- name: Delete baremetal node
+  openstack.cloud.baremetal_node:
+    cloud: "{{ cloud }}"
+    name: ansible_baremetal_node
+    state: absent
