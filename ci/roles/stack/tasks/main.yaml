@@ -1,0 +1,89 @@
+---
+- name: Create minimal stack
+  openstack.cloud.stack:
+    cloud: "{{ cloud }}"
+    template: "roles/stack/files/hello-world.yaml"
+    name: "{{ stack_name }}"
+    tags: "tag1,tag2"
+  register: stack
+
+- name: Assert fields returned by create stack
+  assert:
+    that: item in stack.stack
+  loop: "{{ expected_fields }}"
+
+- name: List stacks
+  openstack.cloud.stack_info:
+    cloud: "{{ cloud }}"
+  register: stacks
+
+- name: Assert stack_info module return values
+  assert:
+    that:
+      - stacks.stacks|length > 0
+
+- name: Assert fields returned by stack info
+  assert:
+    that: item in stacks.stacks[0]
+  loop: "{{ expected_fields }}"
+
+- name: Get single stack
+  openstack.cloud.stack_info:
+    cloud: "{{ cloud }}"
+    name: "{{ stack_name }}"
+  register: stacks
+
+- name: Assert single stack
+  assert:
+    that:
+      - stacks.stacks|length == 1
+      - stacks.stacks.0.name == stack_name
+      - stacks.stacks.0.id == stack.stack.id
+      # Older openstacksdk releases use datatype list instead of str for tags
+      # Ref.: https://review.opendev.org/c/openstack/openstacksdk/+/860534
+      - stacks.stacks.0.tags|string in ["tag1,tag2", "['tag1', 'tag2']"]
+
+- name: Update stack
+  openstack.cloud.stack:
+    cloud: "{{ cloud }}"
+    template: "roles/stack/files/hello-world.yaml"
+    name: "{{ stack_name }}"
+    tags: "tag1,tag2,tag3"
+  register: stack_updated
+
+- name: Assert updated stack
+  assert:
+    that:
+      - stack_updated.stack.id == stack.stack.id
+      - stack_updated is changed
+
+- name: Get updated stack
+  openstack.cloud.stack_info:
+    cloud: "{{ cloud }}"
+    name: "{{ stack_name }}"
+  register: stacks
+
+- name: Assert updated stack
+  assert:
+    that:
+      - stacks.stacks|length == 1
+      - stacks.stacks.0.id == stack.stack.id
+      # Older openstacksdk releases use datatype list instead of str for tags
+      # Ref.: https://review.opendev.org/c/openstack/openstacksdk/+/860534
+      - stacks.stacks.0.tags|string in ["tag1,tag2,tag3", "['tag1', 'tag2', 'tag3']"]
+
+- name: Delete stack
+  openstack.cloud.stack:
+    cloud: "{{ cloud }}"
+    name: "{{ stack_name }}"
+    state: absent
+
+- name: Get single stack
+  openstack.cloud.stack_info:
+    cloud: "{{ cloud }}"
+    name: "{{ stack_name }}"
+  register: stacks
+
+- assert:
+    that:
+      - (stacks.stacks|length == 0) or (stacks.stacks.0.status == 'DELETE_COMPLETE')

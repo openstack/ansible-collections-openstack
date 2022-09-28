@@ -103,6 +103,7 @@
         security_group
         security_group_rule
         server
+        stack
         subnet
         subnet_pool
         user
@@ -111,7 +112,6 @@
         volume
       # failing tags
       # floating_ip
-      # orchestrate
       # neutron_rbac
 
 - job:

@@ -58,14 +58,12 @@
     - { role: security_group, tags: security_group }
     - { role: security_group_rule, tags: security_group_rule }
     - { role: server, tags: server }
+    - { role: stack, tags: stack }
     - { role: subnet, tags: subnet }
     - { role: subnet_pool, tags: subnet_pool }
     - { role: user_group, tags: user_group }
     - { role: user_role, tags: user_role }
     - { role: volume, tags: volume }
-    - role: orchestration
-      tags: orchestrate
-      when: sdk_version is version("0.53.0", '>=')
     - role: loadbalancer
       tags: loadbalancer
     - { role: floating_ip, tags: floating_ip }

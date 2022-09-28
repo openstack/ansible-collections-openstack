@@ -13,30 +13,23 @@ author: OpenStack Ansible SIG
 description:
    - Add or Remove a Stack to an OpenStack Heat
 options:
-    state:
-      description:
-        - Indicate desired state of the resource
-      choices: ['present', 'absent']
-      default: present
-      type: str
-    name:
-      description:
-        - Name of the stack that should be created, name could be char and digit, no space
-      required: true
-      type: str
-    tag:
-      description:
-        - Tag for the stack that should be created, name could be char and digit, no space
-      type: str
-    template:
-      description:
-        - Path of the template file to use for the stack creation
-      type: str
     environment:
       description:
         - List of environment files that should be used for the stack creation
       type: list
       elements: str
+    name:
+      description:
+        - A name for the stack.
+        - The value must be unique within a project.
+        - The name must start with an ASCII letter and can contain ASCII
+          letters, digits, underscores, periods, and hyphens. Specifically,
+          the name must match the C(^[a-zA-Z][a-zA-Z0-9_.-]{0,254}$) regular
+          expression.
+        - When you delete or abandon a stack, its name will not become
+          available for reuse until the deletion completes successfully.
+      required: true
+      type: str
     parameters:
       description:
         - Dictionary of parameters for the stack creation
@@ -46,6 +39,23 @@ options:
         - Rollback stack creation
       type: bool
       default: false
+    state:
+      description:
+        - Indicate desired state of the resource
+      choices: ['present', 'absent']
+      default: present
+      type: str
+    tags:
+      description:
+        - One or more simple string tags to associate with the stack.
+        - To associate multiple tags with a stack, separate the tags with
+          commas. For example, C(tag1,tag2).
+      type: str
+      aliases: ['tag']
+    template:
+      description:
+        - Path of the template file to use for the stack creation
+      type: str
     timeout:
       description:
         - Maximum number of seconds to wait for the stack creation
@@ -177,9 +187,6 @@ stack:
         replaced:
             description: A list of resource objects that will be replaced.
             type: str
-        stack_name:
-            description: Name of the stack.
-            type: str
         status:
             description: stack status.
             type: str
@@ -226,14 +233,14 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class StackModule(OpenStackModule):
     argument_spec = dict(
-        name=dict(required=True),
-        tag=dict(),
-        template=dict(),
         environment=dict(type='list', elements='str'),
+        name=dict(required=True),
         parameters=dict(default={}, type='dict'),
         rollback=dict(default=False, type='bool'),
-        timeout=dict(default=3600, type='int'),
         state=dict(default='present', choices=['absent', 'present']),
+        tags=dict(aliases=['tag']),
+        template=dict(),
+        timeout=dict(default=3600, type='int'),
     )
 
     module_kwargs = dict(
@@ -242,39 +249,7 @@ class StackModule(OpenStackModule):
             ('state', 'present', ('template',), True)]
     )
 
-    def _create_stack(self, stack, parameters):
-        stack = self.conn.create_stack(
-            self.params['name'],
-            template_file=self.params['template'],
-            environment_files=self.params['environment'],
-            timeout=self.params['timeout'],
-            wait=True,
-            rollback=self.params['rollback'],
-            **parameters)
-
-        if stack.status == 'CREATE_COMPLETE':
-            return stack
-        else:
-            self.fail_json(msg="Failure in creating stack: {0}".format(stack))
-
-    def _update_stack(self, stack, parameters):
-        stack = self.conn.update_stack(
-            self.params['name'],
-            template_file=self.params['template'],
-            environment_files=self.params['environment'],
-            timeout=self.params['timeout'],
-            rollback=self.params['rollback'],
-            wait=self.params['wait'],
-            **parameters)
-
-        if stack['stack_status'] == 'UPDATE_COMPLETE':
-            return stack
-        else:
-            self.fail_json(msg="Failure in updating stack: %s" %
-                           stack['stack_status_reason'])
-
-    def _system_state_change(self, stack):
-        state = self.params['state']
+    def _system_state_change(self, stack, state):
         if state == 'present':
             # This method will always return True if state is present to
             # include the case of stack update as there is no simple way
@@ -288,27 +263,56 @@ class StackModule(OpenStackModule):
         state = self.params['state']
         name = self.params['name']
 
+        # self.conn.get_stack() will not return stacks with status ==
+        # DELETE_COMPLETE while self.conn.orchestration.find_stack() will
+        # do so. A name of a stack which has been deleted completely can be
+        # reused to create a new stack, hence we want self.conn.get_stack()'s
+        # behaviour here.
         stack = self.conn.get_stack(name)
 
         if self.ansible.check_mode:
-            self.exit_json(changed=self._system_state_change(stack))
+            self.exit_json(changed=self._system_state_change(stack, state))
 
         if state == 'present':
-            parameters = self.params['parameters']
-            if not stack:
-                stack = self._create_stack(stack, parameters)
+            # assume an existing stack always requires updates because there is
+            # no simple way to check if stack will indeed have to be updated
+            is_update = bool(stack)
+            kwargs = dict(
+                template_file=self.params['template'],
+                environment_files=self.params['environment'],
+                timeout=self.params['timeout'],
+                rollback=self.params['rollback'],
+                #
+                # Always wait because we expect status to be
+                # CREATE_COMPLETE or UPDATE_COMPLETE
+                wait=True,
+            )
+
+            tags = self.params['tags']
+            if tags is not None:
+                kwargs['tags'] = tags
+
+            extra_kwargs = self.params['parameters']
+            dup_kwargs = set(kwargs.keys()) & set(extra_kwargs.keys())
+            if dup_kwargs:
+                raise ValueError('Duplicate key(s) {0} in parameters'
+                                 .format(list(dup_kwargs)))
+            kwargs = dict(kwargs, **extra_kwargs)
+
+            if not is_update:
+                stack = self.conn.create_stack(name, **kwargs)
             else:
-                stack = self._update_stack(stack, parameters)
-            self.exit_json(changed=True,
-                           stack=stack.to_dict(computed=False))
+                stack = self.conn.update_stack(name, **kwargs)
+
+            stack = self.conn.orchestration.get_stack(stack['id'])
+            self.exit_json(changed=True, stack=stack.to_dict(computed=False))
         elif state == 'absent':
             if not stack:
-                changed = False
+                self.exit_json(changed=False)
             else:
-                changed = True
-                if not self.conn.delete_stack(stack['id'], wait=self.params['wait']):
-                    self.fail_json(msg='delete stack failed for stack: %s' % name)
-            self.exit_json(changed=changed)
+                self.conn.delete_stack(name_or_id=stack['id'],
+                                       wait=self.params['wait'])
+                self.exit_json(changed=True)
 
 
 def main():

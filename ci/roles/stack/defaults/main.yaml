@@ -21,7 +21,6 @@ expected_fields:
   - parameters
   - parent_id
   - replaced
-  - stack_name
   - status
   - status_reason
   - tags
