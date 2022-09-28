@@ -4,7 +4,7 @@
 # (c) 2014, Hewlett-Packard Development Company, L.P.
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: baremetal_node
 short_description: Create/Delete Bare Metal Resources from OpenStack
@@ -12,105 +12,69 @@ author: OpenStack Ansible SIG
 description:
     - Create or Remove Ironic nodes from OpenStack.
 options:
-    state:
+    bios_interface:
       description:
-        - Indicates desired state of the resource
-      choices: ['present', 'absent']
-      default: present
+        - The bios interface for this node, e.g. C(no-bios).
       type: str
-    uuid:
+    boot_interface:
       description:
-        - globally unique identifier (UUID) to be given to the resource. Will
-          be auto-generated if not specified, and name is specified.
-        - Definition of a UUID will always take precedence to a name value.
+        - The boot interface for this node, e.g. C(pxe).
       type: str
-    name:
+    chassis_id:
       description:
-        - unique name identifier to be given to the resource.
+        - Associate the node with a pre-defined chassis.
+      type: str
+      aliases: ['chassis_uuid']
+    console_interface:
+      description:
+        - The console interface for this node, e.g. C(no-console).
+      type: str
+    deploy_interface:
+      description:
+        - The deploy interface for this node, e.g. C(iscsi).
       type: str
     driver:
       description:
         - The name of the Ironic Driver to use with this node.
-        - Required when I(state=present)
+        - Required when I(state) is C(present)
       type: str
-    chassis_uuid:
+    driver_info:
       description:
-        - Associate the node with a pre-defined chassis.
-      type: str
-    ironic_url:
+        - Information for this node's driver. Will vary based on which
+          driver is in use. Any sub-field which is populated will be validated
+          during creation. For compatibility reasons sub-fields `power`,
+          `deploy`, `management` and `console` are flattened.
+      required: true
+      type: dict
+    id:
       description:
-        - If noauth mode is utilized, this is required to be set to the
-          endpoint URL for the Ironic API.  Use with "auth" and "auth_type"
-          settings set to None.
+        - ID to be given to the baremetal node. Will be auto-generated on
+          creation if not specified, and I(name) is specified.
+        - Definition of I(id) will always take precedence over I(name).
       type: str
-    resource_class:
-      description:
-        - The specific resource type to which this node belongs.
-      type: str
-    bios_interface:
-      description:
-        - The bios interface for this node, e.g. "no-bios".
-      type: str
-    boot_interface:
-      description:
-        - The boot interface for this node, e.g. "pxe".
-      type: str
-    console_interface:
-      description:
-        - The console interface for this node, e.g. "no-console".
-      type: str
-    deploy_interface:
-      description:
-        - The deploy interface for this node, e.g. "iscsi".
-      type: str
+      aliases: ['uuid']
     inspect_interface:
       description:
-        - The interface used for node inspection, e.g. "no-inspect".
+        - The interface used for node inspection, e.g. C(no-inspect).
       type: str
     management_interface:
       description:
         - The interface for out-of-band management of this node, e.g.
           "ipmitool".
       type: str
+    name:
+      description:
+        - unique name identifier to be given to the resource.
+      type: str
     network_interface:
       description:
         - The network interface provider to use when describing
           connections for this node.
       type: str
-    power_interface:
-      description:
-        - The interface used to manage power actions on this node, e.g.
-          "ipmitool".
-      type: str
-    raid_interface:
-      description:
-        - Interface used for configuring raid on this node.
-      type: str
-    rescue_interface:
-      description:
-        - Interface used for node rescue, e.g. "no-rescue".
-      type: str
-    storage_interface:
-      description:
-        - Interface used for attaching and detaching volumes on this node, e.g.
-          "cinder".
-      type: str
-    vendor_interface:
-      description:
-        - Interface for all vendor-specific actions on this node, e.g.
-          "no-vendor".
-      type: str
-    driver_info:
-      description:
-        - Information for this server's driver. Will vary based on which
-          driver is in use. Any sub-field which is populated will be validated
-          during creation. For compatibility reasons sub-fields `power`,
-          `deploy`, `management` and `console` are flattened.
-      required: true
-      type: dict
     nics:
       description:
-        - 'A list of network interface cards, eg, " - mac: aa:bb:cc:aa:bb:cc"'
+        - 'A list of network interface cards, eg, C( - mac: aa:bb:cc:aa:bb:cc)'
+        - This node attribute cannot be updated.
       required: true
       type: list
       elements: dict
@@ -119,316 +83,609 @@ options:
             description: The MAC address of the network interface card.
             type: str
             required: true
+    power_interface:
+      description:
+        - The interface used to manage power actions on this node, e.g.
+          C(ipmitool).
+      type: str
     properties:
       description:
-        - Definition of the physical characteristics of this server, used for scheduling purposes
+        - Definition of the physical characteristics of this node
+        - Used for scheduling purposes
       type: dict
       suboptions:
         cpu_arch:
           description:
             - CPU architecture (x86_64, i686, ...)
-          default: x86_64
+          type: str
         cpus:
           description:
             - Number of CPU cores this machine has
-          default: 1
-        ram:
+          type: str
+        memory_mb:
           description:
-            - amount of RAM this machine has, in MB
-          default: 1
-        disk_size:
+            - Amount of RAM  in MB this machine has
+          aliases: ['ram']
+          type: str
+        local_gb:
           description:
-            - size of first storage device in this machine (typically /dev/sda), in GB
-          default: 1
+            - Size in GB of first storage device in this machine (typically
+              /dev/sda)
+          aliases: ['disk_size']
+          type: str
         capabilities:
           description:
-            - special capabilities for the node, such as boot_option, node_role etc
-              (see U(https://docs.openstack.org/ironic/latest/install/advanced.html)
-              for more information)
-          default: ""
+            - Special capabilities for this node such as boot_option etc.
+            - For more information refer to
+              U(https://docs.openstack.org/ironic/latest/install/advanced.html).
+          type: str
         root_device:
           description:
             - Root disk device hints for deployment.
-            - See U(https://docs.openstack.org/ironic/latest/install/advanced.html#specifying-the-disk-for-deployment-root-device-hints)
-              for allowed hints.
-          default: ""
+            - For allowed hints refer to
+              U(https://docs.openstack.org/ironic/latest/install/advanced.html).
+          type: dict
+    raid_interface:
+      description:
+        - Interface used for configuring raid on this node.
+      type: str
+    rescue_interface:
+      description:
+        - Interface used for node rescue, e.g. C(no-rescue).
+      type: str
+    resource_class:
+      description:
+        - The specific resource type to which this node belongs.
+      type: str
     skip_update_of_masked_password:
       description:
-        - Allows the code that would assert changes to nodes to skip the
-          update if the change is a single line consisting of the password
-          field.
-        - As of Kilo, by default, passwords are always masked to API
-          requests, which means the logic as a result always attempts to
-          re-assert the password field.
+        - Deprecated, no longer used.
+        - Updating or specifing a password has not been supported for a while.
       type: bool
-    wait:
+    state:
       description:
-        - A boolean value instructing the module to wait for the newly created
-          node to reach the available state.
-      type: bool
-      default: 'no'
+        - Indicates desired state of the resource
+      choices: ['present', 'absent']
+      default: present
+      type: str
+    storage_interface:
+      description:
+        - Interface used for attaching and detaching volumes on this node, e.g.
+          C(cinder).
+      type: str
     timeout:
       description:
-        - An integer value representing the number of seconds to
-          wait for the newly created node to reach the available state.
-      default: 1800
+        - Number of seconds to wait for the newly created node to reach the
+          available state.
       type: int
+      default: 1800
+    vendor_interface:
+      description:
+        - Interface for all vendor-specific actions on this node, e.g.
+          C(no-vendor).
+      type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
-    - "jsonpatch"
 
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
-# Enroll a node with some basic properties and driver info
-- openstack.cloud.baremetal_node:
+EXAMPLES = r'''
+- name: Enroll a node with some basic properties and driver info
+  openstack.cloud.baremetal_node:
+    chassis_id: "00000000-0000-0000-0000-000000000001"
     cloud: "devstack"
     driver: "pxe_ipmitool"
-    uuid: "00000000-0000-0000-0000-000000000002"
-    properties:
-      cpus: 2
-      cpu_arch: "x86_64"
-      ram: 8192
-      disk_size: 64
-      capabilities: "boot_option:local"
-      root_device:
-        wwn: "0x4000cca77fc4dba1"
-    nics:
-      - mac: "aa:bb:cc:aa:bb:cc"
-      - mac: "dd:ee:ff:dd:ee:ff"
     driver_info:
       ipmi_address: "1.2.3.4"
       ipmi_username: "admin"
       ipmi_password: "adminpass"
-    chassis_uuid: "00000000-0000-0000-0000-000000000001"
-
+    id: "00000000-0000-0000-0000-000000000002"
+    nics:
+      - mac: "aa:bb:cc:aa:bb:cc"
+      - mac: "dd:ee:ff:dd:ee:ff"
+    properties:
+      capabilities: "boot_option:local"
+      cpu_arch: "x86_64"
+      cpus: 2
+      local_gb: 64
+      memory_mb: 8192
+      root_device:
+        wwn: "0x4000cca77fc4dba1"
 '''
 
-try:
-    import jsonpatch
-    HAS_JSONPATCH = True
-except ImportError:
-    HAS_JSONPATCH = False
+RETURN = r'''
+node:
+    description: Dictionary describing the Bare Metal node.
+    type: dict
+    returned: On success when I(state) is 'present'.
+    contains:
+        allocation_id:
+            description: The UUID of the allocation associated with the node.
+                         If not null, will be the same as instance_id (the
+                         opposite is not always true). Unlike instance_id,
+                         this field is read-only. Please use the Allocation API
+                         to remove allocations.
+            returned: success
+            type: str
+        bios_interface:
+            description: The bios interface to be used for this node.
+            returned: success
+            type: str
+        boot_interface:
+            description: The boot interface for a node, e.g. "pxe".
+            returned: success
+            type: str
+        boot_mode:
+            description: The boot mode for a node, either "uefi" or "bios"
+            returned: success
+            type: str
+        chassis_id:
+            description: UUID of the chassis associated with this node. May be
+                         empty or None.
+            returned: success
+            type: str
+        clean_step:
+            description: The current clean step.
+            returned: success
+            type: str
+        conductor:
+            description: |
+                The conductor currently servicing a node.
+            returned: success
+            type: str
+        conductor_group:
+            description: The conductor group for a node.
+            returned: success
+            type: str
+        console_interface:
+            description: The console interface for a node, e.g. "no-console".
+            returned: success
+            type: str
+        created_at:
+            description: Bare Metal node created at timestamp.
+            returned: success
+            type: str
+        deploy_interface:
+            description: The deploy interface for a node, e.g. "direct".
+            returned: success
+            type: str
+        deploy_step:
+            description: The current deploy step.
+            returned: success
+            type: str
+        driver:
+            description: The name of the driver.
+            returned: success
+            type: str
+        driver_info:
+            description: All the metadata required by the driver to manage this
+                         node. List of fields varies between drivers, and can
+                         be retrieved from the
+                         /v1/drivers/<DRIVER_NAME>/properties resource.
+            returned: success
+            type: dict
+        driver_internal_info:
+            description: Internal metadata set and stored by the node's driver.
+            returned: success
+            type: dict
+        extra:
+            description: A set of one or more arbitrary metadata key and value
+                         pairs.
+            returned: success
+            type: dict
+        fault:
+            description: The fault indicates the active fault detected by
+                         ironic, typically the node is in "maintenance mode".
+                         None means no fault has been detected by ironic.
+                         "power failure" indicates ironic failed to retrieve
+                         power state from this node. There are other possible
+                         types, e.g., "clean failure" and "rescue abort
+                         failure".
+            returned: success
+            type: str
+        id:
+            description: The UUID for the resource.
+            returned: success
+            type: str
+        inspect_interface:
+            description: The interface used for node inspection.
+            returned: success
+            type: str
+        instance_id:
+            description: UUID of the Nova instance associated with this node.
+            returned: success
+            type: str
+        instance_info:
+            description: Information used to customize the deployed image. May
+                         include root partition size, a base 64 encoded config
+                         drive, and other metadata. Note that this field is
+                         erased automatically when the instance is deleted
+                         (this is done by requesting the node provision state
+                         be changed to DELETED).
+            returned: success
+            type: dict
+        is_automated_clean_enabled:
+            description: Indicates whether the node will perform automated
+                         clean or not.
+            returned: success
+            type: bool
+        is_console_enabled:
+            description: Indicates whether console access is enabled or
+                         disabled on this node.
+            returned: success
+            type: bool
+        is_maintenance:
+            description: Whether or not this node is currently in "maintenance
+                         mode". Setting a node into maintenance mode removes it
+                         from the available resource pool and halts some
+                         internal automation. This can happen manually (eg, via
+                         an API request) or automatically when Ironic detects a
+                         hardware fault that prevents communication with the
+                         machine.
+            returned: success
+            type: bool
+        is_protected:
+            description: Whether the node is protected from undeploying,
+                         rebuilding and deletion.
+            returned: success
+            type: bool
+        is_retired:
+            description: Whether the node is retired and can hence no longer be
+                         provided, i.e. move from manageable to available, and
+                         will end up in manageable after cleaning (rather than
+                         available).
+            returned: success
+            type: bool
+        is_secure_boot:
+            description: Indicates whether node is currently booted with
+                         secure_boot turned on.
+            returned: success
+            type: bool
+        last_error:
+            description: Any error from the most recent (last) transaction that
+                         started but failed to finish.
+            returned: success
+            type: str
+        links:
+            description: A list of relative links, including self and bookmark
+                         links.
+            returned: success
+            type: list
+        maintenance_reason:
+            description: User-settable description of the reason why this node
+                         was placed into maintenance mode
+            returned: success
+            type: str
+        management_interface:
+            description: Interface for out-of-band node management.
+            returned: success
+            type: str
+        name:
+            description: Human-readable identifier for the node resource. May
+                         be undefined. Certain words are reserved.
+            returned: success
+            type: str
+        network_interface:
+            description: Which Network Interface provider to use when plumbing
+                         the network connections for this node.
+            returned: success
+            type: str
+        owner:
+            description: A string or UUID of the tenant who owns the object.
+            returned: success
+            type: str
+        ports:
+            description: List of ironic ports on this node.
+            returned: success
+            type: list
+        port_groups:
+            description: List of ironic port groups on this node.
+            returned: success
+            type: list
+        power_interface:
+            description: Interface used for performing power actions on the
+                         node, e.g. "ipmitool".
+            returned: success
+            type: str
+        power_state:
+            description: The current power state of this node. Usually, "power
+                         on" or "power off", but may be "None" if Ironic is
+                         unable to determine the power state (eg, due to
+                         hardware failure).
+            returned: success
+            type: str
+        properties:
+            description: Physical characteristics of this node. Populated by
+                         ironic-inspector during inspection. May be edited via
+                         the REST API at any time.
+            returned: success
+            type: dict
+        protected_reason:
+            description: The reason the node is marked as protected.
+            returned: success
+            type: str
+        provision_state:
+            description: The current provisioning state of this node.
+            returned: success
+            type: str
+        raid_config:
+            description: Represents the current RAID configuration of the node.
+                         Introduced with the cleaning feature.
+            returned: success
+            type: dict
+        raid_interface:
+            description: Interface used for configuring RAID on this node.
+            returned: success
+            type: str
+        rescue_interface:
+            description: The interface used for node rescue, e.g. "no-rescue".
+            returned: success
+            type: str
+        reservation:
+            description: The name of an Ironic Conductor host which is holding
+                         a lock on this node, if a lock is held. Usually
+                         "null", but this field can be useful for debugging.
+            returned: success
+            type: str
+        resource_class:
+            description: A string which can be used by external schedulers to
+                         identify this node as a unit of a specific type of
+                         resource. For more details, see
+                         https://docs.openstack.org/ironic/latest/install/configure-nova-flavors.html
+            returned: success
+            type: str
+        retired_reason:
+            description: The reason the node is marked as retired.
+            returned: success
+            type: str
+        states:
+            description: Links to the collection of states.
+            returned: success
+            type: list
+        storage_interface:
+            description: Interface used for attaching and detaching volumes on
+                         this node, e.g. "cinder".
+            returned: success
+            type: str
+        target_power_state:
+            description: If a power state transition has been requested, this
+                         field represents the requested (ie, "target") state,
+                         either "power on" or "power off".
+            returned: success
+            type: str
+        target_provision_state:
+            description: If a provisioning action has been requested, this
+                         field represents the requested (ie, "target") state.
+                         Note that a node may go through several states during
+                         its transition to this target state. For instance,
+                         when requesting an instance be deployed to an
+                         AVAILABLE node, the node may go through the following
+                         state change progression, AVAILABLE -> DEPLOYING ->
+                         DEPLOYWAIT -> DEPLOYING -> ACTIVE
+            returned: success
+            type: str
+        target_raid_config:
+            description: Represents the requested RAID configuration of the
+                         node, which will be applied when the node next
+                         transitions through the CLEANING state. Introduced
+                         with the cleaning feature.
+            returned: success
+            type: dict
+        traits:
+            description: List of traits for this node.
+            returned: success
+            type: list
+        updated_at:
+            description: Bare Metal node updated at timestamp.
+            returned: success
+            type: str
+        vendor_interface:
+            description: Interface for vendor-specific functionality on this
+                         node, e.g. "no-vendor".
+            returned: success
+            type: str
+'''
 
-
-from ansible_collections.openstack.cloud.plugins.module_utils.ironic import (
-    IronicModule,
-    ironic_argument_spec,
-)
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    openstack_module_kwargs,
-    openstack_cloud_from_module
+    OpenStackModule
 )
 
 
-_PROPERTIES = {
-    'cpu_arch': 'cpu_arch',
-    'cpus': 'cpus',
-    'ram': 'memory_mb',
-    'disk_size': 'local_gb',
-    'capabilities': 'capabilities',
-    'root_device': 'root_device',
-}
-
-
-def _parse_properties(module):
-    """Convert ansible properties into native ironic values.
-
-    Also filter out any properties that are not set.
-    """
-    p = module.params['properties']
-    return {to_key: p[from_key] for (from_key, to_key) in _PROPERTIES.items()
-            if p.get(from_key) is not None}
-
-
-def _choose_id_value(module):
-    if module.params['uuid']:
-        return module.params['uuid']
-    if module.params['name']:
-        return module.params['name']
-    return None
-
-
-def _choose_if_password_only(module, patch):
-    if len(patch) == 1:
-        if 'password' in patch[0]['path'] and module.params['skip_update_of_masked_password']:
-            # Return false to abort update as the password appears
-            # to be the only element in the patch.
-            return False
-    return True
-
-
-def _exit_node_not_updated(module, server):
-    module.exit_json(
-        changed=False,
-        result="Node not updated",
-        uuid=server['uuid'],
-        provision_state=server['provision_state']
+class BaremetalNodeModule(OpenStackModule):
+    argument_spec = dict(
+        bios_interface=dict(),
+        boot_interface=dict(),
+        chassis_id=dict(aliases=['chassis_uuid']),
+        console_interface=dict(),
+        deploy_interface=dict(),
+        driver=dict(),
+        driver_info=dict(type='dict', required=True),
+        id=dict(aliases=['uuid']),
+        inspect_interface=dict(),
+        management_interface=dict(),
+        name=dict(),
+        network_interface=dict(),
+        nics=dict(type='list', required=True, elements='dict'),
+        power_interface=dict(),
+        properties=dict(
+            type='dict',
+            options=dict(
+                cpu_arch=dict(),
+                cpus=dict(),
+                memory_mb=dict(aliases=['ram']),
+                local_gb=dict(aliases=['disk_size']),
+                capabilities=dict(),
+                root_device=dict(type='dict'),
+            ),
+        ),
+        raid_interface=dict(),
+        rescue_interface=dict(),
+        resource_class=dict(),
+        skip_update_of_masked_password=dict(
+            type='bool',
+            removed_in_version='3.0.0',
+            removed_from_collection='openstack.cloud',
+        ),
+        state=dict(default='present', choices=['present', 'absent']),
+        storage_interface=dict(),
+        timeout=dict(default=1800, type='int'),  # increased default value
+        vendor_interface=dict(),
     )
+
+    module_kwargs = dict(
+        required_if=[
+            ('state', 'present', ('driver',)),
+        ],
+        required_one_of=[
+            ('id', 'name'),
+        ],
+        supports_check_mode=True,
+    )
+
+    def run(self):
+        name_or_id = \
+            self.params['id'] if self.params['id'] else self.params['name']
+        node = self.conn.baremetal.find_node(name_or_id)
+        state = self.params['state']
+
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._will_change(state, node))
+
+        if state == 'present' and not node:
+            node = self._create()
+            self.exit_json(changed=True,
+                           node=node.to_dict(computed=False))
+
+        elif state == 'present' and node:
+            update = self._build_update(node)
+            if update:
+                node = self._update(node, update)
+            self.exit_json(changed=bool(update),
+                           node=node.to_dict(computed=False))
+
+        elif state == 'absent' and node:
+            self._delete(node)
+            self.exit_json(changed=True)
+
+        elif state == 'absent' and not node:
+            self.exit_json(changed=False)
+
+    def _build_update(self, node):
+        update = {}
+        # TODO(TheJulia): Presently this does not support updating nics.
+        #                 Support needs to be added.
+
+        # Update all known updateable attributes
+        node_attributes = dict(
+            (k, self.params[k])
+            for k in [
+                'bios_interface',
+                'boot_interface',
+                'chassis_id',
+                'console_interface',
+                'deploy_interface',
+                'driver',
+                'driver_info',
+                'inspect_interface',
+                'management_interface',
+                'name',
+                'network_interface',
+                'power_interface',
+                'raid_interface',
+                'rescue_interface',
+                'resource_class',
+                'storage_interface',
+                'vendor_interface',
+            ]
+            if k in self.params and self.params[k] is not None
+            and self.params[k] != node[k])
+
+        properties = self.params['properties']
+        if properties is not None:
+            properties = dict(
+                (k, v) for k, v in properties.items() if v is not None)
+            if properties and properties != node['properties']:
+                node_attributes['properties'] = properties
+
+        # name can only be updated if id is given
+        if self.params['id'] is None and 'name' in node_attributes:
+            self.fail_json(msg='The name of a node cannot be updated without'
+                               ' specifying an id')
+
+        if node_attributes:
+            update['node_attributes'] = node_attributes
+
+        return update
+
+    def _create(self):
+        kwargs = {}
+
+        for k in ('bios_interface',
+                  'boot_interface',
+                  'chassis_id',
+                  'console_interface',
+                  'deploy_interface',
+                  'driver',
+                  'driver_info',
+                  'id',
+                  'inspect_interface',
+                  'management_interface',
+                  'name',
+                  'network_interface',
+                  'power_interface',
+                  'raid_interface',
+                  'rescue_interface',
+                  'resource_class',
+                  'storage_interface',
+                  'vendor_interface'):
+            if self.params[k] is not None:
+                kwargs[k] = self.params[k]
+
+        properties = self.params['properties']
+        if properties is not None:
+            properties = dict(
+                (k, v) for k, v in properties.items() if v is not None)
+            if properties:
+                kwargs['properties'] = properties
+
+        node = self.conn.register_machine(
+            nics=self.params['nics'],
+            wait=self.params['wait'],
+            timeout=self.params['timeout'],
+            **kwargs)
+
+        self.exit_json(changed=True, node=node.to_dict(computed=False))
+
+    def _delete(self, node):
+        self.conn.unregister_machine(
+            nics=self.params['nics'], uuid=node['id'])
+
+    def _update(self, node, update):
+        node_attributes = update.get('node_attributes')
+        if node_attributes:
+            node = self.conn.baremetal.update_node(
+                node['id'], **node_attributes)
+
+        return node
+
+    def _will_change(self, state, node):
+        if state == 'present' and not node:
+            return True
+        elif state == 'present' and node:
+            return bool(self._build_update(node))
+        elif state == 'absent' and node:
+            return False
+        else:
+            # state == 'absent' and not node:
+            return True
 
 
 def main():
-    argument_spec = ironic_argument_spec(
-        uuid=dict(),
-        name=dict(),
-        driver=dict(),
-        resource_class=dict(),
-        bios_interface=dict(),
-        boot_interface=dict(),
-        console_interface=dict(),
-        deploy_interface=dict(),
-        inspect_interface=dict(),
-        management_interface=dict(),
-        network_interface=dict(),
-        power_interface=dict(),
-        raid_interface=dict(),
-        rescue_interface=dict(),
-        storage_interface=dict(),
-        vendor_interface=dict(),
-        driver_info=dict(type='dict', required=True),
-        nics=dict(type='list', required=True, elements="dict"),
-        properties=dict(type='dict', default={}),
-        chassis_uuid=dict(),
-        skip_update_of_masked_password=dict(type='bool'),
-        state=dict(default='present', choices=['present', 'absent']),
-        wait=dict(type='bool', default=False),
-        timeout=dict(type='int', default=1800),
-    )
-    module_kwargs = openstack_module_kwargs()
-    module = IronicModule(argument_spec, **module_kwargs)
-
-    if not HAS_JSONPATCH:
-        module.fail_json(msg='jsonpatch is required for this module')
-
-    node_id = _choose_id_value(module)
-
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        server = cloud.get_machine(node_id)
-        if module.params['state'] == 'present':
-            if module.params['driver'] is None:
-                module.fail_json(msg="A driver must be defined in order "
-                                     "to set a node to present.")
-
-            properties = _parse_properties(module)
-            driver_info = module.params['driver_info']
-            kwargs = dict(
-                driver=module.params['driver'],
-                properties=properties,
-                driver_info=driver_info,
-                name=module.params['name'],
-            )
-            optional_field_names = ('resource_class',
-                                    'bios_interface',
-                                    'boot_interface',
-                                    'console_interface',
-                                    'deploy_interface',
-                                    'inspect_interface',
-                                    'management_interface',
-                                    'network_interface',
-                                    'power_interface',
-                                    'raid_interface',
-                                    'rescue_interface',
-                                    'storage_interface',
-                                    'vendor_interface')
-            for i in optional_field_names:
-                if module.params[i]:
-                    kwargs[i] = module.params[i]
-
-            if module.params['chassis_uuid']:
-                kwargs['chassis_uuid'] = module.params['chassis_uuid']
-
-            if server is None:
-                # Note(TheJulia): Add a specific UUID to the request if
-                # present in order to be able to re-use kwargs for if
-                # the node already exists logic, since uuid cannot be
-                # updated.
-                if module.params['uuid']:
-                    kwargs['uuid'] = module.params['uuid']
-
-                server = cloud.register_machine(
-                    module.params['nics'],
-                    wait=module.params['wait'],
-                    timeout=module.params['timeout'],
-                    **kwargs)
-                module.exit_json(changed=True, uuid=server['uuid'],
-                                 provision_state=server['provision_state'])
-            else:
-                # TODO(TheJulia): Presently this does not support updating
-                # nics.  Support needs to be added.
-                #
-                # Note(TheJulia): This message should never get logged
-                # however we cannot realistically proceed if neither a
-                # name or uuid was supplied to begin with.
-                if not node_id:
-                    module.fail_json(msg="A uuid or name value "
-                                         "must be defined")
-
-                # Note(TheJulia): Constructing the configuration to compare
-                # against.  The items listed in the server_config block can
-                # be updated via the API.
-
-                server_config = dict(
-                    driver=server['driver'],
-                    properties=server['properties'],
-                    driver_info=server['driver_info'],
-                    name=server['name'],
-                )
-
-                # Add the pre-existing chassis_uuid only if
-                # it is present in the server configuration.
-                if hasattr(server, 'chassis_uuid'):
-                    server_config['chassis_uuid'] = server['chassis_uuid']
-
-                # Note(TheJulia): If a password is defined and concealed, a
-                # patch will always be generated and re-asserted.
-                patch = jsonpatch.JsonPatch.from_diff(server_config, kwargs)
-
-                if not patch:
-                    _exit_node_not_updated(module, server)
-                elif _choose_if_password_only(module, list(patch)):
-                    # Note(TheJulia): Normally we would allow the general
-                    # exception catch below, however this allows a specific
-                    # message.
-                    try:
-                        server = cloud.patch_machine(
-                            server['uuid'],
-                            list(patch))
-                    except Exception as e:
-                        module.fail_json(msg="Failed to update node, "
-                                         "Error: %s" % e.message)
-
-                    # Enumerate out a list of changed paths.
-                    change_list = []
-                    for change in list(patch):
-                        change_list.append(change['path'])
-                    module.exit_json(changed=True,
-                                     result="Node Updated",
-                                     changes=change_list,
-                                     uuid=server['uuid'],
-                                     provision_state=server['provision_state'])
-
-            # Return not updated by default as the conditions were not met
-            # to update.
-            _exit_node_not_updated(module, server)
-
-        if module.params['state'] == 'absent':
-            if not node_id:
-                module.fail_json(msg="A uuid or name value must be defined "
-                                     "in order to remove a node.")
-
-            if server is not None:
-                cloud.unregister_machine(module.params['nics'],
-                                         server['uuid'])
-                module.exit_json(changed=True, result="deleted")
-            else:
-                module.exit_json(changed=False, result="Server not found")
-
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+    module = BaremetalNodeModule()
+    module()
 
 
 if __name__ == "__main__":

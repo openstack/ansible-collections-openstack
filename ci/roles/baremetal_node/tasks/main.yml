@@ -1,0 +1,74 @@
+---
+# TODO: Actually run this role in CI. Atm we do not have DevStack's ironic plugin enabled.
+- name: Create baremetal node
+  openstack.cloud.baremetal_node:
+    cloud: "{{ cloud }}"
+    driver_info:
+      ipmi_address: "1.2.3.4"
+      ipmi_username: "admin"
+      ipmi_password: "secret"
+    name: ansible_baremetal_node
+    nics:
+      - mac: "aa:bb:cc:aa:bb:cc"
+    state: present
+  register: node
+
+- debug: var=node
+
+- name: assert return values of baremetal_node module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(node.node.keys())|length == 0
+
+- name: Fetch baremetal nodes
+  openstack.cloud.baremetal_node_info:
+    cloud: "{{ cloud }}"
+  register: nodes
+
+- name: assert module results of baremetal_node_info module
+  assert:
+    that:
+      - nodes.nodes|list|length > 0
+
+- name: assert return values of baremetal_node_info module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(nodes.nodes.0.keys())|length == 0
+
+- name: Fetch baremetal node by name
+  openstack.cloud.baremetal_node_info:
+    cloud: "{{ cloud }}"
+    name: ansible_baremetal_node
+  register: nodes
+
+- name: assert module results of baremetal_node_info module
+  assert:
+    that:
+      - nodes.nodes|list|length == 1
+      - nodes.nodes.0.id == node.node.id
+      - nodes.nodes.0.name == "ansible_baremetal_node"
+
+- name: Delete baremetal node
+  openstack.cloud.baremetal_node:
+    cloud: "{{ cloud }}"
+    driver_info:
+      ipmi_address: "1.2.3.4"
+      ipmi_username: "admin"
+      ipmi_password: "secret"
+    name: ansible_baremetal_node
+    nics:
+      - mac: "aa:bb:cc:aa:bb:cc"
+    state: absent
+
+- name: Fetch baremetal node by name
+  openstack.cloud.baremetal_node_info:
+    cloud: "{{ cloud }}"
+    name: ansible_baremetal_node
+  register: nodes
+
+- name: Assert that baremetal node has been deleted
+  assert:
+    that:
+      - nodes.nodes|list|length == 0

@@ -5,27 +5,22 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 module: baremetal_node_info
 short_description: Retrieve information about Bare Metal nodes from OpenStack
 author: OpenStack Ansible SIG
 description:
     - Retrieve information about Bare Metal nodes from OpenStack.
 options:
-    node:
-      description:
-        - Name or globally unique identifier (UUID) to identify the host.
-      type: str
     mac:
       description:
-        - Unique mac address that is used to attempt to identify the host.
+        - MAC address that is used to attempt to identify the host.
       type: str
-    ironic_url:
+    name:
       description:
-        - If noauth mode is utilized, this is required to be set to the
-          endpoint URL for the Ironic API.  Use with "auth" and "auth_type"
-          settings set to None.
+        - Name or ID of the baremetal node.
       type: str
+      aliases: ['node']
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -34,34 +29,36 @@ extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
-# Gather information about all baremeal nodes
-- openstack.cloud.baremetal_node_info:
+EXAMPLES = r'''
+- name: Gather information about all baremeal nodes
+  openstack.cloud.baremetal_node_info:
     cloud: "devstack"
-  register: result
-- debug:
-    msg: "{{ result.baremetal_nodes }}"
-# Gather information about a baremeal node
-- openstack.cloud.baremetal_node_info:
+  register: nodes
+
+- debug: var=nodes
+
+- name: Gather information about a baremeal node
+  openstack.cloud.baremetal_node_info:
     cloud: "devstack"
-    node: "00000000-0000-0000-0000-000000000002"
-  register: result
-- debug:
-    msg: "{{ result.baremetal_nodes }}"
+    name: "00000000-0000-0000-0000-000000000002"
+  register: nodes
+
+- debug: var=nodes
 '''
 
-RETURN = '''
-baremetal_nodes:
-    description: Bare Metal node list. A subset of the dictionary keys
-                 listed below may be returned, depending on your cloud
-                 provider.
-    returned: always, but can be null
-    type: complex
+RETURN = r'''
+nodes:
+    description: |
+        Bare Metal node list. A subset of the dictionary keys listed below may
+        be returned, depending on your cloud provider.
+    returned: always
+    type: list
+    elements: dict
     contains:
         allocation_id:
             description: The UUID of the allocation associated with the node.
-                         If not null, will be the same as instance_uuid (the
-                         opposite is not always true). Unlike instance_uuid,
+                         If not null, will be the same as instance_id (the
+                         opposite is not always true). Unlike instance_id,
                          this field is read-only. Please use the Allocation API
                          to remove allocations.
             returned: success
@@ -88,14 +85,11 @@ baremetal_nodes:
             returned: success
             type: str
         conductor:
-            description: The conductor currently servicing a node. This field
-                         is read-only.
+            description: The conductor currently servicing a node.
             returned: success
             type: str
         conductor_group:
-            description: The conductor group for a node. Case-insensitive
-                         string up to 255 characters, containing a-z, 0-9, _,
-                         -, and ..
+            description: The conductor group for a node.
             returned: success
             type: str
         console_interface:
@@ -239,209 +233,10 @@ baremetal_nodes:
             description: List of ironic ports on this node.
             returned: success
             type: list
-            elements: dict
-            contains:
-              address:
-                description: Physical hardware address of this network port,
-                             typically the hardware MAC address.
-                returned: success
-                type: str
-              created_at:
-                description: The UTC date and time when the resource was
-                             created, ISO 8601 format.
-                returned: success
-                type: str
-              extra:
-                description: A set of one or more arbitrary metadata key and
-                             value pairs.
-                returned: success
-                type: dict
-              id:
-                description: The UUID for the resource.
-                returned: success
-                type: str
-              internal_info:
-                description: Internal metadata set and stored by the port. This
-                             field is read-only.
-                returned: success
-                type: dict
-              is_pxe_enabled:
-                description: Indicates whether PXE is enabled or disabled on
-                             the port.
-                returned: success
-                type: str
-              links:
-                  description: A list of relative links, including self and bookmark
-                               links.
-                  returned: success
-                  type: list
-              local_link_connection:
-                description: The port binding profile. If specified, must
-                             contain switch_id (only a MAC address or an
-                             OpenFlow based datapath_id of the switch are
-                             accepted in this field) and port_id (identifier of
-                             the physical port on the switch to which node's
-                             port is connected to) fields. switch_info is an
-                             optional string field to be used to store any
-                             vendor-specific information.
-                returned: success
-                type: dict
-              node_id:
-                description: UUID of the node this resource belongs to.
-                returned: success
-                type: str
-              physical_network:
-                description: The name of the physical network to which a port
-                             is connected. May be empty.
-                returned: success
-                type: str
-              port_group_id:
-                description: UUID of the port group this resource belongs to.
-                returned: success
-                type: str
-              updated_at:
-                description: The UTC date and time when the resource was
-                             updated, ISO 8601 format. May be "null".
-                returned: success
-                type: str
         port_groups:
             description: List of ironic port groups on this node.
             returned: success
             type: list
-            elements: dict
-            contains:
-              address:
-                description: Physical hardware address of this port group,
-                             typically the hardware MAC address.
-                returned: success
-                type: str
-              created_at:
-                description: The UTC date and time when the resource was
-                             created, ISO 8601 format.
-                returned: success
-                type: str
-              extra:
-                description: A set of one or more arbitrary metadata key and
-                             value pairs.
-                returned: success
-                type: dict
-              id:
-                description: The UUID for the resource.
-                returned: success
-                type: str
-              internal_info:
-                description: Internal metadata set and stored by the port group.
-                             This field is read-only.
-                returned: success
-                type: dict
-              is_standalone_ports_supported:
-                description: Indicates whether ports that are members of this
-                             port group can be used as stand-alone ports.
-                returned: success
-                type: bool
-              links:
-                  description: A list of relative links, including self and bookmark
-                               links.
-                  returned: success
-                  type: list
-              mode:
-                description: Mode of the port group. For possible values, refer
-                             to https://www.kernel.org/doc/Documentation/networking/bonding.txt.
-                             If not specified in a request to create a port
-                             group, it will be set to the value of the
-                             [DEFAULT]default_portgroup_mode configuration
-                             option. When set, can not be removed from the port
-                             group.
-                returned: success
-                type: str
-              name:
-                description: Human-readable identifier for the port group
-                             resource. May be undefined.
-                returned: success
-                type: str
-              node_id:
-                description: UUID of the node this resource belongs to.
-                returned: success
-                type: str
-              ports:
-                description: List of ports belonging to this port group.
-                returned: success
-                type: list
-                elements: dict
-                contains:
-                  address:
-                    description: Physical hardware address of this network port,
-                                 typically the hardware MAC address.
-                    returned: success
-                    type: str
-                  created_at:
-                    description: The UTC date and time when the resource was
-                                 created, ISO 8601 format.
-                    returned: success
-                    type: str
-                  extra:
-                    description: A set of one or more arbitrary metadata key and
-                                 value pairs.
-                    returned: success
-                    type: dict
-                  id:
-                    description: The UUID for the resource.
-                    returned: success
-                    type: str
-                  internal_info:
-                    description: Internal metadata set and stored by the port. This
-                                 field is read-only.
-                    returned: success
-                    type: dict
-                  is_pxe_enabled:
-                    description: Indicates whether PXE is enabled or disabled on
-                                 the port.
-                    returned: success
-                    type: str
-                  links:
-                      description: A list of relative links, including self and bookmark
-                                   links.
-                      returned: success
-                      type: list
-                  local_link_connection:
-                    description: The port binding profile. If specified, must
-                                 contain switch_id (only a MAC address or an
-                                 OpenFlow based datapath_id of the switch are
-                                 accepted in this field) and port_id (identifier of
-                                 the physical port on the switch to which node's
-                                 port is connected to) fields. switch_info is an
-                                 optional string field to be used to store any
-                                 vendor-specific information.
-                    returned: success
-                    type: dict
-                  node_id:
-                    description: UUID of the node this resource belongs to.
-                    returned: success
-                    type: str
-                  physical_network:
-                    description: The name of the physical network to which a port
-                                 is connected. May be empty.
-                    returned: success
-                    type: str
-                  port_group_id:
-                    description: UUID of the port group this resource belongs to.
-                    returned: success
-                    type: str
-                  updated_at:
-                    description: The UTC date and time when the resource was
-                                 updated, ISO 8601 format. May be "null".
-                    returned: success
-                    type: str
-              properties:
-                description: Key/value properties related to the port group's
-                             configuration.
-                returned: success
-                type: dict
-              updated_at:
-                description: The UTC date and time when the resource was
-                             updated, ISO 8601 format. May be "null".
-                returned: success
-                type: str
         power_interface:
             description: Interface used for performing power actions on the
                          node, e.g. "ipmitool".
@@ -544,73 +339,74 @@ baremetal_nodes:
                          node, e.g. "no-vendor".
             returned: success
             type: str
+baremetal_nodes:
+    description: Same as C(nodes), kept for backward compatibility.
+    returned: always
+    type: list
+    elements: dict
 '''
 
-
-from ansible_collections.openstack.cloud.plugins.module_utils.ironic import (
-    IronicModule,
-    ironic_argument_spec,
-)
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    openstack_module_kwargs,
-    openstack_cloud_from_module
+    OpenStackModule
 )
 
 
-def get_ports_and_portgroups(cloud, machine):
-    machine['ports'] = [nic.to_dict(computed=False)
-                        for nic in cloud.baremetal.ports(
-                            details=True, node_id=machine['id'])]
+class BaremetalNodeInfoModule(OpenStackModule):
+    argument_spec = dict(
+        mac=dict(),
+        name=dict(aliases=['node']),
+    )
 
-    machine['port_groups'] = [grp.to_dict(computed=False) for grp in
-                              cloud.baremetal.port_groups(node=machine['id'],
-                                                          details=True)]
+    module_kwargs = dict(
+        mutually_exclusive=[
+            ('mac', 'name'),
+        ],
+        supports_check_mode=True,
+    )
 
-    # links to ports are not useful, replace with list of ports
-    for port_group in machine['port_groups']:
-        port_group['ports'] = [port for port in machine['ports']
-                               if port['port_group_id'] == port_group['id']]
+    def run(self):
+        name_or_id = self.params['name']
+        mac = self.params['mac']
+
+        node_id = None
+        if name_or_id:
+            # self.conn.baremetal.nodes() does not support searching by name or
+            # id which we want to provide for backward compatibility
+            node = self.conn.baremetal.find_node(name_or_id)
+            if node:
+                node_id = node['id']
+        elif mac:
+            # self.conn.get_machine_by_mac(mac) is not necessary
+            # because nodes can be filtered by instance_id
+            baremetal_port = self.conn.get_nic_by_mac(mac)
+            if baremetal_port:
+                node_id = baremetal_port['node_id']
+
+        if name_or_id or mac:
+            if node_id:
+                # fetch node details with self.conn.baremetal.get_node()
+                # because self.conn.baremetal.nodes() does not provide a
+                # query parameter to filter by a node's id
+                node = self.conn.baremetal.get_node(node_id)
+                nodes = [node.to_dict(computed=False)]
+            else:  # not node_id
+                # return empty list when no matching node could be found
+                # because *_info modules do not raise errors on missing
+                # resources
+                nodes = []
+        else:  # not name_or_id and not mac
+            nodes = [node.to_dict(computed=False) for node in
+                     self.conn.baremetal.nodes(details=True)]
+
+        self.exit_json(changed=False,
+                       nodes=nodes,
+                       # keep for backward compatibility
+                       baremetal_nodes=nodes)
 
 
 def main():
-    argument_spec = ironic_argument_spec(
-        node=dict(),
-        mac=dict(),
-    )
-    module_kwargs = openstack_module_kwargs()
-    module_kwargs['supports_check_mode'] = True
-
-    module = IronicModule(argument_spec, **module_kwargs)
-
-    machine = None
-    machines = list()
-
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        if module.params['node']:
-            machine = cloud.baremetal.find_node(module.params['node'])
-        elif module.params['mac']:
-            nic = next(cloud.baremetal.ports(address=module.params['mac'],
-                                             fields=['node_id']), None)
-            if nic:
-                machine = cloud.baremetal.find_node(nic['node_id'])
-
-        # Fail if node not found
-        if (module.params['node'] or module.params['mac']) and not machine:
-            module.fail_json(msg='The baremetal node was not found')
-
-        if machine:
-            machines.append(machine.to_dict(computed=False))
-        else:
-            machines = [machine.to_dict(computed=False)
-                        for machine in cloud.baremetal.nodes(details=True)]
-
-        for machine in machines:
-            get_ports_and_portgroups(cloud, machine)
-
-        module.exit_json(changed=False, baremetal_nodes=machines)
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+    module = BaremetalNodeInfoModule()
+    module()
 
 
 if __name__ == "__main__":
