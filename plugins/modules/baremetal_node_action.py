@@ -4,41 +4,21 @@
 # (c) 2015, Hewlett-Packard Development Company, L.P.
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: baremetal_node_action
-short_description: Activate/Deactivate Bare Metal Resources from OpenStack
+short_description: Activate/Deactivate Bare Metal nodes from OpenStack
 author: OpenStack Ansible SIG
 description:
-    - Deploy to nodes controlled by Ironic.
+    - Deploy to Bare Metal nodes controlled by Ironic.
 options:
-    name:
-      description:
-        - Name of the node to create.
-      type: str
-    state:
-      description:
-        - Indicates desired state of the resource.
-        - I(state) can be C('present'), C('absent'), C('maintenance') or C('off').
-      default: present
-      type: str
     deploy:
       description:
        - Indicates if the resource should be deployed. Allows for deployment
          logic to be disengaged and control of the node power or maintenance
          state to be changed.
-      type: str
-      default: 'yes'
-    uuid:
-      description:
-        - globally unique identifier (UUID) to be given to the resource.
-      type: str
-    ironic_url:
-      description:
-        - If noauth mode is utilized, this is required to be set to the
-          endpoint URL for the Ironic API.  Use with "auth" and "auth_type"
-          settings set to None.
-      type: str
+      type: bool
+      default: true
     config_drive:
       description:
         - A configdrive file or HTTP(S) URL that will be passed along to the
@@ -47,8 +27,8 @@ options:
     instance_info:
       description:
         - Definition of the instance information which is used to deploy
-          the node.  This information is only required when an instance is
-          set to present.
+          the node.  This information is only required when I(state) is
+          set to C(present) or C(on).
       type: dict
       suboptions:
         image_source:
@@ -60,37 +40,47 @@ options:
         image_disk_format:
           description:
             - The type of image that has been requested to be deployed.
-    power:
-      description:
-        - A setting to allow power state to be asserted allowing nodes
-          that are not yet deployed to be powered on, and nodes that
-          are deployed to be powered off.
-        - I(power) can be C('present'), C('absent'), C('maintenance') or C('off').
-      default: present
-      type: str
     maintenance:
       description:
-        - A setting to allow the direct control if a node is in
-          maintenance mode.
-        - I(maintenance) can be C('yes'), C('no'), C('True'), or C('False').
-      type: str
+        - Set node into maintenance mode.
+        - The power state as controlled with I(power) will not be changed
+          when maintenance mode of a node is changed.
+      type: bool
     maintenance_reason:
       description:
         - A string expression regarding the reason a node is in a
           maintenance mode.
       type: str
-    wait:
+    name:
       description:
-        - A boolean value instructing the module to wait for node
-          activation or deactivation to complete before returning.
-      type: bool
-      default: 'no'
+        - Name or ID of the Bare Metal node.
+      type: str
+      required: true
+      aliases: ['id', 'uuid']
+    power:
+      description:
+        - A setting to allow power state to be asserted allowing nodes
+          that are not yet deployed to be powered on, and nodes that
+          are deployed to be powered off.
+        - I(power) can be C(present), C(absent), C(maintenance), C(on) or
+          C(off).
+      choices: ['present', 'absent', 'maintenance', 'on', 'off']
+      default: present
+      type: str
+    state:
+      description:
+        - Indicates desired state of the resource.
+        - I(state) can be C(present), C(absent), C(maintenance), C(on) or
+          C(off).
+      choices: ['present', 'absent', 'maintenance', 'on', 'off']
+      default: present
+      type: str
     timeout:
       description:
-        - An integer value representing the number of seconds to
-          wait for the node activation or deactivation to complete.
-      default: 1800
+        - Number of seconds to wait for the node activation or deactivation
+          to complete.
       type: int
+      default: 1800
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -99,263 +89,183 @@ extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
+EXAMPLES = r'''
 # Activate a node by booting an image with a configdrive attached
 - openstack.cloud.baremetal_node_action:
-    cloud: "openstack"
-    uuid: "d44666e1-35b3-4f6b-acb0-88ab7052da69"
-    state: present
-    power: present
-    deploy: True
-    maintenance: False
-    config_drive: "http://192.168.1.1/host-configdrive.iso"
     instance_info:
       image_source: "http://192.168.1.1/deploy_image.img"
       image_checksum: "356a6b55ecc511a20c33c946c4e678af"
       image_disk_format: "qcow"
     delegate_to: localhost
+    deploy: yes
+    cloud: "openstack"
+    config_drive: "http://192.168.1.1/host-configdrive.iso"
+    maintenance: no
+    power: present
+    uuid: "d44666e1-35b3-4f6b-acb0-88ab7052da69"
+    state: present
 
 # Activate a node by booting an image with a configdrive json object
 - openstack.cloud.baremetal_node_action:
-    uuid: "d44666e1-35b3-4f6b-acb0-88ab7052da69"
     auth_type: None
-    ironic_url: "http://192.168.1.1:6385/"
+    auth:
+        endpoint: "http://192.168.1.1:6385/"
+    id: "d44666e1-35b3-4f6b-acb0-88ab7052da69"
     config_drive:
       meta_data:
         hostname: node1
         public_keys:
           default: ssh-rsa AAA...BBB==
+    delegate_to: localhost
     instance_info:
       image_source: "http://192.168.1.1/deploy_image.img"
       image_checksum: "356a6b55ecc511a20c33c946c4e678af"
       image_disk_format: "qcow"
-    delegate_to: localhost
 '''
 
+RETURN = r'''
+'''
 
-from ansible_collections.openstack.cloud.plugins.module_utils.ironic import (
-    IronicModule,
-    ironic_argument_spec,
-)
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    openstack_module_kwargs,
-    openstack_cloud_from_module
+    OpenStackModule
 )
 
 
-def _choose_id_value(module):
-    if module.params['uuid']:
-        return module.params['uuid']
-    if module.params['name']:
-        return module.params['name']
-    return None
+class BaremetalNodeActionModule(OpenStackModule):
 
-
-def _is_true(value):
-    true_values = [True, 'yes', 'Yes', 'True', 'true', 'present', 'on']
-    if value in true_values:
-        return True
-    return False
-
-
-def _is_false(value):
-    false_values = [False, None, 'no', 'No', 'False', 'false', 'absent', 'off']
-    if value in false_values:
-        return True
-    return False
-
-
-def _check_set_maintenance(module, cloud, node):
-    if _is_true(module.params['maintenance']):
-        if _is_false(node['maintenance']):
-            cloud.set_machine_maintenance_state(
-                node['uuid'],
-                True,
-                reason=module.params['maintenance_reason'])
-            module.exit_json(changed=True, msg="Node has been set into "
-                                               "maintenance mode")
-        else:
-            # User has requested maintenance state, node is already in the
-            # desired state, checking to see if the reason has changed.
-            if (str(node['maintenance_reason']) not in
-                    str(module.params['maintenance_reason'])):
-                cloud.set_machine_maintenance_state(
-                    node['uuid'],
-                    True,
-                    reason=module.params['maintenance_reason'])
-                module.exit_json(changed=True, msg="Node maintenance reason "
-                                                   "updated, cannot take any "
-                                                   "additional action.")
-    elif _is_false(module.params['maintenance']):
-        if node['maintenance'] is True:
-            cloud.remove_machine_from_maintenance(node['uuid'])
-            return True
-    else:
-        module.fail_json(msg="maintenance parameter was set but a valid "
-                             "the value was not recognized.")
-    return False
-
-
-def _check_set_power_state(module, cloud, node):
-    if 'power on' in str(node['power_state']):
-        if _is_false(module.params['power']):
-            # User has requested the node be powered off.
-            cloud.set_machine_power_off(node['uuid'])
-            module.exit_json(changed=True, msg="Power requested off")
-    if 'power off' in str(node['power_state']):
-        if (
-            _is_false(module.params['power'])
-            and _is_false(module.params['state'])
-        ):
-            return False
-        if (
-            _is_false(module.params['power'])
-            and _is_false(module.params['state'])
-        ):
-            module.exit_json(
-                changed=False,
-                msg="Power for node is %s, node must be reactivated "
-                    "OR set to state absent"
-            )
-        # In the event the power has been toggled on and
-        # deployment has been requested, we need to skip this
-        # step.
-        if (
-            _is_true(module.params['power'])
-            and _is_false(module.params['deploy'])
-        ):
-            # Node is powered down when it is not awaiting to be provisioned
-            cloud.set_machine_power_on(node['uuid'])
-            return True
-    # Default False if no action has been taken.
-    return False
-
-
-def main():
-    argument_spec = ironic_argument_spec(
-        uuid=dict(),
-        name=dict(),
-        instance_info=dict(type='dict'),
+    argument_spec = dict(
         config_drive=dict(type='raw'),
-        state=dict(default='present'),
-        maintenance=dict(),
+        deploy=dict(type='bool', default=True),
+        instance_info=dict(type='dict'),
+        maintenance=dict(type='bool'),
         maintenance_reason=dict(),
-        power=dict(default='present'),
-        deploy=dict(default='yes'),
-        wait=dict(type='bool', default=False),
-        timeout=dict(type='int', default=1800),
+        name=dict(required=True, aliases=['id', 'uuid']),
+        power=dict(default='present',
+                   choices=['present', 'absent', 'maintenance', 'on', 'off']),
+        state=dict(default='present',
+                   choices=['present', 'absent', 'maintenance', 'on', 'off']),
+        timeout=dict(type='int', default=1800),  # increased default value
     )
-    module_kwargs = openstack_module_kwargs()
-    module = IronicModule(argument_spec, **module_kwargs)
 
-    if (
-        module.params['config_drive']
-        and not isinstance(module.params['config_drive'], (str, dict))
-    ):
-        config_drive_type = type(module.params['config_drive'])
-        msg = ('argument config_drive is of type %s and we expected'
-               ' str or dict') % config_drive_type
-        module.fail_json(msg=msg)
+    module_kwargs = dict(
+        required_if=[
+            ('state', 'present', ('instance_info',)),
+        ],
+    )
 
-    node_id = _choose_id_value(module)
-
-    if not node_id:
-        module.fail_json(msg="A uuid or name value must be defined "
-                             "to use this module.")
-    sdk, cloud = openstack_cloud_from_module(module)
-    try:
-        node = cloud.get_machine(node_id)
-
-        if node is None:
-            module.fail_json(msg="node not found")
-
-        uuid = node['uuid']
-        instance_info = module.params['instance_info']
-        changed = False
-        wait = module.params['wait']
-        timeout = module.params['timeout']
+    def run(self):
+        # Fail early on invalid arguments
+        config_drive = self.params['config_drive']
+        if config_drive and not isinstance(config_drive, (str, dict)):
+            self.fail_json(msg='config_drive must be of type str or dict,'
+                               ' not {0}'.format(type(config_drive)))
 
         # User has requested desired state to be in maintenance state.
-        if module.params['state'] == 'maintenance':
-            module.params['maintenance'] = True
+        if self.params['state'] == 'maintenance':
+            if self.params['maintenance'] is False:
+                self.fail_json(
+                    msg='state=maintenance contradicts with maintenance=false')
+            self.params['maintenance'] = True
 
-        if node['provision_state'] in [
-                'cleaning',
-                'deleting',
-                'wait call-back']:
-            module.fail_json(msg="Node is in %s state, cannot act upon the "
-                                 "request as the node is in a transition "
-                                 "state" % node['provision_state'])
-        # TODO(TheJulia) This is in-development code, that requires
-        # code in the shade library that is still in development.
-        if _check_set_maintenance(module, cloud, node):
-            if node['provision_state'] in 'active':
-                module.exit_json(changed=True,
-                                 result="Maintenance state changed")
-            changed = True
-            node = cloud.get_machine(node_id)
+        name_or_id = self.params['name']
+        node = self.conn.baremetal.find_node(name_or_id, ignore_missing=False)
 
-        if _check_set_power_state(module, cloud, node):
-            changed = True
-            node = cloud.get_machine(node_id)
+        if node['provision_state'] in ['cleaning',
+                                       'deleting',
+                                       'wait call-back']:
+            self.fail_json(msg='Node is in {0} state, cannot act upon the'
+                               ' request as the node is in a transition'
+                               ' state'.format(node['provision_state']))
 
-        if _is_true(module.params['state']):
-            if _is_false(module.params['deploy']):
-                module.exit_json(
-                    changed=changed,
-                    result="User request has explicitly disabled "
-                           "deployment logic"
-                )
+        changed = False
+
+        # Update maintenance state
+        if self.params['maintenance']:
+            maintenance_reason = self.params['maintenance_reason']
+            if not node['maintenance'] \
+               or node['maintenance_reason'] != maintenance_reason:
+                self.conn.baremetal.set_node_maintenance(
+                    node['id'], reason=maintenance_reason)
+                self.exit_json(changed=True)
+        else:  # self.params['maintenance'] is False
+            if node['maintenance']:
+                self.conn.baremetal.unset_node_maintenance(node['id'])
+                if node['provision_state'] in 'active':
+                    # Maintenance state changed
+                    self.exit_json(changed=True)
+                changed = True
+                node = self.conn.baremetal.get_node(node['id'])
+
+        # Update power state
+        if node['power_state'] == 'power on':
+            if self.params['power'] in ['absent', 'off']:
+                # User has requested the node be powered off.
+                self.conn.baremetal.set_node_power_state(node['id'],
+                                                         'power off')
+                self.exit_json(changed=True)
+        elif node['power_state'] == 'power off':
+            if self.params['power'] not in ['absent', 'off'] \
+               or self.params['state'] not in ['absent', 'off']:
+                # In the event the power has been toggled on and
+                # deployment has been requested, we need to skip this
+                # step.
+                if self.params['power'] == 'present' \
+                   and not self.params['deploy']:
+                    # Node is powered down when it is not awaiting to be
+                    # provisioned
+                    self.conn.baremetal.set_node_power_state(node['id'],
+                                                             'power on')
+                    changed = True
+                    node = self.conn.baremetal.get_node(node['id'])
+        else:
+            self.fail_json(msg='Node has unknown power state {0}'
+                               .format(node['power_state']))
+
+        if self.params['state'] in ['present', 'on']:
+            if not self.params['deploy']:
+                # User request has explicitly disabled deployment logic
+                self.exit_json(changed=changed)
 
             if 'active' in node['provision_state']:
-                module.exit_json(
-                    changed=changed,
-                    result="Node already in an active state."
-                )
-
-            if instance_info is None:
-                module.fail_json(
-                    changed=changed,
-                    msg="When setting an instance to present, "
-                        "instance_info is a required variable.")
+                # Node already in an active state
+                self.exit_json(changed=changed)
 
             # TODO(TheJulia): Update instance info, however info is
             # deployment specific. Perhaps consider adding rebuild
             # support, although there is a known desire to remove
             # rebuild support from Ironic at some point in the future.
-            cloud.update_machine(uuid, instance_info=instance_info)
-            cloud.validate_node(uuid)
-            if not wait:
-                cloud.activate_node(uuid, module.params['config_drive'])
-            else:
-                cloud.activate_node(
-                    uuid,
-                    configdrive=module.params['config_drive'],
-                    wait=wait,
-                    timeout=timeout)
+            self.conn.baremetal.update_node(
+                node['id'],
+                instance_info=self.params['instance_info'])
+            self.conn.baremetal.validate_node(node['id'])
+            self.conn.baremetal.set_node_provision_state(
+                node['id'],
+                target='active',
+                config_drive=self.params['config_drive'],
+                wait=self.params['wait'],
+                timeout=self.params['timeout'])
+
             # TODO(TheJulia): Add more error checking..
-            module.exit_json(changed=changed, result="node activated")
+            self.exit_json(changed=True)
 
-        elif _is_false(module.params['state']):
-            if node['provision_state'] not in "deleted":
-                cloud.update_machine(uuid, instance_info={})
-                if not wait:
-                    cloud.deactivate_node(uuid)
-                else:
-                    cloud.deactivate_node(
-                        uuid,
-                        wait=wait,
-                        timeout=timeout)
+        elif node['provision_state'] not in 'deleted':
+            self.conn.baremetal.update_node(node['id'], instance_info={})
+            self.conn.baremetal.set_node_provision_state(
+                node['id'],
+                target='deleted',
+                wait=self.params['wait'],
+                timeout=self.params['timeout'])
+            self.exit_json(changed=True)
 
-                module.exit_json(changed=True, result="deleted")
-            else:
-                module.exit_json(changed=False, result="node not found")
         else:
-            module.fail_json(msg="State must be present, absent, "
-                                 "maintenance, off")
+            # self.params['state'] in ['absent', 'off']
+            # and node['provision_state'] in 'deleted'
+            self.exit_json(changed=changed)
 
-    except sdk.exceptions.OpenStackCloudException as e:
-        module.fail_json(msg=str(e))
+
+def main():
+    module = BaremetalNodeActionModule()
+    module()
 
 
 if __name__ == "__main__":
