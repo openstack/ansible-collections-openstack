@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2012, Marco Vito Moscaritolo <marco@agavee.com>
 # Copyright (c) 2013, Jesse Keating <jesse.keating@rackspace.com>
 # Copyright (c) 2015, Hewlett-Packard Development Company, L.P.
@@ -133,6 +134,9 @@ import logging
 from ansible.errors import AnsibleParserError
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable, Cacheable
 from ansible.utils.display import Display
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
+    ensure_compatibility
+)
 
 display = Display()
 os_logger = logging.getLogger("openstack")
@@ -173,6 +177,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             msg = "it's not a plugin configuration nor a clouds.yaml file"
         elif not HAS_SDK:
             msg = "openstacksdk is required for the OpenStack inventory plugin. OpenStack inventory sources will be skipped."
+
+        if not msg:
+            try:
+                ensure_compatibility(sdk.version.__version__)
+            except ImportError as e:
+                msg = ("Incompatible openstacksdk library found: {error}."
+                       .format(error=str(e)))
 
         if msg:
             display.vvvv(msg)
