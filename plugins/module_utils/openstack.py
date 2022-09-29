@@ -55,6 +55,39 @@ MINIMUM_SDK_VERSION = '0.101.0'
 MAXIMUM_SDK_VERSION = None
 
 
+def ensure_compatibility(version, min_version=None, max_version=None):
+    """ Raises ImportError if the specified version does not
+        meet the minimum and maximum version requirements"""
+
+    if min_version and MINIMUM_SDK_VERSION:
+        min_version = max(StrictVersion(MINIMUM_SDK_VERSION),
+                          StrictVersion(min_version))
+    elif MINIMUM_SDK_VERSION:
+        min_version = StrictVersion(MINIMUM_SDK_VERSION)
+
+    if max_version and MAXIMUM_SDK_VERSION:
+        max_version = min(StrictVersion(MAXIMUM_SDK_VERSION),
+                          StrictVersion(max_version))
+    elif MAXIMUM_SDK_VERSION:
+        max_version = StrictVersion(MAXIMUM_SDK_VERSION)
+
+    if min_version and StrictVersion(version) < min_version:
+        raise ImportError(
+            "Version MUST be >={min_version} and <={max_version}, but"
+            " {version} is smaller than minimum version {min_version}"
+            .format(version=version,
+                    min_version=min_version,
+                    max_version=max_version))
+
+    if max_version and StrictVersion(version) > max_version:
+        raise ImportError(
+            "Version MUST be >={min_version} and <={max_version}, but"
+            " {version} is larger than maximum version {max_version}"
+            .format(version=version,
+                    min_version=min_version,
+                    max_version=max_version))
+
+
 def openstack_argument_spec():
     # DEPRECATED: This argument spec is only used for the deprecated old
     # OpenStack modules. It turns out that modern OpenStack auth is WAY
@@ -129,33 +162,16 @@ def openstack_cloud_from_module(module, min_version=None, max_version=None):
     try:
         # Due to the name shadowing we should import other way
         sdk = importlib.import_module('openstack')
-        sdk_version = importlib.import_module('openstack.version')
     except ImportError:
         module.fail_json(msg='openstacksdk is required for this module')
 
-    if min_version and MINIMUM_SDK_VERSION:
-        min_version = max(StrictVersion(MINIMUM_SDK_VERSION),
-                          StrictVersion(min_version))
-    elif MINIMUM_SDK_VERSION:
-        min_version = StrictVersion(MINIMUM_SDK_VERSION)
-
-    if max_version and MAXIMUM_SDK_VERSION:
-        max_version = min(StrictVersion(MAXIMUM_SDK_VERSION),
-                          StrictVersion(max_version))
-    elif MAXIMUM_SDK_VERSION:
-        max_version = StrictVersion(MAXIMUM_SDK_VERSION)
-
-    if min_version and StrictVersion(sdk_version.__version__) < min_version:
+    try:
+        ensure_compatibility(sdk.version.__version__,
+                             min_version, max_version)
+    except ImportError as e:
         module.fail_json(
-            msg="To utilize this module, the installed version of "
-                "the openstacksdk library MUST be >={min_version}.".format(
-                    min_version=min_version))
-
-    if max_version and StrictVersion(sdk_version.__version__) > max_version:
-        module.fail_json(
-            msg="To utilize this module, the installed version of "
-                "the openstacksdk library MUST be <={max_version}.".format(
-                    max_version=max_version))
+            msg="Incompatible openstacksdk library found: {error}."
+                .format(error=str(e)))
 
     cloud_config = module.params.pop('cloud', None)
     try:
@@ -298,40 +314,18 @@ class OpenStackModule:
         try:
             # Due to the name shadowing we should import other way
             sdk = importlib.import_module('openstack')
-            sdk_version_lib = importlib.import_module('openstack.version')
-            self.sdk_version = sdk_version_lib.__version__
+            self.sdk_version = sdk.version.__version__
         except ImportError:
             self.fail_json(msg='openstacksdk is required for this module')
 
-        # Fail if the available SDK version doesn't meet the minimum
-        # and maximum version requirements
-        if self.module_min_sdk_version and MINIMUM_SDK_VERSION:
-            min_version = max(StrictVersion(MINIMUM_SDK_VERSION),
-                              StrictVersion(self.module_min_sdk_version))
-        elif MINIMUM_SDK_VERSION:
-            min_version = StrictVersion(MINIMUM_SDK_VERSION)
-        else:
-            min_version = None
-
-        if self.module_max_sdk_version and MAXIMUM_SDK_VERSION:
-            max_version = min(StrictVersion(MAXIMUM_SDK_VERSION),
-                              StrictVersion(self.module_max_sdk_version))
-        elif MAXIMUM_SDK_VERSION:
-            max_version = StrictVersion(MAXIMUM_SDK_VERSION)
-        else:
-            max_version = None
-
-        if min_version and StrictVersion(self.sdk_version) < min_version:
-            self.fail(
-                msg="To utilize this module, the installed version of "
-                "the openstacksdk library MUST be >={min_version}.".format(
-                    min_version=min_version))
-
-        if max_version and StrictVersion(self.sdk_version) > max_version:
-            self.fail(
-                msg="To utilize this module, the installed version of "
-                "the openstacksdk library MUST be <={max_version}.".format(
-                    max_version=max_version))
+        try:
+            ensure_compatibility(self.sdk_version,
+                                 self.module_min_sdk_version,
+                                 self.module_max_sdk_version)
+        except ImportError as e:
+            self.fail_json(
+                msg="Incompatible openstacksdk library found: {error}."
+                    .format(error=str(e)))
 
         # Fail if there are set unsupported for this version parameters
         # New parameters should NOT use 'default' but rely on SDK defaults
