@@ -14,8 +14,6 @@ DOCUMENTATION = '''
 name: openstack
 author: OpenStack Ansible SIG
 short_description: OpenStack inventory source
-requirements:
-    - "openstacksdk >= 0.28"
 description:
     - Get inventory hosts from OpenStack clouds
     - Uses openstack.(yml|yaml) YAML configuration file to configure the inventory plugin
@@ -113,7 +111,9 @@ options:
         description: Automatically create groups from host variables.
         type: bool
         default: true
-
+requirements:
+    - "python >= 3.6"
+    - "openstacksdk"
 extends_documentation_fragment:
 - inventory_cache
 - constructed
