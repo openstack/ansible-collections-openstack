@@ -5,6 +5,28 @@ Openstack Cloud Ansilbe modules Release Notes
 .. contents:: Topics
 
 
+v1.10.0
+=======
+
+Release Summary
+---------------
+
+Enable logging of openstacksdk activities and warn users about incompatible openstacksdk releases when using inventory plugin
+
+Bugfixes
+--------
+
+- Add SDK logging option for openstack ansible collections
+- Don't use deprecated distutils from python 3.10
+- Ensure openstacksdk compatibility in inventory plugin
+- Lowered maximum OpenStack SDK version to 0.98.999 in inventory plugin
+
+Known Issues
+------------
+
+- For compatibility with OpenStack SDK >= 0.99.0 use Ansible OpenStack collection 2.0.0 or later which is currently under development.
+- Release series 1.x.x of this collection is compatible to OpenStack SDK prior to 0.99.0 only.
+
 v1.9.1
 ======
 
