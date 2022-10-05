@@ -6,9 +6,9 @@
 # - Retry change (noop)
 #
 - module_defaults:
-    # meta/action_groups.yml glue seems to be missing
-    # group/os:
-    #   cloud: "{{ cloud }}"
+    group/openstack.cloud.openstack:
+      cloud: "{{ cloud }}"
+    # Backward compatibility with Ansible 2.9
     openstack.cloud.identity_domain:
       cloud: "{{ cloud }}"
     openstack.cloud.federation_idp:

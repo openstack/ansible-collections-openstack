@@ -6,21 +6,21 @@
 # - Retry change (noop)
 #
 - module_defaults:
-    # meta/action_groups.yml glue seems to be missing
-    # group/os:
-    #   cloud: "{{ cloud }}"
+    group/openstack.cloud.openstack:
+      cloud: "{{ cloud }}"
+    openstack.cloud.keystone_federation_protocol:
+      cloud: "{{ cloud }}"  # Backward compatibility with Ansible 2.9
+      idp_id: "{{ idp_name }}"
+    openstack.cloud.keystone_federation_protocol_info:
+      cloud: "{{ cloud }}"  # Backward compatibility with Ansible 2.9
+      idp_id: "{{ idp_name }}"
+    # Backward compatibility with Ansible 2.9
     openstack.cloud.identity_domain:
       cloud: "{{ cloud }}"
     openstack.cloud.federation_idp:
       cloud: "{{ cloud }}"
     openstack.cloud.federation_mapping:
       cloud: "{{ cloud }}"
-    openstack.cloud.keystone_federation_protocol:
-      cloud: "{{ cloud }}"
-      idp_id: "{{ idp_name }}"
-    openstack.cloud.keystone_federation_protocol_info:
-      cloud: "{{ cloud }}"
-      idp_id: "{{ idp_name }}"
   block:
     # ========================================================================
     #   Initial setup

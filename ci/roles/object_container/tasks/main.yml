@@ -1,5 +1,8 @@
 ---
 - module_defaults:
+    group/openstack.cloud.openstack:
+      cloud: "{{ cloud }}"
+    # Backward compatibility with Ansible 2.9
     openstack.cloud.object_container:
       cloud: "{{ cloud }}"
   block:

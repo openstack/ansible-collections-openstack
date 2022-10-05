@@ -1,7 +1,4 @@
 test_project: ansible_project
-quota_name_frag:
-  cloud: "{{ cloud }}"
-  name: "{{ test_project }}"
 test_network_quota:
   floating_ips: 5
   networks: 50

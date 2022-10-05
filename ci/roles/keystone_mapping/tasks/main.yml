@@ -1,8 +1,8 @@
 ---
 - module_defaults:
-    # meta/action_groups.yml glue seems to be missing
-    # group/os:
-    #   cloud: "{{ cloud }}"
+    group/openstack.cloud.openstack:
+      cloud: "{{ cloud }}"
+    # Backward compatibility with Ansible 2.9
     openstack.cloud.federation_mapping:
       cloud: "{{ cloud }}"
     openstack.cloud.federation_mapping_info:
