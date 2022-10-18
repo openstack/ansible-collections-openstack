@@ -22,17 +22,14 @@ options:
      description:
         - Whether this network is shared or not.
      type: bool
-     default: 'no'
    admin_state_up:
      description:
         - Whether the state should be marked as up or down.
      type: bool
-     default: 'yes'
    external:
      description:
         - Whether this network is externally accessible.
      type: bool
-     default: 'no'
    state:
      description:
         - Indicate desired state of the resource.
@@ -194,9 +191,9 @@ class NetworkModule(OpenStackModule):
 
     argument_spec = dict(
         name=dict(required=True),
-        shared=dict(default=False, type='bool'),
-        admin_state_up=dict(default=True, type='bool'),
-        external=dict(default=False, type='bool'),
+        shared=dict(type='bool'),
+        admin_state_up=dict(type='bool'),
+        external=dict(type='bool'),
         provider_physical_network=dict(),
         provider_network_type=dict(),
         provider_segmentation_id=dict(type='int'),
@@ -245,9 +242,12 @@ class NetworkModule(OpenStackModule):
             if project_id is not None:
                 kwargs['project_id'] = project_id
 
-            kwargs["shared"] = shared
-            kwargs["admin_state_up"] = admin_state_up
-            kwargs["is_router_external"] = external
+            if shared is not None:
+                kwargs["shared"] = shared
+            if admin_state_up is not None:
+                kwargs["admin_state_up"] = admin_state_up
+            if external is not None:
+                kwargs["is_router_external"] = external
 
             if not net:
                 net = self.conn.network.create_network(name=name, **kwargs)
@@ -276,7 +276,13 @@ class NetworkModule(OpenStackModule):
                 for arg in ["shared", "admin_state_up", "is_router_external",
                             "mtu", "port_security_enabled", "dns_domain",
                             "provider_segmentation_id"]:
-                    if arg in kwargs and kwargs[arg] != net[arg]:
+                    if (
+                        arg in kwargs
+                        # ensure user wants something specific
+                        and kwargs[arg] is not None
+                        # and this is not what we have right now
+                        and kwargs[arg] != net[arg]
+                    ):
                         update_kwargs[arg] = kwargs[arg]
 
                 if update_kwargs:
