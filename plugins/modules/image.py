@@ -16,11 +16,13 @@ options:
    name:
      description:
         - The name of the image when uploading - or the name/ID of the image if deleting
+        - If provided with the id, it can be used to change the name of existing image
      required: true
      type: str
    id:
      description:
         - The ID of the image when uploading an image
+        - This image attribute cannot be changed.
      type: str
    checksum:
      description:
@@ -29,12 +31,14 @@ options:
    disk_format:
      description:
         - The format of the disk that is getting uploaded
+        - This image attribute cannot be changed.
      default: qcow2
      choices: ['ami', 'ari', 'aki', 'vhd', 'vmdk', 'raw', 'qcow2', 'vdi', 'iso', 'vhdx', 'ploop']
      type: str
    container_format:
      description:
         - The format of the container
+        - This image attribute cannot be changed.
      default: bare
      choices: ['ami', 'aki', 'ari', 'bare', 'ovf', 'ova', 'docker']
      type: str
@@ -73,6 +77,7 @@ options:
    filename:
      description:
         - The path to the file which has to be uploaded
+        - This image attribute cannot be changed.
      type: str
    ramdisk:
      description:
@@ -457,8 +462,8 @@ class ImageModule(OpenStackModule):
         container_format=dict(default='bare', choices=['ami', 'aki', 'ari', 'bare', 'ovf', 'ova', 'docker']),
         owner=dict(aliases=['project']),
         owner_domain=dict(aliases=['project_domain']),
-        min_disk=dict(type='int', default=0),
-        min_ram=dict(type='int', default=0),
+        min_disk=dict(type='int'),
+        min_ram=dict(type='int'),
         is_public=dict(type='bool', default=False),
         is_protected=dict(type='bool', aliases=['protected']),
         filename=dict(),
@@ -506,7 +511,11 @@ class ImageModule(OpenStackModule):
         return image
 
     def _build_update(self, image):
-        update_payload = dict(is_protected=self.params['is_protected'])
+        update_payload = {'visibility': self._resolve_visibility()}
+
+        for k in ('is_protected', 'min_disk', 'min_ram'):
+            update_payload[k] = self.params[k]
+
         for k in ('kernel', 'ramdisk'):
             if not self.params[k]:
                 continue
@@ -514,25 +523,31 @@ class ImageModule(OpenStackModule):
             k_image = self.conn.image.find_image(
                 name_or_id=self.params[k], ignore_missing=False)
             update_payload[k_id] = k_image.id
+
         update_payload = {k: v for k, v in update_payload.items()
                           if v is not None and image[k] != v}
+
         for p, v in self.params['properties'].items():
             if p not in image or image[p] != v:
                 update_payload[p] = v
+
         if (self.params['tags']
                 and set(image['tags']) != set(self.params['tags'])):
             update_payload['tags'] = self.params['tags']
+
+        # If both name and id are defined,then we might change the name
+        if self.params['id'] and \
+           self.params['name'] and \
+           self.params['name'] != image['name']:
+            update_payload['name'] = self.params['name']
+
         return update_payload
 
     def run(self):
         changed = False
-        image_filters = {}
         image_name_or_id = self.params['id'] or self.params['name']
         owner_name_or_id = self.params['owner']
         owner_domain_name_or_id = self.params['owner_domain']
-
-        if self.params['checksum']:
-            image_filters['checksum'] = image_filters
         owner_filters = {}
         if owner_domain_name_or_id:
             owner_domain = self.conn.identity.find_domain(
@@ -550,7 +565,10 @@ class ImageModule(OpenStackModule):
 
         image = None
         if image_name_or_id:
-            image = self.conn.image.find_image(image_name_or_id, **image_filters)
+            image = self.conn.get_image(
+                image_name_or_id,
+                filters={(k, self.params[k])
+                         for k in ['checksum'] if self.params[k] is not None})
 
         changed = False
         if self.params['state'] == 'present':
@@ -569,7 +587,7 @@ class ImageModule(OpenStackModule):
             update_payload = self._build_update(image)
 
             if update_payload:
-                self.conn.image.update_image(image, **update_payload)
+                self.conn.image.update_image(image.id, **update_payload)
                 changed = True
 
             self.exit_json(changed=changed, image=self._return_value(image.id),

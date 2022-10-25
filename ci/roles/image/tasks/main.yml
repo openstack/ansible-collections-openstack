@@ -59,7 +59,6 @@
       - "image_info_result.images[0].name == image_name"
       - "image_info_result.images[0].tags | sort == image_tags | sort"
 
-
 - name: Create raw image again (defaults)
   openstack.cloud.image:
      cloud: "{{ cloud }}"
@@ -81,7 +80,7 @@
       - item in returned_image.image
   loop: "{{ expected_fields }}"
 
-- name: Update raw image (defaults)
+- name: Update is_protected on raw image (defaults)
   openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: present
@@ -99,6 +98,69 @@
   assert:
     that:
       - returned_image is changed
+
+- name: Update visibility on raw image (defaults)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ image_name }}"
+     is_public: false
+  register: returned_image
+
+- name: Assert changed
+  assert:
+    that:
+      - returned_image.image.visibility == 'private'
+
+- name: Update again visibility on raw image (defaults)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ image_name }}"
+     is_public: true
+  register: returned_image
+
+- name: Assert changed
+  assert:
+    that:
+      - returned_image is changed
+      - returned_image.image.visibility == 'public'
+
+- name: Define visibility on raw image (defaults)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ image_name }}"
+     visibility: shared
+  register: returned_image
+
+- name: Assert changed
+  assert:
+    that:
+      - returned_image is changed
+      - returned_image.image.visibility == 'shared'
+
+- name: Rename raw image (defaults)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     id: "{{ returned_image.id }}"
+     name: "{{ image_name }}-changed"
+  register: returned_image
+
+- name: Assert changed
+  assert:
+    that:
+      - returned_image is changed
+      - returned_image.image.name == "{{ image_name }}-changed"
+
+- name: Rename back raw image (defaults)
+  openstack.cloud.image:
+     cloud: "{{ cloud }}"
+     state: present
+     id: "{{ returned_image.id }}"
+     name: "{{ image_name }}"
+  register: returned_image
 
 - name: Delete raw image (defaults)
   openstack.cloud.image:
