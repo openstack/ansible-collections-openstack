@@ -2,4 +2,7 @@
 collections:
 - ansible.posix
 - ansible.utils
-- community.general
+- name: community.general
+  version: 4.8.8
+  # 5.0.0 dropped compatibility with ansible 2.9 and ansible-base 2.10
+  # Ref.: https://github.com/ansible-collections/community.general/commit/1a9b3214fdf1eaccba5cc9ee210cbc5b5070fe4b
