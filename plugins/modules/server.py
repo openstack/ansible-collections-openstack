@@ -205,12 +205,11 @@ options:
           into active state.
       default: 180
       type: int
-    user_data:
+    userdata:
       description:
         - Opaque blob of data which is made available to the instance.
         - This server attribute cannot be updated.
       type: str
-      aliases: ['userdata']
     volume_size:
       description:
         - The size of the volume to create in GB if booting from volume based
@@ -423,7 +422,7 @@ EXAMPLES = '''
         image: "Ubuntu Server 14.04"
         flavor: "P-1"
         network: "Production"
-        user_data: |
+        userdata: |
           #cloud-config
           chpasswd:
             list: |
@@ -444,7 +443,7 @@ EXAMPLES = '''
         image: "Ubuntu Server 22.04"
         flavor: "P-1"
         network: "Production"
-        user_data: |
+        userdata: |
           #!/bin/sh
           apt update
           apt -y full-upgrade
@@ -818,7 +817,7 @@ class ServerModule(OpenStackModule):
         security_groups=dict(default=[], type='list', elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
         terminate_volume=dict(default=False, type='bool'),
-        user_data=dict(aliases=['userdata']),
+        userdata=dict(),
         volume_size=dict(type='int'),
         volumes=dict(default=[], type='list', elements='str'),
     )
@@ -1065,7 +1064,7 @@ class ServerModule(OpenStackModule):
                   'boot_volume', 'config_drive', 'description', 'key_name',
                   'name', 'network', 'reuse_ips', 'scheduler_hints',
                   'security_groups', 'terminate_volume', 'timeout',
-                  'user_data', 'volume_size', 'volumes', 'wait']:
+                  'userdata', 'volume_size', 'volumes', 'wait']:
             if self.params[k] is not None:
                 args[k] = self.params[k]
 
