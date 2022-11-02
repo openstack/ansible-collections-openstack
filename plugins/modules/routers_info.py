@@ -23,6 +23,7 @@ options:
           this dictionary may be additional dictionaries.
      required: false
      type: dict
+     default: {}
      suboptions:
        project_id:
          description:

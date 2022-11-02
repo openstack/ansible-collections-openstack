@@ -153,6 +153,7 @@ options:
         - This server attribute cannot be updated.
       type: list
       elements: raw
+      default: []
       suboptions:
         tag:
           description:
