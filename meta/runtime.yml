@@ -13,6 +13,7 @@ action_groups:
     - coe_cluster
     - coe_cluster_template
     - compute_flavor
+    - compute_flavor_access
     - compute_flavor_info
     - compute_service_info
     - config
@@ -55,7 +56,6 @@ action_groups:
     - port
     - port_info
     - project
-    - project_access
     - project_info
     - quota
     - recordset
@@ -83,3 +83,4 @@ action_groups:
     - volume_info
     - volume_snapshot
     - volume_snapshot_info
+    - volume_type_access

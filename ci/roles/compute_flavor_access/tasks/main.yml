@@ -1,0 +1,96 @@
+---
+- name: Create flavor
+  openstack.cloud.compute_flavor:
+    cloud: devstack-admin
+    state: present
+    name: ansible_flavor
+    is_public: False
+    ram: 1024
+    vcpus: 1
+    disk: 10
+    ephemeral: 10
+    swap: 1
+  register: flavor
+
+- name: Fetch demo project
+  openstack.cloud.project_info:
+    cloud: devstack-admin
+    name: demo
+  register: projects
+
+- name: Verify demo project
+  assert:
+    that:
+      - projects.openstack_projects|length == 1
+      - projects.openstack_projects.0.name == "demo"
+
+- name: Grant access to flavor
+  openstack.cloud.compute_flavor_access:
+    cloud: devstack-admin
+    name: ansible_flavor
+    project: demo
+    state: present
+  register: access
+
+- name: Verify access
+  assert:
+    that:
+      - access is changed
+      - access.flavor.id == flavor.flavor.id
+
+# TODO: Replace with appropriate Ansible module once available
+- name: Get compute flavor
+  command: openstack --os-cloud=devstack-admin flavor show ansible_flavor -f json
+  register: flavor_show
+
+- name: Verify volume type access
+  assert:
+    that:
+      - (flavor_show.stdout | from_json).name == 'ansible_flavor'
+      - projects.openstack_projects.0.id in (flavor_show.stdout | from_json).access_project_ids
+
+- name: Grant access to flavor again
+  openstack.cloud.compute_flavor_access:
+    cloud: devstack-admin
+    name: ansible_flavor
+    project: demo
+    state: present
+  register: access
+
+- name: Verify access did not change
+  assert:
+    that:
+      - access is not changed
+
+- name: Revoke access to flavor
+  openstack.cloud.compute_flavor_access:
+    cloud: devstack-admin
+    name: ansible_flavor
+    project: demo
+    state: absent
+  register: access
+
+- name: Verify revoked access
+  assert:
+    that:
+      - access is changed
+      - access.flavor.id == flavor.flavor.id
+
+- name: Revoke access to flavor again
+  openstack.cloud.compute_flavor_access:
+    cloud: devstack-admin
+    name: ansible_flavor
+    project: demo
+    state: absent
+  register: access
+
+- name: Verify access did not change
+  assert:
+    that:
+      - access is not changed
+
+- name: Delete flavor
+  openstack.cloud.compute_flavor:
+    cloud: devstack-admin
+    state: absent
+    name: ansible_flavor

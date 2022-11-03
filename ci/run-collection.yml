@@ -8,6 +8,7 @@
     - { role: auth, tags: auth }
     - { role: catalog_service, tags: catalog_service }
     - { role: compute_flavor, tags: compute_flavor }
+    - { role: compute_flavor_access, tags: compute_flavor_access }
     - { role: config, tags: config }
     - { role: dns_zone_info, tags: dns_zone_info }
     - role: object_container
@@ -68,6 +69,7 @@
     - { role: volume, tags: volume }
     - { role: volume_backup, tags: volume_backup }
     - { role: volume_snapshot, tags: volume_snapshot }
+    - { role: volume_type_access, tags: volume_type_access }
     - role: loadbalancer
       tags: loadbalancer
     - { role: quota, tags: quota }

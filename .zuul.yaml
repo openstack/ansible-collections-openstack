@@ -67,6 +67,7 @@
         auth
         catalog_service
         compute_flavor
+        compute_flavor_access
         config
         dns
         dns_zone_info
@@ -114,6 +115,7 @@
         volume
         volume_backup
         volume_snapshot
+        volume_type_access
       # failing tags
       # neutron_rbac
 

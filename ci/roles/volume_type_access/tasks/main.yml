@@ -1,0 +1,96 @@
+---
+# TODO: Replace with appropriate Ansible module once available
+- name: Get volume types
+  command: openstack --os-cloud=devstack-admin volume type list -f json
+  register: volume_types
+
+# TODO: Replace with appropriate Ansible module once available
+- name: Create volume type
+  command: openstack --os-cloud=devstack-admin volume type create ansible_volume_type --private
+  when: "'ansible_volume_type' not in (volume_types.stdout | from_json) | map(attribute='Name') | list"
+
+# TODO: Replace with appropriate Ansible module once available
+- name: Get volume types
+  command: openstack --os-cloud=devstack-admin volume type show ansible_volume_type -f json
+  register: volume_type
+
+- name: Fetch demo project
+  openstack.cloud.project_info:
+    cloud: devstack-admin
+    name: demo
+  register: projects
+
+- name: Verify demo project
+  assert:
+    that:
+      - projects.openstack_projects|length == 1
+      - projects.openstack_projects.0.name == "demo"
+
+- name: Grant access to volume type
+  openstack.cloud.volume_type_access:
+    cloud: devstack-admin
+    name: ansible_volume_type
+    project: demo
+    state: present
+  register: access
+
+- name: Verify access
+  assert:
+    that:
+      - access is changed
+      - access.volume_type.id == (volume_type.stdout | from_json).id
+
+# TODO: Replace with appropriate Ansible module once available
+- name: Get volume types
+  command: openstack --os-cloud=devstack-admin volume type show ansible_volume_type -f json
+  register: volume_type
+
+- name: Verify volume type access
+  assert:
+    that:
+      - (volume_type.stdout | from_json).name == 'ansible_volume_type'
+      - projects.openstack_projects.0.id in (volume_type.stdout | from_json).access_project_ids
+
+- name: Grant access to volume type again
+  openstack.cloud.volume_type_access:
+    cloud: devstack-admin
+    name: ansible_volume_type
+    project: demo
+    state: present
+  register: access
+
+- name: Verify access did not change
+  assert:
+    that:
+      - access is not changed
+
+- name: Revoke access to volume type
+  openstack.cloud.volume_type_access:
+    cloud: devstack-admin
+    name: ansible_volume_type
+    project: demo
+    state: absent
+  register: access
+
+- name: Verify revoked access
+  assert:
+    that:
+      - access is changed
+      - access.volume_type.id == (volume_type.stdout | from_json).id
+
+- name: Revoke access to volume type again
+  openstack.cloud.volume_type_access:
+    cloud: devstack-admin
+    name: ansible_volume_type
+    project: demo
+    state: absent
+  register: access
+
+- name: Verify access did not change
+  assert:
+    that:
+      - access is not changed
+
+# TODO: Replace with appropriate Ansible module once available
+- name: Delete volume type
+  command: openstack --os-cloud=devstack-admin volume type delete ansible_volume_type
