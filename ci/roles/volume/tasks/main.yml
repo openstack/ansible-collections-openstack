@@ -46,35 +46,6 @@
      description: Test volume
   register: vol
 
-- name: Create volume backup
-  openstack.cloud.volume_backup:
-    cloud: "{{ cloud }}"
-    state: present
-    name: ansible_volume_backup
-    volume: ansible_volume
-  register: vol_backup
-
-- name: Get backup info
-  openstack.cloud.volume_backup_info:
-    cloud: "{{ cloud }}"
-    name: ansible_volume_backup
-  register: backup_info
-
-- debug: var=vol
-
-- debug: var=vol_backup
-
-- debug: var=backup_info
-
-- debug: var=snap_info
-
-- name: Delete volume backup
-  openstack.cloud.volume_backup:
-    cloud: "{{ cloud }}"
-    name: ansible_volume_backup
-    wait: false
-    state: absent
-
 - name: Delete volume snapshot
   openstack.cloud.volume_snapshot:
     cloud: "{{ cloud }}"

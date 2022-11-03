@@ -1,0 +1,89 @@
+---
+- name: Get existing backups
+  openstack.cloud.volume_backup_info:
+    cloud: "{{ cloud }}"
+  register: info
+
+- name: Assert volume_backup_info
+  assert:
+    that:
+      - info.volume_backups|length == 0
+
+- name: Get non-existing backup
+  openstack.cloud.volume_backup_info:
+    cloud: "{{ cloud }}"
+    name: non-existing-backup
+  register: info
+
+- name: Assert volume_backup_info
+  assert:
+    that:
+      - info.volume_backups|length == 0
+
+- name: Create volume
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: present
+     size: 1
+     name: ansible_volume
+  register: volume
+
+- name: Create volume backup
+  openstack.cloud.volume_backup:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_volume_backup
+    volume: ansible_volume
+    # TODO: Uncomment code when https://storyboard.openstack.org/#!/story/2010395 has been solved.
+    #metadata:
+    #  key1: value1
+    #  key2: value2
+  register: backup
+
+- name: Assert volume_backup
+  assert:
+    that:
+      - backup.volume_backup.name == "ansible_volume_backup"
+      - backup.volume_backup.volume_id == volume.volume.id
+      # TODO: Uncomment code when https://storyboard.openstack.org/#!/story/2010395 has been solved.
+      #- backup.volume_backup.metadata.keys()|sort == ['key1', 'key2']
+      #- backup.volume_backup.metadata['key1'] == 'value1'
+      #- backup.volume_backup.metadata['key2'] == 'value2'
+
+- name: Assert return values of volume_backup module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(backup.volume_backup.keys())|length == 0
+
+- name: Get backup info
+  openstack.cloud.volume_backup_info:
+    cloud: "{{ cloud }}"
+    name: ansible_volume_backup
+  register: info
+
+- name: Assert volume_backup_info
+  assert:
+    that:
+      - info.volume_backups|length == 1
+      - info.volume_backups[0].id == backup.backup.id
+      - info.volume_backups[0].volume_id == volume.volume.id
+
+- name: Assert return values of volume_info module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(info.volume_backups[0].keys())|length == 0
+
+- name: Delete volume backup
+  openstack.cloud.volume_backup:
+    cloud: "{{ cloud }}"
+    name: ansible_volume_backup
+    wait: false
+    state: absent
+
+- name: Delete volume
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_volume

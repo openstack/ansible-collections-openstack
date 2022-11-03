@@ -1,0 +1,22 @@
+expected_fields:
+  - availability_zone
+  - container
+  - created_at
+  - data_timestamp
+  - description
+  - fail_reason
+  - force
+  - has_dependent_backups
+  - id
+  - is_incremental
+  - links
+  - metadata
+  - name
+  - object_count
+  - project_id
+  - size
+  - snapshot_id
+  - status
+  - updated_at
+  - user_id
+  - volume_id

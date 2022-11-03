@@ -111,6 +111,7 @@
         user_group
         user_role
         volume
+        volume_backup
       # failing tags
       # neutron_rbac
 
