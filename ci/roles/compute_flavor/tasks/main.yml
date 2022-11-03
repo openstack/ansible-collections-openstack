@@ -245,10 +245,10 @@
   openstack.cloud.compute_flavor_info:
     cloud: "{{ cloud }}"
     name: "m1.tiny"
-  register: flavor_name
+  register: flavor
 
 - name: Check output of list flavors with filter
   assert:
     that:
-      - flavor_name.openstack_flavors | length == 1
-
+      - flavor.openstack_flavors | length == 1
+      - flavor.openstack_flavors.0.name == "m1.tiny"

@@ -55,7 +55,6 @@
          name: "{{ test_volume_image }}"
          filename: "{{ tmp_file.path }}"
          disk_format: raw
-         tags: "{{ image_tags }}"
 
     - name: Create volume from image
       openstack.cloud.volume:
@@ -76,21 +75,19 @@
       openstack.cloud.image:
          cloud: "{{ cloud }}"
          state: present
-         name: "{{ image_name }}"
+         name: ansible_image
          filename: "{{ tmp_file.path }}"
          is_public: true
          disk_format: raw
-         tags: "{{ image_tags }}"
 
     - name: Delete test shared image
       openstack.cloud.image:
          cloud: "{{ cloud }}"
          state: absent
-         name: "{{ image_name }}"
+         name: ansible_image
          filename: "{{ tmp_file.path }}"
          is_public: true
          disk_format: raw
-         tags: "{{ image_tags }}"
 
   always:
     - name: Remove temporary image file

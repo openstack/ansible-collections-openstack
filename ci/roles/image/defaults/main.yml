@@ -1,7 +1,3 @@
-image_name: ansible_image
-image_tags:
-  - test
-  - ansible
 expected_fields:
   - architecture
   - checksum

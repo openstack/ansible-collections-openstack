@@ -11,7 +11,7 @@
   assert:
     that:
       - "'domain' in os_domain"
-      - os_domain.domain.name == "{{ domain_name }}"
+      - os_domain.domain.name == domain_name
       - >-
           ('enabled' in os_domain.domain.keys() and os_domain.domain['enabled']|bool) or
           ('is_enabled' in os_domain.domain and os_domain.domain['is_enabled']|bool)

@@ -53,7 +53,7 @@ expected_fields:
   - user_id
   - vm_state
   - volumes
-flavor: m1.tiny
+flavor_name: m1.tiny
 floating_ip_pool_name: public
 server_alt_name: ansible_server_alt
 server_alt_network: ansible_server_network_alt
