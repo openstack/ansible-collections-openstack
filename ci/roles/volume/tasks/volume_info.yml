@@ -1,24 +1,3 @@
-- name: Get info about volumes and all projects for all SDK
-  openstack.cloud.volume_info:
-    cloud: "{{ cloud }}"
-    details: true
-    all_projects: true
-
-- name: Get info about volumes
-  openstack.cloud.volume_info:
-    cloud: "{{ cloud }}"
-    all_projects: true
-  register: delete
-
-- name: Clean up volumes before the test
-  openstack.cloud.volume:
-    cloud: "{{ cloud }}"
-    state: absent
-    name: "{{ vol.name }}"
-  loop: "{{ delete.volumes }}"
-  loop_control:
-    loop_var: vol
-
 - name: Create volume
   openstack.cloud.volume:
     cloud: "{{ cloud }}"
@@ -41,6 +20,12 @@
       - info.volumes | selectattr("description", "equalto", "testci") | list | length == 1
       - info.volumes.0.name == 'ansible_test'
       - info.volumes.0.status == 'available'
+
+- name: Assert return values of volume_info module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(info.volumes[0].keys())|length == 0
 
 - name: Get not detailed info about volumes
   openstack.cloud.volume_info:
