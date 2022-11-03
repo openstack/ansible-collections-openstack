@@ -66,8 +66,8 @@
         address_scope
         auth
         catalog_service
-        client_config
         compute_flavor
+        config
         dns
         dns_zone_info
         endpoint

@@ -1,0 +1,10 @@
+---
+- name: List all cloud profiles
+  openstack.cloud.config:
+  register: config
+  # WARNING: This will output sensitive authentication information!!!!
+
+- name: Assert config module
+  assert:
+    that:
+      - cloud in (config.clouds | map(attribute='name') | list)
