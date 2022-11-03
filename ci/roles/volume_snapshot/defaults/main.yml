@@ -1,0 +1,13 @@
+expected_fields:
+  - created_at
+  - description
+  - id
+  - is_forced
+  - metadata
+  - name
+  - progress
+  - project_id
+  - size
+  - status
+  - updated_at
+  - volume_id

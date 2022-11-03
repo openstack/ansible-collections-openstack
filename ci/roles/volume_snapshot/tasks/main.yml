@@ -1,0 +1,96 @@
+---
+- name: Get existing snapshots
+  openstack.cloud.volume_snapshot_info:
+    cloud: "{{ cloud }}"
+  register: info
+
+- name: Assert volume_snapshot_info
+  assert:
+    that:
+      - info.volume_snapshots|length == 0
+
+- name: Get non-existing snapshot
+  openstack.cloud.volume_snapshot_info:
+    cloud: "{{ cloud }}"
+    name: non-existing-snapshot
+  register: info
+
+- name: Assert volume_snapshot_info
+  assert:
+    that:
+      - info.volume_snapshots|length == 0
+
+- name: Create volume
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: present
+     size: 1
+     name: ansible_volume
+     description: Test volume
+  register: volume
+
+- name: Create volume snapshot
+  openstack.cloud.volume_snapshot:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_volume_snapshot
+    volume: ansible_volume
+  register: snapshot
+
+- name: Assert volume_snapshot
+  assert:
+    that:
+      - snapshot.volume_snapshot.name == "ansible_volume_snapshot"
+
+- name: Assert return values of volume_snapshot module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(snapshot.volume_snapshot.keys())|length == 0
+
+- name: Get snapshot info
+  openstack.cloud.volume_snapshot_info:
+    cloud: "{{ cloud }}"
+    name: ansible_volume_snapshot
+  register: info
+
+- name: Assert volume_snapshot_info
+  assert:
+    that:
+      - info.volume_snapshots|length == 1
+      - info.volume_snapshots[0].id == snapshot.volume_snapshot.id
+      - info.volume_snapshots[0].volume_id == volume.volume.id
+
+- name: Assert return values of volume_info module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(info.volume_snapshots[0].keys())|length == 0
+
+- name: Create volume from snapshot
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: present
+     size: 1
+     snapshot: ansible_volume_snapshot
+     name: ansible_volume2
+     description: Test volume
+
+- name: Delete volume snapshot
+  openstack.cloud.volume_snapshot:
+    cloud: "{{ cloud }}"
+    name: ansible_volume_snapshot
+    volume: ansible_volume
+    state: absent
+
+- name: Delete volume
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_volume2
+
+- name: Delete volume
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_volume

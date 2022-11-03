@@ -20,53 +20,18 @@
      volume: "{{ vol.volume.id }}"
      name: ansible_volume1
      description: Test volume
-  register: vol
 
-- name: Create volume snapshot
-  openstack.cloud.volume_snapshot:
-    cloud: "{{ cloud }}"
-    state: present
-    name: ansible_volume_snapshot
-    volume: ansible_volume
-  register: vol_snap
-
-- name: Get snapshot info
-  openstack.cloud.volume_snapshot_info:
-    cloud: "{{ cloud }}"
-    name: ansible_volume_snapshot
-  register: snap_info
-
-- name: Create volume from snapshot
+- name: Delete volume
   openstack.cloud.volume:
      cloud: "{{ cloud }}"
-     state: present
-     size: 1
-     snapshot: ansible_volume_snapshot
-     name: ansible_volume2
-     description: Test volume
-  register: vol
-
-- name: Delete volume snapshot
-  openstack.cloud.volume_snapshot:
-    cloud: "{{ cloud }}"
-    name: ansible_volume_snapshot
-    volume: ansible_volume
-    state: absent
+     state: absent
+     name: ansible_volume1
 
 - name: Delete volume
   openstack.cloud.volume:
      cloud: "{{ cloud }}"
      state: absent
      name: ansible_volume
-
-- name: Clean up
-  openstack.cloud.volume:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ item }}"
-  loop:
-    - ansible_volume1
-    - ansible_volume2
 
 - name: Test images
   block:

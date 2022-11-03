@@ -5,7 +5,7 @@
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: volume_snapshot_info
 short_description: Get volume snapshots
@@ -16,32 +16,35 @@ options:
   details:
     description: More detailed output
     type: bool
-    default: True
   name:
     description:
       - Name of the Snapshot.
     type: str
-  volume:
-    description:
-      - Name of the volume.
-    type: str
   status:
     description:
       - Specifies the snapshot status.
-    choices: [creating, available, error, deleting,
-              error_deleting, rollbacking, backing-up]
+    choices: ['available', 'backing-up', 'creating', 'deleted', 'deleting',
+              'error', 'error_deleting', 'restoring', 'unmanaging']
     type: str
-requirements: ["openstacksdk"]
+  volume:
+    description:
+      - Name or ID of the volume.
+    type: str
+
+requirements:
+  - "python >= 3.6"
+  - "openstacksdk"
+
 extends_documentation_fragment:
-- openstack.cloud.openstack
+  - openstack.cloud.openstack
 '''
 
-RETURN = '''
+RETURN = r'''
 volume_snapshots:
     description: List of dictionaries describing volume snapshots.
     type: list
     elements: dict
-    returned: always.
+    returned: always
     contains:
         created_at:
             description: Snapshot creation time.
@@ -53,12 +56,26 @@ volume_snapshots:
             description: Unique UUID.
             type: str
             sample: "39007a7e-ee4f-4d13-8283-b4da2e037c69"
+        is_forced:
+            description: Indicate whether to create snapshot,
+                         even if the volume is attached.
+            type: bool
         metadata:
             description: Snapshot metadata.
             type: dict
         name:
             description: Snapshot Name.
             type: str
+        progress:
+            description: The percentage of completeness the snapshot is
+                         currently at.
+            type: str
+        project_id:
+            description: The project ID this snapshot is associated with.
+            type: str
+        size:
+            description: The size of the volume, in GBs.
+            type: int
         status:
             description: Snapshot status.
             type: str
@@ -68,62 +85,53 @@ volume_snapshots:
         volume_id:
             description: Volume ID.
             type: str
-
 '''
 
-EXAMPLES = '''
-# Get snapshots.
-- openstack.cloud.volume_snapshot_info:
-  register: snapshots
+EXAMPLES = r'''
+- name: List all snapshots
+  openstack.cloud.volume_snapshot_info:
 
-- openstack.cloud.volume_snapshotbackup_info:
+- name: Fetch data about a single snapshot
+  openstack.cloud.volume_snapshot_info:
     name: my_fake_snapshot
-  register: snapshot
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
 class VolumeSnapshotInfoModule(OpenStackModule):
-    module_min_sdk_version = '0.49.0'
-
     argument_spec = dict(
-        details=dict(default=True, type='bool'),
+        details=dict(type='bool'),
         name=dict(),
+        status=dict(choices=['available', 'backing-up', 'creating', 'deleted',
+                             'deleting', 'error', 'error_deleting',
+                             'restoring', 'unmanaging']),
         volume=dict(),
-        status=dict(choices=['creating', 'available', 'error',
-                             'deleting', 'error_deleting', 'rollbacking',
-                             'backing-up']),
     )
+
     module_kwargs = dict(
         supports_check_mode=True
     )
 
     def run(self):
+        kwargs = dict((k, self.params[k])
+                      for k in ['details', 'name', 'status']
+                      if self.params[k] is not None)
 
-        details_filter = self.params['details']
-        name_filter = self.params['name']
-        volume_filter = self.params['volume']
-        status_filter = self.params['status']
+        volume_name_or_id = self.params['volume']
+        volume = None
+        if volume_name_or_id:
+            volume = self.conn.block_storage.find_volume(volume_name_or_id)
+            if volume:
+                kwargs['volume_id'] = volume.id
 
-        data = []
-        query = {}
-        if name_filter:
-            query['name'] = name_filter
-        if volume_filter:
-            query['volume_id'] = self.conn.block_storage.find_volume(volume_filter)
-        if status_filter:
-            query['status'] = status_filter.lower()
+        if volume_name_or_id and not volume:
+            snapshots = []
+        else:
+            snapshots = [b.to_dict(computed=False)
+                         for b in self.conn.block_storage.snapshots(**kwargs)]
 
-        for raw in self.conn.block_storage.snapshots(details_filter, **query):
-            dt = raw.to_dict()
-            dt.pop('location')
-            data.append(dt)
-
-        self.exit_json(
-            changed=False,
-            volume_snapshots=data
-        )
+        self.exit_json(changed=False, volume_snapshots=snapshots)
 
 
 def main():
