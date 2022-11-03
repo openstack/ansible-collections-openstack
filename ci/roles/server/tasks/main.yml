@@ -4,8 +4,8 @@
      cloud: "{{ cloud }}"
      state: present
      name: "{{ server_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
+     image: "{{ image_name }}"
+     flavor: "{{ flavor_name }}"
      network: "{{ server_network }}"
      auto_floating_ip: false
      meta: "key1=value1,key2=value2"
@@ -46,8 +46,8 @@
      cloud: "{{ cloud }}"
      state: present
      name: "{{ server_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
+     image: "{{ image_name }}"
+     flavor: "{{ flavor_name }}"
      auto_floating_ip: false
      network: "{{ server_network }}"
      meta:
@@ -67,7 +67,7 @@
 - name: Check info about server name
   assert:
     that:
-      info.openstack_servers[0].name == "{{ server_name }}"
+      info.openstack_servers[0].name == server_name
 
 - name: Delete server with meta as dict
   openstack.cloud.server:
@@ -81,8 +81,8 @@
      cloud: "{{ cloud }}"
      state: present
      name: "{{ server_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
+     image: "{{ image_name }}"
+     flavor: "{{ flavor_name }}"
      network: "{{ server_network }}"
      floating_ip_pools:
        - "{{ floating_ip_pool_name }}"
@@ -101,7 +101,7 @@
 - name: Check info about server image name
   assert:
     that:
-      info.openstack_servers[0].image.name == "{{ image }}"
+      info.openstack_servers[0].image.name == image_name
 
 - name: Delete server (FIP from pool/network)
   openstack.cloud.server:
@@ -115,8 +115,8 @@
      cloud: "{{ cloud }}"
      state: present
      name: "{{ server_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
+     image: "{{ image_name }}"
+     flavor: "{{ flavor_name }}"
      network: "{{ server_network }}"
      auto_floating_ip: false
      boot_from_volume: true
@@ -133,13 +133,14 @@
      state: absent
      name: "{{ server_name }}"
      wait: true
+
 - name: Create a minimal server
   openstack.cloud.server:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ server_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
+     image: "{{ image_name }}"
+     flavor: "{{ flavor_name }}"
      network: "{{ server_network }}"
      auto_floating_ip: false
      wait: true

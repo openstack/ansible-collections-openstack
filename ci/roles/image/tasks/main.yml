@@ -10,35 +10,37 @@
   openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: present
-     name: "{{ image_name }}"
+     name: ansible_image
      filename: "{{ tmp_file.stdout }}"
      disk_format: raw
-     tags: "{{ image_tags }}"
+     tags:
+       - test
+       - ansible
   register: image
 
 - name: Get details of created image
   openstack.cloud.image_info:
     cloud: "{{ cloud }}"
-    image: "{{ image_name }}"
+    image: ansible_image
   register: image_info_result
 
 - name: Verify image info
   assert:
     that:
-      - "image_info_result.openstack_images[0].name == image_name"
-      - "image_info_result.openstack_images[0].tags | sort == image_tags | sort"
+      - image_info_result.openstack_images[0].name == "ansible_image"
+      - image_info_result.openstack_images[0].tags | sort == ['test', 'ansible'] | sort
 
 - name: Delete raw image (defaults)
   openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: absent
-     name: "{{ image_name }}"
+     name: ansible_image
 
 - name: Create raw image (complex)
   openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: present
-     name: "{{ image_name }}"
+     name: ansible_image
      filename: "{{ tmp_file.stdout }}"
      disk_format: raw
      is_public: True
@@ -55,12 +57,12 @@
   openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: absent
-     name: "{{ image_name }}"
+     name: ansible_image
 
 - name: Try to get details of deleted image
   openstack.cloud.image_info:
     cloud: "{{ cloud }}"
-    image: "{{ image_name }}"
+    image: ansible_image
   register: deleted_image_info_result
 
 - name: Verify image is deleted
@@ -82,17 +84,19 @@
   openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: present
-     name: "{{ image_name }}"
+     name: ansible_image
      filename: "{{ tmp_file.stdout }}"
      disk_format: raw
-     tags: "{{ image_tags }}"
+     tags:
+       - test
+       - ansible
      project: image_owner_project
   register: image
 
 - name: Get details of created image (owner by project name)
   openstack.cloud.image_info:
     cloud: "{{ cloud }}"
-    image: "{{ image_name }}"
+    image: ansible_image
   register: image_info_result
 
 - name: Verify image owner (owner by project name)
@@ -104,16 +108,18 @@
   openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: absent
-     name: "{{ image_name }}"
+     name: ansible_image
 
 - name: Create raw image (owner by project name and domain name)
   openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: present
-     name: "{{ image_name }}"
+     name: ansible_image
      filename: "{{ tmp_file.stdout }}"
      disk_format: raw
-     tags: "{{ image_tags }}"
+     tags:
+       - test
+       - ansible
      project: image_owner_project
      project_domain: default
   register: image
@@ -121,7 +127,7 @@
 - name: Get details of created image (owner by project name and domain name)
   openstack.cloud.image_info:
     cloud: "{{ cloud }}"
-    image: "{{ image_name }}"
+    image: ansible_image
   register: image_info_result
 
 - name: Verify image owner (owner by project name and domain name)
@@ -133,7 +139,7 @@
   openstack.cloud.image:
      cloud: "{{ cloud }}"
      state: absent
-     name: "{{ image_name }}"
+     name: ansible_image
 
 - name: Delete owner project
   openstack.cloud.project:

@@ -3,8 +3,8 @@
      cloud: "{{ cloud }}"
      state: present
      name: "{{ server_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
+     image: "{{ image_name }}"
+     flavor: "{{ flavor_name }}"
      network: "{{ server_network }}"
      auto_floating_ip: false
      wait: true
@@ -380,7 +380,7 @@
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
     server: "{{ server_name }}"
-    image: "{{ image }}"
+    image: "{{ image_name }}"
     action: rebuild
     wait: true
   register: server
@@ -401,7 +401,7 @@
   openstack.cloud.server_action:
     cloud: "{{ cloud }}"
     server: "{{ server_name }}"
-    image: "{{ image }}"
+    image: "{{ image_name }}"
     action: rebuild
     wait: true
     admin_password: random
@@ -538,8 +538,8 @@
      cloud: "{{ cloud_alt }}"
      state: present
      name: "{{ server_alt_name }}"
-     image: "{{ image }}"
-     flavor: "{{ flavor }}"
+     image: "{{ image_name }}"
+     flavor: "{{ flavor_name }}"
      network: "{{ server_alt_network }}"
      auto_floating_ip: false
      wait: true

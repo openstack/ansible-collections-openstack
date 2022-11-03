@@ -143,7 +143,7 @@
      cloud: "{{ cloud }}"
      state: present
      name: ansible_server1
-     image: "{{ image }}"
+     image: "{{ image_name }}"
      flavor: m1.tiny
      nics:
          # one nic only else simple, first floating ip test does not work
@@ -173,7 +173,7 @@
      cloud: "{{ cloud }}"
      state: present
      name: ansible_server2
-     image: "{{ image }}"
+     image: "{{ image_name }}"
      flavor: m1.tiny
      nics:
          - port-name: ansible_internal_port2

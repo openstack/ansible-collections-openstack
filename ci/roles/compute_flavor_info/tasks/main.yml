@@ -7,12 +7,12 @@
   openstack.cloud.compute_flavor_info:
     cloud: "{{ cloud }}"
     name: "m1.tiny"
-  register: flavor_name
+  register: flavor
 
 - name: Check output of list flavors with filter
   assert:
     that:
-      - flavor_name.openstack_flavors | length == 1
+      - flavor.openstack_flavors | length == 1
 
 - name: Assert fields on SDK 0.*
   when: sdk_version is version(1.0, '<')
@@ -20,7 +20,7 @@
     that:
       - '["name", "description", "disk", "is_public", "ram",
           "vcpus", "swap", "ephemeral", "is_disabled", "rxtx_factor", "id",
-          "extra_specs"] | difference(flavor_name.openstack_flavors.0.keys())
+          "extra_specs"] | difference(flavor.openstack_flavors.0.keys())
           | length == 0'
 
 - name: Assert fields on SDK 1.*
@@ -29,5 +29,5 @@
     that:
       - '["name", "original_name", "description", "disk", "is_public", "ram",
           "vcpus", "swap", "ephemeral", "is_disabled", "rxtx_factor", "id",
-          "extra_specs"] | difference(flavor_name.openstack_flavors.0.keys())
+          "extra_specs"] | difference(flavor.openstack_flavors.0.keys())
           | length == 0'

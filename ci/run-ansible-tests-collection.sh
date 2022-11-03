@@ -138,6 +138,6 @@ pushd ci/
 set -o pipefail
 ANSIBLE_COLLECTIONS_PATHS=$TEST_COLLECTIONS_PATHS ansible-playbook \
     -vvv ./run-collection.yml \
-    -e "sdk_version=${SDK_VER} cloud=${CLOUD} cloud_alt=${CLOUD_ALT} image=${IMAGE} ${ANSIBLE_VARS}" \
+    -e "sdk_version=${SDK_VER} cloud=${CLOUD} cloud_alt=${CLOUD_ALT} image_name=${IMAGE} ${ANSIBLE_VARS}" \
     ${tag_opt} 2>&1 | sudo tee /opt/stack/logs/test_output.log
 popd

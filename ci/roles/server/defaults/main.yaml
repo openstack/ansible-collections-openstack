@@ -3,6 +3,6 @@ server_name: ansible_server
 server_alt_network: private_alt
 server_alt_subnet: subnet_alt
 server_alt_name: ansible_server_alt
-flavor: m1.tiny
+flavor_name: m1.tiny
 floating_ip_pool_name: public
 boot_volume_size: 5
