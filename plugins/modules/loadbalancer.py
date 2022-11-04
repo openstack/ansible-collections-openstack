@@ -125,6 +125,7 @@ options:
                     accessible from.
     elements: dict
     type: list
+    default: []
   wait:
     description:
       - If the module should wait for the load balancer to be created or

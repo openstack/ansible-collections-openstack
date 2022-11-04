@@ -23,6 +23,7 @@ options:
      description:
         - Long description of the purpose of the security group
      type: str
+     default: ''
    state:
      description:
        - Should the resource be present or absent.
