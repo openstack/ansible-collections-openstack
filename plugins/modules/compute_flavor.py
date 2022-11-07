@@ -13,52 +13,19 @@ description:
    - Add or remove compute flavors from OpenStack.
    - Updating a flavor consists of deleting and (re)creating a flavor.
 options:
-  state:
-    description:
-       - Indicate desired state of the resource. When I(state) is 'present',
-         then I(ram), I(vcpus), and I(disk) are all required. There are no
-         default values for those parameters.
-    choices: ['present', 'absent']
-    default: present
-    type: str
-  name:
-    description:
-       - Flavor name.
-    required: true
-    type: str
-  ram:
-    description:
-       - Amount of memory, in MB.
-    type: int
-  vcpus:
-    description:
-       - Number of virtual CPUs.
-    type: int
   disk:
     description:
        - Size of local disk, in GB.
-    default: 0
+       - Required when I(state) is C(present).
     type: int
   ephemeral:
     description:
        - Ephemeral space size, in GB.
-    default: 0
     type: int
-  swap:
+  extra_specs:
     description:
-       - Swap space size, in MB.
-    default: 0
-    type: int
-  rxtx_factor:
-    description:
-       - RX/TX factor.
-    default: 1.0
-    type: float
-  is_public:
-    description:
-       - Make flavor accessible to the public.
-    type: bool
-    default: 'yes'
+       - Metadata dictionary
+    type: dict
   id:
     description:
        - ID for the flavor. This is optional as a unique UUID will be
@@ -70,10 +37,41 @@ options:
          will be dropped in the next major release.
     type: str
     aliases: ['flavorid']
-  extra_specs:
+  is_public:
     description:
-       - Metadata dictionary
-    type: dict
+       - Make flavor accessible to the public.
+    type: bool
+  name:
+    description:
+       - Flavor name.
+    required: true
+    type: str
+  ram:
+    description:
+       - Amount of memory, in MB.
+       - Required when I(state) is C(present).
+    type: int
+  rxtx_factor:
+    description:
+       - RX/TX factor.
+    type: float
+  state:
+    description:
+       - Indicate desired state of the resource.
+       - When I(state) is C(present), then I(ram), I(vcpus), and I(disk) are
+         required. There are no default values for those parameters.
+    choices: ['present', 'absent']
+    default: present
+    type: str
+  swap:
+    description:
+       - Swap space size, in MB.
+    type: int
+  vcpus:
+    description:
+       - Number of virtual CPUs.
+       - Required when I(state) is C(present).
+    type: int
 requirements:
    - "python >= 3.6"
    - "openstacksdk"
@@ -192,21 +190,17 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class ComputeFlavorModule(OpenStackModule):
     argument_spec = dict(
-        state=dict(default='present',
-                   choices=['absent', 'present']),
-        name=dict(required=True),
-
-        # required when state is 'present'
-        ram=dict(type='int'),
-        vcpus=dict(type='int'),
-
-        disk=dict(default=0, type='int'),
-        ephemeral=dict(default=0, type='int'),
-        swap=dict(default=0, type='int'),
-        rxtx_factor=dict(default=1.0, type='float'),
-        is_public=dict(default=True, type='bool'),
-        id=dict(aliases=['flavorid']),
+        disk=dict(type='int'),
+        ephemeral=dict(type='int'),
         extra_specs=dict(type='dict'),
+        id=dict(aliases=['flavorid']),
+        is_public=dict(type='bool'),
+        name=dict(required=True),
+        ram=dict(type='int'),
+        rxtx_factor=dict(type='float'),
+        state=dict(default='present', choices=['absent', 'present']),
+        swap=dict(type='int'),
+        vcpus=dict(type='int'),
     )
 
     module_kwargs = dict(
@@ -216,93 +210,149 @@ class ComputeFlavorModule(OpenStackModule):
         supports_check_mode=True
     )
 
-    def _system_state_change(self, flavor, extra_specs, old_extra_specs):
-        state = self.params['state']
-        if state == 'present':
-            if not flavor:
-                return True
-            return self._needs_update(flavor) or extra_specs != old_extra_specs
-        if state == 'absent' and flavor:
-            return True
-        return False
-
-    def _needs_update(self, flavor):
-        fields = ['ram', 'vcpus', 'disk', 'ephemeral', 'swap', 'rxtx_factor',
-                  'is_public']
-        for k in fields:
-            if self.params[k] is not None and self.params[k] != flavor[k]:
-                return True
-
-    def _build_flavor_specs_diff(self, extra_specs, old_extra_specs):
-        new_extra_specs = dict([(k, str(v)) for k, v in extra_specs.items()])
-        unset_keys = set(old_extra_specs.keys()) - set(extra_specs.keys())
-        return new_extra_specs, unset_keys
-
     def run(self):
         state = self.params['state']
+        id = self.params['id']
         name = self.params['name']
-        extra_specs = self.params['extra_specs'] or {}
-
-        flavor = self.conn.compute.find_flavor(name, get_extra_specs=True)
-        old_extra_specs = {}
-        if flavor:
-            old_extra_specs = flavor['extra_specs']
-            if flavor['swap'] == '':
-                flavor['swap'] = 0
+        name_or_id = id if id and id != 'auto' else name
+        flavor = self.conn.compute.find_flavor(name_or_id,
+                                               get_extra_specs=True)
 
         if self.ansible.check_mode:
-            self.exit_json(changed=self._system_state_change(
-                flavor, extra_specs, old_extra_specs))
+            self.exit_json(changed=self._will_change(state, flavor))
 
-        if state == 'present':
-            flavor_id = self.params['id']
-            # Keep for backward compatibility
-            flavor_id = None if flavor_id == 'auto' else flavor_id
-            if flavor and self._needs_update(flavor):
-                # Because only flavor descriptions are updateable, we have to
-                # delete and recreate a flavor to "update" it
-                flavor_id = flavor['id']
-                self.conn.compute.delete_flavor(flavor)
-                old_extra_specs = {}
-                flavor = None
+        if state == 'present' and not flavor:
+            # Create flavor
+            flavor = self._create()
+            self.exit_json(changed=True,
+                           flavor=flavor.to_dict(computed=False))
 
-            changed = False
-            if not flavor:
-                flavor = self.conn.compute.create_flavor(
-                    name=name,
-                    ram=self.params['ram'],
-                    vcpus=self.params['vcpus'],
-                    disk=self.params['disk'],
-                    id=flavor_id,
-                    ephemeral=self.params['ephemeral'],
-                    swap=self.params['swap'],
-                    rxtx_factor=self.params['rxtx_factor'],
-                    is_public=self.params['is_public']
-                )
-                changed = True
+        elif state == 'present' and flavor:
+            # Update flavor
+            update = self._build_update(flavor)
+            if update:
+                flavor = self._update(flavor, update)
 
-            new_extra_specs, unset_keys = self._build_flavor_specs_diff(
-                extra_specs, old_extra_specs)
+            self.exit_json(changed=bool(update),
+                           flavor=flavor.to_dict(computed=False))
 
-            if unset_keys:
-                self.conn.unset_flavor_specs(flavor['id'], unset_keys)
+        elif state == 'absent' and flavor:
+            # Delete flavor
+            self._delete(flavor)
+            self.exit_json(changed=True)
 
-            if old_extra_specs != new_extra_specs:
-                self.conn.compute.create_flavor_extra_specs(
-                    flavor['id'], extra_specs)
-                changed = True
+        elif state == 'absent' and not flavor:
+            # Do nothing
+            self.exit_json(changed=False)
 
-            # Have to refetch updated extra_specs
+    def _build_update(self, flavor):
+        return {
+            **self._build_update_extra_specs(flavor),
+            **self._build_update_flavor(flavor)}
+
+    def _build_update_extra_specs(self, flavor):
+        update = {}
+
+        old_extra_specs = flavor['extra_specs']
+        new_extra_specs = self.params['extra_specs'] or {}
+        if flavor['swap'] == '':
+            flavor['swap'] = 0
+
+        delete_extra_specs_keys = \
+            set(old_extra_specs.keys()) - set(new_extra_specs.keys())
+
+        if delete_extra_specs_keys:
+            update['delete_extra_specs_keys'] = delete_extra_specs_keys
+
+        stringified = dict([(k, str(v))
+                            for k, v in new_extra_specs.items()])
+
+        if old_extra_specs != stringified:
+            update['create_extra_specs'] = new_extra_specs
+
+        return update
+
+    def _build_update_flavor(self, flavor):
+        update = {}
+
+        flavor_attributes = dict(
+            (k, self.params[k])
+            for k in ['ram', 'vcpus', 'disk', 'ephemeral', 'swap',
+                      'rxtx_factor', 'is_public']
+            if k in self.params and self.params[k] is not None
+            and self.params[k] != flavor[k])
+
+        if flavor_attributes:
+            update['flavor_attributes'] = flavor_attributes
+
+        return update
+
+    def _create(self):
+        kwargs = dict((k, self.params[k])
+                      for k in ['name', 'ram', 'vcpus', 'disk', 'ephemeral',
+                                'swap', 'rxtx_factor', 'is_public']
+                      if self.params[k] is not None)
+
+        # Keep for backward compatibility
+        id = self.params['id']
+        if id is not None and id != 'auto':
+            kwargs['id'] = id
+
+        flavor = self.conn.compute.create_flavor(**kwargs)
+
+        extra_specs = self.params['extra_specs']
+        if extra_specs:
+            flavor = self.conn.compute.create_flavor_extra_specs(flavor.id,
+                                                                 extra_specs)
+
+        return flavor
+
+    def _delete(self, flavor):
+        self.conn.compute.delete_flavor(flavor)
+
+    def _update(self, flavor, update):
+        flavor = self._update_flavor(flavor, update)
+        flavor = self._update_extra_specs(flavor, update)
+        return flavor
+
+    def _update_extra_specs(self, flavor, update):
+        if update.get('flavor_attributes'):
+            # No need to update extra_specs since flavor will be recreated
+            return flavor
+
+        delete_extra_specs_keys = update.get('delete_extra_specs_keys')
+        if delete_extra_specs_keys:
+            self.conn.unset_flavor_specs(flavor.id, delete_extra_specs_keys)
+            # Update flavor after extra_specs removal
             flavor = self.conn.compute.fetch_flavor_extra_specs(flavor)
 
-            self.exit_json(
-                changed=changed, flavor=flavor.to_dict(computed=False))
+        create_extra_specs = update.get('create_extra_specs')
+        if create_extra_specs:
+            flavor = self.conn.compute.create_flavor_extra_specs(
+                flavor.id, create_extra_specs)
 
-        elif state == 'absent':
-            if flavor:
-                self.conn.compute.delete_flavor(flavor)
-                self.exit_json(changed=True)
-            self.exit_json(changed=False)
+        return flavor
+
+    def _update_flavor(self, flavor, update):
+        flavor_attributes = update.get('flavor_attributes')
+        if flavor_attributes:
+            # Because only flavor descriptions are updateable,
+            # flavor has to be recreated to "update" it
+            self._delete(flavor)
+            flavor = self._create()
+
+        return flavor
+
+    def _will_change(self, state, flavor):
+        if state == 'present' and not flavor:
+            return True
+        elif state == 'present' and flavor:
+            return bool(self._build_update(flavor))
+        elif state == 'absent' and flavor:
+            return True
+        else:
+            # state == 'absent' and not flavor:
+            return False
 
 
 def main():
