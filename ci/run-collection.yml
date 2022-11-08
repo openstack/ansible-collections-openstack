@@ -18,6 +18,7 @@
       tags: dns
       when: sdk_version is version(0.28, '>=')
     - { role: endpoint, tags: endpoint }
+    - { role: federation_mapping, tags: federation_mapping }
     - { role: floating_ip, tags: floating_ip }
     - { role: host_aggregate, tags: host_aggregate }
     - { role: identity_domain_info, tags: identity_domain_info }
@@ -31,9 +32,6 @@
     - { role: image_info, tags: image_info }
     - { role: keypair, tags: keypair }
     - { role: keystone_domain, tags: keystone_domain }
-    - role: keystone_mapping
-      tags: keystone_mapping
-      when: sdk_version is version(0.44, '>=')
     - role: keystone_idp
       tags: keystone_idp
       when: sdk_version is version(0.44, '>=')

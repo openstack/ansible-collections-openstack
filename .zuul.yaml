@@ -72,6 +72,7 @@
         dns
         dns_zone_info
         endpoint
+        federation_mapping
         floating_ip
         host_aggregate
         identity_domain_info
@@ -87,7 +88,6 @@
         keystone_domain
         keystone_federation_protocol
         keystone_idp
-        keystone_mapping
         logging
         loadbalancer
         network

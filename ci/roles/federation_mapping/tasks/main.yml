@@ -12,10 +12,6 @@
       openstack.cloud.federation_mapping:
         state: 'absent'
         name: '{{ mapping_name }}'
-      register: delete_mapping
-    - assert:
-        that:
-        - delete_mapping is successful
 
     - name: 'Create mapping - CHECK_MODE'
       openstack.cloud.federation_mapping:
@@ -24,15 +20,16 @@
         rules: '{{ mapping_rules_1 }}'
       register: create_mapping
       check_mode: yes
+
     - assert:
         that:
-        - create_mapping is successful
         - create_mapping is changed
 
     - name: 'Fetch mapping info (mapping should be absent)'
       openstack.cloud.federation_mapping_info:
         name: '{{ mapping_name }}'
       register: mapping_info
+
     - assert:
         that:
         - mapping_info.mappings | length == 0
@@ -43,44 +40,45 @@
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_1 }}'
       register: create_mapping
+
     - assert:
         that:
-        - create_mapping is successful
         - create_mapping is changed
-        - '"id" in create_mapping.mapping'
-        - '"name" in create_mapping.mapping'
-        - '"rules" in create_mapping.mapping'
         - create_mapping.mapping.id == mapping_name
         - create_mapping.mapping.name == mapping_name
         - create_mapping.mapping.rules | length == 1
+
+    - name: assert return values of federation_mapping module
+      assert:
+        that:
+          # allow new fields to be introduced but prevent fields from being removed
+          - expected_fields|difference(create_mapping.mapping.keys())|length == 0
 
     - name: 'Fetch mapping info - with name'
       openstack.cloud.federation_mapping_info:
         name: '{{ mapping_name }}'
       register: mapping_info
+
     - assert:
         that:
-        - mapping_info is successful
-        - '"mappings" in mapping_info'
         - mapping_info.mappings | length == 1
-        - mapping_0.id == mapping_name
-        - mapping_0.name == mapping_name
-        - mapping_0.rules | length == 1
-      vars:
-        mapping_0: '{{ mapping_info.mappings[0] }}'
+        - mapping_info.mappings[0].id == mapping_name
+        - mapping_info.mappings[0].name == mapping_name
+        - mapping_info.mappings[0].rules | length == 1
 
-    - name: Verify returned values
+    - name: Check info about mappings
       assert:
-        that: item in mapping_info.mappings[0]
-      loop: "{{ expected_fields }}"
+        that:
+          - mapping_info.mappings|length > 0
+          # allow new fields to be introduced but prevent fields from being removed
+          - expected_fields|difference(mapping_info.mappings[0].keys())|length == 0
 
     - name: 'Fetch mapping info - without name'
       openstack.cloud.federation_mapping_info: {}
       register: mapping_info
+
     - assert:
         that:
-        - mapping_info is successful
-        - '"mappings" in mapping_info'
         # In CI we generally have a clean slate, but this might
         # not be true for everyone...
         - mapping_info.mappings | length >= 1
@@ -94,9 +92,9 @@
         rules: '{{ mapping_rules_1 }}'
       register: create_mapping
       check_mode: yes
+
     - assert:
         that:
-        - create_mapping is successful
         - create_mapping is not changed
 
     - name: 'Create mapping (retry - no change)'
@@ -105,9 +103,9 @@
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_1 }}'
       register: create_mapping
+
     - assert:
         that:
-        - create_mapping is successful
         - create_mapping is not changed
         - create_mapping.mapping.id == mapping_name
         - create_mapping.mapping.name == mapping_name
@@ -120,9 +118,9 @@
         rules: '{{ mapping_rules_2 }}'
       register: update_mapping
       check_mode: yes
+
     - assert:
         that:
-        - update_mapping is successful
         - update_mapping is changed
 
     - name: 'Update mapping'
@@ -131,13 +129,10 @@
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_2 }}'
       register: update_mapping
+
     - assert:
         that:
-        - update_mapping is successful
         - update_mapping is changed
-        - '"id" in update_mapping.mapping'
-        - '"name" in update_mapping.mapping'
-        - '"rules" in update_mapping.mapping'
         - update_mapping.mapping.id == mapping_name
         - update_mapping.mapping.name == mapping_name
         - update_mapping.mapping.rules | length == 1
@@ -148,13 +143,10 @@
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_2 }}'
       register: update_mapping
+
     - assert:
         that:
-        - update_mapping is successful
         - update_mapping is not changed
-        - '"id" in update_mapping.mapping'
-        - '"name" in update_mapping.mapping'
-        - '"rules" in update_mapping.mapping'
         - update_mapping.mapping.id == mapping_name
         - update_mapping.mapping.name == mapping_name
         - update_mapping.mapping.rules | length == 1
@@ -165,13 +157,10 @@
         name: '{{ mapping_name_2 }}'
         rules: '{{ mapping_rules_1 }}'
       register: create_mapping
+
     - assert:
         that:
-        - create_mapping is successful
         - create_mapping is changed
-        - '"id" in create_mapping.mapping'
-        - '"name" in create_mapping.mapping'
-        - '"rules" in create_mapping.mapping'
         - create_mapping.mapping.id == mapping_name_2
         - create_mapping.mapping.name == mapping_name_2
         - create_mapping.mapping.rules | length == 1
@@ -180,24 +169,20 @@
       openstack.cloud.federation_mapping_info:
         name: '{{ mapping_name_2 }}'
       register: mapping_info
+
     - assert:
         that:
-        - mapping_info is successful
-        - '"mappings" in mapping_info'
         - mapping_info.mappings | length == 1
-        - mapping_0.id == mapping_name_2
-        - mapping_0.name == mapping_name_2
-        - mapping_0.rules | length == 1
-      vars:
-        mapping_0: '{{ mapping_info.mappings[0] }}'
+        - mapping_info.mappings[0].id == mapping_name_2
+        - mapping_info.mappings[0].name == mapping_name_2
+        - mapping_info.mappings[0].rules | length == 1
 
     - name: 'Fetch mapping info - without name'
       openstack.cloud.federation_mapping_info: {}
       register: mapping_info
+
     - assert:
         that:
-        - mapping_info is successful
-        - '"mappings" in mapping_info'
         # In CI we generally have a clean slate, but this might
         # not be true for everyone...
         - mapping_info.mappings | length >= 2
@@ -212,9 +197,9 @@
         name: '{{ mapping_name }}'
       register: delete_mapping
       check_mode: yes
+
     - assert:
         that:
-        - delete_mapping is successful
         - delete_mapping is changed
 
     - name: 'Delete mapping'
@@ -222,9 +207,9 @@
         state: 'absent'
         name: '{{ mapping_name }}'
       register: delete_mapping
+
     - assert:
         that:
-        - delete_mapping is successful
         - delete_mapping is changed
 
     - name: 'Delete mapping (retry - no change) - CHECK_MODE'
@@ -233,9 +218,9 @@
         name: '{{ mapping_name }}'
       register: delete_mapping
       check_mode: yes
+
     - assert:
         that:
-        - delete_mapping is successful
         - delete_mapping is not changed
 
     - name: 'Delete mapping (retry - no change) '
@@ -243,15 +228,16 @@
         state: 'absent'
         name: '{{ mapping_name }}'
       register: delete_mapping
+
     - assert:
         that:
-        - delete_mapping is successful
         - delete_mapping is not changed
 
     - name: 'Fetch mapping info after deletion'
       openstack.cloud.federation_mapping_info:
         name: '{{ mapping_name }}'
       register: mapping_info
+
     - assert:
         that:
         - mapping_info.mappings | length == 0
@@ -261,9 +247,9 @@
         state: 'absent'
         name: '{{ mapping_name_2 }}'
       register: delete_mapping
+
     - assert:
         that:
-        - delete_mapping is successful
         - delete_mapping is changed
 
   always:

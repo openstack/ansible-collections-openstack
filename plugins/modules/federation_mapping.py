@@ -4,7 +4,7 @@
 # Copyright: Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: federation_mapping
 short_description: Manage a federation mapping
@@ -18,19 +18,13 @@ options:
     required: true
     type: str
     aliases: ['id']
-  state:
-    description:
-      - Whether the mapping should be C(present) or C(absent).
-    choices: ['present', 'absent']
-    default: present
-    type: str
   rules:
     description:
-      - The rules that comprise the mapping.  These are pairs of I(local) and
-        I(remote) definitions.  For more details on how these work please see
+      - The rules that comprise the mapping. These are pairs of I(local) and
+        I(remote) definitions. For more details on how these work please see
         the OpenStack documentation
         U(https://docs.openstack.org/keystone/latest/admin/federation/mapping_combinations.html).
-      - Required if I(state=present)
+      - Required if I(state) is C(present).
     type: list
     elements: dict
     suboptions:
@@ -46,14 +40,22 @@ options:
         required: true
         type: list
         elements: dict
+  state:
+    description:
+      - Whether the mapping should be C(present) or C(absent).
+    choices: ['present', 'absent']
+    default: present
+    type: str
+notes:
+    - Name equals the ID of a mapping.
 requirements:
   - "python >= 3.6"
-  - "openstacksdk >= 0.44"
+  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
+EXAMPLES = r'''
 - name: Create a new mapping
   openstack.cloud.federation_mapping:
     cloud: example_cloud
@@ -77,7 +79,23 @@ EXAMPLES = '''
     state: absent
 '''
 
-RETURN = '''
+RETURN = r'''
+mapping:
+  description: Dictionary describing the federation mapping.
+  returned: always
+  type: dict
+  contains:
+    id:
+      description: The id of the mapping
+      type: str
+      sample: "ansible-test-mapping"
+    name:
+      description: Name of the mapping. Equal to C(id).
+      type: str
+      sample: "ansible-test-mapping"
+    rules:
+      description: List of rules for the mapping
+      type: list
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -86,108 +104,94 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class IdentityFederationMappingModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True, aliases=['id']),
+        rules=dict(
+            type='list',
+            elements='dict',
+            options=dict(
+                local=dict(required=True, type='list', elements='dict'),
+                remote=dict(required=True, type='list', elements='dict')
+            )),
         state=dict(default='present', choices=['absent', 'present']),
-        rules=dict(type='list', elements='dict', options=dict(
-            local=dict(required=True, type='list', elements='dict'),
-            remote=dict(required=True, type='list', elements='dict')
-        )),
     )
+
     module_kwargs = dict(
         required_if=[('state', 'present', ['rules'])],
         supports_check_mode=True
     )
 
-    def normalize_mapping(self, mapping):
-        """
-        Normalizes the mapping definitions so that the outputs are consistent with
-        the parameters
-
-        - "name" (parameter) == "id" (SDK)
-        """
-        if mapping is None:
-            return None
-
-        _mapping = mapping.to_dict()
-        _mapping['name'] = mapping['id']
-        return _mapping
-
-    def create_mapping(self, name):
-        """
-        Attempt to create a Mapping
-
-        returns: A tuple containing the "Changed" state and the created mapping
-        """
-
-        if self.ansible.check_mode:
-            return (True, None)
-
-        rules = self.params.get('rules')
-
-        mapping = self.conn.identity.create_mapping(id=name, rules=rules)
-        return (True, mapping)
-
-    def delete_mapping(self, mapping):
-        """
-        Attempt to delete a Mapping
-
-        returns: the "Changed" state
-        """
-        if mapping is None:
-            return False
-
-        if self.ansible.check_mode:
-            return True
-
-        self.conn.identity.delete_mapping(mapping)
-        return True
-
-    def update_mapping(self, mapping):
-        """
-        Attempt to delete a Mapping
-
-        returns: The "Changed" state and the the new mapping
-        """
-
-        current_rules = mapping.rules
-        new_rules = self.params.get('rules')
-
-        # Nothing to do
-        if current_rules == new_rules:
-            return (False, mapping)
-
-        if self.ansible.check_mode:
-            return (True, None)
-
-        new_mapping = self.conn.identity.update_mapping(mapping, rules=new_rules)
-        return (True, new_mapping)
-
     def run(self):
-        """ Module entry point """
+        state = self.params['state']
 
-        name = self.params.get('name')
-        state = self.params.get('state')
-        changed = False
+        id = self.params['name']
+        mapping = self.conn.identity.find_mapping(id)
 
-        mapping = self.conn.identity.find_mapping(name)
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._will_change(state, mapping))
 
-        if state == 'absent':
-            if mapping is not None:
-                changed = self.delete_mapping(mapping)
-            self.exit_json(changed=changed)
+        if state == 'present' and not mapping:
+            # Create mapping
+            mapping = self._create()
+            self.exit_json(changed=True,
+                           mapping=mapping.to_dict(computed=False))
 
-        # state == 'present'
+        elif state == 'present' and mapping:
+            # Update mapping
+            update = self._build_update(mapping)
+            if update:
+                mapping = self._update(mapping, update)
+
+            self.exit_json(changed=bool(update),
+                           mapping=mapping.to_dict(computed=False))
+
+        elif state == 'absent' and mapping:
+            # Delete mapping
+            self._delete(mapping)
+            self.exit_json(changed=True)
+
+        elif state == 'absent' and not mapping:
+            # Do nothing
+            self.exit_json(changed=False)
+
+    def _build_update(self, mapping):
+        update = {}
+
+        if len(self.params['rules']) < 1:
+            self.fail_json(msg='At least one rule must be passed')
+
+        attributes = dict((k, self.params[k]) for k in ['rules']
+                          if k in self.params and self.params[k] is not None
+                          and self.params[k] != mapping[k])
+
+        if attributes:
+            update['attributes'] = attributes
+
+        return update
+
+    def _create(self):
+        return self.conn.identity.create_mapping(id=self.params['name'],
+                                                 rules=self.params['rules'])
+
+    def _delete(self, mapping):
+        self.conn.identity.delete_mapping(mapping.id)
+
+    def _update(self, mapping, update):
+        attributes = update.get('attributes')
+        if attributes:
+            mapping = self.conn.identity.update_mapping(mapping.id,
+                                                        **attributes)
+
+        return mapping
+
+    def _will_change(self, state, mapping):
+        if state == 'present' and not mapping:
+            return True
+        elif state == 'present' and mapping:
+            return bool(self._build_update(mapping))
+        elif state == 'absent' and mapping:
+            return True
         else:
-            if len(self.params.get('rules')) < 1:
-                self.fail_json(msg='At least one rule must be passed')
-
-            if mapping is None:
-                (changed, mapping) = self.create_mapping(name)
-                mapping = self.normalize_mapping(mapping)
-                self.exit_json(changed=changed, mapping=mapping)
-            else:
-                (changed, new_mapping) = self.update_mapping(mapping)
-                new_mapping = self.normalize_mapping(new_mapping)
-                self.exit_json(mapping=new_mapping, changed=changed)
+            # state == 'absent' and not mapping:
+            return False
 
 
 def main():

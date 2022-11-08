@@ -4,19 +4,21 @@
 # Copyright: Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: federation_mapping_info
-short_description: Get the information about the available federation mappings
+short_description: Fetch Keystone federation mappings
 author: OpenStack Ansible SIG
 description:
-  - Fetch federation mappings.
+  - Fetch Keystone federation mappings.
 options:
   name:
     description:
-      - The name of the mapping to fetch.
+      - ID or name of the federation mapping.
     type: str
     aliases: ['id']
+notes:
+    - Name equals the ID of a federation mapping.
 requirements:
   - "python >= 3.6"
   - "openstacksdk"
@@ -24,38 +26,34 @@ extends_documentation_fragment:
   - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
-- name: Fetch a specific mapping
+EXAMPLES = r'''
+- name: Fetch all federation mappings
+  openstack.cloud.federation_mapping_info:
+    cloud: example_cloud
+
+- name: Fetch federation mapping by name
   openstack.cloud.federation_mapping_info:
     cloud: example_cloud
     name: example_mapping
-
-- name: Fetch all mappings
-  openstack.cloud.federation_mapping_info:
-    cloud: example_cloud
 '''
 
-RETURN = '''
+RETURN = r'''
 mappings:
-  description:
-    - List of federation mappings
+  description: List of federation mapping dictionaries.
+  returned: always
   type: list
   elements: dict
-  returned: always
   contains:
     id:
-      description:
-        - The id of the mapping
+      description: The id of the mapping
       type: str
       sample: "ansible-test-mapping"
     name:
-      description:
-        - The name of the mapping
+      description: Name of the mapping. Equal to C(id).
       type: str
       sample: "ansible-test-mapping"
     rules:
-      description:
-        - List of rules for the mapping
+      description: List of rules for the mapping
       type: list
 '''
 
@@ -72,7 +70,7 @@ class IdentityFederationMappingInfoModule(OpenStackModule):
     )
 
     def run(self):
-        # name is defined as id for mappings
+        # name is id for federation mappings
         id = self.params['name']
 
         if id:
