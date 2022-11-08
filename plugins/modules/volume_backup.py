@@ -255,10 +255,10 @@ class VolumeBackupModule(OpenStackModule):
             # openstacksdk does not support it either
             return False
         elif state == 'absent' and backup:
-            return False
+            return True
         else:
             # state == 'absent' and not backup:
-            return True
+            return False
 
 
 def main():

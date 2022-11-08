@@ -1227,10 +1227,10 @@ class ServerModule(OpenStackModule):
         elif state == 'present' and server:
             return bool(self._build_update(server))
         elif state == 'absent' and server:
-            return False
+            return True
         else:
             # state == 'absent' and not server:
-            return True
+            return False
 
 
 def main():

@@ -677,10 +677,10 @@ class BaremetalNodeModule(OpenStackModule):
         elif state == 'present' and node:
             return bool(self._build_update(node))
         elif state == 'absent' and node:
-            return False
+            return True
         else:
             # state == 'absent' and not node:
-            return True
+            return False
 
 
 def main():

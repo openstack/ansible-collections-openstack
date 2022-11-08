@@ -688,10 +688,10 @@ class PortModule(OpenStackModule):
         elif state == 'present' and port:
             return bool(self._build_update(port))
         elif state == 'absent' and port:
-            return False
+            return True
         else:
             # state == 'absent' and not port:
-            return True
+            return False
 
 
 def main():
