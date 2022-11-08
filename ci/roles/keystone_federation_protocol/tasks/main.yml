@@ -28,42 +28,24 @@
       openstack.cloud.identity_domain:
         name: '{{ domain_name }}'
       register: create_domain
-    - assert:
-        that:
-        - create_domain is successful
-        - '"id" in create_domain'
-    - name: 'Store domain ID as fact'
-      set_fact:
-        domain_id: '{{ create_domain.id }}'
 
     - name: 'Create test Identity Provider'
       openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
-        domain_id: '{{ domain_id }}'
-      register: create_idp
-    - assert:
-        that:
-        - create_idp is successful
+        domain_id: '{{ create_domain.id }}'
 
     - name: 'Create test mapping (1)'
       openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name_1 }}'
         rules: '{{ mapping_rules_1 }}'
-      register: create_mapping
-    - assert:
-        that:
-        - create_mapping is successful
+
     - name: 'Create test mapping (2)'
       openstack.cloud.federation_mapping:
         state: 'present'
         name: '{{ mapping_name_2 }}'
         rules: '{{ mapping_rules_2 }}'
-      register: create_mapping
-    - assert:
-        that:
-        - create_mapping is successful
 
     # We *should* have a blank slate to start with, but we also shouldn't
     # explode if I(state=absent) and the IDP doesn't exist
@@ -71,10 +53,6 @@
       openstack.cloud.keystone_federation_protocol:
         state: 'absent'
         name: '{{ protocol_name }}'
-      register: delete_protocol
-    - assert:
-        that:
-        - delete_protocol is successful
 
     # ========================================================================
     #   Creation
@@ -86,19 +64,19 @@
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_1 }}'
       register: create_protocol
+
     - assert:
         that:
-        - create_protocol is successful
         - create_protocol is changed
 
     - name: 'Fetch Protocol info (should be absent)'
       openstack.cloud.keystone_federation_protocol_info:
         name: '{{ protocol_name }}'
       register: protocol_info
-      ignore_errors: yes
+
     - assert:
         that:
-        - protocol_info is failed
+        - protocol_info.protocols | length == 0
 
     - name: 'Create protocol'
       openstack.cloud.keystone_federation_protocol:
@@ -106,21 +84,19 @@
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_1 }}'
       register: create_protocol
+
     - assert:
         that:
-        - create_protocol is successful
         - create_protocol is changed
-        - '"protocol" in create_protocol'
-        - '"id" in protocol'
-        - '"name" in protocol'
-        - '"idp_id" in protocol'
-        - '"mapping_id" in protocol'
-        - protocol.id == protocol_name
-        - protocol.name == protocol_name
-        - protocol.idp_id == idp_name
-        - protocol.mapping_id == mapping_name_1
-      vars:
-        protocol: '{{ create_protocol.protocol }}'
+        - create_protocol.protocol.id == protocol_name
+        - create_protocol.protocol.name == protocol_name
+        - create_protocol.protocol.mapping_id == mapping_name_1
+
+    - name: assert return values of keystone_federation_protocol module
+      assert:
+        that:
+          # allow new fields to be introduced but prevent fields from being removed
+          - expected_fields|difference(create_protocol.protocol.keys())|length == 0
 
     - name: 'Create protocol (retry - no change) - CHECK MODE'
       check_mode: yes
@@ -129,9 +105,9 @@
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_1 }}'
       register: create_protocol
+
     - assert:
         that:
-        - create_protocol is successful
         - create_protocol is not changed
 
     - name: 'Create protocol (retry - no change)'
@@ -140,21 +116,13 @@
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_1 }}'
       register: create_protocol
+
     - assert:
         that:
-        - create_protocol is successful
         - create_protocol is not changed
-        - '"protocol" in create_protocol'
-        - '"id" in protocol'
-        - '"name" in protocol'
-        - '"idp_id" in protocol'
-        - '"mapping_id" in protocol'
-        - protocol.id == protocol_name
-        - protocol.name == protocol_name
-        - protocol.idp_id == idp_name
-        - protocol.mapping_id == mapping_name_1
-      vars:
-        protocol: '{{ create_protocol.protocol }}'
+        - create_protocol.protocol.id == protocol_name
+        - create_protocol.protocol.name == protocol_name
+        - create_protocol.protocol.mapping_id == mapping_name_1
 
     # ========================================================================
     #   Update
@@ -166,9 +134,9 @@
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_2 }}'
       register: update_protocol
+
     - assert:
         that:
-        - update_protocol is successful
         - update_protocol is changed
 
     - name: 'Update protocol'
@@ -177,21 +145,13 @@
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_2 }}'
       register: update_protocol
+
     - assert:
         that:
-        - update_protocol is successful
         - update_protocol is changed
-        - '"protocol" in update_protocol'
-        - '"id" in protocol'
-        - '"name" in protocol'
-        - '"idp_id" in protocol'
-        - '"mapping_id" in protocol'
-        - protocol.id == protocol_name
-        - protocol.name == protocol_name
-        - protocol.idp_id == idp_name
-        - protocol.mapping_id == mapping_name_2
-      vars:
-        protocol: '{{ update_protocol.protocol }}'
+        - update_protocol.protocol.id == protocol_name
+        - update_protocol.protocol.name == protocol_name
+        - update_protocol.protocol.mapping_id == mapping_name_2
 
     - name: 'Update protocol (retry - no change) - CHECK MODE'
       check_mode: yes
@@ -200,9 +160,9 @@
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_2 }}'
       register: update_protocol
+
     - assert:
         that:
-        - update_protocol is successful
         - update_protocol is not changed
 
     - name: 'Update protocol (retry - no change)'
@@ -211,21 +171,13 @@
         name: '{{ protocol_name }}'
         mapping_id: '{{ mapping_name_2 }}'
       register: update_protocol
+
     - assert:
         that:
-        - update_protocol is successful
         - update_protocol is not changed
-        - '"protocol" in update_protocol'
-        - '"id" in protocol'
-        - '"name" in protocol'
-        - '"idp_id" in protocol'
-        - '"mapping_id" in protocol'
-        - protocol.id == protocol_name
-        - protocol.name == protocol_name
-        - protocol.idp_id == idp_name
-        - protocol.mapping_id == mapping_name_2
-      vars:
-        protocol: '{{ update_protocol.protocol }}'
+        - update_protocol.protocol.id == protocol_name
+        - update_protocol.protocol.name == protocol_name
+        - update_protocol.protocol.mapping_id == mapping_name_2
 
     # ========================================================================
     #   Create second protocol to test openstack.cloud.keystone_federation_protocol_info
@@ -238,19 +190,10 @@
       register: create_protocol_2
     - assert:
         that:
-        - create_protocol_2 is successful
         - create_protocol_2 is changed
-        - '"protocol" in create_protocol_2'
-        - '"id" in protocol'
-        - '"name" in protocol'
-        - '"idp_id" in protocol'
-        - '"mapping_id" in protocol'
-        - protocol.id == protocol_name_2
-        - protocol.name == protocol_name_2
-        - protocol.idp_id == idp_name
-        - protocol.mapping_id == mapping_name_1
-      vars:
-        protocol: '{{ create_protocol_2.protocol }}'
+        - create_protocol_2.protocol.id == protocol_name_2
+        - create_protocol_2.protocol.name == protocol_name_2
+        - create_protocol_2.protocol.mapping_id == mapping_name_1
 
     # ========================================================================
     #   Basic tests of openstack.cloud.keystone_federation_protocol_info
@@ -259,49 +202,36 @@
       openstack.cloud.keystone_federation_protocol_info:
         name: '{{ protocol_name }}'
       register: protocol_info
+
+    - name: Check info about protocols
+      assert:
+        that:
+          - protocol_info.protocols|length > 0
+          # allow new fields to be introduced but prevent fields from being removed
+          - expected_fields|difference(protocol_info.protocols[0].keys())|length == 0
+
     - assert:
         that:
-        - protocol_info is successful
-        - '"protocols" in protocol_info'
-        - protocol_info.protocols | length == 1
-        - '"id" in protocol'
-        - '"name" in protocol'
-        - '"idp_id" in protocol'
-        - '"mapping_id" in protocol'
-        - protocol.id == protocol_name
-        - protocol.name == protocol_name
-        - protocol.idp_id == idp_name
-        - protocol.mapping_id == mapping_name_2
-      vars:
-        protocol: '{{ protocol_info.protocols[0] }}'
+        - protocol_info.protocols[0].id == protocol_name
+        - protocol_info.protocols[0].name == protocol_name
+        - protocol_info.protocols[0].mapping_id == mapping_name_2
 
     - name: 'Fetch Protocol info (all protocols on our test IDP)'
       openstack.cloud.keystone_federation_protocol_info: {}
         # idp_id defined in defaults at the start
       register: protocol_info
+
     - assert:
         that:
-        - protocol_info is successful
-        - '"protocols" in protocol_info'
         # We created the IDP, and we're going to delete it:
         # we should be able to trust what's attached to it
         - protocol_info.protocols | length == 2
-        - '"id" in protocol_1'
-        - '"name" in protocol_1'
-        - '"idp_id" in protocol_1'
-        - '"mapping_id" in protocol_1'
-        - '"id" in protocol_2'
-        - '"name" in protocol_2'
-        - '"idp_id" in protocol_2'
-        - '"mapping_id" in protocol_2'
         - protocol_name in (protocol_info.protocols | map(attribute='id'))
         - protocol_name in (protocol_info.protocols | map(attribute='id'))
         - protocol_name_2 in (protocol_info.protocols | map(attribute='name'))
         - protocol_name_2 in (protocol_info.protocols | map(attribute='name'))
         - mapping_name_1 in (protocol_info.protocols | map(attribute='mapping_id'))
         - mapping_name_2 in (protocol_info.protocols | map(attribute='mapping_id'))
-        - protocol_1.idp_id == idp_name
-        - protocol_2.idp_id == idp_name
       vars:
         protocol_1: '{{ protocol_info.protocols[0] }}'
         protocol_2: '{{ protocol_info.protocols[1] }}'
@@ -315,9 +245,9 @@
         state: 'absent'
         name: '{{ protocol_name }}'
       register: update_protocol
+
     - assert:
         that:
-        - update_protocol is successful
         - update_protocol is changed
 
     - name: 'Delete protocol'
@@ -325,9 +255,9 @@
         state: 'absent'
         name: '{{ protocol_name }}'
       register: update_protocol
+
     - assert:
         that:
-        - update_protocol is successful
         - update_protocol is changed
 
     - name: 'Delete protocol (retry - no change) - CHECK MODE'
@@ -336,9 +266,9 @@
         state: 'absent'
         name: '{{ protocol_name }}'
       register: update_protocol
+
     - assert:
         that:
-        - update_protocol is successful
         - update_protocol is not changed
 
     - name: 'Delete protocol (retry - no change)'
@@ -346,9 +276,9 @@
         state: 'absent'
         name: '{{ protocol_name }}'
       register: update_protocol
+
     - assert:
         that:
-        - update_protocol is successful
         - update_protocol is not changed
 
     # ========================================================================

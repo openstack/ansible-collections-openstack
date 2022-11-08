@@ -9,6 +9,11 @@ idp_remote_ids:
 # Minimal Domain definition
 domain_name: 'test-domain'
 
+expected_fields:
+  - id
+  - mapping_id
+  - name
+
 # Minimal Mapping definition
 mapping_name_1: 'ansible-test-mapping-1'
 mapping_name_2: 'ansible-test-mapping-2'

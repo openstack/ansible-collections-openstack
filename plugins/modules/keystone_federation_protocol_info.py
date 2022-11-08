@@ -4,47 +4,67 @@
 # Copyright: Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: keystone_federation_protocol_info
-short_description: get information about federation Protocols
+short_description: Fetch Keystone federation protocols
 author: OpenStack Ansible SIG
 description:
-  - Get information about federation Protocols.
+  - Fetch Keystone federation protocols.
 options:
   name:
     description:
-      - The name of the Protocol.
+      - ID or name of the federation protocol.
     type: str
     aliases: ['id']
-  idp_id:
+  idp:
     description:
-      - The name of the Identity Provider this Protocol is associated with.
-    aliases: ['idp_name']
+      - ID or name of the identity provider this protocol is associated with.
+    aliases: ['idp_id', 'idp_name']
     required: true
     type: str
+notes:
+    - Name equals the ID of a federation protocol.
+    - Name equals the ID of an identity provider.
 requirements:
   - "python >= 3.6"
-  - "openstacksdk >= 0.44"
+  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
-- name: Describe a protocol
+EXAMPLES = r'''
+- name: Fetch all federation protocols attached to an identity provider
   openstack.cloud.keystone_federation_protocol_info:
     cloud: example_cloud
-    name: example_protocol
-    idp_id: example_idp
-    mapping_name: example_mapping
+    idp: example_idp
 
-- name: Describe all protocols attached to an IDP
+- name: Fetch federation protocol by name
   openstack.cloud.keystone_federation_protocol_info:
     cloud: example_cloud
-    idp_id: example_idp
+    idp: example_idp
+    name: example_protocol
 '''
 
-RETURN = '''
+RETURN = r'''
+protocols:
+    description: List of federation protocol dictionaries.
+    returned: always
+    type: list
+    elements: dict
+    contains:
+        id:
+            description: ID of the federation protocol.
+            returned: success
+            type: str
+        mapping_id:
+            description: The definition of the federation protocol.
+            returned: success
+            type: str
+        name:
+            description: Name of the protocol. Equal to C(id).
+            returned: success
+            type: str
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -53,42 +73,29 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class IdentityFederationProtocolInfoModule(OpenStackModule):
     argument_spec = dict(
         name=dict(aliases=['id']),
-        idp_id=dict(required=True, aliases=['idp_name']),
+        idp=dict(required=True, aliases=['idp_id', 'idp_name']),
     )
+
     module_kwargs = dict(
         supports_check_mode=True
     )
 
-    def normalize_protocol(self, protocol):
-        """
-        Normalizes the protocol definitions so that the outputs are consistent with the
-        parameters
-
-        - "name" (parameter) == "id" (SDK)
-        """
-        if protocol is None:
-            return None
-
-        _protocol = protocol.to_dict()
-        _protocol['name'] = protocol['id']
-        # As of 0.44 SDK doesn't copy the URI parameters over, so let's add them
-        _protocol['idp_id'] = protocol['idp_id']
-        return _protocol
-
     def run(self):
-        """ Module entry point """
+        # name is id for federation protocols
+        id = self.params['name']
 
-        name = self.params.get('name')
-        idp = self.params.get('idp_id')
+        # name is id for identity providers
+        idp_id = self.params['idp']
 
-        if name:
-            protocol = self.conn.identity.get_federation_protocol(idp, name)
-            protocol = self.normalize_protocol(protocol)
-            self.exit_json(changed=False, protocols=[protocol])
-
+        if id:
+            protocol = self.conn.identity.find_federation_protocol(idp_id, id)
+            protocols = [protocol] if protocol else []
         else:
-            protocols = list(map(self.normalize_protocol, self.conn.identity.federation_protocols(idp)))
-            self.exit_json(changed=False, protocols=protocols)
+            protocols = self.conn.identity.federation_protocols(idp_id)
+
+        self.exit_json(changed=False,
+                       protocols=[p.to_dict(computed=False)
+                                  for p in protocols])
 
 
 def main():

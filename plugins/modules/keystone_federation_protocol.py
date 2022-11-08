@@ -4,62 +4,85 @@
 # Copyright: Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: keystone_federation_protocol
-short_description: manage a federation Protocol
+short_description: Manage a Keystone federation protocol
 author: OpenStack Ansible SIG
 description:
-  - Manage a federation Protocol.
+  - Manage a Keystone federation protocol.
 options:
   name:
     description:
-      - The name of the Protocol.
+      - ID or name of the federation protocol.
+      - This attribute cannot be updated.
     type: str
     required: true
     aliases: ['id']
+  idp:
+    description:
+      - ID or name of the identity provider this protocol is associated with.
+      - This attribute cannot be updated.
+    aliases: ['idp_id', 'idp_name']
+    required: true
+    type: str
+  mapping:
+    description:
+      - ID or name of the mapping to use for this protocol.
+      - Required when creating a new protocol.
+    type: str
+    aliases: ['mapping_id', 'mapping_name']
   state:
     description:
       - Whether the protocol should be C(present) or C(absent).
     choices: ['present', 'absent']
     default: present
     type: str
-  idp_id:
-    description:
-      - The name of the Identity Provider this Protocol is associated with.
-    aliases: ['idp_name']
-    required: true
-    type: str
-  mapping_id:
-    description:
-      - The name of the Mapping to use for this Protocol.'
-      - Required when creating a new Protocol.
-    type: str
-    aliases: ['mapping_name']
+notes:
+    - Name equals the ID of a federation protocol.
+    - Name equals the ID of an identity provider.
+    - Name equals the ID of a mapping.
 requirements:
   - "python >= 3.6"
-  - "openstacksdk >= 0.44"
+  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
+EXAMPLES = r'''
 - name: Create a protocol
   openstack.cloud.keystone_federation_protocol:
     cloud: example_cloud
     name: example_protocol
-    idp_id: example_idp
-    mapping_id: example_mapping
+    idp: example_idp
+    mapping: example_mapping
 
 - name: Delete a protocol
   openstack.cloud.keystone_federation_protocol:
     cloud: example_cloud
     name: example_protocol
-    idp_id: example_idp
+    idp: example_idp
     state: absent
 '''
 
-RETURN = '''
+RETURN = r'''
+protocol:
+    description: Dictionary describing the federation protocol.
+    returned: always
+    type: dict
+    contains:
+        id:
+            description: ID of the federation protocol.
+            returned: success
+            type: str
+        mapping_id:
+            description: The definition of the federation protocol.
+            returned: success
+            type: str
+        name:
+            description: Name of the protocol. Equal to C(id).
+            returned: success
+            type: str
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -69,115 +92,91 @@ class IdentityFederationProtocolModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True, aliases=['id']),
         state=dict(default='present', choices=['absent', 'present']),
-        idp_id=dict(required=True, aliases=['idp_name']),
-        mapping_id=dict(aliases=['mapping_name']),
+        idp=dict(required=True, aliases=['idp_id', 'idp_name']),
+        mapping=dict(aliases=['mapping_id', 'mapping_name']),
     )
     module_kwargs = dict(
+        required_if=[
+            ('state', 'present', ('mapping',)),
+        ],
         supports_check_mode=True
     )
 
-    def normalize_protocol(self, protocol):
-        """
-        Normalizes the protocol definitions so that the outputs are consistent with the
-        parameters
-
-        - "name" (parameter) == "id" (SDK)
-        """
-        if protocol is None:
-            return None
-
-        _protocol = protocol.to_dict()
-        _protocol['name'] = protocol['id']
-        # As of 0.44 SDK doesn't copy the URI parameters over, so let's add them
-        _protocol['idp_id'] = protocol['idp_id']
-        return _protocol
-
-    def delete_protocol(self, protocol):
-        """
-        Delete an existing Protocol
-
-        returns: the "Changed" state
-        """
-        if protocol is None:
-            return False
-
-        if self.ansible.check_mode:
-            return True
-
-        self.conn.identity.delete_federation_protocol(None, protocol)
-        return True
-
-    def create_protocol(self, name):
-        """
-        Create a new Protocol
-
-        returns: the "Changed" state and the new protocol
-        """
-        if self.ansible.check_mode:
-            return True, None
-
-        idp_name = self.params.get('idp_id')
-        mapping_id = self.params.get('mapping_id')
-
-        attributes = {
-            'idp_id': idp_name,
-            'mapping_id': mapping_id,
-        }
-
-        protocol = self.conn.identity.create_federation_protocol(id=name, **attributes)
-        return (True, protocol)
-
-    def update_protocol(self, protocol):
-        """
-        Update an existing Protocol
-
-        returns: the "Changed" state and the new protocol
-        """
-        mapping_id = self.params.get('mapping_id')
-
-        attributes = {}
-
-        if (mapping_id is not None) and (mapping_id != protocol.mapping_id):
-            attributes['mapping_id'] = mapping_id
-
-        if not attributes:
-            return False, protocol
-
-        if self.ansible.check_mode:
-            return True, None
-
-        new_protocol = self.conn.identity.update_federation_protocol(None, protocol, **attributes)
-        return (True, new_protocol)
-
     def run(self):
-        """ Module entry point """
-        name = self.params.get('name')
-        state = self.params.get('state')
-        idp = self.params.get('idp_id')
-        changed = False
+        state = self.params['state']
 
-        protocol = self.conn.identity.find_federation_protocol(idp, name)
+        id = self.params['name']
+        idp_id = self.params['idp']
+        protocol = self.conn.identity.find_federation_protocol(idp_id, id)
 
-        if state == 'absent':
-            if protocol is not None:
-                changed = self.delete_protocol(protocol)
-            self.exit_json(changed=changed)
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._will_change(state, protocol))
 
-        # state == 'present'
+        if state == 'present' and not protocol:
+            # Create protocol
+            protocol = self._create()
+            self.exit_json(changed=True,
+                           protocol=protocol.to_dict(computed=False))
+
+        elif state == 'present' and protocol:
+            # Update protocol
+            update = self._build_update(protocol)
+            if update:
+                protocol = self._update(protocol, update)
+
+            self.exit_json(changed=bool(update),
+                           protocol=protocol.to_dict(computed=False))
+
+        elif state == 'absent' and protocol:
+            # Delete protocol
+            self._delete(protocol)
+            self.exit_json(changed=True)
+
+        elif state == 'absent' and not protocol:
+            # Do nothing
+            self.exit_json(changed=False)
+
+    def _build_update(self, protocol):
+        update = {}
+
+        attributes = dict(
+            (k, self.params[p])
+            for (p, k) in {'mapping': 'mapping_id'}.items()
+            if p in self.params and self.params[p] is not None
+            and self.params[p] != protocol[k])
+
+        if attributes:
+            update['attributes'] = attributes
+
+        return update
+
+    def _create(self):
+        return self.conn.identity.create_federation_protocol(
+            id=self.params['name'],
+            idp_id=self.params['idp'],
+            mapping_id=self.params['mapping'])
+
+    def _delete(self, protocol):
+        self.conn.identity.delete_federation_protocol(None, protocol)
+
+    def _update(self, protocol, update):
+        attributes = update.get('attributes')
+        if attributes:
+            protocol = self.conn.identity.update_federation_protocol(
+                protocol.idp_id, protocol.id, **attributes)
+
+        return protocol
+
+    def _will_change(self, state, protocol):
+        if state == 'present' and not protocol:
+            return True
+        elif state == 'present' and protocol:
+            return bool(self._build_update(protocol))
+        elif state == 'absent' and protocol:
+            return True
         else:
-            if protocol is None:
-                if self.params.get('mapping_id') is None:
-                    self.fail_json(
-                        msg='A mapping_id must be passed when creating'
-                        ' a protocol')
-                (changed, protocol) = self.create_protocol(name)
-                protocol = self.normalize_protocol(protocol)
-                self.exit_json(changed=changed, protocol=protocol)
-
-            else:
-                (changed, new_protocol) = self.update_protocol(protocol)
-                new_protocol = self.normalize_protocol(new_protocol)
-                self.exit_json(changed=changed, protocol=new_protocol)
+            # state == 'absent' and not protocol:
+            return False
 
 
 def main():
