@@ -1,0 +1,9 @@
+expected_fields:
+  - action
+  - id
+  - name
+  - object_id
+  - object_type
+  - project_id
+  - target_project_id
+  - tenant_id

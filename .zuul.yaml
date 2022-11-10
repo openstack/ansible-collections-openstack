@@ -60,65 +60,6 @@
     description: |
       Run openstack collections functional tests against a master devstack
       using master of openstacksdk with latest ansible release
-    vars:
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: &skip_broken_ci_roles >-
-        address_scope
-        auth
-        catalog_service
-        compute_flavor
-        compute_flavor_access
-        config
-        dns
-        dns_zone_info
-        endpoint
-        federation_mapping
-        floating_ip
-        host_aggregate
-        identity_domain_info
-        identity_group
-        identity_group_info
-        identity_user
-        identity_user_info
-        identity_role
-        identity_role_info
-        image
-        image_info
-        keypair
-        keystone_domain
-        keystone_federation_protocol
-        keystone_idp
-        logging
-        loadbalancer
-        network
-        nova_services
-        object
-        object_container
-        port
-        project
-        project_info
-        quota
-        recordset
-        role_assignment
-        router
-        security_group
-        security_group_rule
-        server
-        server_group
-        server_metadata
-        server_volume
-        stack
-        subnet
-        subnet_pool
-        user
-        user_group
-        user_role
-        volume
-        volume_backup
-        volume_snapshot
-        volume_type_access
-      # failing tags
-      # neutron_rbac
 
 - job:
     name: ansible-collections-openstack-functional-devstack-octavia-base
@@ -166,9 +107,6 @@
       Run openstack collections functional tests against a master devstack
       with Octavia plugin enabled, using latest releases of openstacksdk
       and latest ansible release. Run it only on Load Balancer changes.
-    vars:
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
 
 - job:
     name: ansible-collections-openstack-functional-devstack-releases
@@ -179,8 +117,6 @@
       using latest releases of openstacksdk and latest ansible release
     vars:
       tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-openstacksdk-1.x.x.txt'
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
       tox_install_siblings: false
 
 # Job with Ansible 2.9 for checking backward compatibility
@@ -196,8 +132,6 @@
         override-checkout: stable-2.9
     vars:
       tox_envlist: ansible-2.9
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.11
@@ -211,8 +145,6 @@
         override-checkout: stable-2.11
     vars:
       tox_envlist: ansible-2.11
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.12
@@ -226,8 +158,6 @@
         override-checkout: stable-2.12
     vars:
       tox_envlist: ansible-2.12
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
@@ -242,9 +172,6 @@
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: devel
-    vars:
-      # TODO: Remove tox_extra_args once all ci roles pass
-      tox_extra_args: *skip_broken_ci_roles
 
 # Linters
 - job:
