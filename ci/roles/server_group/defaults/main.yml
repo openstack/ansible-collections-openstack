@@ -1,0 +1,11 @@
+expected_fields:
+  - id
+  - name
+  - policy
+  - policies
+  - member_ids
+  - metadata
+  - project_id
+  - rules
+  - user_id
+

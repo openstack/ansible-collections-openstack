@@ -14,10 +14,9 @@ description:
 options:
    state:
      description:
-        - Indicate desired state of the resource. When I(state) is 'present',
-          then I(policies) is required.
+        - Indicate desired state of the resource. When I(state) is C(present),
+          then I(policy) is required.
      choices: ['present', 'absent']
-     required: false
      default: present
      type: str
    name:
@@ -25,15 +24,17 @@ options:
         - Server group name.
      required: true
      type: str
-   policies:
+   policy:
      description:
-        - A list of one or more policy names to associate with the server
-          group. The list must contain at least one policy name. The current
-          valid policy names are anti-affinity, affinity, soft-anti-affinity
-          and soft-affinity.
-     required: false
-     type: list
-     elements: str
+        - Represents the current name of the policy.
+     choices: ['anti-affinity', 'affinity', 'soft-anti-affinity', 'soft-affinity']
+     type: str
+   rules:
+     description:
+        - Rules to be applied to the policy. Currently, only the
+          C(max_server_per_host) rule is supported for the C(anti-affinity)
+          policy.
+     type: dict
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -43,58 +44,68 @@ extends_documentation_fragment:
 '''
 
 EXAMPLES = '''
-# Create a server group with 'affinity' policy.
-- openstack.cloud.server_group:
+- name: Create a server group with 'affinity' policy.
+  openstack.cloud.server_group:
+    cloud: "{{ cloud }}"
     state: present
-    auth:
-      auth_url: https://identity.example.com
-      username: admin
-      password: admin
-      project_name: admin
     name: my_server_group
-    policies:
-      - affinity
+    policy: affinity
 
-# Delete 'my_server_group' server group.
-- openstack.cloud.server_group:
+- name: Delete 'my_server_group' server group.
+  openstack.cloud.server_group:
+    cloud: "{{ cloud }}"
     state: absent
-    auth:
-      auth_url: https://identity.example.com
-      username: admin
-      password: admin
-      project_name: admin
     name: my_server_group
 '''
 
 RETURN = '''
-id:
-    description: Unique UUID.
-    returned: success
-    type: str
-name:
-    description: The name of the server group.
-    returned: success
-    type: str
-policies:
-    description: A list of one or more policy names of the server group.
-    returned: success
-    type: list
-members:
-    description: A list of members in the server group.
-    returned: success
-    type: list
-metadata:
-    description: Metadata key and value pairs.
-    returned: success
+server_group:
+    description: Object representing the server group
+    returned: On success when I(state) is present
     type: dict
-project_id:
-    description: The project ID who owns the server group.
-    returned: success
-    type: str
-user_id:
-    description: The user ID who owns the server group.
-    returned: success
-    type: str
+    contains:
+        id:
+            description: Unique UUID.
+            returned: always
+            type: str
+        name:
+            description: The name of the server group.
+            returned: always
+            type: str
+        policies:
+            description: |
+                A list of exactly one policy name to associate with the group.
+                Available until microversion 2.63
+            returned: always
+            type: list
+        policy:
+            description: |
+                Represents the name of the policy. Available from version 2.64 on.
+            returned: always
+            type: str
+        member_ids:
+            description: The list of members in the server group
+            returned: always
+            type: list
+        metadata:
+            description: Metadata key and value pairs.
+            returned: always
+            type: dict
+        project_id:
+            description: The project ID who owns the server group.
+            returned: always
+            type: str
+        rules:
+            description: |
+                The rules field, applied to the policy. Currently, only the
+                C(max_server_per_host) rule is supported for the
+                C(anti-affinity) policy.
+            returned: always
+            type: dict
+        user_id:
+            description: The user ID who owns the server group.
+            returned: always
+            type: str
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -103,12 +114,17 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class ServerGroupModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True),
-        policies=dict(type='list', elements='str'),
+        policy=dict(choices=['anti-affinity', 'affinity', 'soft-anti-affinity',
+                             'soft-affinity']),
         state=dict(default='present', choices=['absent', 'present']),
+        rules=dict(type='dict')
     )
 
     module_kwargs = dict(
         supports_check_mode=True,
+        required_if=[
+            ('state', 'present', ['policy'])
+        ],
     )
 
     def _system_state_change(self, state, server_group):
@@ -121,10 +137,9 @@ class ServerGroupModule(OpenStackModule):
 
     def run(self):
         name = self.params['name']
-        policies = self.params['policies']
         state = self.params['state']
 
-        server_group = self.conn.get_server_group(name)
+        server_group = self.conn.compute.find_server_group(name)
 
         if self.ansible.check_mode:
             self.exit_json(
@@ -134,22 +149,19 @@ class ServerGroupModule(OpenStackModule):
         changed = False
         if state == 'present':
             if not server_group:
-                if not policies:
-                    self.fail_json(
-                        msg="Parameter 'policies' is required in Server Group "
-                            "Create"
-                    )
-                server_group = self.conn.create_server_group(name, policies)
+                kwargs = {k: self.params[k]
+                          for k in ['name', 'policy', 'rules']
+                          if self.params[k] is not None}
+                server_group = self.conn.compute.create_server_group(**kwargs)
                 changed = True
 
             self.exit_json(
                 changed=changed,
-                id=server_group['id'],
-                server_group=server_group
+                server_group=server_group.to_dict(computed=False)
             )
         if state == 'absent':
             if server_group:
-                self.conn.delete_server_group(server_group['id'])
+                self.conn.compute.delete_server_group(server_group)
                 changed = True
             self.exit_json(changed=changed)
 

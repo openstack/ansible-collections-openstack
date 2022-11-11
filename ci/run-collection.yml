@@ -57,6 +57,7 @@
     - { role: security_group, tags: security_group }
     - { role: security_group_rule, tags: security_group_rule }
     - { role: server, tags: server }
+    - { role: server_group, tags: server_group }
     - { role: server_metadata, tags: server_metadata }
     - { role: server_volume, tags: server_volume }
     - { role: stack, tags: stack }

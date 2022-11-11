@@ -1,0 +1,72 @@
+- name: Create server group
+  openstack.cloud.server_group:
+    cloud: "{{ cloud }}"
+    name: ansible_group
+    policy: affinity
+  register: server_group
+
+- name: Assert changed
+  assert:
+    that: server_group is changed
+
+- name: Assert return values
+  assert:
+    that: item in server_group.server_group
+  loop: "{{ expected_fields }}"
+
+- name: Create server group again
+  openstack.cloud.server_group:
+    cloud: "{{ cloud }}"
+    name: ansible_group
+    policy: affinity
+  register: server_group
+
+- name: Assert not changed
+  assert:
+    that: server_group is not changed
+
+- name: Delete server group
+  openstack.cloud.server_group:
+    cloud: "{{ cloud }}"
+    name: ansible_group
+    state: absent
+  register: server_group
+
+- name: Assert changed
+  assert:
+    that: server_group is changed
+
+- name: Delete server group again
+  openstack.cloud.server_group:
+    cloud: "{{ cloud }}"
+    name: ansible_group
+    state: absent
+  register: server_group
+
+- name: Assert not changed
+  assert:
+    that: server_group is not changed
+
+- name: Create server group with rules
+  openstack.cloud.server_group:
+    cloud: "{{ cloud }}"
+    name: ansible_group
+    policy: anti-affinity
+    rules:
+      max_server_per_host: 2
+  register: server_group
+
+- name: Assert changed
+  assert:
+    that: server_group is changed
+
+- name: Assert return values
+  assert:
+    that: item in server_group.server_group
+  loop: "{{ expected_fields }}"
+
+- name: Delete server group
+  openstack.cloud.server_group:
+    cloud: "{{ cloud }}"
+    name: ansible_group
+    state: absent

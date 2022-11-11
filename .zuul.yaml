@@ -104,6 +104,7 @@
         security_group
         security_group_rule
         server
+        server_group
         server_metadata
         server_volume
         stack
