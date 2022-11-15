@@ -13,6 +13,10 @@ description:
    - Add or remove compute flavors from OpenStack.
    - Updating a flavor consists of deleting and (re)creating a flavor.
 options:
+  description:
+    description:
+       - Description of the flavor.
+    type: str
   disk:
     description:
        - Size of local disk, in GB.
@@ -90,6 +94,7 @@ EXAMPLES = '''
     vcpus: 1
     disk: 10
     ephemeral: 10
+    description: "I am flavor mycloud"
 
 - name: Delete tiny flavor
   openstack.cloud.compute_flavor:
@@ -190,6 +195,7 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class ComputeFlavorModule(OpenStackModule):
     argument_spec = dict(
+        description=dict(),
         disk=dict(type='int'),
         ephemeral=dict(type='int'),
         extra_specs=dict(type='dict'),
@@ -278,7 +284,7 @@ class ComputeFlavorModule(OpenStackModule):
         flavor_attributes = dict(
             (k, self.params[k])
             for k in ['ram', 'vcpus', 'disk', 'ephemeral', 'swap',
-                      'rxtx_factor', 'is_public']
+                      'rxtx_factor', 'is_public', 'description']
             if k in self.params and self.params[k] is not None
             and self.params[k] != flavor[k])
 
@@ -290,7 +296,8 @@ class ComputeFlavorModule(OpenStackModule):
     def _create(self):
         kwargs = dict((k, self.params[k])
                       for k in ['name', 'ram', 'vcpus', 'disk', 'ephemeral',
-                                'swap', 'rxtx_factor', 'is_public']
+                                'swap', 'rxtx_factor', 'is_public',
+                                'description']
                       if self.params[k] is not None)
 
         # Keep for backward compatibility
