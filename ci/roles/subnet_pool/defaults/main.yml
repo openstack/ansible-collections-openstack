@@ -1,5 +1,24 @@
-subnet_pool_name: "subnet_pool"
-address_scope_name: "address_scope"
+address_scope_name: "ansible_address_scope"
 default_prefix_length: 24
-minimum_prefix_length: 10
+expected_fields:
+  - address_scope_id
+  - created_at
+  - default_prefix_length
+  - default_quota
+  - description
+  - id
+  - ip_version
+  - is_default
+  - is_shared
+  - maximum_prefix_length
+  - minimum_prefix_length
+  - name
+  - prefixes
+  - project_id
+  - revision_number
+  - tags
+  - tenant_id
+  - updated_at
 maximum_prefix_length: 30
+minimum_prefix_length: 10
+subnet_pool_name: "ansible_subnet_pool"

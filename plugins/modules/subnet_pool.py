@@ -4,81 +4,74 @@
 # Copyright (c) 2021 by Uemit Seren <uemit.seren@gmail.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: subnet_pool
-short_description: Create or delete subnet pools from OpenStack
+short_description: Create, update or delete a subnet pool from OpenStack
 author: OpenStack Ansible SIG
 description:
-   - Create or Delete subnet pools from OpenStack.
+   - Create, update or delete a subnet pool from OpenStack.
 options:
-   state:
-     description:
-        - Indicate desired state of the resource
-     choices: ['present', 'absent']
-     default: present
-     type: str
-   name:
-     description:
-        - Name to be give to the subnet pool
-     required: true
-     type: str
-   project:
-     description:
-        - Unique name or ID of the project.
-     type: str
-   prefixes:
-     description:
-        - Set subnet pool prefixes (in CIDR notation)
-     type: list
-     elements: str
-   minimum_prefix_length:
-     description:
-        - The minimum prefix length that can be allocated from the subnet pool.
-     required: False
-     type: int
-   maximum_prefix_length:
-     description:
-        - The maximum prefix length that can be allocated from the subnet pool.
-     required: False
-     type: int
-   default_prefix_length:
-     description:
-        - The length of the prefix to allocate when the cidr or prefixlen attributes
-          are omitted when creating a subnet
-     type: int
-     required: False
    address_scope:
      description:
-        - Set address scope (ID or name) associated with the subnet pool
+        - ID or name of the address scope associated with this subnet pool.
      type: str
-     required: False
-   is_default:
+   default_prefix_length:
      description:
-        - Whether this subnet pool is by default
-     type: bool
-     default: 'no'
-   description:
-     description: The subnet pool description
-     type: str
-     required: False
+        - The prefix length to allocate when the cidr or prefixlen attributes
+          are omitted when creating a subnet.
+     type: int
    default_quota:
      description:
         - A per-project quota on the prefix space that can be allocated
-          from the subnet pool for project subnets
-     required: False
+          from the subnet pool for project subnets.
      type: int
-   shared:
-     description:
-        - Whether this subnet pool is shared or not.
-     type: bool
-     default: 'no'
+   description:
+     description: The subnet pool description.
+     type: str
    extra_specs:
      description:
-        - Dictionary with extra key/value pairs passed to the API
-     required: false
-     default: {}
+        - Dictionary with extra key/value pairs passed to the API.
      type: dict
+   is_default:
+     description:
+        - Whether this subnet pool is the default.
+     type: bool
+   is_shared:
+     description:
+        - Whether this subnet pool is shared or not.
+        - This attribute cannot be updated.
+     type: bool
+     aliases: ['shared']
+   maximum_prefix_length:
+     description:
+        - The maximum prefix length that can be allocated from the subnet pool.
+     type: int
+   minimum_prefix_length:
+     description:
+        - The minimum prefix length that can be allocated from the subnet pool.
+     type: int
+   name:
+     description:
+        - Name to be give to the subnet pool.
+        - This attribute cannot be updated.
+     required: true
+     type: str
+   prefixes:
+     description:
+        - Subnet pool prefixes in CIDR notation.
+     type: list
+     elements: str
+   project:
+     description:
+        - Name or ID of the project.
+     type: str
+   state:
+     description:
+        - Whether the subnet pool should be C(present) or C(absent).
+     choices: ['present', 'absent']
+     default: present
+     type: str
 requirements:
     - "python >= 3.6"
     - "openstacksdk"
@@ -87,17 +80,17 @@ extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
-# Create an subnet pool.
-- openstack.cloud.subnet_pool:
+EXAMPLES = r'''
+- name: Create an subnet pool.
+  openstack.cloud.subnet_pool:
     cloud: mycloud
     state: present
     name: my_subnet_pool
     prefixes:
         - 10.10.10.0/24
 
-# Create a subnet pool for a given project.
-- openstack.cloud.subnet_pool:
+- name: Create a subnet pool for a given project.
+  openstack.cloud.subnet_pool:
     cloud: mycloud
     state: present
     name: my_subnet_pool
@@ -105,8 +98,8 @@ EXAMPLES = '''
     prefixes:
         - 10.10.10.0/24
 
-# Create a shared and default subnet pool in existing address scope
-- openstack.cloud.subnet_pool:
+- name: Create a shared and default subnet pool in existing address scope
+  openstack.cloud.subnet_pool:
     cloud: mycloud
     state: present
     name: my_subnet_pool
@@ -116,47 +109,23 @@ EXAMPLES = '''
     maximum_prefix_length: 32
     minimum_prefix_length: 8
     default_prefix_length: 24
-    shared: True
+    is_shared: True
     prefixes:
         - 10.10.10.0/8
 
-# Delete subnet poool.
-- openstack.cloud.subnet_pool:
+- name: Delete subnet poool.
+  openstack.cloud.subnet_pool:
     cloud: mycloud
     state: absent
     name: my_subnet_pool
 '''
 
-RETURN = '''
+RETURN = r'''
 subnet_pool:
     description: Dictionary describing the subnet pool.
-    returned: On success when I(state) is 'present'
-    type: complex
+    returned: On success when I(state) is C(present).
+    type: dict
     contains:
-        id:
-            description: Subnet Pool ID.
-            type: str
-            sample: "474acfe5-be34-494c-b339-50f06aa143e4"
-        name:
-            description: Subnet Pool name.
-            type: str
-            sample: "my_subnet_pool"
-        project_id:
-            description: The ID of the project.
-            type: str
-            sample: "861174b82b43463c9edc5202aadc60ef"
-        ip_version:
-            description: The IP version of the subnet pool 4 or 6.
-            type: int
-            sample: 4
-        is_shared:
-            description: Indicates whether this subnet pool is shared across all projects.
-            type: bool
-            sample: false
-        is_default:
-            description: Indicates whether this is the default subnet pool.
-            type: bool
-            sample: false
         address_scope_id:
             description: The address scope ID.
             type: str
@@ -166,37 +135,72 @@ subnet_pool:
             type: str
             sample: ""
         default_prefix_length:
-            description:
-                - The length of the prefix to allocate when the cidr or prefixlen
-                  attributes are omitted when creating a subnet
+            description: The length of the prefix to allocate when the cidr or
+                         prefixlen attributes are omitted when creating a
+                         subnet.
             type: int
             sample: 32
         default_quota:
-            description:
-                - The per-project quota on the prefix space that can be allocated
-                  from the subnet pool for project subnets.
+            description: The per-project quota on the prefix space that can be
+                         allocated from the subnet pool for project subnets.
             type: int
             sample: 22
         description:
             description: The subnet pool description.
             type: str
             sample: "My test subnet pool."
+        id:
+            description: Subnet Pool ID.
+            type: str
+            sample: "474acfe5-be34-494c-b339-50f06aa143e4"
+        ip_version:
+            description: The IP version of the subnet pool 4 or 6.
+            type: int
+            sample: 4
+        is_default:
+            description: Indicates whether this is the default subnet pool.
+            type: bool
+            sample: false
+        is_shared:
+            description: Indicates whether this subnet pool is shared across
+                         all projects.
+            type: bool
+            sample: false
         maximum_prefix_length:
-            description: The maximum prefix length that can be allocated from the subnet pool.
+            description: The maximum prefix length that can be allocated from
+                         the subnet pool.
             type: int
             sample: 22
         minimum_prefix_length:
-            description: The minimum prefix length that can be allocated from the subnet pool.
+            description: The minimum prefix length that can be allocated from
+                         the subnet pool.
             type: int
             sample: 8
+        name:
+            description: Subnet Pool name.
+            type: str
+            sample: "my_subnet_pool"
         prefixes:
-            description: A list of subnet prefixes that are assigned to the subnet pool.
+            description: A list of subnet prefixes that are assigned to the
+                         subnet pool.
             type: list
             sample: ['10.10.20.0/24', '10.20.10.0/24']
+        project_id:
+            description: The ID of the project.
+            type: str
+            sample: "861174b82b43463c9edc5202aadc60ef"
         revision_number:
             description: Revision number of the subnet pool.
             type: int
             sample: 5
+        tags:
+            description:  A list of associated tags.
+            returned: success
+            type: list
+        tenant_id:
+            description: The ID of the project. Deprecated.
+            type: str
+            sample: "861174b82b43463c9edc5202aadc60ef"
         updated_at:
             description: Timestamp when the subnet pool was last updated.
             type: str
@@ -208,132 +212,150 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class SubnetPoolModule(OpenStackModule):
     argument_spec = dict(
-        state=dict(default='present', choices=['absent', 'present']),
-        name=dict(required=True),
-        shared=dict(default=False, type='bool'),
-        minimum_prefix_length=dict(type='int'),
-        maximum_prefix_length=dict(type='int'),
-        default_prefix_length=dict(type='int'),
-        description=dict(),
-        default_quota=dict(type='int'),
-        prefixes=dict(type='list', elements='str'),
-        is_default=dict(default=False, type='bool'),
         address_scope=dict(),
+        default_prefix_length=dict(type='int'),
+        default_quota=dict(type='int'),
+        description=dict(),
+        extra_specs=dict(type='dict'),
+        is_default=dict(type='bool'),
+        is_shared=dict(type='bool', aliases=['shared']),
+        maximum_prefix_length=dict(type='int'),
+        minimum_prefix_length=dict(type='int'),
+        name=dict(required=True),
+        prefixes=dict(type='list', elements='str'),
         project=dict(),
-        extra_specs=dict(type='dict', default=dict())
+        state=dict(default='present', choices=['absent', 'present']),
     )
 
-    def _needs_update(self, subnet_pool):
-        """Check for differences in the updatable values.
-
-        NOTE: We don't currently allow name updates.
-        """
-        compare_simple = ['is_default',
-                          'minimum_prefix_length',
-                          'maximum_prefix_length',
-                          'default_prefix_length',
-                          'description',
-                          'default_quota']
-        compare_list = ['prefixes']
-
-        for key in compare_simple:
-            if self.params[key] is not None and self.params[key] != subnet_pool[key]:
-                return True
-        for key in compare_list:
-            if (
-                self.params[key] is not None
-                and set(self.params[key]) != set(subnet_pool[key])
-            ):
-                return True
-
-        return False
-
-    def _system_state_change(self, subnet_pool, filters=None):
-        """Check if the system state would be changed."""
-        state = self.params['state']
-        if state == 'absent' and subnet_pool:
-            return True
-        if state == 'present':
-            if not subnet_pool:
-                return True
-            return self._needs_update(subnet_pool, filters)
-        return False
-
-    def _compose_subnet_pool_args(self):
-        subnet_pool_kwargs = {}
-        optional_parameters = ['name',
-                               'minimum_prefix_length',
-                               'maximum_prefix_length',
-                               'default_prefix_length',
-                               'description',
-                               'is_default',
-                               'default_quota',
-                               'prefixes']
-
-        for optional_param in optional_parameters:
-            if self.params[optional_param] is not None:
-                subnet_pool_kwargs[optional_param] = self.params[optional_param]
-
-        return subnet_pool_kwargs
-
     def run(self):
-
         state = self.params['state']
+
         name = self.params['name']
-        project = self.params['project']
-        address_scope = self.params['address_scope']
-        extra_specs = self.params['extra_specs']
+        subnet_pool = self.conn.network.find_subnet_pool(name)
 
-        if project is not None:
-            proj = self.conn.get_project(project)
-            if proj is None:
-                self.fail(msg='Project %s could not be found' % project)
-            project_id = proj['id']
-        else:
-            project_id = self.conn.current_project_id
-
-        address_scope_id = None
-        if address_scope is not None:
-            address_scope = self.conn.network.find_address_scope(name_or_id=address_scope)
-            if address_scope is None:
-                self.fail(msg='AddressScope %s could not be found' % address_scope)
-            address_scope_id = address_scope['id']
-        subnet_pool = self.conn.network.find_subnet_pool(name_or_id=name)
         if self.ansible.check_mode:
-            self.exit_json(
-                changed=self._system_state_change(subnet_pool)
-            )
+            self.exit_json(changed=self._will_change(state, subnet_pool))
 
-        if state == 'present':
-            changed = False
+        if state == 'present' and not subnet_pool:
+            # Create subnet_pool
+            subnet_pool = self._create()
+            self.exit_json(changed=True,
+                           subnet_pool=subnet_pool.to_dict(computed=False))
 
-            if not subnet_pool:
-                kwargs = self._compose_subnet_pool_args()
-                kwargs['address_scope_id'] = address_scope_id
-                kwargs['project_id'] = project_id
-                kwargs['is_shared'] = self.params['shared']
-                dup_args = set(kwargs.keys()) & set(extra_specs.keys())
-                if dup_args:
-                    raise ValueError('Duplicate key(s) {0} in extra_specs'
-                                     .format(list(dup_args)))
-                kwargs = dict(kwargs, **extra_specs)
-                subnet_pool = self.conn.network.create_subnet_pool(**kwargs)
-                changed = True
-            else:
-                if self._needs_update(subnet_pool):
-                    kwargs = self._compose_subnet_pool_args()
-                    subnet_pool = self.conn.network.update_subnet_pool(subnet_pool['id'], **kwargs)
-                    changed = True
-                else:
-                    changed = False
-            self.exit_json(changed=changed, subnet_pool=subnet_pool, id=subnet_pool['id'])
+        elif state == 'present' and subnet_pool:
+            # Update subnet_pool
+            update = self._build_update(subnet_pool)
+            if update:
+                subnet_pool = self._update(subnet_pool, update)
 
-        elif state == 'absent':
-            if not subnet_pool:
-                self.exit(changed=False)
-            else:
-                self.conn.network.delete_subnet_pool(subnet_pool['id'])
-                self.exit_json(changed=True)
+            self.exit_json(changed=bool(update),
+                           subnet_pool=subnet_pool.to_dict(computed=False))
+
+        elif state == 'absent' and subnet_pool:
+            # Delete subnet_pool
+            self._delete(subnet_pool)
+            self.exit_json(changed=True)
+
+        elif state == 'absent' and not subnet_pool:
+            # Do nothing
+            self.exit_json(changed=False)
+
+    def _build_update(self, subnet_pool):
+        update = {}
+
+        attributes = dict((k, self.params[k])
+                          for k in ['default_prefix_length', 'default_quota',
+                                    'description', 'is_default',
+                                    'maximum_prefix_length',
+                                    'minimum_prefix_length']
+                          if self.params[k] is not None
+                          and self.params[k] != subnet_pool[k])
+
+        for k in ['prefixes']:
+            if self.params[k] is not None \
+               and set(self.params[k]) != set(subnet_pool[k]):
+                attributes[k] = self.params[k]
+
+        project_name_or_id = self.params['project']
+        if project_name_or_id is not None:
+            project = self.conn.identity.find_project(project_name_or_id,
+                                                      ignore_missing=False)
+            if subnet_pool['project_id'] != project.id:
+                attributes['project_id'] = project.id
+
+        address_scope_name_or_id = self.params['address_scope']
+        if address_scope_name_or_id is not None:
+            address_scope = self.conn.network.find_address_scope(
+                address_scope_name_or_id, ignore_missing=False)
+            if subnet_pool['address_scope_id'] != address_scope.id:
+                attributes['address_scope_id'] = address_scope.id
+
+        extra_specs = self.params['extra_specs']
+        if extra_specs:
+            duplicate_keys = set(attributes.keys()) & set(extra_specs.keys())
+            if duplicate_keys:
+                raise ValueError('Duplicate key(s) in extra_specs: {0}'
+                                 .format(', '.join(list(duplicate_keys))))
+            for k, v in extra_specs.items():
+                if v != subnet_pool[k]:
+                    attributes[k] = v
+
+        if attributes:
+            update['attributes'] = attributes
+
+        return update
+
+    def _create(self):
+        kwargs = dict((k, self.params[k])
+                      for k in ['default_prefix_length', 'default_quota',
+                                'description', 'is_default', 'is_shared',
+                                'maximum_prefix_length',
+                                'minimum_prefix_length', 'name', 'prefixes']
+                      if self.params[k] is not None)
+
+        project_name_or_id = self.params['project']
+        if project_name_or_id is not None:
+            project = self.conn.identity.find_project(project_name_or_id,
+                                                      ignore_missing=False)
+            kwargs['project_id'] = project.id
+
+        address_scope_name_or_id = self.params['address_scope']
+        if address_scope_name_or_id is not None:
+            address_scope = self.conn.network.find_address_scope(
+                address_scope_name_or_id, ignore_missing=False)
+            kwargs['address_scope_id'] = address_scope.id
+
+        extra_specs = self.params['extra_specs']
+        if extra_specs:
+            duplicate_keys = set(kwargs.keys()) & set(extra_specs.keys())
+            if duplicate_keys:
+                raise ValueError('Duplicate key(s) in extra_specs: {0}'
+                                 .format(', '.join(list(duplicate_keys))))
+            kwargs = dict(kwargs, **extra_specs)
+
+        return self.conn.network.create_subnet_pool(**kwargs)
+
+    def _delete(self, subnet_pool):
+        self.conn.network.delete_subnet_pool(subnet_pool.id)
+
+    def _update(self, subnet_pool, update):
+        attributes = update.get('attributes')
+        if attributes:
+            subnet_pool = self.conn.network.update_subnet_pool(subnet_pool.id,
+                                                               **attributes)
+
+        return subnet_pool
+
+    def _will_change(self, state, subnet_pool):
+        if state == 'present' and not subnet_pool:
+            return True
+        elif state == 'present' and subnet_pool:
+            return bool(self._build_update(subnet_pool))
+        elif state == 'absent' and subnet_pool:
+            return True
+        else:
+            # state == 'absent' and not subnet_pool:
+            return False
 
 
 def main():
