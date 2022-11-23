@@ -1,1 +1,22 @@
-container_name: "test-container"
+expected_fields:
+  - bytes
+  - bytes_used
+  - content_type
+  - count
+  - history_location
+  - id
+  - if_none_match
+  - is_content_type_detected
+  - is_newest
+  - meta_temp_url_key
+  - meta_temp_url_key_2
+  - metadata
+  - name
+  - object_count
+  - read_ACL
+  - storage_policy
+  - sync_key
+  - sync_to
+  - timestamp
+  - versions_location
+  - write_ACL

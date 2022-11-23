@@ -1,37 +1,35 @@
 ---
-- name: Create a test object file
-  shell: mktemp
-  register: tmp_file
-
 - name: Create container
-  openstack.cloud.object:
-     cloud: "{{ cloud }}"
-     state: present
-     container: ansible_container
-     container_access: private
+  openstack.cloud.object_container:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_container
 
-- name: Put object
+- name: Create object
   openstack.cloud.object:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_object
-     filename: "{{ tmp_file.stdout }}"
-     container: ansible_container
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_object
+    data: "this is a test"
+    container: ansible_container
+  register: object
+
+- name: Assert return values of object module
+  assert:
+    that:
+      - object.object.id == "ansible_object"
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(object.object.keys())|length == 0
 
 - name: Delete object
   openstack.cloud.object:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: ansible_object
-     container: ansible_container
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_object
+    container: ansible_container
 
 - name: Delete container
-  openstack.cloud.object:
-     cloud: "{{ cloud }}"
-     state: absent
-     container: ansible_container
-
-- name: Delete test object file
-  file:
-     name: "{{ tmp_file.stdout }}"
-     state: absent
+  openstack.cloud.object_container:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_container

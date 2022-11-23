@@ -1,63 +1,93 @@
 ---
-- module_defaults:
-    group/openstack.cloud.openstack:
-      cloud: "{{ cloud }}"
-    # Backward compatibility with Ansible 2.9
-    openstack.cloud.object_container:
-      cloud: "{{ cloud }}"
-  block:
-    - name: Create an empty container
-      openstack.cloud.object_container:
-        container: "{{ container_name }}"
-      register: container
+- name: Create an empty container with public access
+  openstack.cloud.object_container:
+    cloud: "{{ cloud }}"
+    name: ansible_container
+    read_ACL: ".r:*,.rlistings"
+  register: container
 
-    - name: Verify container was created
-      assert:
-        that:
-          - container is success
-          - container is changed
-          - container.container.name == container_name
+- name: Assert return values of container module
+  assert:
+    that:
+      - container is changed
+      - container.container.name == "ansible_container"
+      - container.container.read_ACL == ".r:*,.rlistings"
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(container.container.keys())|length == 0
 
-    - name: Set metadata for a container
-      openstack.cloud.object_container:
-        container: "{{ container_name }}"
-        metadata: "Cache-Control='no-cache'"
-      register: set_meta
+- name: Set container metadata aka container properties
+  openstack.cloud.object_container:
+    cloud: "{{ cloud }}"
+    name: ansible_container
+    metadata:
+      'Cache-Control': 'no-cache'
+      'foo': 'bar'
+  register: container
 
-    - name: Verify container metadata was set
-      assert:
-        that:
-          - set_meta is success
-          - set_meta is changed
+- name: Verify container metadata was set
+  assert:
+    that:
+      - container is changed
+      - ('cache-control' in container.container.metadata.keys()|map('lower'))
+      - container.container.metadata['foo'] == 'bar'
 
-    - name: Delete some keys from container metadata
-      openstack.cloud.object_container:
-        container: "{{ container_name }}"
-        keys:
-            - Cache-Control
-      register: delete_meta
+- name: Update a container
+  openstack.cloud.object_container:
+    cloud: "{{ cloud }}"
+    name: ansible_container
+    delete_metadata_keys:
+      - 'Cache-Control'
+    read_ACL: ""
+  register: container
 
-    - name: Verify some keys from container metadata was deleted
-      assert:
-        that:
-          - delete_meta is success
-          - delete_meta is changed
+- name: Verify updated container
+  assert:
+    that:
+      - container is changed
+      - ('cache-control' not in container.container.metadata.keys()|map('lower'))
+      - "container.container.metadata == {'foo': 'bar'}"
+      - container.container.read_ACL is none or container.container.read_ACL == ""
 
-    - name: Delete container
-      openstack.cloud.object_container:
-        container: "{{ container_name }}"
-        state: absent
-      register: deleted
+- name: Delete container
+  openstack.cloud.object_container:
+    cloud: "{{ cloud }}"
+    name: ansible_container
+    state: absent
+  register: container
 
-    - name: Verify container was deleted
-      assert:
-        that:
-          - deleted is success
-          - deleted is changed
+- name: Verify container was deleted
+  assert:
+    that:
+      - container is changed
 
-  always:
-    - name: Delete container
-      openstack.cloud.object_container:
-        container: "{{ container_name }}"
-        state: absent
-      ignore_errors: yes
+- name: Delete container again
+  openstack.cloud.object_container:
+    cloud: "{{ cloud }}"
+    name: ansible_container
+    state: absent
+  register: container
+
+- name: Verify container was not deleted again
+  assert:
+    that:
+      - container is not changed
+
+- name: Create another container for recursive deletion
+  openstack.cloud.object_container:
+    cloud: "{{ cloud }}"
+    name: ansible_container2
+
+- name: Load an object into container
+  openstack.cloud.object:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_object
+    data: "this is another test"
+    container: ansible_container2
+
+- name: Delete container recursively
+  openstack.cloud.object_container:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_container2
+    delete_with_all_objects: yes

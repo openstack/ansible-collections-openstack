@@ -11,9 +11,6 @@
     - { role: compute_flavor_access, tags: compute_flavor_access }
     - { role: config, tags: config }
     - { role: dns_zone_info, tags: dns_zone_info }
-    - role: object_container
-      tags: object_container
-      when: sdk_version is version(0.18, '>=')
     - role: dns
       tags: dns
       when: sdk_version is version(0.28, '>=')
@@ -45,6 +42,7 @@
       tags: nova_services
       when: sdk_version is version(0.44, '>=')
     - { role: object, tags: object }
+    - { role: object_container, tags: object_container }
     - { role: port, tags: port }
     - { role: project, tags: project }
     - { role: project_info, tags: project_info }
