@@ -13,6 +13,7 @@ expected_fields:
   - image_id
   - is_bootable
   - is_encrypted
+  - is_multiattach
   - migration_id
   - migration_status
   - project_id

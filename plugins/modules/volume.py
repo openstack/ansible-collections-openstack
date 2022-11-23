@@ -32,6 +32,15 @@ options:
      type: bool
      default: False
      aliases: [bootable]
+   is_multiattach:
+     description:
+       - Whether volume will be sharable or not.
+       - To enable this volume to attach to more than one server, set
+         I(is_multiattach) to C(true).
+       - Note that support for multiattach volumes depends on the volume
+         type being used.
+       - "Cinder's default for I(is_multiattach) is C(false)."
+     type: bool
    metadata:
      description:
        - Metadata for the volume
@@ -140,6 +149,10 @@ volume:
     is_encrypted:
       description: If true, this volume is encrypted.
       type: bool
+    is_multiattach:
+      description: Whether this volume can be attached to more than one
+                   server.
+      type: bool
     metadata:
       description: A metadata object. Contains one or more metadata key and
                    value pairs that are associated with the volume.
@@ -207,6 +220,7 @@ class VolumeModule(OpenStackModule):
         description=dict(aliases=['display_description']),
         image=dict(),
         is_bootable=dict(type='bool', default=False, aliases=['bootable']),
+        is_multiattach=dict(type='bool'),
         metadata=dict(type='dict'),
         name=dict(required=True, aliases=['display_name']),
         scheduler_hints=dict(type='dict'),
@@ -263,8 +277,8 @@ class VolumeModule(OpenStackModule):
         self.exit_json(changed=True, volume=volume, diff=diff)
 
     def _build_create_kwargs(self):
-        keys = ('availability_zone', 'size', 'name', 'description',
-                'volume_type', 'scheduler_hints', 'metadata')
+        keys = ('availability_zone', 'is_multiattach', 'size', 'name',
+                'description', 'volume_type', 'scheduler_hints', 'metadata')
         kwargs = {k: self.params[k] for k in keys
                   if self.params[k] is not None}
 
