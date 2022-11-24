@@ -1,0 +1,67 @@
+---
+- name: Create dns zone
+  openstack.cloud.dns_zone:
+    cloud: "{{ cloud }}"
+    name: ansible.test.zone.
+    type: primary
+    email: test@example.net
+  register: dns_zone
+
+- name: Assert return values of dns_zone module
+  assert:
+    that:
+      - dns_zone.zone.name == "ansible.test.zone."
+      - dns_zone.zone.type|lower == "primary"
+      - dns_zone.zone.email == "test@example.net"
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(dns_zone.zone.keys())|length == 0
+
+- name: Update dns zone
+  openstack.cloud.dns_zone:
+    cloud: "{{ cloud }}"
+    name: ansible.test.zone.
+    description: "Another description"
+  register: dns_zone
+
+- name: Assert return values of dns_zone module
+  assert:
+    that:
+      - dns_zone.zone.description == "Another description"
+
+- name: Fetch all dns zones
+  openstack.cloud.dns_zone_info:
+    cloud: "{{ cloud }}"
+  register: dns_zones
+
+- name: Assert return values of dns_zone_info module
+  assert:
+    that:
+      - dns_zones is not changed
+      - dns_zones | length > 0
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(dns_zones.zones[0].keys())|length == 0
+
+- name: Fetch a dns zone by name
+  openstack.cloud.dns_zone_info:
+    cloud: "{{ cloud }}"
+    name: ansible.test.zone.
+  register: dns_zones
+
+- name: Assert return values of dns_zone_info module
+  assert:
+    that:
+      - dns_zones is not changed
+      - dns_zones.zones | length == 1
+      - dns_zones.zones[0].id == dns_zone.zone.id
+
+- name: Delete dns zone
+  openstack.cloud.dns_zone:
+    cloud: "{{ cloud }}"
+    name: ansible.test.zone.
+    state: absent
+  register: dns_zone
+
+- name: Verify dns zone
+  assert:
+    that:
+      - dns_zone is changed

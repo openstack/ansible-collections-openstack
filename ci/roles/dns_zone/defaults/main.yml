@@ -1,0 +1,17 @@
+expected_fields:
+  - action
+  - attributes
+  - created_at
+  - description
+  - email
+  - id
+  - links
+  - masters
+  - name
+  - pool_id
+  - project_id
+  - serial
+  - status
+  - ttl
+  - type
+  - updated_at

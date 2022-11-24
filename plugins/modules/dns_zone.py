@@ -4,116 +4,161 @@
 # Copyright (c) 2016 Hewlett-Packard Enterprise
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: dns_zone
-short_description: Manage OpenStack DNS zones
+short_description: Manage a OpenStack DNS zone.
 author: OpenStack Ansible SIG
 description:
-    - Manage OpenStack DNS zones. Zones can be created, deleted or
-      updated. Only the I(email), I(description), I(ttl) and I(masters) values
-      can be updated.
+    - Create, delete or update a OpenStack DNS zone.
 options:
-   name:
-     description:
-        - Zone name
-     required: true
-     type: str
-   zone_type:
-     description:
-        - Zone type
-     choices: [primary, secondary]
-     type: str
-   email:
-     description:
-        - Email of the zone owner (only applies if zone_type is primary)
-     type: str
-   description:
-     description:
-        - Zone description
-     type: str
-   ttl:
-     description:
-        -  TTL (Time To Live) value in seconds
-     type: int
-   masters:
-     description:
-        - Master nameservers (only applies if zone_type is secondary)
-     type: list
-     elements: str
-   state:
-     description:
-       - Should the resource be present or absent.
-     choices: [present, absent]
-     default: present
-     type: str
+  description:
+    description:
+      - Zone description.
+    type: str
+  email:
+    description:
+      - Email of the zone owner.
+      - Only applies if I(type) is C(primary).
+    type: str
+  masters:
+    description:
+      - Master nameservers
+      - Only applies if I(type) is C(secondary).
+    type: list
+    elements: str
+  name:
+    description:
+      - Name of the DNS zone.
+    required: true
+    type: str
+  state:
+    description:
+      - Whether the zone should be C(present) or C(absent).
+    choices: ['present', 'absent']
+    default: present
+    type: str
+  ttl:
+    description:
+      -  TTL (Time To Live) value in seconds.
+    type: int
+  type:
+    description:
+      - Zone type.
+      - This attribute cannot be updated.
+    choices: ['primary', 'secondary']
+    type: str
+    aliases: ['zone_type']
 requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
+  - "python >= 3.6"
+  - "openstacksdk"
 extends_documentation_fragment:
-- openstack.cloud.openstack
+  - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
-# Create a zone named "example.net"
-- openstack.cloud.dns_zone:
+EXAMPLES = r'''
+- name: Create DNS zone example.net.
+  openstack.cloud.dns_zone:
     cloud: mycloud
     state: present
     name: example.net.
-    zone_type: primary
+    type: primary
     email: test@example.net
     description: Test zone
     ttl: 3600
 
-# Update the TTL on existing "example.net." zone
-- openstack.cloud.dns_zone:
+- name: Set TTL on DNS zone example.net.
+  openstack.cloud.dns_zone:
     cloud: mycloud
     state: present
     name: example.net.
     ttl: 7200
 
-# Delete zone named "example.net."
-- openstack.cloud.dns_zone:
+- name: Delete zone example.net.
+  openstack.cloud.dns_zone:
     cloud: mycloud
     state: absent
     name: example.net.
 '''
 
-RETURN = '''
+RETURN = r'''
 zone:
-    description: Dictionary describing the zone.
-    returned: On success when I(state) is 'present'.
-    type: complex
-    contains:
-        id:
-            description: Unique zone ID
-            type: str
-            sample: "c1c530a3-3619-46f3-b0f6-236927b2618c"
-        name:
-            description: Zone name
-            type: str
-            sample: "example.net."
-        type:
-            description: Zone type
-            type: str
-            sample: "PRIMARY"
-        email:
-            description: Zone owner email
-            type: str
-            sample: "test@example.net"
-        description:
-            description: Zone description
-            type: str
-            sample: "Test description"
-        ttl:
-            description: Zone TTL value
-            type: int
-            sample: 3600
-        masters:
-            description: Zone master nameservers
-            type: list
-            sample: []
+  description: Dictionary describing the zone.
+  returned: On success when I(state) is C(present).
+  type: dict
+  contains:
+    action:
+      description: Current action in progress on the resource.
+      type: str
+      sample: "CREATE"
+    attributes:
+      description: Key value pairs of information about this zone, and the
+                   pool the user would like to place the zone in. This
+                   information can be used by the scheduler to place zones on
+                   the correct pool.
+      type: dict
+      sample: {"tier": "gold", "ha": "true"}
+    created_at:
+      description: Date / Time when resource was created.
+      type: str
+      sample: "2014-07-07T18:25:31.275934"
+    description:
+      description: Description for this zone.
+      type: str
+      sample: "This is an example zone."
+    email:
+      description: E-mail for the zone. Used in SOA records for the zone.
+      type: str
+      sample: "test@example.org"
+    id:
+      description: ID for the resource.
+      type: int
+      sample: "a86dba58-0043-4cc6-a1bb-69d5e86f3ca3"
+    links:
+      description: Links to the resource, and other related resources. When a
+                   response has been broken into pages, we will include a next
+                   link that should be followed to retrieve all results.
+      type: dict
+      sample: {"self": "https://127.0.0.1:9001/v2/zones/a86dba...d5e86f3ca3"}
+    masters:
+      description: The servers to slave from to get DNS information.
+                   Mandatory for secondary zones.
+      type: list
+      sample: "[]"
+    name:
+      description: DNS Name for the zone.
+      type: str
+      sample: "test.test."
+    pool_id:
+      description: ID for the pool hosting this zone.
+      type: str
+      sample: "a86dba58-0043-4cc6-a1bb-69d5e86f3ca3"
+    project_id:
+      description: ID for the project that owns the resource.
+      type: str
+      sample: "4335d1f0-f793-11e2-b778-0800200c9a66"
+    serial:
+      description: Current serial number for the zone.
+      type: int
+      sample: 1404757531
+    status:
+      description: Status of the resource.
+      type: str
+      sample: "ACTIVE"
+    ttl:
+      description: TTL (Time to Live) for the zone.
+      type: int
+      sample: 7200
+    type:
+      description: Type of zone. PRIMARY is controlled by Designate,
+                   SECONDARY zones are slaved from another DNS Server.
+                   Defaults to PRIMARY.
+      type: str
+      sample: "PRIMARY"
+    updated_at:
+      description: Date / Time when resource last updated.
+      type: str
+      sample: "2014-07-07T18:25:31.275934"
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -122,119 +167,116 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 class DnsZoneModule(OpenStackModule):
 
     argument_spec = dict(
-        name=dict(required=True),
-        zone_type=dict(choices=['primary', 'secondary']),
-        email=dict(),
         description=dict(),
-        ttl=dict(type='int'),
+        email=dict(),
         masters=dict(type='list', elements='str'),
+        name=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
+        ttl=dict(type='int'),
+        type=dict(choices=['primary', 'secondary'], aliases=['zone_type']),
     )
 
-    def _system_state_change(self, state, email, description, ttl, masters, zone):
-        if state == 'present':
-            if not zone:
-                return True
-            if email is not None and zone.email != email:
-                return True
-            if description is not None and zone.description != description:
-                return True
-            if ttl is not None and zone.ttl != ttl:
-                return True
-            if masters is not None and zone.masters != masters:
-                return True
-        if state == 'absent' and zone:
-            return True
-        return False
+    def run(self):
+        state = self.params['state']
+        name_or_id = self.params['name']
 
-    def _wait(self, timeout, zone, state):
-        """Wait for a zone to reach the desired state for the given state."""
+        zone = self.conn.dns.find_zone(name_or_id=name_or_id)
+
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._will_change(state, zone))
+
+        if state == 'present' and not zone:
+            # Create zone
+            zone = self._create()
+            self.exit_json(changed=True,
+                           zone=zone.to_dict(computed=False))
+
+        elif state == 'present' and zone:
+            # Update zone
+            update = self._build_update(zone)
+            if update:
+                zone = self._update(zone, update)
+
+            self.exit_json(changed=bool(update),
+                           zone=zone.to_dict(computed=False))
+
+        elif state == 'absent' and zone:
+            # Delete zone
+            self._delete(zone)
+            self.exit_json(changed=True)
+
+        elif state == 'absent' and not zone:
+            # Do nothing
+            self.exit_json(changed=False)
+
+    def _build_update(self, zone):
+        update = {}
+
+        attributes = dict((k, self.params[k])
+                          for k in ['description', 'email', 'masters', 'ttl']
+                          if self.params[k] is not None
+                          and self.params[k] != zone[k])
+
+        if attributes:
+            update['attributes'] = attributes
+
+        return update
+
+    def _create(self):
+        kwargs = dict((k, self.params[k])
+                      for k in ['description', 'email', 'masters', 'name',
+                                'ttl', 'type']
+                      if self.params[k] is not None)
+
+        if 'type' in kwargs:
+            # designate expects upper case PRIMARY or SECONDARY
+            kwargs['type'] = kwargs['type'].upper()
+
+        zone = self.conn.dns.create_zone(**kwargs)
+
+        if self.params['wait']:
+            self.sdk.resource.wait_for_status(
+                self.conn.dns, zone,
+                status='active',
+                failures=['error'],
+                wait=self.params['timeout'])
+
+        return zone
+
+    def _delete(self, zone):
+        self.conn.dns.delete_zone(zone.id)
 
         for count in self.sdk.utils.iterate_timeout(
-                timeout,
-                "Timeout waiting for zone to be %s" % state):
+            timeout=self.params['timeout'],
+            message="Timeout waiting for zone to be absent"
+        ):
+            if self.conn.dns.find_zone(zone.id) is None:
+                break
 
-            if (state == 'absent' and zone is None) or (state == 'present' and zone and zone.status == 'ACTIVE'):
-                return
+    def _update(self, zone, update):
+        attributes = update.get('attributes')
+        if attributes:
+            zone = self.conn.dns.update_zone(zone.id, **attributes)
 
-            try:
-                zone = self.conn.get_zone(zone.id)
-            except Exception:
-                continue
+        if self.params['wait']:
+            self.sdk.resource.wait_for_status(
+                self.conn.dns, zone,
+                status='active',
+                failures=['error'],
+                wait=self.params['timeout'])
 
-            if zone and zone.status == 'ERROR':
-                self.fail_json(msg="Zone reached ERROR state while waiting for it to be %s" % state)
+        return zone
 
-    def run(self):
-
-        name = self.params['name']
-        state = self.params['state']
-        wait = self.params['wait']
-        timeout = self.params['timeout']
-
-        zone = self.conn.get_zone(name)
-
-        if state == 'present':
-
-            zone_type = self.params['zone_type']
-            email = self.params['email']
-            description = self.params['description']
-            ttl = self.params['ttl']
-            masters = self.params['masters']
-
-            kwargs = {}
-
-            if email:
-                kwargs['email'] = email
-            if description:
-                kwargs['description'] = description
-            if ttl:
-                kwargs['ttl'] = ttl
-            if masters:
-                kwargs['masters'] = masters
-
-            if self.ansible.check_mode:
-                self.exit_json(changed=self._system_state_change(state, email,
-                                                                 description, ttl,
-                                                                 masters, zone))
-
-            if zone is None:
-                zone = self.conn.create_zone(
-                    name=name, zone_type=zone_type, **kwargs)
-                changed = True
-            else:
-                if masters is None:
-                    masters = []
-
-                pre_update_zone = zone
-                changed = self._system_state_change(state, email,
-                                                    description, ttl,
-                                                    masters, pre_update_zone)
-                if changed:
-                    zone = self.conn.update_zone(
-                        name, **kwargs)
-
-            if wait:
-                self._wait(timeout, zone, state)
-
-            self.exit_json(changed=changed, zone=zone)
-
-        elif state == 'absent':
-            if self.ansible.check_mode:
-                self.exit_json(changed=self._system_state_change(state, None,
-                                                                 None, None,
-                                                                 None, zone))
-
-            if zone is None:
-                changed = False
-            else:
-                self.conn.delete_zone(name)
-                changed = True
-
-            if wait:
-                self._wait(timeout, zone, state)
-
-            self.exit_json(changed=changed)
+    def _will_change(self, state, zone):
+        if state == 'present' and not zone:
+            return True
+        elif state == 'present' and zone:
+            return bool(self._build_update(zone))
+        elif state == 'absent' and zone:
+            return True
+        else:
+            # state == 'absent' and not zone:
+            return False
 
 
 def main():

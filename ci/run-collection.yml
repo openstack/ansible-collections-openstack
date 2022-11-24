@@ -10,10 +10,7 @@
     - { role: compute_flavor, tags: compute_flavor }
     - { role: compute_flavor_access, tags: compute_flavor_access }
     - { role: config, tags: config }
-    - { role: dns_zone_info, tags: dns_zone_info }
-    - role: dns
-      tags: dns
-      when: sdk_version is version(0.28, '>=')
+    - { role: dns_zone, tags: dns_zone }
     - { role: endpoint, tags: endpoint }
     - { role: federation_mapping, tags: federation_mapping }
     - { role: floating_ip, tags: floating_ip }
