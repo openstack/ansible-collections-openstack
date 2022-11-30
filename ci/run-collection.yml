@@ -7,6 +7,8 @@
     - { role: address_scope, tags: address_scope }
     - { role: auth, tags: auth }
     - { role: catalog_service, tags: catalog_service }
+    - { role: coe_cluster, tags: coe_cluster }
+    - { role: coe_cluster_template, tags: coe_cluster_template }
     - { role: compute_flavor, tags: compute_flavor }
     - { role: compute_flavor_access, tags: compute_flavor_access }
     - { role: config, tags: config }
