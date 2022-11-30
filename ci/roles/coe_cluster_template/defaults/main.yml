@@ -1,0 +1,40 @@
+expected_fields:
+# Magnum might return more fields according to its documentation [0] but
+# openstacksdk normalizes coe cluster template resources, moving most
+# fields from top level into a 'properties' field [1].
+# [0] https://docs.openstack.org/api-ref/container-infrastructure-management/#create-new-cluster
+# [1] https://opendev.org/openstack/openstacksdk/src/commit/d57c1fcab3b6cbe806cbae735fefa4983b200ab2/openstack/cloud/_normalize.py#L522
+  - apiserver_port
+  - cluster_distro
+  - coe
+  - created_at
+  - dns_nameserver
+  - docker_volume_size
+  - external_network_id
+  - fixed_network
+  - fixed_subnet
+  - flavor_id
+  - floating_ip_enabled
+  - http_proxy
+  - https_proxy
+  - id
+  - image_id
+  - insecure_registry
+  - is_public
+  - is_registry_enabled
+  - is_tls_disabled
+  - keypair_id
+  - labels
+  - location
+  - master_flavor_id
+  - name
+  - network_driver
+  - no_proxy
+  - properties
+  - public
+  - registry_enabled
+  - server_type
+  - tls_disabled
+  - updated_at
+  - uuid
+  - volume_driver

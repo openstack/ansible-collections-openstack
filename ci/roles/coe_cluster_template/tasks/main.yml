@@ -1,0 +1,81 @@
+---
+- name: Create keypair
+  openstack.cloud.keypair:
+    cloud: "{{ cloud }}"
+    name: ansible_keypair
+    state: present
+  register: keypair
+
+- name: List all images
+  openstack.cloud.image_info:
+    cloud: "{{ cloud }}"
+  register: images
+
+- name: Identify Fedora CoreOS image id
+  set_fact:
+    image_id: "{{ images.images|community.general.json_query(query)|first }}"
+  vars:
+    query: "[?starts_with(name, 'fedora-coreos')].id"
+
+- name: Create Kubernetes cluster template
+  openstack.cloud.coe_cluster_template:
+    cloud: "{{ cloud }}"
+    coe: kubernetes
+    floating_ip_enabled: false
+    image_id: '{{ image_id }}'
+    keypair_id: '{{ keypair.keypair.id }}'
+    name: k8s
+    state: present
+  register: coe_cluster_template
+
+- name: Assert return values of coe_cluster_template module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(coe_cluster_template.cluster_template.keys())|length == 0
+
+- name: Create Kubernetes cluster template again
+  openstack.cloud.coe_cluster_template:
+    cloud: "{{ cloud }}"
+    coe: kubernetes
+    floating_ip_enabled: false
+    image_id: '{{ image_id }}'
+    keypair_id: '{{ keypair.keypair.id }}'
+    name: k8s
+    state: present
+  register: coe_cluster_template
+
+- name: Assert return values of coe_cluster_template module
+  assert:
+    that:
+      - coe_cluster_template is not changed
+
+- name: Delete Kubernetes cluster template
+  openstack.cloud.coe_cluster_template:
+    cloud: "{{ cloud }}"
+    name: k8s
+    state: absent
+  register: coe_cluster_template
+
+- name: Assert return values of coe_cluster_template module
+  assert:
+    that:
+      - coe_cluster_template is changed
+
+- name: Delete Kubernetes cluster template again
+  openstack.cloud.coe_cluster_template:
+    cloud: "{{ cloud }}"
+    name: k8s
+    state: absent
+  register: coe_cluster_template
+
+- name: Assert return values of coe_cluster_template module
+  assert:
+    that:
+      - coe_cluster_template is not changed
+
+- name: Delete keypair
+  openstack.cloud.keypair:
+    cloud: "{{ cloud }}"
+    name: ansible_keypair
+    state: absent

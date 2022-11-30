@@ -1,0 +1,181 @@
+---
+- name: Create keypair
+  openstack.cloud.keypair:
+    cloud: "{{ cloud }}"
+    name: ansible_keypair
+    state: present
+  register: keypair
+
+- name: List all images
+  openstack.cloud.image_info:
+    cloud: "{{ cloud }}"
+  register: images
+
+- name: Identify Fedora CoreOS image id
+  set_fact:
+    image_id: "{{ images.images|community.general.json_query(query)|first }}"
+  vars:
+    query: "[?starts_with(name, 'fedora-coreos')].id"
+
+- name: Create external network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    external: true
+    name: ansible_external_network
+    state: present
+  register: external_network
+
+- name: Create external subnet
+  openstack.cloud.subnet:
+    cidr: 10.6.6.0/24
+    cloud: "{{ cloud }}"
+    name: ansible_external_subnet
+    network_name: ansible_external_network
+    state: present
+
+- name: Create internal network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_internal_network
+    external: false
+
+- name: Create internal subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: present
+    network_name: ansible_internal_network
+    name: ansible_internal_subnet
+    cidr: 10.7.7.0/24
+
+- name: Create router
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    external_fixed_ips:
+      - subnet: ansible_external_subnet
+        ip: 10.6.6.10
+    interfaces:
+       - net: ansible_internal_network
+         subnet: ansible_internal_subnet
+         portip: 10.7.7.1
+    name: ansible_router
+    network: ansible_external_network
+    state: present
+
+- name: Create Kubernetes cluster template
+  openstack.cloud.coe_cluster_template:
+    cloud: "{{ cloud }}"
+    coe: kubernetes
+    external_network_id: '{{ external_network.network.id }}'
+    fixed_network: ansible_internal_network
+    fixed_subnet: ansible_internal_subnet
+    floating_ip_enabled: true
+    image_id: '{{ image_id }}'
+    keypair_id: '{{ keypair.keypair.id }}'
+    name: k8s
+    state: present
+  register: coe_cluster_template
+
+- name: Create Kubernetes cluster
+  openstack.cloud.coe_cluster:
+    cloud: "{{ cloud }}"
+    cluster_template_id: "{{ coe_cluster_template.cluster_template.uuid }}"
+    keypair: ansible_keypair
+    name: k8s
+    state: present
+    # cluster creation takes longer than max tenant timeout of 10800
+    wait: false
+  register: coe_cluster
+
+- name: Assert return values of coe_cluster module
+  assert:
+    that:
+      # openstack.cloud.coe_cluster will only return 'id' on cluster creation when wait is false
+      - "['id']|difference(coe_cluster.cluster.keys())|length == 0"
+
+- name: Pause for 1 minutes to allow Magnum to create the Kubernetes cluster
+  ansible.builtin.pause:
+    minutes: 1
+
+- name: Create Kubernetes cluster again
+  openstack.cloud.coe_cluster:
+    cloud: "{{ cloud }}"
+    cluster_template_id: "{{ coe_cluster_template.cluster_template.uuid }}"
+    keypair: ansible_keypair
+    name: k8s
+    state: present
+    # cluster creation takes longer than max tenant timeout of 10800
+    wait: false
+  register: coe_cluster
+
+- name: Assert return values of coe_cluster module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(coe_cluster.cluster.keys())|length == 0
+
+- name: Delete Kubernetes cluster
+  openstack.cloud.coe_cluster:
+    cloud: "{{ cloud }}"
+    name: k8s
+    state: absent
+  register: coe_cluster
+
+- name: Assert return values of coe_cluster module
+  assert:
+    that:
+      - coe_cluster is changed
+
+- name: Delete Kubernetes cluster again
+  openstack.cloud.coe_cluster:
+    cloud: "{{ cloud }}"
+    name: k8s
+    state: absent
+  register: coe_cluster
+
+- name: Assert return values of coe_cluster module
+  assert:
+    that:
+      - coe_cluster is not changed
+
+- name: Delete Kubernetes cluster template
+  openstack.cloud.coe_cluster_template:
+    cloud: "{{ cloud }}"
+    name: k8s
+    state: absent
+
+- name: Delete router
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    name: ansible_router
+    state: absent
+
+- name: Delete internal subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_internal_subnet
+
+- name: Delete internal network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_internal_network
+
+- name: Delete external subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    name: ansible_external_subnet
+    state: absent
+
+- name: Delete external network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: ansible_external_network
+    state: absent
+
+- name: Delete keypair
+  openstack.cloud.keypair:
+    cloud: "{{ cloud }}"
+    name: ansible_keypair
+    state: absent

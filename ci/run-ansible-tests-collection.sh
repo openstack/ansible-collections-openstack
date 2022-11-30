@@ -114,8 +114,14 @@ if [ -n "$TAGS" ]; then
 fi
 
 if ! systemctl is-enabled devstack@o-api.service 2>&1; then
-    # Run all tasks except for loadbalancer if Octavia is not available
+    # Skip loadbalancer tasks if Octavia is not available
     tag_opt+=" --skip-tags loadbalancer"
+fi
+
+# TODO: Replace with more robust test for Magnum availability
+if [ ! -e /etc/magnum ]; then
+    # Skip coe tasks if Magnum is not available
+    tag_opt+=" --skip-tags coe_cluster,coe_cluster_template"
 fi
 
 cd ci/
