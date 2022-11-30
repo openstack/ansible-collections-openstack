@@ -1,2 +1,2 @@
 # 0.99.0 and later are release candidates for the first major release of OpenStackSDK 1.x.x
-openstacksdk>=0.102.0
+openstacksdk>=0.103.0
