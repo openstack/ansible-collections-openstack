@@ -34,8 +34,9 @@ options:
         description:
         - Perform the given action. The lock and unlock actions always return
             changed as the servers API does not provide lock status.
-        choices: [stop, start, pause, unpause, lock, unlock, suspend, resume,
-                rebuild, shelve, shelve_offload, unshelve]
+        choices: [stop, start, pause, unpause, lock, unlock, suspend,
+                  reboot_soft, reboot_hard, resume, rebuild, shelve,
+                  shelve_offload, unshelve]
         type: str
         required: true
     image:
@@ -106,6 +107,8 @@ _action_map = {'stop': ['SHUTOFF'],
                'lock': ['ACTIVE'],  # API doesn't show lock/unlock status
                'unlock': ['ACTIVE'],
                'suspend': ['SUSPENDED'],
+               'reboot_soft': ['ACTIVE'],
+               'reboot_hard': ['ACTIVE'],
                'resume': ['ACTIVE'],
                'rebuild': ['ACTIVE'],
                'shelve': ['SHELVED_OFFLOADED', 'SHELVED'],
@@ -120,7 +123,7 @@ class ServerActionModule(OpenStackModule):
         server=dict(required=True),
         action=dict(required=True,
                     choices=['stop', 'start', 'pause', 'unpause',
-                             'lock', 'unlock', 'suspend', 'resume',
+                             'lock', 'unlock', 'suspend', 'reboot_soft', 'reboot_hard', 'resume',
                              'rebuild', 'shelve', 'shelve_offload', 'unshelve']),
         image=dict(),
         admin_password=dict(no_log=True),
@@ -165,12 +168,25 @@ class ServerActionModule(OpenStackModule):
             # shelve_offload is not supported in OpenstackSDK
             return self._action(os_server, json={'shelveOffload': None})
         action_name = self.params['action'] + "_server"
+
+        # reboot_* actions are using reboot_server method with an extra param
+        if self.params['action'] == 'reboot_soft' or self.params['action'] == 'reboot_hard':
+            action_name = 'reboot_server'
+
+        # Try to grab method from OpenstackSDK
         try:
             func_name = getattr(self.conn.compute, action_name)
         except AttributeError:
             self.fail_json(
                 msg="Method %s wasn't found in OpenstackSDK compute" % action_name)
-        func_name(os_server)
+
+        # Do the action
+        if self.params['action'] == 'reboot_soft':
+            func_name(os_server, 'SOFT')
+        elif self.params['action'] == 'reboot_hard':
+            func_name(os_server, 'HARD')
+        else:
+            func_name(os_server)
 
     def _rebuild_server(self, os_server):
         # rebuild should ensure images exists
