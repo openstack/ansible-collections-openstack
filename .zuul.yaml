@@ -67,7 +67,6 @@
     # parent job variant during job freeze when child jobs are on other branches.
     description: |
       Run openstack collections functional tests against a devstack with Octavia plugin enabled
-    pre-run: ci/playbooks/get_amphora_tarball.yaml
     # Do not set job.override-checkout or job.required-projects.override-checkout in base job because
     # else Zuul will use this branch when matching variants for parent jobs during job freeze
     required-projects:
@@ -93,10 +92,6 @@
         o-cw: true
         o-hk: true
         o-hm: true
-      devstack_localrc:
-        OCTAVIA_AMP_IMAGE_FILE: "/tmp/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2"
-        OCTAVIA_AMP_IMAGE_SIZE: 3
-        OCTAVIA_AMP_IMAGE_NAME: "test-only-amphora-x64-haproxy-ubuntu-bionic"
 
 - job:
     name: ansible-collections-openstack-functional-devstack-octavia

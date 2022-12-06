@@ -1,5 +1,25 @@
-
 ---
+- name: Download Amphora tarball
+  get_url:
+    url: "https://tarballs.openstack.org/octavia/test-images/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2"
+    dest: /tmp/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2
+
+- name: Upload Amphora image for Octavia to test load balancers
+  openstack.cloud.image:
+    cloud: "{{ cloud }}"
+    container_format: bare
+    disk_format: qcow2
+    filename: /tmp/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2
+    is_public: false
+    name: test-only-amphora-x64-haproxy-ubuntu-bionic
+    owner: service
+    properties:
+      hw_architecture: x86_64
+      hw_rng_model: virtio
+    state: present
+    tags:
+      - amphora
+
 - name: Create network {{ network_name }} for LB
   openstack.cloud.network:
     cloud: "{{ cloud }}"
