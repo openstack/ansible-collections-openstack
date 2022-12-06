@@ -31,6 +31,5 @@ build_ignore:
   - .env
   - .vscode
   - ansible_collections_openstack.egg-info
-  - contrib
   - changelogs
 version: 2.0.0-dev
