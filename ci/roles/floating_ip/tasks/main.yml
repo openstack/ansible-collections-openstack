@@ -1,5 +1,16 @@
 ---
 # Prepare environment
+- name: List all images
+  openstack.cloud.image_info:
+    cloud: "{{ cloud }}"
+  register: images
+
+- name: Identify CirrOS image name
+  set_fact:
+    image_name: "{{ images.openstack_images|community.general.json_query(query)|first }}"
+  vars:
+    query: "[?starts_with(name, 'cirros')].name"
+
 - name: Gather information about public network
   openstack.cloud.networks_info:
     cloud: "{{ cloud }}"

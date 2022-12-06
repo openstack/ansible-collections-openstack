@@ -95,12 +95,6 @@ if [ "$USE_DEV" -eq 1 ]; then
     source "$ENVDIR/ansible/hacking/env-setup"
 fi
 
-# Run the shade Ansible tests
-tag_opt=""
-if [ -n "$TAGS" ]; then
-    tag_opt="--tags $TAGS"
-fi
-
 # Loop through all ANSIBLE_VAR_ environment variables to allow passing the further
 for var in $(env | grep -e '^ANSIBLE_VAR_'); do
   VAR_NAME=${var%%=*} # split variable name from value
@@ -110,38 +104,19 @@ for var in $(env | grep -e '^ANSIBLE_VAR_'); do
   ANSIBLE_VARS+="${ANSIBLE_VAR_NAME}=${ANSIBLE_VAR_VALUE} " # concat variables
 done
 
-# Until we have a module that lets us determine the image we want from
-# within a playbook, we have to find the image here and pass it in.
-# We use the openstack client instead of nova client since it can use clouds.yaml.
-IMAGE=$(openstack "--os-cloud=$CLOUD" image list -f value -c Name | grep cirros | grep -v -e ramdisk -e kernel)
-if [ -z "$IMAGE" ]; then
-  echo "Failed to find Cirros image"
-  exit 3
-fi
-
-# In case of Octavia enabled:
-_octavia_image_path="/tmp/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2"
-if systemctl list-units --full -all | grep -Fq "devstack@o-api.service" && \
-  test -f "$_octavia_image_path"; then
-    # Upload apmhora image for Octavia to test load balancers
-    OCTAVIA_AMP_IMAGE_FILE=${OCTAVIA_AMP_IMAGE_FILE:-"$_octavia_image_path"}
-    OCTAVIA_AMP_IMAGE_NAME=${OCTAVIA_AMP_IMAGE_NAME:-"test-only-amphora-x64-haproxy-ubuntu-bionic"}
-    OCTAVIA_AMP_IMAGE_SIZE=${OCTAVIA_AMP_IMAGE_SIZE:-3}
-    openstack "--os-cloud=$CLOUD" image create \
-        --container-format bare \
-        --disk-format qcow2 \
-        --private \
-        --file "$OCTAVIA_AMP_IMAGE_FILE" \
-        --project service "$OCTAVIA_AMP_IMAGE_NAME"
-    openstack "--os-cloud=$CLOUD" image set --tag amphora "$OCTAVIA_AMP_IMAGE_NAME"
-    # End of Octavia preparement
-else
-    # Run all tasks except for loadbalancer tasks
-    tag_opt+=" --skip-tags loadbalancer"
-fi
-
 # Discover openstacksdk version
 SDK_VER=$(python -c "import openstack; print(openstack.version.__version__)")
+
+# Choose integration tests
+tag_opt=""
+if [ -n "$TAGS" ]; then
+    tag_opt="--tags $TAGS"
+fi
+
+if ! systemctl is-enabled devstack@o-api.service 2>&1; then
+    # Run all tasks except for loadbalancer if Octavia is not available
+    tag_opt+=" --skip-tags loadbalancer"
+fi
 
 cd ci/
 
@@ -150,5 +125,5 @@ set -o pipefail
 # shellcheck disable=SC2086
 ANSIBLE_COLLECTIONS_PATHS=$TEST_COLLECTIONS_PATHS ansible-playbook \
     -vvv ./run-collection.yml \
-    -e "sdk_version=${SDK_VER} cloud=${CLOUD} cloud_alt=${CLOUD_ALT} image_name=${IMAGE} ${ANSIBLE_VARS}" \
+    -e "sdk_version=${SDK_VER} cloud=${CLOUD} cloud_alt=${CLOUD_ALT} ${ANSIBLE_VARS}" \
     ${tag_opt} 2>&1 | sudo tee /opt/stack/logs/test_output.log
