@@ -36,7 +36,6 @@
       - .*\.rst
       - tools/run-ansible-sanity.sh
       - tests/sanity/.*
-      - contrib/.*
       - .zuul.yaml
     vars:
       zuul_work_dir: src/opendev.org/openstack/ansible-collections-openstack
@@ -436,7 +435,6 @@
       - ^.*\.md$
       - ^.*\.rst$
       - ^changelogs/.*$
-      - ^contrib/.*$
       - ^docs/.*$
       - ^meta/.*$
       - ^requirements.*$
