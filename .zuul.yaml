@@ -140,9 +140,9 @@
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
-      - # Choose parent devstack job from master branch instead of non-existing stable/1.0.0 branch
+      - # Choose parent devstack job from stable/yoga branch instead of non-existing stable/1.0.0 branch
         name: openstack/devstack
-        override-checkout: master
+        override-checkout: stable/yoga
       - name: openstack/openstacksdk
         # Yoga has the latest SDK release of the 0.*.* series atm
         override-checkout: stable/yoga
@@ -159,9 +159,9 @@
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.11
-      - # Choose parent devstack job from master branch instead of non-existing stable/1.0.0 branch
+      - # Choose parent devstack job from stable/yoga branch instead of non-existing stable/1.0.0 branch
         name: openstack/devstack
-        override-checkout: master
+        override-checkout: stable/yoga
       - name: openstack/openstacksdk
         # Yoga has the latest SDK release of the 0.*.* series atm
         override-checkout: stable/yoga
@@ -178,9 +178,9 @@
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.12
-      - # Choose parent devstack job from master branch instead of non-existing stable/1.0.0 branch
+      - # Choose parent devstack job from stable/yoga branch instead of non-existing stable/1.0.0 branch
         name: openstack/devstack
-        override-checkout: master
+        override-checkout: stable/yoga
       - name: openstack/openstacksdk
         # Yoga has the latest SDK release of the 0.*.* series atm
         override-checkout: stable/yoga
@@ -214,6 +214,8 @@
       - # Choose parent devstack job from stable/xena branch
         name: openstack/devstack
         override-checkout: stable/xena
+      - name: openstack/designate
+        override-checkout: stable/xena
       - name: openstack/openstacksdk
         override-checkout: stable/xena
     vars:
@@ -243,6 +245,8 @@
         override-checkout: stable/1.0.0
       - # Choose parent devstack job from stable/wallaby branch
         name: openstack/devstack
+        override-checkout: stable/wallaby
+      - name: openstack/designate
         override-checkout: stable/wallaby
       - name: openstack/openstacksdk
         override-checkout: stable/wallaby
@@ -274,6 +278,8 @@
       - # Choose parent devstack job from stable/victoria branch
         name: openstack/devstack
         override-checkout: stable/victoria
+      - name: openstack/designate
+        override-checkout: stable/victoria
       - name: openstack/openstacksdk
         override-checkout: stable/victoria
     vars:
@@ -303,6 +309,8 @@
         override-checkout: stable/1.0.0
       - # Choose parent devstack job from stable/ussuri branch
         name: openstack/devstack
+        override-checkout: stable/ussuri
+      - name: openstack/designate
         override-checkout: stable/ussuri
       - name: openstack/openstacksdk
         override-checkout: stable/ussuri
@@ -334,6 +342,8 @@
       - # Choose parent devstack job from stable/train branch
         name: openstack/devstack
         override-checkout: stable/train
+      - name: openstack/designate
+        override-checkout: train-eol
       - name: openstack/openstacksdk
         override-checkout: stable/train
     vars:
