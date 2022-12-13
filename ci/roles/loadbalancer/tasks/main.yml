@@ -4,7 +4,7 @@
     url: "https://tarballs.openstack.org/octavia/test-images/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2"
     dest: /tmp/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2
 
-- name: Upload Amphora image for Octavia to test load balancers
+- name: Upload Amphora image for Octavia to test load-balancers
   openstack.cloud.image:
     cloud: "{{ cloud }}"
     container_format: bare
@@ -20,17 +20,33 @@
     tags:
       - amphora
 
-- name: Create network {{ network_name }} for LB
+- name: Create external network
   openstack.cloud.network:
     cloud: "{{ cloud }}"
-    name: "{{ network_name }}"
+    external: true
+    name: ansible_external_network
+    state: present
+  register: external_network
+
+- name: Create external subnet
+  openstack.cloud.subnet:
+    cidr: 10.6.6.0/24
+    cloud: "{{ cloud }}"
+    name: ansible_external_subnet
+    network_name: ansible_external_network
     state: present
 
-- name: Create subnet {{ subnet_name }} on network {{ network_name }} for LB
+- name: Create internal network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: ansible_internal_network
+    state: present
+
+- name: Create internal subnet
   openstack.cloud.subnet:
     cloud: "{{ cloud }}"
-    network_name: "{{ network_name }}"
-    name: "{{ subnet_name }}"
+    network_name: ansible_internal_network
+    name: ansible_internal_subnet
     state: present
     enable_dhcp: true
     dns_nameservers:
@@ -41,30 +57,228 @@
     allocation_pool_start: 192.168.0.2
     allocation_pool_end: 192.168.0.254
 
-- name: Create loadbalancer - generic
+- name: Create router 1
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    external_fixed_ips:
+      - subnet: ansible_external_subnet
+        ip: 10.6.6.10
+    interfaces:
+       - net: ansible_internal_network
+         subnet: ansible_internal_subnet
+         portip: 192.168.0.1
+    name: ansible_router1
+    network: ansible_external_network
+    state: present
+
+- name: Create load-balancer
   openstack.cloud.loadbalancer:
     cloud: "{{ cloud }}"
     state: present
-    name: "{{ lb_name }}"
-    vip_subnet: "{{ subnet_name }}"
-    timeout: 450
+    name: ansible_lb
+    vip_subnet: ansible_internal_subnet
+    timeout: 1200
+  register: load_balancer
 
-- name: Delete loadbalancer
+- name: Assert return values of loadbalancer module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(load_balancer.load_balancer.keys())|length == 0
+
+- name: Create load-balancer again
   openstack.cloud.loadbalancer:
     cloud: "{{ cloud }}"
+    state: present
+    name: ansible_lb
+    vip_subnet: ansible_internal_subnet
+    timeout: 1200
+  register: load_balancer
+
+- name: Assert return values of loadbalancer module
+  assert:
+    that:
+      - load_balancer is not changed
+
+- name: Update load-balancer description
+  openstack.cloud.loadbalancer:
+    cloud: "{{ cloud }}"
+    description: "Ansible load-balancer"
+    state: present
+    name: ansible_lb
+    vip_subnet: ansible_internal_subnet
+    timeout: 1200
+  register: load_balancer
+
+- name: Assert return values of loadbalancer module
+  assert:
+    that:
+      - load_balancer.load_balancer.description == "Ansible load-balancer"
+
+- name: Delete load-balancer
+  openstack.cloud.loadbalancer:
+    cloud: "{{ cloud }}"
+    name: ansible_lb
     state: absent
-    name: "{{ lb_name }}"
     timeout: 150
 
-- name: Delete subnet {{ subnet_name }} on network {{ network_name }}
-  openstack.cloud.subnet:
+- name: Create load-balancer with floating ip address
+  openstack.cloud.loadbalancer:
+    assign_floating_ip: true
     cloud: "{{ cloud }}"
-    network_name: "{{ network_name }}"
-    name: "{{ subnet_name }}"
+    # Help Octavia to find a external network which is connected to ansible_internal_subnet via a router
+    floating_ip_network: ansible_external_network
+    name: ansible_lb
+    state: present
+    timeout: 1200
+    vip_subnet: ansible_internal_subnet
+  register: load_balancer
+
+- name: Assert return values of loadbalancer module
+  assert:
+    that:
+      - "'floating_ip' in load_balancer.keys()"
+      - load_balancer.load_balancer.vip_address == load_balancer.floating_ip.fixed_ip_address
+
+- name: Delete load-balancer with floating ip address
+  openstack.cloud.loadbalancer:
+    cloud: "{{ cloud }}"
+    delete_floating_ip: true
+    name: ansible_lb
+    state: absent
+    timeout: 150
+
+- name: List all floating ips
+  openstack.cloud.floating_ip_info:
+    cloud: "{{ cloud }}"
+  register: floating_ips
+
+- name: Assert load-balancer's floating ip has been deleted
+  assert:
+    that:
+      - load_balancer.floating_ip.floating_ip_address not in
+        floating_ips.floating_ips|map(attribute='floating_ip_address')|sort|list
+
+- name: Create load-balancer with floating ip address from specific network
+  openstack.cloud.loadbalancer:
+    assign_floating_ip: true
+    cloud: "{{ cloud }}"
+    floating_ip_network: ansible_external_network
+    name: ansible_lb
+    state: present
+    timeout: 1200
+    vip_subnet: ansible_internal_subnet
+  register: load_balancer
+
+- name: Assert return values of loadbalancer module
+  assert:
+    that:
+      - load_balancer.floating_ip.floating_network_id == external_network.network.id
+
+- name: Create load-balancer with floating ip address from specific network again
+  openstack.cloud.loadbalancer:
+    assign_floating_ip: true
+    cloud: "{{ cloud }}"
+    floating_ip_network: ansible_external_network
+    name: ansible_lb
+    state: present
+    timeout: 1200
+    vip_subnet: ansible_internal_subnet
+  register: load_balancer
+
+- name: Assert return values of loadbalancer module
+  assert:
+    that:
+      - load_balancer is not changed
+
+# TODO: Replace with appropriate Ansible module once available
+- name: Disassociate floating ip from load-balancer
+  command: >
+    openstack --os-cloud={{ cloud }} floating ip unset --port {{ load_balancer.floating_ip.floating_ip_address }}
+
+- name: Reassign floating ip address to load-balancer
+  openstack.cloud.loadbalancer:
+    assign_floating_ip: true
+    cloud: "{{ cloud }}"
+    floating_ip_network: ansible_external_network
+    name: ansible_lb
+    state: present
+    timeout: 1200
+    vip_subnet: ansible_internal_subnet
+  register: load_balancer2
+
+- name: Assert return values of loadbalancer module
+  assert:
+    that:
+      - load_balancer2.floating_ip.floating_network_id == external_network.network.id
+      - load_balancer.floating_ip.floating_ip_address == load_balancer2.floating_ip.floating_ip_address
+
+- name: Reassign specific floating ip address to load-balancer
+  openstack.cloud.loadbalancer:
+    assign_floating_ip: true
+    cloud: "{{ cloud }}"
+    floating_ip_address: 10.6.6.42
+    floating_ip_network: ansible_external_network
+    name: ansible_lb
+    state: present
+    timeout: 1200
+    vip_subnet: ansible_internal_subnet
+  register: load_balancer
+
+- name: Assert return values of loadbalancer module
+  assert:
+    that:
+      - load_balancer.floating_ip.floating_network_id == external_network.network.id
+      - load_balancer.floating_ip.floating_ip_address == '10.6.6.42'
+
+- name: Disassociate floating ip address with load-balancer
+  openstack.cloud.loadbalancer:
+    cloud: "{{ cloud }}"
+    name: ansible_lb
+    state: present
+    timeout: 1200
+    vip_subnet: ansible_internal_subnet
+  register: load_balancer
+
+- name: Assert return values of loadbalancer module
+  assert:
+    that:
+      - "'floating_ip' not in load_balancer.keys()"
+
+- name: Delete load-balancer
+  openstack.cloud.loadbalancer:
+    cloud: "{{ cloud }}"
+    delete_floating_ip: true
+    name: ansible_lb
+    state: absent
+    timeout: 150
+
+- name: Delete router 1
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    name: ansible_router1
     state: absent
 
-- name: Delete network {{ network_name }} of LB
+- name: Delete internal subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    name: ansible_internal_subnet
+    state: absent
+
+- name: Delete internal network
   openstack.cloud.network:
     cloud: "{{ cloud }}"
-    name: "{{ network_name }}"
+    name: ansible_internal_network
+    state: absent
+
+- name: Delete external subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    name: ansible_external_subnet
+    state: absent
+
+- name: Delete external network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: ansible_external_network
     state: absent

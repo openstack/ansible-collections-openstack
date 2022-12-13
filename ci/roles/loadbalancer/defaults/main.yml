@@ -1,3 +1,22 @@
-network_name: network_lb
-subnet_name: subnet_lb
-lb_name: test_lb
+expected_fields:
+  - additional_vips
+  - availability_zone
+  - created_at
+  - description
+  - flavor_id
+  - id
+  - is_admin_state_up
+  - listeners
+  - name
+  - operating_status
+  - pools
+  - project_id
+  - provider
+  - provisioning_status
+  - tags
+  - updated_at
+  - vip_address
+  - vip_network_id
+  - vip_port_id
+  - vip_qos_policy_id
+  - vip_subnet_id

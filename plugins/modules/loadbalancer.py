@@ -7,15 +7,55 @@
 DOCUMENTATION = '''
 ---
 module: loadbalancer
-short_description: Add/Delete load balancer from OpenStack Cloud
+short_description: Manage Octavia load-balancer in an OpenStack cloud
 author: OpenStack Ansible SIG
 description:
-  - Add or Remove load balancer from the OpenStack load-balancer
-    service(Octavia). Load balancer update is not supported for now.
+  - Add, update or remove Octavia load-balancer from OpenStack cloud.
 options:
+  assign_floating_ip:
+    description:
+      - Allocate floating ip address and associate with the VIP automatically.
+      - Deprecated, use M(openstack.cloud.floating_ip) instead.
+    type: bool
+    default: false
+    aliases: ['auto_public_ip']
+  delete_floating_ip:
+    description:
+      - When I(state) is C(present) and I(delete_floating_ip) is C(true), then
+        any floating ip address associated with the VIP will be deleted.
+      - When I(state) is C(absent) and I(delete_floating_ip) is C(true), then
+        any floating ip address associated with the VIP will be deleted along
+        with the load balancer.
+      - Deprecated, use M(openstack.cloud.floating_ip) instead.
+    type: bool
+    default: false
+    aliases: ['delete_public_ip']
+  description:
+    description:
+      - A human-readable description for the load-balancer.
+    type: str
+  flavor:
+    description:
+      - The flavor of the load balancer.
+      - This attribute cannot be updated.
+    type: str
+  floating_ip_address:
+    description:
+      - Floating ip address aka public ip address associated with the VIP.
+      - Deprecated, use M(openstack.cloud.floating_ip) instead.
+    type: str
+    aliases: ['public_ip_address']
+  floating_ip_network:
+    description:
+      - Name or ID of a Neutron external network where floating ip address will
+        be created on.
+      - Deprecated, use M(openstack.cloud.floating_ip) instead.
+    type: str
+    aliases: ['public_network']
   name:
     description:
       - The name of the load balancer.
+      - This attribute cannot be updated.
     required: true
     type: str
   state:
@@ -24,664 +64,581 @@ options:
     choices: [present, absent]
     default: present
     type: str
-  flavor:
+  vip_address:
     description:
-      - The flavor of the load balancer.
+      - IP address of the load balancer virtual IP.
+      - This attribute cannot be updated.
     type: str
   vip_network:
     description:
       - The name or id of the network for the virtual IP of the load balancer.
-        One of I(vip_network), I(vip_subnet), or I(vip_port) must be specified
+      - One of I(vip_network), I(vip_subnet), or I(vip_port) must be specified
         for creation.
-    type: str
-  vip_subnet:
-    description:
-      - The name or id of the subnet for the virtual IP of the load balancer.
-        One of I(vip_network), I(vip_subnet), or I(vip_port) must be specified
-        for creation.
+      - This attribute cannot be updated.
     type: str
   vip_port:
     description:
       - The name or id of the load balancer virtual IP port. One of
-        I(vip_network), I(vip_subnet), or I(vip_port) must be specified for
-        creation.
+      - One of I(vip_network), I(vip_subnet), or I(vip_port) must be specified
+        for creation.
+      - This attribute cannot be updated.
     type: str
-  vip_address:
+  vip_subnet:
     description:
-      - IP address of the load balancer virtual IP.
+      - The name or id of the subnet for the virtual IP of the load balancer.
+      - One of I(vip_network), I(vip_subnet), or I(vip_port) must be specified
+        for creation.
+      - This attribute cannot be updated.
     type: str
-  public_ip_address:
-    description:
-      - Public IP address associated with the VIP.
-    type: str
-  auto_public_ip:
-    description:
-      - Allocate a public IP address and associate with the VIP automatically.
-    type: bool
-    default: 'no'
-  public_network:
-    description:
-      - The name or ID of a Neutron external network.
-    type: str
-  delete_public_ip:
-    description:
-      - When C(state=absent) and this option is true, any public IP address
-        associated with the VIP will be deleted along with the load balancer.
-    type: bool
-    default: 'no'
-  listeners:
-    description:
-      - A list of listeners that attached to the load balancer.
-    suboptions:
-      name:
-        description:
-          - The listener name or ID.
-      protocol:
-        description:
-          - The protocol for the listener.
-        default: HTTP
-      protocol_port:
-        description:
-          - The protocol port number for the listener.
-        default: 80
-      allowed_cidrs:
-        description:
-          - A list of IPv4, IPv6 or mix of both CIDRs to be allowed access to the listener. The default is all allowed.
-            When a list of CIDRs is provided, the default switches to deny all.
-            Ignored on unsupported Octavia versions (less than 2.12)
-        default: []
-      pool:
-        description:
-          - The pool attached to the listener.
-        suboptions:
-          name:
-            description:
-              - The pool name or ID.
-          protocol:
-            description:
-              - The protocol for the pool.
-            default: HTTP
-          lb_algorithm:
-            description:
-              - The load balancing algorithm for the pool.
-            default: ROUND_ROBIN
-          members:
-            description:
-              - A list of members that added to the pool.
-            suboptions:
-              name:
-                description:
-                  - The member name or ID.
-              address:
-                description:
-                  - The IP address of the member.
-              protocol_port:
-                description:
-                  - The protocol port number for the member.
-                default: 80
-              subnet:
-                description:
-                  - The name or ID of the subnet the member service is
-                    accessible from.
-    elements: dict
-    type: list
-    default: []
-  wait:
-    description:
-      - If the module should wait for the load balancer to be created or
-        deleted.
-    type: bool
-    default: 'yes'
-  timeout:
-    description:
-      - The amount of time the module should wait.
-    default: 180
-    type: int
 requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
+  - "python >= 3.6"
+  - "openstacksdk"
 extends_documentation_fragment:
-- openstack.cloud.openstack
+  - openstack.cloud.openstack
 '''
 
-RETURN = '''
-id:
-    description: The load balancer UUID.
-    returned: On success when C(state=present)
-    type: str
-    sample: "39007a7e-ee4f-4d13-8283-b4da2e037c69"
-loadbalancer:
-    description: Dictionary describing the load balancer.
-    returned: On success when C(state=present)
-    type: complex
-    contains:
-        id:
-            description: Unique UUID.
-            type: str
-            sample: "39007a7e-ee4f-4d13-8283-b4da2e037c69"
-        name:
-            description: Name given to the load balancer.
-            type: str
-            sample: "lingxian_test"
-        vip_network_id:
-            description: Network ID the load balancer virtual IP port belongs in.
-            type: str
-            sample: "f171db43-56fd-41cf-82d7-4e91d741762e"
-        vip_subnet_id:
-            description: Subnet ID the load balancer virtual IP port belongs in.
-            type: str
-            sample: "c53e3c70-9d62-409a-9f71-db148e7aa853"
-        vip_port_id:
-            description: The load balancer virtual IP port ID.
-            type: str
-            sample: "2061395c-1c01-47ab-b925-c91b93df9c1d"
-        vip_address:
-            description: The load balancer virtual IP address.
-            type: str
-            sample: "192.168.2.88"
-        public_vip_address:
-            description: The load balancer public VIP address.
-            type: str
-            sample: "10.17.8.254"
-        provisioning_status:
-            description: The provisioning status of the load balancer.
-            type: str
-            sample: "ACTIVE"
-        operating_status:
-            description: The operating status of the load balancer.
-            type: str
-            sample: "ONLINE"
-        is_admin_state_up:
-            description: The administrative state of the load balancer.
-            type: bool
-            sample: true
-        listeners:
-            description: The associated listener IDs, if any.
-            type: list
-            sample: [{"id": "7aa1b380-beec-459c-a8a7-3a4fb6d30645"}, {"id": "692d06b8-c4f8-4bdb-b2a3-5a263cc23ba6"}]
-        pools:
-            description: The associated pool IDs, if any.
-            type: list
-            sample: [{"id": "27b78d92-cee1-4646-b831-e3b90a7fa714"}, {"id": "befc1fb5-1992-4697-bdb9-eee330989344"}]
-'''
-
-EXAMPLES = '''
-# Create a load balancer by specifying the VIP subnet.
-- openstack.cloud.loadbalancer:
-    auth:
-      auth_url: https://identity.example.com
-      username: admin
-      password: passme
-      project_name: admin
-    state: present
-    name: my_lb
-    vip_subnet: my_subnet
-    timeout: 150
-
-# Create a load balancer by specifying the VIP network and the IP address.
-- openstack.cloud.loadbalancer:
-    auth:
-      auth_url: https://identity.example.com
-      username: admin
-      password: passme
-      project_name: admin
-    state: present
-    name: my_lb
-    vip_network: my_network
-    vip_address: 192.168.0.11
-
-# Create a load balancer together with its sub-resources in the 'all in one'
-# way. A public IP address is also allocated to the load balancer VIP.
-- openstack.cloud.loadbalancer:
-    auth:
-      auth_url: https://identity.example.com
-      username: admin
-      password: passme
-      project_name: admin
-    name: lingxian_test
-    state: present
-    vip_subnet: kong_subnet
-    auto_public_ip: yes
-    public_network: public
+RETURN = r'''
+floating_ip:
+  description: Dictionary describing the floating ip address attached to the
+               load-balancer.
+  type: dict
+  returned: On success when I(state) is C(present) and I(assign_floating_ip) is
+            C(true).
+  contains:
+    created_at:
+      description: Timestamp at which the floating IP was assigned.
+      type: str
+    description:
+      description: The description of a floating IP.
+      type: str
+    dns_domain:
+      description: The DNS domain.
+      type: str
+    dns_name:
+      description: The DNS name.
+      type: str
+    fixed_ip_address:
+      description: The fixed IP address associated with a floating IP address.
+      type: str
+    floating_ip_address:
+      description: The IP address of a floating IP.
+      type: str
+    floating_network_id:
+      description: The id of the network associated with a floating IP.
+      type: str
+    id:
+      description: Id of the floating ip.
+      type: str
+    name:
+      description: Name of the floating ip.
+      type: str
+    port_details:
+      description: |
+        The details of the port that this floating IP associates
+        with. Present if C(fip-port-details) extension is loaded.
+      type: dict
+    port_id:
+      description: The port ID floating ip associated with.
+      type: str
+    project_id:
+      description: The ID of the project this floating IP is associated with.
+      type: str
+    qos_policy_id:
+      description: The ID of the QoS policy attached to the floating IP.
+      type: str
+    revision_number:
+      description: Revision number.
+      type: str
+    router_id:
+      description: The id of the router floating ip associated with.
+      type: str
+    status:
+      description: |
+        The status of a floating IP, which can be 'ACTIVE' or 'DOWN'.
+      type: str
+    subnet_id:
+      description: The id of the subnet the floating ip associated with.
+      type: str
+    tags:
+      description: List of tags.
+      type: list
+      elements: str
+    updated_at:
+      description: Timestamp at which the floating IP was last updated.
+      type: str
+load_balancer:
+  description: Dictionary describing the load-balancer.
+  returned: On success when I(state) is C(present).
+  type: dict
+  contains:
+    additional_vips:
+      description: Additional VIPs.
+      type: str
+    availability_zone:
+      description: Name of the target Octavia availability zone.
+      type: str
+    created_at:
+      description: Timestamp when the load balancer was created.
+      type: str
+    description:
+      description: The load balancer description.
+      type: str
+    flavor_id:
+      description: The load balancer flavor ID.
+      type: str
+    id:
+      description: Unique UUID.
+      type: str
+    is_admin_state_up:
+      description: The administrative state of the load balancer.
+      type: bool
     listeners:
-      - name: lingxian_80
-        protocol: TCP
-        protocol_port: 80
-        pool:
-          name: lingxian_80_pool
-          protocol: TCP
-          members:
-            - name: mywebserver1
-              address: 192.168.2.81
-              protocol_port: 80
-              subnet: webserver_subnet
-      - name: lingxian_8080
-        protocol: TCP
-        protocol_port: 8080
-        pool:
-          name: lingxian_8080-pool
-          protocol: TCP
-          members:
-            - name: mywebserver2
-              address: 192.168.2.82
-              protocol_port: 8080
-    wait: yes
-    timeout: 600
-
-# Delete a load balancer(and all its related resources)
-- openstack.cloud.loadbalancer:
-    auth:
-      auth_url: https://identity.example.com
-      username: admin
-      password: passme
-      project_name: admin
-    state: absent
-    name: my_lb
-
-# Delete a load balancer(and all its related resources) together with the
-# public IP address(if any) attached to it.
-- openstack.cloud.loadbalancer:
-    auth:
-      auth_url: https://identity.example.com
-      username: admin
-      password: passme
-      project_name: admin
-    state: absent
-    name: my_lb
-    delete_public_ip: yes
+      description: The associated listener IDs, if any.
+      type: list
+    name:
+      description: Name given to the load balancer.
+      type: str
+    operating_status:
+      description: The operating status of the load balancer.
+      type: str
+    pools:
+      description: The associated pool IDs, if any.
+      type: list
+    project_id:
+      description: The ID of the project this load balancer is associated with.
+      type: str
+    provider:
+      description: Provider name for the load balancer.
+      type: str
+    provisioning_status:
+      description: The provisioning status of the load balancer.
+      type: str
+    tags:
+      description: A list of associated tags.
+      type: str
+    updated_at:
+      description: Timestamp when the load balancer was last updated.
+      type: str
+    vip_address:
+      description: The load balancer virtual IP address.
+      type: str
+    vip_network_id:
+      description: Network ID the load balancer virtual IP port belongs in.
+      type: str
+    vip_port_id:
+      description: The load balancer virtual IP port ID.
+      type: str
+    vip_qos_policy_id:
+      description: VIP qos policy id.
+      type: str
+    vip_subnet_id:
+      description: Subnet ID the load balancer virtual IP port belongs in.
+      type: str
 '''
 
-import time
+EXAMPLES = r'''
+- name: Create a load balancer
+  openstack.cloud.loadbalancer:
+    cloud: devstack
+    name: my_lb
+    state: present
+    vip_subnet: my_subnet
+
+- name: Create another load balancer
+  openstack.cloud.loadbalancer:
+    cloud: devstack
+    name: my_lb
+    state: present
+    vip_address: 192.168.0.11
+    vip_network: my_network
+
+- name: Delete a load balancer and all its related resources
+  openstack.cloud.loadbalancer:
+    cloud: devstack
+    name: my_lb
+    state: absent
+
+- name: Delete a load balancer, its related resources and its floating ip
+  openstack.cloud.loadbalancer:
+    cloud: devstack
+    delete_floating_ip: yes
+    name: my_lb
+    state: absent
+'''
+
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
 class LoadBalancerModule(OpenStackModule):
 
-    def _wait_for_pool(self, pool, provisioning_status, operating_status, failures, interval=5):
-        """Wait for pool to be in a particular provisioning and operating status."""
-        timeout = self.params['timeout']  # reuse loadbalancer timeout
-
-        total_sleep = 0
-        if failures is None:
-            failures = []
-
-        while total_sleep < timeout:
-            pool = self.conn.load_balancer.find_pool(name_or_id=pool.id)
-            if pool:
-                if pool.provisioning_status == provisioning_status and pool.operating_status == operating_status:
-                    return None
-                if pool.provisioning_status in failures:
-                    self.fail_json(
-                        msg="Pool %s transitioned to failure state %s" %
-                            (pool.id, pool.provisioning_status)
-                    )
-            else:
-                if provisioning_status == "DELETED":
-                    return None
-                else:
-                    self.fail_json(
-                        msg="Pool %s transitioned to DELETED" % pool.id
-                    )
-
-            time.sleep(interval)
-            total_sleep += interval
-
-    def _wait_for_lb(self, lb, status, failures, interval=5):
-        """Wait for load balancer to be in a particular provisioning status."""
-        timeout = self.params['timeout']
-
-        total_sleep = 0
-        if failures is None:
-            failures = []
-
-        while total_sleep < timeout:
-            lb = self.conn.load_balancer.find_load_balancer(lb.id)
-
-            if lb:
-                if lb.provisioning_status == status:
-                    return None
-                if lb.provisioning_status in failures:
-                    self.fail_json(
-                        msg="Load Balancer %s transitioned to failure state %s" %
-                            (lb.id, lb.provisioning_status)
-                    )
-            else:
-                if status == "DELETED":
-                    return None
-                else:
-                    self.fail_json(
-                        msg="Load Balancer %s transitioned to DELETED" % lb.id
-                    )
-
-            time.sleep(interval)
-            total_sleep += interval
-
-        self.fail_json(
-            msg="Timeout waiting for Load Balancer %s to transition to %s" %
-                (lb.id, status)
-        )
-
     argument_spec = dict(
-        name=dict(required=True),
+        assign_floating_ip=dict(default=False, type='bool',
+                                aliases=['auto_public_ip']),
+        delete_floating_ip=dict(default=False, type='bool',
+                                aliases=['delete_public_ip']),
+        description=dict(),
         flavor=dict(),
+        floating_ip_address=dict(aliases=['public_ip_address']),
+        floating_ip_network=dict(aliases=['public_network']),
+        name=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
-        vip_network=dict(),
-        vip_subnet=dict(),
-        vip_port=dict(),
         vip_address=dict(),
-        listeners=dict(type='list', default=[], elements='dict'),
-        public_ip_address=dict(),
-        auto_public_ip=dict(default=False, type='bool'),
-        public_network=dict(),
-        delete_public_ip=dict(default=False, type='bool'),
+        vip_network=dict(),
+        vip_port=dict(),
+        vip_subnet=dict(),
     )
-    module_kwargs = dict(supports_check_mode=True)
+    module_kwargs = dict(
+        required_if=[
+            ('state', 'present', ('vip_network', 'vip_subnet', 'vip_port'),
+             True)
+        ],
+        mutually_exclusive=[
+            ('assign_floating_ip', 'delete_floating_ip'),
+        ],
+        supports_check_mode=True,
+    )
 
     def run(self):
-        flavor = self.params['flavor']
-        vip_network = self.params['vip_network']
-        vip_subnet = self.params['vip_subnet']
-        vip_port = self.params['vip_port']
-        listeners = self.params['listeners']
-        public_vip_address = self.params['public_ip_address']
-        allocate_fip = self.params['auto_public_ip']
-        delete_fip = self.params['delete_public_ip']
-        public_network = self.params['public_network']
+        state = self.params['state']
 
-        vip_network_id = None
-        vip_subnet_id = None
-        vip_port_id = None
-        flavor_id = None
+        load_balancer = self._find()
 
-        try:
-            max_microversion = 1
-            max_majorversion = 2
-            changed = False
-            lb = self.conn.load_balancer.find_load_balancer(
-                name_or_id=self.params['name'])
+        if self.ansible.check_mode:
+            self.exit_json(changed=self._will_change(state, load_balancer))
 
-            if self.params['state'] == 'present':
-                if lb and self.ansible.check_mode:
-                    self.exit_json(changed=False)
-                if lb:
-                    self.exit_json(changed=False)
-                ver_data = self.conn.load_balancer.get_all_version_data()
-                region = list(ver_data.keys())[0]
-                interface_type = list(ver_data[region].keys())[0]
-                versions = ver_data[region][interface_type]['load-balancer']
-                for ver in versions:
-                    if ver['status'] == 'CURRENT':
-                        curversion = ver['version'].split(".")
-                        max_majorversion = int(curversion[0])
-                        max_microversion = int(curversion[1])
+        if state == 'present' and not load_balancer:
+            # Create load_balancer
+            load_balancer, floating_ip = self._create()
+            self.exit_json(
+                changed=True,
+                load_balancer=load_balancer.to_dict(computed=False),
+                **(dict(floating_ip=floating_ip.to_dict(computed=False))
+                   if floating_ip is not None else dict()))
 
-                if not lb:
-                    if self.ansible.check_mode:
-                        self.exit_json(changed=True)
+        elif state == 'present' and load_balancer:
+            # Update load_balancer
+            update, floating_ip = self._build_update(load_balancer)
+            if update:
+                load_balancer, floating_ip = self._update(load_balancer,
+                                                          update)
 
-                    if not (vip_network or vip_subnet or vip_port):
-                        self.fail_json(
-                            msg="One of vip_network, vip_subnet, or vip_port must "
-                                "be specified for load balancer creation"
-                        )
+            self.exit_json(
+                changed=bool(update),
+                load_balancer=load_balancer.to_dict(computed=False),
+                **(dict(floating_ip=floating_ip.to_dict(computed=False))
+                   if floating_ip is not None else dict()))
 
-                    if flavor:
-                        _flavor = self.conn.load_balancer.find_flavor(flavor)
-                        if not _flavor:
-                            self.fail_json(
-                                msg='flavor %s not found' % flavor
-                            )
-                        flavor_id = _flavor.id
+        elif state == 'absent' and load_balancer:
+            # Delete load_balancer
+            self._delete(load_balancer)
+            self.exit_json(changed=True)
 
-                    if vip_network:
-                        network = self.conn.get_network(vip_network)
-                        if not network:
-                            self.fail_json(
-                                msg='network %s is not found' % vip_network
-                            )
-                        vip_network_id = network.id
-                    if vip_subnet:
-                        subnet = self.conn.get_subnet(vip_subnet)
-                        if not subnet:
-                            self.fail_json(
-                                msg='subnet %s is not found' % vip_subnet
-                            )
-                        vip_subnet_id = subnet.id
-                    if vip_port:
-                        port = self.conn.get_port(vip_port)
+        elif state == 'absent' and not load_balancer:
+            # Do nothing
+            self.exit_json(changed=False)
 
-                        if not port:
-                            self.fail_json(
-                                msg='port %s is not found' % vip_port
-                            )
-                        vip_port_id = port.id
-                    lbargs = {"name": self.params['name'],
-                              "vip_network_id": vip_network_id,
-                              "vip_subnet_id": vip_subnet_id,
-                              "vip_port_id": vip_port_id,
-                              "vip_address": self.params['vip_address']
-                              }
-                    if flavor_id is not None:
-                        lbargs["flavor_id"] = flavor_id
+    def _build_update(self, load_balancer):
+        update = {}
 
-                    lb = self.conn.load_balancer.create_load_balancer(**lbargs)
+        non_updateable_keys = [k for k in ['name', 'vip_address']
+                               if self.params[k] is not None
+                               and self.params[k] != load_balancer[k]]
 
-                    changed = True
+        flavor_name_or_id = self.params['flavor']
+        if flavor_name_or_id is not None:
+            flavor = self.conn.load_balancer.find_flavor(
+                flavor_name_or_id, ignore_missing=False)
+            if load_balancer['flavor_id'] != flavor.id:
+                non_updateable_keys.append('flavor_id')
 
-                if not listeners and not self.params['wait']:
-                    self.exit_json(
-                        changed=changed,
-                        loadbalancer=lb.to_dict(),
-                        id=lb.id
-                    )
+        vip_network_name_or_id = self.params['vip_network']
+        if vip_network_name_or_id is not None:
+            network = self.conn.network.find_network(
+                vip_network_name_or_id, ignore_missing=False)
+            if load_balancer['vip_network_id'] != network.id:
+                non_updateable_keys.append('vip_network_id')
 
-                self._wait_for_lb(lb, "ACTIVE", ["ERROR"])
+        vip_subnet_name_or_id = self.params['vip_subnet']
+        if vip_subnet_name_or_id is not None:
+            subnet = self.conn.network.find_subnet(
+                vip_subnet_name_or_id, ignore_missing=False)
+            if load_balancer['vip_subnet_id'] != subnet.id:
+                non_updateable_keys.append('vip_subnet_id')
 
-                for listener_def in listeners:
-                    listener_name = listener_def.get("name")
-                    pool_def = listener_def.get("pool")
+        vip_port_name_or_id = self.params['vip_port']
+        if vip_port_name_or_id is not None:
+            port = self.conn.network.find_port(
+                vip_port_name_or_id, ignore_missing=False)
+            if load_balancer['vip_port_id'] != port.id:
+                non_updateable_keys.append('vip_port_id')
 
-                    if not listener_name:
-                        self.fail_json(msg='listener name is required')
+        if non_updateable_keys:
+            self.fail_json(msg='Cannot update parameters {0}'
+                               .format(non_updateable_keys))
 
-                    listener = self.conn.load_balancer.find_listener(
-                        name_or_id=listener_name
-                    )
+        attributes = dict((k, self.params[k])
+                          for k in ['description']
+                          if self.params[k] is not None
+                          and self.params[k] != load_balancer[k])
 
-                    if not listener:
-                        self._wait_for_lb(lb, "ACTIVE", ["ERROR"])
+        if attributes:
+            update['attributes'] = attributes
 
-                        protocol = listener_def.get("protocol", "HTTP")
-                        protocol_port = listener_def.get("protocol_port", 80)
-                        allowed_cidrs = listener_def.get("allowed_cidrs", [])
-                        listenerargs = {"name": listener_name,
-                                        "loadbalancer_id": lb.id,
-                                        "protocol": protocol,
-                                        "protocol_port": protocol_port
-                                        }
-                        if max_microversion >= 12 and max_majorversion >= 2:
-                            listenerargs['allowed_cidrs'] = allowed_cidrs
-                        listener = self.conn.load_balancer.create_listener(**listenerargs)
-                        changed = True
+        floating_ip, floating_ip_update = \
+            self._build_update_floating_ip(load_balancer)
 
-                # Ensure pool in the listener.
-                    if pool_def:
-                        pool_name = pool_def.get("name")
-                        members = pool_def.get('members', [])
+        return {**update, **floating_ip_update}, floating_ip
 
-                        if not pool_name:
-                            self.fail_json(msg='pool name is required')
+    def _build_update_floating_ip(self, load_balancer):
+        assign_floating_ip = self.params['assign_floating_ip']
+        delete_floating_ip = self.params['delete_floating_ip']
 
-                        pool = self.conn.load_balancer.find_pool(name_or_id=pool_name)
+        floating_ip_address = self.params['floating_ip_address']
+        if floating_ip_address is not None \
+           and (not assign_floating_ip and not delete_floating_ip):
+            self.fail_json(msg="assign_floating_ip or delete_floating_ip must"
+                               " be true when floating_ip_address is set")
 
-                        if not pool:
-                            self._wait_for_lb(lb, "ACTIVE", ["ERROR"])
+        floating_ip_network = self.params['floating_ip_network']
+        if floating_ip_network is not None \
+           and (not assign_floating_ip and not delete_floating_ip):
+            self.fail_json(msg="assign_floating_ip or delete_floating_ip must"
+                               " be true when floating_ip_network is set")
 
-                            protocol = pool_def.get("protocol", "HTTP")
-                            lb_algorithm = pool_def.get("lb_algorithm",
-                                                        "ROUND_ROBIN")
+        ips = list(self.conn.network.ips(
+            port_id=load_balancer.vip_port_id,
+            fixed_ip_address=load_balancer.vip_address))
 
-                            pool = self.conn.load_balancer.create_pool(
-                                name=pool_name,
-                                listener_id=listener.id,
-                                protocol=protocol,
-                                lb_algorithm=lb_algorithm
-                            )
-                            self._wait_for_pool(pool, "ACTIVE", "ONLINE", ["ERROR"])
-                            changed = True
+        if len(ips) > 1:
+            self.fail_json(msg="Only a single floating ip address"
+                               " per load-balancer is supported")
 
-                    # Ensure members in the pool
-                        for member_def in members:
-                            member_name = member_def.get("name")
-                            if not member_name:
-                                self.fail_json(msg='member name is required')
+        if delete_floating_ip or not assign_floating_ip:
+            if not ips:
+                return None, {}
 
-                            member = self.conn.load_balancer.find_member(member_name,
-                                                                         pool.id
-                                                                         )
+            if len(ips) != 1:
+                raise AssertionError("A single floating ip is expected")
 
-                            if not member:
-                                self._wait_for_lb(lb, "ACTIVE", ["ERROR"])
+            ip = ips[0]
 
-                            address = member_def.get("address")
-                            if not address:
-                                self.fail_json(
-                                    msg='member address for member %s is '
-                                        'required' % member_name
-                                )
+            return ip, {'delete_floating_ip': ip}
 
-                            subnet_id = member_def.get("subnet")
-                            if subnet_id:
-                                subnet = self.conn.get_subnet(subnet_id)
-                                if not subnet:
-                                    self.fail_json(
-                                        msg='subnet %s for member %s is not '
-                                            'found' % (subnet_id, member_name)
-                                    )
-                                subnet_id = subnet.id
+        # else assign_floating_ip
 
-                            protocol_port = member_def.get("protocol_port", 80)
+        if not ips:
+            return None, dict(
+                assign_floating_ip=dict(
+                    floating_ip_address=floating_ip_address,
+                    floating_ip_network=floating_ip_network))
 
-                            member = self.conn.load_balancer.create_member(
-                                pool,
-                                name=member_name,
-                                address=address,
-                                protocol_port=protocol_port,
-                                subnet_id=subnet_id
-                            )
-                            self._wait_for_pool(pool, "ACTIVE", "ONLINE", ["ERROR"])
-                            changed = True
+        if len(ips) != 1:
+            raise AssertionError("A single floating ip is expected")
 
-                # Associate public ip to the load balancer VIP. If
-                # public_vip_address is provided, use that IP, otherwise, either
-                # find an available public ip or create a new one.
-                fip = None
-                orig_public_ip = None
-                new_public_ip = None
-                if public_vip_address or allocate_fip:
-                    ips = self.conn.network.ips(
-                        port_id=lb.vip_port_id,
-                        fixed_ip_address=lb.vip_address
-                    )
-                    ips = list(ips)
-                    if ips:
-                        orig_public_ip = ips[0]
-                        new_public_ip = orig_public_ip.floating_ip_address
+        ip = ips[0]
 
-                if public_vip_address and public_vip_address != orig_public_ip:
-                    fip = self.conn.network.find_ip(public_vip_address)
+        if floating_ip_network is not None:
+            network = self.conn.network.find_network(floating_ip_network,
+                                                     ignore_missing=False)
+            if ip.floating_network_id != network.id:
+                return ip, dict(
+                    assign_floating_ip=dict(
+                        floating_ip_address=floating_ip_address,
+                        floating_ip_network=floating_ip_network),
+                    delete_floating_ip=ip)
 
-                    if not fip:
-                        self.fail_json(
-                            msg='Public IP %s is unavailable' % public_vip_address
-                        )
+        if floating_ip_address is not None \
+           and floating_ip_address != ip.floating_ip_address:
+            return ip, dict(
+                assign_floating_ip=dict(
+                    floating_ip_address=floating_ip_address,
+                    floating_ip_network=floating_ip_network),
+                delete_floating_ip=ip)
 
-                    # Release origin public ip first
-                    self.conn.network.update_ip(
-                        orig_public_ip,
-                        fixed_ip_address=None,
-                        port_id=None
-                    )
+        return ip, {}
 
-                    # Associate new public ip
-                    self.conn.network.update_ip(
-                        fip,
-                        fixed_ip_address=lb.vip_address,
-                        port_id=lb.vip_port_id
-                    )
+    def _create(self):
+        kwargs = dict((k, self.params[k])
+                      for k in ['description', 'name', 'vip_address']
+                      if self.params[k] is not None)
 
-                    new_public_ip = public_vip_address
-                    changed = True
-                elif allocate_fip and not orig_public_ip:
-                    fip = self.conn.network.find_available_ip()
-                    if not fip:
-                        if not public_network:
-                            self.fail_json(msg="Public network is not provided")
+        flavor_name_or_id = self.params['flavor']
+        if flavor_name_or_id is not None:
+            flavor = self.conn.load_balancer.find_flavor(
+                flavor_name_or_id, ignore_missing=False)
+            kwargs['flavor_id'] = flavor.id
 
-                        pub_net = self.conn.network.find_network(public_network)
-                        if not pub_net:
-                            self.fail_json(
-                                msg='Public network %s not found' %
-                                    public_network
-                            )
-                        fip = self.conn.network.create_ip(
-                            floating_network_id=pub_net.id
-                        )
+        vip_network_name_or_id = self.params['vip_network']
+        if vip_network_name_or_id is not None:
+            network = self.conn.network.find_network(
+                vip_network_name_or_id, ignore_missing=False)
+            kwargs['vip_network_id'] = network.id
 
-                    self.conn.network.update_ip(
-                        fip,
-                        fixed_ip_address=lb.vip_address,
-                        port_id=lb.vip_port_id
-                    )
+        vip_subnet_name_or_id = self.params['vip_subnet']
+        if vip_subnet_name_or_id is not None:
+            subnet = self.conn.network.find_subnet(
+                vip_subnet_name_or_id, ignore_missing=False)
+            kwargs['vip_subnet_id'] = subnet.id
 
-                    new_public_ip = fip.floating_ip_address
-                    changed = True
+        vip_port_name_or_id = self.params['vip_port']
+        if vip_port_name_or_id is not None:
+            port = self.conn.network.find_port(
+                vip_port_name_or_id, ignore_missing=False)
+            kwargs['vip_port_id'] = port.id
 
-                # Include public_vip_address in the result.
-                lb = self.conn.load_balancer.find_load_balancer(name_or_id=lb.id)
-                lb_dict = lb.to_dict()
-                lb_dict.update({"public_vip_address": new_public_ip})
+        load_balancer = self.conn.load_balancer.create_load_balancer(**kwargs)
 
-                self.exit_json(
-                    changed=changed,
-                    loadbalancer=lb_dict,
-                    id=lb.id
-                )
-            elif self.params['state'] == 'absent':
-                changed = False
-                public_vip_address = None
+        if self.params['wait']:
+            load_balancer = self.conn.load_balancer.wait_for_load_balancer(
+                load_balancer.id,
+                wait=self.params['timeout'])
 
-                if lb:
-                    if self.ansible.check_mode:
-                        self.exit_json(changed=True)
-                    if delete_fip:
-                        ips = self.conn.network.ips(
-                            port_id=lb.vip_port_id,
-                            fixed_ip_address=lb.vip_address
-                        )
-                        ips = list(ips)
-                        if ips:
-                            public_vip_address = ips[0]
+        floating_ip, update = self._build_update_floating_ip(load_balancer)
+        if update:
+            load_balancer, floating_ip = \
+                self._update_floating_ip(load_balancer, update)
 
-                    # Deleting load balancer with `cascade=False` does not make
-                    # sense because the deletion will always fail if there are
-                    # sub-resources.
-                    self.conn.load_balancer.delete_load_balancer(lb, cascade=True)
-                    changed = True
+        return load_balancer, floating_ip
 
-                    if self.params['wait']:
-                        self._wait_for_lb(lb, "DELETED", ["ERROR"])
+    def _delete(self, load_balancer):
+        if self.params['delete_floating_ip']:
+            ips = list(self.conn.network.ips(
+                port_id=load_balancer.vip_port_id,
+                fixed_ip_address=load_balancer.vip_address))
+        else:
+            ips = []
 
-                    if delete_fip and public_vip_address:
-                        self.conn.network.delete_ip(public_vip_address)
-                        changed = True
-                elif self.ansible.check_mode:
-                    self.exit_json(changed=False)
+        # With cascade=False the deletion of load-balancer
+        # would always fail if there are sub-resources.
+        self.conn.load_balancer.delete_load_balancer(load_balancer.id,
+                                                     cascade=True)
 
-                self.exit_json(changed=changed)
-        except Exception as e:
-            self.fail_json(msg=str(e))
+        if self.params['wait']:
+            for count in self.sdk.utils.iterate_timeout(
+                timeout=self.params['timeout'],
+                message="Timeout waiting for load-balancer to be absent"
+            ):
+                if self.conn.load_balancer.\
+                   find_load_balancer(load_balancer.id) is None:
+                    break
+
+        for ip in ips:
+            self.conn.network.delete_ip(ip)
+
+    def _find(self):
+        name = self.params['name']
+        return self.conn.load_balancer.find_load_balancer(name_or_id=name)
+
+    def _update(self, load_balancer, update):
+        attributes = update.get('attributes')
+        if attributes:
+            load_balancer = \
+                self.conn.load_balancer.update_load_balancer(load_balancer.id,
+                                                             **attributes)
+
+        if self.params['wait']:
+            load_balancer = self.conn.load_balancer.wait_for_load_balancer(
+                load_balancer.id,
+                wait=self.params['timeout'])
+
+        load_balancer, floating_ip = \
+            self._update_floating_ip(load_balancer, update)
+
+        return load_balancer, floating_ip
+
+    def _update_floating_ip(self, load_balancer, update):
+        floating_ip = None
+        delete_floating_ip = update.get('delete_floating_ip')
+        if delete_floating_ip:
+            self.conn.network.delete_ip(delete_floating_ip.id)
+
+        assign_floating_ip = update.get('assign_floating_ip')
+        if assign_floating_ip:
+            floating_ip_address = assign_floating_ip['floating_ip_address']
+            floating_ip_network = assign_floating_ip['floating_ip_network']
+
+            if floating_ip_network is not None:
+                network = self.conn.network.find_network(floating_ip_network,
+                                                         ignore_missing=False)
+            else:
+                network = None
+
+            if floating_ip_address is not None:
+                kwargs = ({'floating_network_id': network.id}
+                          if network is not None else {})
+                ip = self.conn.network.find_ip(floating_ip_address, **kwargs)
+            else:
+                ip = None
+
+            if ip:
+                if ip['port_id'] is not None:
+                    self.fail_json(
+                        msg="Floating ip {0} is associated to another fixed ip"
+                            " address {1} already".format(
+                                ip.floating_ip_address, ip.fixed_ip_address))
+
+                # Associate floating ip
+                floating_ip = self.conn.network.update_ip(
+                    ip.id, fixed_ip_address=load_balancer.vip_address,
+                    port_id=load_balancer.vip_port_id)
+
+            elif floating_ip_address:  # and not ip
+                # Create new floating ip
+                kwargs = ({'floating_network_id': network.id}
+                          if network is not None else {})
+                floating_ip = self.conn.network.create_ip(
+                    fixed_ip_address=load_balancer.vip_address,
+                    floating_ip_address=floating_ip_address,
+                    port_id=load_balancer.vip_port_id,
+                    **kwargs)
+
+            elif network:
+                # List disassociated floating ips on network
+                ips = [ip
+                       for ip in
+                       self.conn.network.ips(floating_network_id=network.id)
+                       if ip['port_id'] is None]
+                if ips:
+                    # Associate first disassociated floating ip
+                    ip = ips[0]
+                    floating_ip = self.conn.network.update_ip(
+                        ip.id, fixed_ip_address=load_balancer.vip_address,
+                        port_id=load_balancer.vip_port_id)
+                else:
+                    # No disassociated floating ips
+                    # Create new floating ip on network
+                    floating_ip = self.conn.network.create_ip(
+                        fixed_ip_address=load_balancer.vip_address,
+                        floating_network_id=network.id,
+                        port_id=load_balancer.vip_port_id)
+
+            else:
+                # Find disassociated floating ip
+                ip = self.conn.network.find_available_ip()
+
+                if ip:
+                    # Associate disassociated floating ip
+                    floating_ip = self.conn.network.update_ip(
+                        ip.id, fixed_ip_address=load_balancer.vip_address,
+                        port_id=load_balancer.vip_port_id)
+                else:
+                    # Create new floating ip
+                    floating_ip = self.conn.network.create_ip(
+                        fixed_ip_address=load_balancer.vip_address,
+                        port_id=load_balancer.vip_port_id)
+
+        return load_balancer, floating_ip
+
+    def _will_change(self, state, load_balancer):
+        if state == 'present' and not load_balancer:
+            return True
+        elif state == 'present' and load_balancer:
+            return bool(self._build_update(load_balancer)[0])
+        elif state == 'absent' and load_balancer:
+            return True
+        else:
+            # state == 'absent' and not load_balancer:
+            return False
 
 
 def main():
