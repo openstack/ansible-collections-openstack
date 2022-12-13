@@ -1,0 +1,322 @@
+---
+- name: Create external network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    external: true
+    name: ansible_external_network
+    state: present
+
+- name: Create external subnet
+  openstack.cloud.subnet:
+    cidr: 10.6.6.0/24
+    cloud: "{{ cloud }}"
+    name: ansible_external_subnet
+    network_name: ansible_external_network
+    state: present
+
+- name: Create internal network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: ansible_internal_network
+    state: present
+
+- name: Create internal subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: present
+    network_name: ansible_internal_network
+    name: ansible_internal_subnet
+    cidr: 10.7.7.0/24
+
+- name: Create router
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    external_fixed_ips:
+      - subnet: ansible_external_subnet
+        ip: 10.6.6.10
+    interfaces:
+       - net: ansible_internal_network
+         subnet: ansible_internal_subnet
+         portip: 10.7.7.1
+    name: ansible_router
+    network: ansible_external_network
+    state: present
+
+- name: Create load-balancer
+  openstack.cloud.loadbalancer:
+    assign_floating_ip: true
+    cloud: "{{ cloud }}"
+    floating_ip_network: ansible_external_network
+    name: ansible_lb
+    state: present
+    timeout: 450
+    vip_subnet: ansible_internal_subnet
+  register: load_balancer
+
+- name: Create load-balancer listener
+  openstack.cloud.lb_listener:
+    cloud: "{{ cloud }}"
+    load_balancer: ansible_lb
+    name: ansible_listener
+    protocol: HTTP
+    protocol_port: 8080
+    state: present
+  register: listener
+
+- name: Assert return values of lb_listener module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - "['allowed_cidrs', 'alpn_protocols', 'connection_limit', 'created_at', 'default_pool', 'default_pool_id',
+          'default_tls_container_ref', 'description', 'id', 'insert_headers', 'is_admin_state_up', 'l7_policies',
+          'load_balancer_id', 'load_balancers', 'name', 'operating_status', 'project_id', 'protocol', 'protocol_port',
+          'provisioning_status', 'sni_container_refs', 'tags', 'timeout_client_data', 'timeout_member_connect',
+          'timeout_member_data', 'timeout_tcp_inspect', 'tls_ciphers', 'tls_versions', 'updated_at'
+          ]|difference(listener.listener.keys())|length == 0"
+
+- name: Create load-balancer listener again
+  openstack.cloud.lb_listener:
+    cloud: "{{ cloud }}"
+    load_balancer: ansible_lb
+    name: ansible_listener
+    protocol: HTTP
+    protocol_port: 8080
+    state: present
+  register: listener
+
+- name: Assert return values of lb_listener module
+  assert:
+    that:
+      - listener is not changed
+
+- name: Update load-balancer listener description
+  openstack.cloud.lb_listener:
+    cloud: "{{ cloud }}"
+    description: "Ansible load-balancer listener"
+    load_balancer: ansible_lb
+    name: ansible_listener
+    protocol: HTTP
+    protocol_port: 8080
+    state: present
+  register: listener
+
+- name: Assert return values of lb_listener module
+  assert:
+    that:
+      - listener.listener.description == "Ansible load-balancer listener"
+
+- name: Create load-balancer pool
+  openstack.cloud.lb_pool:
+    cloud: "{{ cloud }}"
+    lb_algorithm: ROUND_ROBIN
+    listener: "{{ listener.listener.id }}"
+    name: ansible_pool
+    protocol: HTTP
+    state: present
+  register: pool
+
+- name: Assert return values of lb_pool module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - "['alpn_protocols', 'created_at', 'description', 'health_monitor_id', 'id', 'is_admin_state_up', 'lb_algorithm',
+          'listener_id', 'listeners', 'loadbalancer_id', 'loadbalancers', 'members','name', 'operating_status',
+          'project_id', 'protocol', 'provisioning_status', 'session_persistence', 'tags', 'tls_ciphers', 'tls_enabled',
+          'tls_versions', 'updated_at'
+          ]|difference(pool.pool.keys())|length == 0"
+
+- name: Create load-balancer pool again
+  openstack.cloud.lb_pool:
+    cloud: "{{ cloud }}"
+    lb_algorithm: ROUND_ROBIN
+    listener: "{{ listener.listener.id }}"
+    name: ansible_pool
+    protocol: HTTP
+    state: present
+  register: pool
+
+- name: Assert return values of lb_pool module
+  assert:
+    that:
+      - pool is not changed
+
+- name: Update load-balancer pool description
+  openstack.cloud.lb_pool:
+    cloud: "{{ cloud }}"
+    description: "Ansible load-balancer pool"
+    lb_algorithm: ROUND_ROBIN
+    listener: "{{ listener.listener.id }}"
+    name: ansible_pool
+    protocol: HTTP
+    state: present
+  register: pool
+
+- name: Assert return values of lb_pool module
+  assert:
+    that:
+      - pool.pool.description == "Ansible load-balancer pool"
+
+- name: Create load-balancer pool member
+  openstack.cloud.lb_member:
+    address: 10.7.7.42
+    cloud: "{{ cloud }}"
+    name: ansible_member
+    pool: ansible_pool
+    protocol_port: 8080
+    state: present
+  register: member
+
+- name: Assert return values of lb_member module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - "['address', 'backup', 'created_at', 'id', 'is_admin_state_up', 'monitor_address', 'monitor_port', 'name',
+          'operating_status', 'project_id', 'protocol_port', 'provisioning_status', 'subnet_id', 'tags', 'updated_at',
+          'weight'
+          ]|difference(member.member.keys())|length == 0"
+
+- name: Create load-balancer pool member again
+  openstack.cloud.lb_member:
+    address: 10.7.7.42
+    cloud: "{{ cloud }}"
+    name: ansible_member
+    pool: ansible_pool
+    protocol_port: 8080
+    state: present
+  register: member
+
+- name: Assert return values of lb_member module
+  assert:
+    that:
+      - member is not changed
+
+- name: Update load-balancer pool member weight
+  openstack.cloud.lb_member:
+    address: 10.7.7.42
+    cloud: "{{ cloud }}"
+    name: ansible_member
+    pool: ansible_pool
+    protocol_port: 8080
+    state: present
+    weight: 42
+  register: member
+
+- name: Assert return values of lb_member module
+  assert:
+    that:
+      - member.member.weight == 42
+
+- name: Create load-balancer health monitor
+  openstack.cloud.lb_health_monitor:
+    cloud: "{{ cloud }}"
+    delay: 10
+    health_monitor_timeout: 5
+    max_retries: 3
+    name: ansible_health_monitor
+    pool: ansible_pool
+    state: present
+  register: health_monitor
+
+- name: Assert return values of lb_health_monitor module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - "['created_at', 'delay', 'expected_codes', 'http_method', 'id', 'is_admin_state_up', 'max_retries',
+          'max_retries_down', 'name', 'operating_status', 'pool_id', 'pools', 'project_id', 'provisioning_status',
+          'tags', 'timeout', 'type', 'updated_at', 'url_path'
+          ]|difference(health_monitor.health_monitor.keys())|length == 0"
+
+- name: Create load-balancer health monitor again
+  openstack.cloud.lb_health_monitor:
+    cloud: "{{ cloud }}"
+    delay: 10
+    health_monitor_timeout: 5
+    max_retries: 3
+    name: ansible_health_monitor
+    pool: ansible_pool
+    state: present
+  register: health_monitor
+
+- name: Assert return values of lb_health_monitor module
+  assert:
+    that:
+      - health_monitor is not changed
+
+- name: Update load-balancer health monitor delay
+  openstack.cloud.lb_health_monitor:
+    cloud: "{{ cloud }}"
+    delay: 1337
+    health_monitor_timeout: 5
+    max_retries: 3
+    name: ansible_health_monitor
+    pool: ansible_pool
+    state: present
+  register: health_monitor
+
+- name: Assert return values of lb_health_monitor module
+  assert:
+    that:
+      - health_monitor.health_monitor.delay == 1337
+
+- name: Delete load-balancer health monitor
+  openstack.cloud.lb_health_monitor:
+    cloud: "{{ cloud }}"
+    name: ansible_health_monitor
+    state: absent
+
+- name: Delete load-balancer pool member
+  openstack.cloud.lb_member:
+    cloud: "{{ cloud }}"
+    name: ansible_member
+    pool: ansible_pool
+    state: absent
+
+- name: Delete load-balancer pool
+  openstack.cloud.lb_pool:
+    cloud: "{{ cloud }}"
+    name: ansible_pool
+    state: absent
+
+- name: Delete load-balancer listener
+  openstack.cloud.lb_listener:
+    cloud: "{{ cloud }}"
+    name: ansible_listener
+    state: absent
+
+- name: Delete load-balancer
+  openstack.cloud.loadbalancer:
+    cloud: "{{ cloud }}"
+    delete_floating_ip: true
+    name: ansible_lb
+    state: absent
+    timeout: 150
+
+- name: Delete router
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    name: ansible_router
+    state: absent
+
+- name: Delete internal subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    name: ansible_internal_subnet
+    state: absent
+
+- name: Delete internal network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: ansible_internal_network
+    state: absent
+
+- name: Delete external subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    name: ansible_external_subnet
+    state: absent
+
+- name: Delete external network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: ansible_external_network
+    state: absent

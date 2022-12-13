@@ -282,3 +282,5 @@
     cloud: "{{ cloud }}"
     name: ansible_external_network
     state: absent
+
+- import_tasks: lb_modules.yml
