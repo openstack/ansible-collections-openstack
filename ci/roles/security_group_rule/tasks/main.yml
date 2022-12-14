@@ -1,161 +1,157 @@
 ---
-- name: Ensure security group does not exist before tests
-  openstack.cloud.security_group:
-     cloud: "{{ cloud }}"
-     name: "{{ secgroup_name }}"
-     state: absent
-     description: Created from Ansible playbook
-
 - name: Create security group
   openstack.cloud.security_group:
      cloud: "{{ cloud }}"
-     name: "{{ secgroup_name }}"
+     name: ansible_security_group
      state: present
      description: Created from Ansible playbook
 
 - name: Create empty ICMP rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: icmp
      remote_ip_prefix: 0.0.0.0/0
-  register: rule
+  register: security_group_rule
 
-- name: Assert return fields for security_group_rule
+- name: Assert return values of security_group_rule module
   assert:
-     that: item in rule.rule
-  loop: "{{ expected_fields }}"
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(security_group_rule.rule.keys())|length == 0
+
+- name: Assert changed
+  assert:
+     that: security_group_rule is changed
 
 - name: Fetch all security group rule
   openstack.cloud.security_group_rule_info:
      cloud: "{{ cloud }}"
-  register: all_rules
+  register: security_group_rules
 
-- name: Assert return fields security_group_rule_info
+- name: Assert return values of security_group_rule_info module
   assert:
-     that: item in all_rules.security_group_rules[0]
-  loop: "{{ expected_fields }}"
+    that:
+      - security_group_rules.security_group_rules | length > 0
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(security_group_rules.security_group_rules.0.keys())|length == 0
 
 - name: Fetch security group rule based on rule
   openstack.cloud.security_group_rule_info:
      cloud: "{{ cloud }}"
-     id: "{{ rule.rule.id }}"
-  register: filter_by_rule
+     id: "{{ security_group_rule.rule.id }}"
+  register: security_group_rules
 
 - name: Assert return fields security_group_rule_info
   assert:
-    that: filter_by_rule.security_group_rules|length != 0
-
-- name: Assert changed
-  assert:
-     that: rule is changed
+    that: security_group_rules.security_group_rules | length > 0
 
 - name: Create empty ICMP rule again
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: icmp
      remote_ip_prefix: 0.0.0.0/0
-  register: rule
+  register: security_group_rule
 
 - name: Assert not changed
   assert:
-     that: rule is not changed
+     that: security_group_rule is not changed
 
 - name: Create -1 ICMP rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: icmp
      port_range_min: -1
      port_range_max: -1
      remote_ip_prefix: 0.0.0.0/0
-  register: rule
+  register: security_group_rule
 
 - name: Assert not changed
   assert:
-     that: rule is not changed
+     that: security_group_rule is not changed
 
 - name: Create -1 ICMP rule again
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: icmp
      port_range_min: -1
      port_range_max: -1
      remote_ip_prefix: 0.0.0.0/0
-  register: rule
+  register: security_group_rule
 
 - name: Assert not changed
   assert:
-     that: rule is not changed
+     that: security_group_rule is not changed
 
 - name: Create empty TCP rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: tcp
      remote_ip_prefix: 0.0.0.0/0
-  register: rule
+  register: security_group_rule
 
 - name: Assert changed
   assert:
-     that: rule is changed
+     that: security_group_rule is changed
 
 - name: Create TCP rule again with port range (1, 65535)
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: tcp
      port_range_min: 1
      port_range_max: 65535
      remote_ip_prefix: 0.0.0.0/0
-  register: rule
+  register: security_group_rule
 
 - name: Assert changed
   assert:
-     that: rule is not changed
+     that: security_group_rule is not changed
 
 - name: Create TCP rule again with port range (-1, -1)
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: tcp
      port_range_min: -1
      port_range_max: -1
      remote_ip_prefix: 0.0.0.0/0
-  register: rule
+  register: security_group_rule
 
 - name: Assert changed
   assert:
-     that: rule is not changed
+     that: security_group_rule is not changed
 
 - name: Create TCP rule again with defined range
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: tcp
      port_range_min: 8000
      port_range_max: 9000
      remote_ip_prefix: 0.0.0.0/0
-  register: rule
+  register: security_group_rule
 
 - name: Assert changed
   assert:
-     that: rule is changed
+     that: security_group_rule is changed
 
 - name: Create empty UDP rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: udp
      remote_ip_prefix: 0.0.0.0/0
@@ -163,7 +159,7 @@
 - name: Create UDP rule again with port range (1, 65535)
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: udp
      port_range_min: 1
@@ -173,7 +169,7 @@
 - name: Create UDP rule again with port range (-1, -1)
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: udp
      port_range_min: -1
@@ -183,7 +179,7 @@
 - name: Create HTTP rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: tcp
      port_range_min: 80
@@ -193,7 +189,7 @@
 - name: Create egress rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: present
      protocol: tcp
      port_range_min: 30000
@@ -204,41 +200,37 @@
 - name: List all available rules of all security groups in a project
   openstack.cloud.security_group_rule_info:
      cloud: "{{ cloud }}"
-  when: sdk_version is version("0.32", '>=')
-  register: test_sec_rules
+  register: security_group_rules
 
 - name: Check - List all available rules of all security groups in a project
   assert:
     that:
-      - test_sec_rules.security_group_rules | length > 0
-  when: sdk_version is version("0.32", '>=')
+      - security_group_rules.security_group_rules | length > 0
 
 - name: List all available rules of a specific security group
   openstack.cloud.security_group_rule_info:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
-  register: test_sec_rule1
+     security_group: ansible_security_group
+  register: security_group_rules
 
 - name: Check - List all available rules of a specific security group
   assert:
     that:
-      - test_sec_rule1.security_group_rules | length > 0
+      - security_group_rules.security_group_rules | length > 0
 
 - name: List all available rules with filters
   openstack.cloud.security_group_rule_info:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      protocol: tcp
      port_range_min: 80
      port_range_max: 80
      remote_ip_prefix: 0.0.0.0/0
-  when: sdk_version is version("0.32", '>=')
-  register: test_sec_rule
 
 - name: Delete empty ICMP rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: absent
      protocol: icmp
      remote_ip_prefix: 0.0.0.0/0
@@ -246,7 +238,7 @@
 - name: Delete -1 ICMP rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: absent
      protocol: icmp
      port_range_min: -1
@@ -256,7 +248,7 @@
 - name: Delete empty TCP rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: absent
      protocol: tcp
      remote_ip_prefix: 0.0.0.0/0
@@ -264,7 +256,7 @@
 - name: Delete empty UDP rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: absent
      protocol: udp
      remote_ip_prefix: 0.0.0.0/0
@@ -272,7 +264,7 @@
 - name: Delete HTTP rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: absent
      protocol: tcp
      port_range_min: 80
@@ -282,7 +274,7 @@
 - name: Delete egress rule
   openstack.cloud.security_group_rule:
      cloud: "{{ cloud }}"
-     security_group: "{{ secgroup_name }}"
+     security_group: ansible_security_group
      state: absent
      protocol: tcp
      port_range_min: 30000
@@ -293,5 +285,5 @@
 - name: Delete security group
   openstack.cloud.security_group:
      cloud: "{{ cloud }}"
-     name: "{{ secgroup_name }}"
+     name: ansible_security_group
      state: absent

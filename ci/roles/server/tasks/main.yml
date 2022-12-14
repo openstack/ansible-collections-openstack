@@ -469,8 +469,8 @@
       - server_updated.server.metadata['key2'] == 'value2'
       - server_updated.server.metadata['key3'] == 'value3'
       - server_updated.server.security_groups|map(attribute='name')|unique|length == 2
-      - security_group.secgroup.name in server_updated.server.security_groups|map(attribute='name')
-      - security_group_alt.secgroup.name in server_updated.server.security_groups|map(attribute='name')
+      - security_group.security_group.name in server_updated.server.security_groups|map(attribute='name')
+      - security_group_alt.security_group.name in server_updated.server.security_groups|map(attribute='name')
       - server_network in server_updated.server.addresses.keys()|list|sort
       - server_updated.server.addresses[server_network]|length == 2
       - port.port.fixed_ips[0].ip_address in

@@ -17,4 +17,3 @@ expected_fields:
   - tags
   - tenant_id
   - updated_at
-secgroup_name: shade_secgroup

@@ -143,10 +143,6 @@ EXAMPLES = '''
 '''
 
 RETURN = '''
-id:
-  description: Unique rule UUID.
-  type: str
-  returned: state == present
 rule:
   description: Representation of the security group rule
   type: dict
@@ -430,7 +426,7 @@ class SecurityGroupRuleModule(OpenStackModule):
                 changed = True
 
             rule = rule.to_dict(computed=False)
-            self.exit_json(changed=changed, rule=rule, id=rule['id'])
+            self.exit_json(changed=changed, rule=rule)
 
         if state == 'absent' and rule:
             self.conn.network.delete_security_group_rule(rule['id'])

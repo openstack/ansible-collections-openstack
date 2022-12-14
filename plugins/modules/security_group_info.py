@@ -4,42 +4,32 @@
 # Copyright (c) 2020 by Open Telekom Cloud, operated by T-Systems International GmbH
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: security_group_info
 short_description: Lists security groups
-extends_documentation_fragment: openstack.cloud.openstack
 author: OpenStack Ansible SIG
 description:
   - List security groups
 options:
+  any_tags:
+    description:
+      - A list of tags to filter the list result by.
+      - Resources that match any tag in this list will be returned.
+    type: list
+    elements: str
   description:
     description:
-      - Description of the security group
+      - Description of the security group.
     type: str
   name:
     description:
       - Name or id of the security group.
     type: str
-  project_id:
-    description:
-      - Specifies the project id as filter criteria
-    type: str
-  revision_number:
-    description:
-      - Filter the list result by the revision number of the
-      - resource.
-    type: int
-  tags:
+  not_any_tags:
     description:
       - A list of tags to filter the list result by.
-      - Resources that match all tags in this list will be returned.
-    type: list
-    elements: str
-  any_tags:
-    description:
-      - A list of tags to filter the list result by.
-      - Resources that match any tag in this list will be returned.
+      - Resources that match any tag in this list will be excluded.
     type: list
     elements: str
   not_tags:
@@ -48,22 +38,33 @@ options:
       - Resources that match all tags in this list will be excluded.
     type: list
     elements: str
-  not_any_tags:
+  project_id:
+    description:
+      - Specifies the project id as filter criteria.
+    type: str
+  revision_number:
+    description:
+      - Filter the list result by the revision number of the resource.
+    type: int
+  tags:
     description:
       - A list of tags to filter the list result by.
-      - Resources that match any tag in this list will be excluded.
+      - Resources that match all tags in this list will be returned.
     type: list
     elements: str
-
-requirements: ["openstacksdk"]
+requirements:
+  - "python >= 3.6"
+  - "openstacksdk"
+extends_documentation_fragment:
+  - openstack.cloud.openstack
 '''
 
-RETURN = '''
+RETURN = r'''
 security_groups:
   description: List of dictionaries describing security groups.
   type: list
   elements: dict
-  returned: On Success.
+  returned: always
   contains:
     created_at:
       description: Creation time of the security group
@@ -135,32 +136,30 @@ security_groups:
       sample: "yyyy-mm-dd hh:mm:ss"
 '''
 
-EXAMPLES = '''
-# Get specific security group
-- openstack.cloud.security_group_info:
-    cloud: "{{ cloud }}"
-    name: "{{ my_sg }}"
-  register: sg
-# Get all security groups
-- openstack.cloud.security_group_info:
-    cloud: "{{ cloud }}"
-  register: sg
+EXAMPLES = r'''
+- name: Get all security groups
+  openstack.cloud.security_group_info:
+    cloud: devstack
+
+- name: Get specific security group
+  openstack.cloud.security_group_info:
+    cloud: devstack
+    name: my_sg
 '''
 
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    OpenStackModule)
+from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
 class SecurityGroupInfoModule(OpenStackModule):
     argument_spec = dict(
+        any_tags=dict(type='list', elements='str'),
         description=dict(),
         name=dict(),
+        not_any_tags=dict(type='list', elements='str'),
+        not_tags=dict(type='list', elements='str'),
         project_id=dict(),
         revision_number=dict(type='int'),
         tags=dict(type='list', elements='str'),
-        any_tags=dict(type='list', elements='str'),
-        not_tags=dict(type='list', elements='str'),
-        not_any_tags=dict(type='list', elements='str')
     )
     module_kwargs = dict(
         supports_check_mode=True
@@ -168,16 +167,13 @@ class SecurityGroupInfoModule(OpenStackModule):
 
     def run(self):
         name = self.params['name']
-        args = {
-            k: self.params[k]
-            for k in ['description', 'project_id', 'revision_number']
-            if self.params[k]
-        }
-        args.update({
-            k: ','.join(self.params[k])
-            for k in ['tags', 'any_tags', 'not_tags', 'not_any_tags']
-            if self.params[k]
-        })
+        args = {k: self.params[k]
+                for k in ['description', 'project_id', 'revision_number']
+                if self.params[k]}
+
+        args.update({k: ','.join(self.params[k])
+                     for k in ['tags', 'any_tags', 'not_tags', 'not_any_tags']
+                     if self.params[k]})
 
         # self.conn.search_security_groups() cannot be used here,
         # refer to git blame for rationale.
@@ -185,12 +181,14 @@ class SecurityGroupInfoModule(OpenStackModule):
 
         if name:
             # TODO: Upgrade name_or_id code to match openstacksdk [1]?
-            # [1] https://opendev.org/openstack/openstacksdk/src/commit/0898398415ae7b0e2447d61226acf50f01567cdd/openstack/cloud/_utils.py#L89
+            # [1] https://opendev.org/openstack/openstacksdk/src/commit/
+            #     0898398415ae7b0e2447d61226acf50f01567cdd/openstack/cloud/_utils.py#L89
             security_groups = [item for item in security_groups
                                if name in (item['id'], item['name'])]
 
-        security_groups = [item.to_dict() for item in security_groups]
-        self.exit(changed=False, security_groups=security_groups)
+        self.exit(changed=False,
+                  security_groups=[sg.to_dict(computed=False)
+                                   for sg in security_groups])
 
 
 def main():

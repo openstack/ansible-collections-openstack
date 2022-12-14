@@ -43,5 +43,4 @@ network_external: true
 network_name: ansible_port_network
 no_security_groups: True
 port_name: ansible_port
-secgroup_name: ansible_port_secgroup
 subnet_name: ansible_port_subnet

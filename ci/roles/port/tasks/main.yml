@@ -86,7 +86,7 @@
   openstack.cloud.security_group:
     cloud: "{{ cloud }}"
     state: present
-    name: "{{ secgroup_name }}"
+    name: ansible_security_group
     description: Test group
   register: security_group
 
@@ -99,7 +99,7 @@
     fixed_ips:
       - ip_address: 10.5.5.69
     security_groups:
-      - "{{ secgroup_name }}"
+      - ansible_security_group
   register: port
 
 - debug: var=port
@@ -221,7 +221,7 @@
     name: "{{ port_name }}"
     network: "{{ network_name }}"
     security_groups:
-      - "{{ secgroup_name }}"
+      - ansible_security_group
     state: present
   register: port_updated
 
@@ -242,7 +242,7 @@
       - port_updated.port.fixed_ips[0].ip_address == "10.5.5.70"
       - port_updated.port.fixed_ips[0].subnet_id == subnet.subnet.id
       - port_updated.port.security_group_ids|length == 1
-      - port_updated.port.security_group_ids[0] == security_group.secgroup.id
+      - port_updated.port.security_group_ids[0] == security_group.security_group.id
 
 - name: Delete updated port
   openstack.cloud.port:
@@ -254,7 +254,7 @@
   openstack.cloud.security_group:
     cloud: "{{ cloud }}"
     state: absent
-    name: "{{ secgroup_name }}"
+    name: ansible_security_group
 
 - name: Create port (with binding profile)
   openstack.cloud.port:

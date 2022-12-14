@@ -1,75 +1,73 @@
 ---
-- name: Ensure security group does not exist before tests
-  openstack.cloud.security_group:
-     cloud: "{{ cloud }}"
-     name: "{{ secgroup_name }}"
-     state: absent
-
 - name: Create security group
   openstack.cloud.security_group:
      cloud: "{{ cloud }}"
-     name: "{{ secgroup_name }}"
+     name: ansible_security_group
      state: present
-     description: Created from Ansible playbook
+     description: 'Created from Ansible playbook'
   register: security_group
 
-- name: List all security groups of a project
-  openstack.cloud.security_group_info:
-     cloud: "{{ cloud }}"
-  register: test_sec_groups
-
-- name: Check list all security groups of a project
+- name: Assert return values of security_group module
   assert:
     that:
-      - test_sec_groups.security_groups | length > 0
+      - security_group.security_group.name == 'ansible_security_group'
+      - security_group.security_group.description == 'Created from Ansible playbook'
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(security_group.security_group.keys())|length == 0
 
-- name: Assert fields returned by security_group_info
-  assert:
-    that:
-      - item in test_sec_groups.security_groups[0]
-  loop: "{{ expected_fields }}"
-
-- name: Filter security group by name
+- name: List all security groups
   openstack.cloud.security_group_info:
      cloud: "{{ cloud }}"
-     name: "{{ secgroup_name }}"
-  register: test_sec_group
+  register: security_groups
+
+- name: Assert return values of security_group_info module
+  assert:
+    that:
+      - security_groups.security_groups | length > 0
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(security_groups.security_groups[0].keys())|length == 0
+
+- name: Find security group by name
+  openstack.cloud.security_group_info:
+     cloud: "{{ cloud }}"
+     name: ansible_security_group
+  register: security_groups
 
 - name: Check filter security group by name
   assert:
     that:
-      - test_sec_group.security_groups | length  == 1
-      - test_sec_group.security_groups[0]['id'] == security_group.id
+      - security_groups.security_groups | length  == 1
+      - security_groups.security_groups.0.id == security_group.security_group.id
 
 - name: Filter security group by description
   openstack.cloud.security_group_info:
      cloud: "{{ cloud }}"
-     description: Created from Ansible playbook
-  register: test_sec_group
+     description: 'Created from Ansible playbook'
+  register: security_groups
 
 - name: Check filter security group by description
   assert:
     that:
-      - test_sec_group.security_groups | length  == 1
-      - test_sec_group.security_groups[0]['id'] == security_group.id
+      - security_groups.security_groups | length  == 1
+      - security_groups.security_groups.0.id == security_group.security_group.id
 
 - name: Filter security group by not_tags
   openstack.cloud.security_group_info:
      cloud: "{{ cloud }}"
-     name: "{{ secgroup_name }}"
+     name: ansible_security_group
      not_tags:
-     - ansibletag1
-     - ansibletag2
-  register: test_sec_group
+       - ansibletag1
+       - ansibletag2
+  register: security_groups
 
 - name: Check filter security group by not_tags
   assert:
     that:
-      - test_sec_group.security_groups | length  == 1
-      - test_sec_group.security_groups[0]['id'] == security_group.id
+      - security_groups.security_groups | length  == 1
+      - security_groups.security_groups.0.id == security_group.security_group.id
 
 - name: Delete security group
   openstack.cloud.security_group:
      cloud: "{{ cloud }}"
-     name: "{{ secgroup_name }}"
+     name: ansible_security_group
      state: absent
