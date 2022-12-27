@@ -39,7 +39,7 @@
       - .zuul.yaml
     vars:
       zuul_work_dir: src/opendev.org/openstack/ansible-collections-openstack
-      tox_envlist: ansible
+      tox_envlist: ansible_latest
       tox_install_siblings: true
       fetch_subunit: false
       devstack_plugins:
@@ -125,7 +125,7 @@
       - name: github.com/ansible/ansible
         override-checkout: stable-2.9
     vars:
-      tox_envlist: ansible-2.9
+      tox_envlist: ansible_2_9
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.11
@@ -138,7 +138,7 @@
       - name: github.com/ansible/ansible
         override-checkout: stable-2.11
     vars:
-      tox_envlist: ansible-2.11
+      tox_envlist: ansible_2_11
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.12
@@ -151,7 +151,7 @@
       - name: github.com/ansible/ansible
         override-checkout: stable-2.12
     vars:
-      tox_envlist: ansible-2.12
+      tox_envlist: ansible_2_12
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
@@ -171,7 +171,6 @@
 - job:
     name: openstack-tox-linters-ansible
     parent: openstack-tox-linters
-    nodeset: ubuntu-focal
     description: |
       Run openstack collections linter tests using the devel branch of ansible
     required-projects:
@@ -180,7 +179,7 @@
     vars:
       # override tox_constraints_file from parent job
       tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-none.txt'
-      tox_envlist: linters
+      tox_envlist: linters_latest
       tox_install_siblings: true
 
 - job:
@@ -198,13 +197,15 @@
 - job:
     name: openstack-tox-linters-ansible-2.12
     parent: openstack-tox-linters-ansible
+    nodeset: ubuntu-focal
     description: |
       Run openstack collections linter tests using the 2.12 branch of ansible
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.12
     vars:
-      tox_envlist: linters-2.12
+      ensure_tox_version: '<4'
+      tox_envlist: linters_2_12
       python_version: 3.8
       bindep_profile: test py38
 
