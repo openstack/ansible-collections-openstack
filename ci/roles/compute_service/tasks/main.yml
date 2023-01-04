@@ -1,0 +1,23 @@
+---
+- name: Fetch compute services
+  openstack.cloud.compute_service_info:
+    cloud: "{{ cloud }}"
+  register: compute_services
+
+- name: Assert return values of compute_service_info module
+  assert:
+    that:
+      - compute_services.compute_services | length > 0
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(compute_services.compute_services[0].keys())|length == 0
+
+- name: Fetch compute services with filters
+  openstack.cloud.compute_service_info:
+    cloud: "{{ cloud }}"
+    binary: "nova-compute"
+  register: compute_services
+
+- name: Assert return values of compute_service_info module
+  assert:
+    that:
+      - compute_services.compute_services | length > 0

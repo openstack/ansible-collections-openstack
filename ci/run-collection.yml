@@ -11,6 +11,7 @@
     - { role: coe_cluster_template, tags: coe_cluster_template }
     - { role: compute_flavor, tags: compute_flavor }
     - { role: compute_flavor_access, tags: compute_flavor_access }
+    - { role: compute_service, tags: compute_service }
     - { role: config, tags: config }
     - { role: dns_zone, tags: dns_zone }
     - { role: endpoint, tags: endpoint }
@@ -37,9 +38,6 @@
     - { role: logging, tags: logging }
     - { role: network, tags: network }
     - { role: neutron_rbac_policy, tags: neutron_rbac_policy }
-    - role: nova_services
-      tags: nova_services
-      when: sdk_version is version(0.44, '>=')
     - { role: object, tags: object }
     - { role: object_container, tags: object_container }
     - { role: port, tags: port }

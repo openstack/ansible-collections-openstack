@@ -1,0 +1,11 @@
+expected_fields:
+  - availability_zone
+  - binary
+  - disabled_reason
+  - host
+  - id
+  - is_forced_down
+  - name
+  - state
+  - status
+  - updated_at
