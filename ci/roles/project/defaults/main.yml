@@ -1,4 +1,4 @@
-project_fields:
+expected_fields:
   - description
   - domain_id
   - id

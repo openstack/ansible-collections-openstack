@@ -1,155 +1,181 @@
 ---
-- name: Ensure project doesn't exist before tests
+- name: Create project
   openstack.cloud.project:
     cloud: "{{ cloud }}"
-    state: absent
+    state: present
     name: ansible_project
+    description: dummy description
+    domain: default
+    is_enabled: True
+  register: project
 
-- block:
-  - name: Create project
-    openstack.cloud.project:
-      cloud: "{{ cloud }}"
-      state: present
-      name: ansible_project
-      description: dummy description
-      domain: default
-      enabled: True
-    register: project
+- name: Assert return values of project module
+  assert:
+    that:
+      - project is changed
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(project.project.keys())|length == 0
 
-  - name: Assert project changed
-    assert:
-       that: project is changed
+- name: Fetch project
+  openstack.cloud.project_info:
+     cloud: "{{ cloud }}"
+     name: ansible_project
+  register: project
 
-  - name: Assert project fields
-    assert:
-      that: item in project['project']
-    loop: "{{ project_fields }}"
+- name: Assert project
+  assert:
+    that:
+      - project.projects | length == 1
+      - project.projects.0.name == 'ansible_project'
+      - project.projects.0.description == 'dummy description'
 
-  - name: Get project
-    openstack.cloud.project_info:
-       cloud: "{{ cloud }}"
-       name: ansible_project
-    register: project_info
+- name: Create project again
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    description: dummy description
+    domain: default
+    is_enabled: True
+  register: project
 
-  - name: Assert project
-    assert:
-      that:
-        - project_info.openstack_projects | length == 1
-        - project_info.openstack_projects[0]['name'] == 'ansible_project'
-        - project_info.openstack_projects[0]['description'] == 'dummy description'
+- name: Assert return values of project module
+  assert:
+    that:
+      - project is not changed
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(project.project.keys())|length == 0
 
-- block:
-  - name: Create identical project
-    openstack.cloud.project:
-      cloud: "{{ cloud }}"
-      state: present
-      name: ansible_project
-      description: dummy description
-      domain: default
-      enabled: True
-    register: project
+- name: Update project
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    description: new description
+    extra_specs:
+      tags:
+        - example_tag
+  register: project
 
-  - name: Assert project not changed
-    assert:
-       that: project is not changed
+- name: Assert project changed
+  assert:
+     that:
+       - project is changed
+       - project.project.description == 'new description'
 
-  - name: Assert project fields
-    assert:
-      that: item in project['project']
-    loop: "{{ project_fields }}"
+- name: Fetch all projects
+  openstack.cloud.project_info:
+    cloud: "{{ cloud }}"
+  register: projects
 
+- name: Assert return values of project_info module
+  assert:
+    that:
+      - projects.projects | length > 0
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(projects.projects.0.keys())|length == 0
 
-- block:
-  - name: Update project
-    openstack.cloud.project:
-      cloud: "{{ cloud }}"
-      state: present
-      name: ansible_project
-      description: new description
-      properties:
-        tags:
-          - example_tag
-    register: project
+- name: Fetch project by name
+  openstack.cloud.project_info:
+    cloud: "{{ cloud }}"
+    name: 'ansible_project'
+  register: projects
 
-  - name: Assert project changed
-    assert:
-       that: project is changed
+- name: Assert return values of project_info module
+  assert:
+    that:
+      - projects.projects | length == 1
+      - projects.projects.0.name == 'ansible_project'
 
-  - name: Assert project fields
-    assert:
-      that: item in project['project']
-    loop: "{{ project_fields }}"
+- name: Fetch projects with filter
+  openstack.cloud.project_info:
+    cloud: "{{ cloud }}"
+    filters:
+      name: 'ansible_project'
+  register: projects
 
-  - name: Get project
-    openstack.cloud.project_info:
-       cloud: "{{ cloud }}"
-       name: ansible_project
-    register: project_info
+- name: Assert return values of project_info module
+  assert:
+    that:
+      - projects.projects | length == 1
+      - projects.projects.0.name == 'ansible_project'
 
-  - name: Assert project
-    assert:
-      that:
-        - project_info.openstack_projects | length == 1
-        - project_info.openstack_projects[0]['description'] == 'new description'
+- name: Fetch project by name and domain
+  openstack.cloud.project_info:
+    cloud: "{{ cloud }}"
+    name: 'ansible_project'
+    domain: 'default'
+  register: projects
 
-- block:
-  - name: Delete project
-    openstack.cloud.project:
-       cloud: "{{ cloud }}"
-       state: absent
-       name: ansible_project
-    register: project
+- name: Assert return values of project_info module
+  assert:
+    that:
+      - projects.projects | length == 1
+      - projects.projects.0.name == 'ansible_project'
 
-  - name: Assert project changed
-    assert:
-       that: project is changed
+- name: Delete project
+  openstack.cloud.project:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_project
+  register: project
 
-  - name: Get project
-    openstack.cloud.project_info:
-       cloud: "{{ cloud }}"
-       name: ansible_project
-    register: project_info
+- name: Assert project changed
+  assert:
+     that: project is changed
 
-  - name: Assert project deleted
-    assert:
-      that:
-        - project_info.openstack_projects | length == 0
+- name: Get project
+  openstack.cloud.project_info:
+     cloud: "{{ cloud }}"
+     name: ansible_project
+  register: project_info
 
+- name: Assert project deleted
+  assert:
+    that:
+      - project_info.projects | length == 0
 
-- block:
-  - name: Delete non existant project
-    openstack.cloud.project:
-       cloud: "{{ cloud }}"
-       state: absent
-       name: ansible_project
-    register: project
+- name: Delete project again
+  openstack.cloud.project:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_project
+  register: project
 
-  - name: Assert project not changed
-    assert:
-       that: project is not changed
+- name: Assert project not changed
+  assert:
+     that: project is not changed
 
-- block:
-  - name: Create project with properties
-    openstack.cloud.project:
-      cloud: "{{ cloud }}"
-      state: present
-      name: ansible_project
-      description: dummy description
-      domain: default
-      enabled: True
-      properties:
-        dummy_key: dummy_value
-    register: project
+- name: Create project with extra_specs
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    extra_specs:
+      is_enabled: False
+  register: project
 
-- block:
-  - name: Update project with properties
-    openstack.cloud.project:
-      cloud: "{{ cloud }}"
-      state: present
-      name: ansible_project
-      description: dummy description
-      domain: default
-      enabled: True
-      properties:
-        dummy_key: other_dummy_value
-    register: project
+- name: Assert return values of project module
+  assert:
+    that:
+      - project.project.is_enabled == False
+
+- name: Update project with extra_specs
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    extra_specs:
+      is_enabled: True
+  register: project
+
+- name: Assert return values of project module
+  assert:
+    that:
+      - project.project.is_enabled == True
+
+- name: Delete project
+  openstack.cloud.project:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_project

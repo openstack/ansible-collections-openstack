@@ -5,8 +5,8 @@
      state: present
      name: ansible_source_project
      description: Source project for network RBAC test
-     domain_id: default
-     enabled: True
+     domain: default
+     is_enabled: True
   register: source_project
 
 - name: Create network

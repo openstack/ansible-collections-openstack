@@ -42,7 +42,6 @@
     - { role: object_container, tags: object_container }
     - { role: port, tags: port }
     - { role: project, tags: project }
-    - { role: project_info, tags: project_info }
     - { role: recordset, tags: recordset }
     - { role: role_assignment, tags: role_assignment }
     - { role: router, tags: router }

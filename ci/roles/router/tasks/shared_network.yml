@@ -5,8 +5,8 @@
     state: present
     name: "shared_net_test_1"
     description: "Project that contains the subnet to be shared"
-    domain_id: default
-    enabled: True
+    domain: default
+    is_enabled: True
   register: project_1
 
 - name: Create the network to be shared
@@ -37,8 +37,8 @@
     state: present
     name: "shared_net_test_2"
     description: "Project that contains the subnet to be shared"
-    domain_id: default
-    enabled: True
+    domain: default
+    is_enabled: True
   register: project_2
 
 - name: Share the network with the second project

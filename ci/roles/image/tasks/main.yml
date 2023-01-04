@@ -239,8 +239,8 @@
      state: present
      name: image_owner_project
      description: Project owning test image
-     domain_id: default
-     enabled: True
+     domain: default
+     is_enabled: True
   register: owner_project
 
 - name: Create raw image (owner by project name)
@@ -309,7 +309,7 @@
      cloud: "{{ cloud }}"
      state: absent
      name: image_owner_project
-     domain_id: default
+     domain: default
 
 - name: Delete test image file
   file:

@@ -21,8 +21,8 @@
 - name: Verify demo project
   assert:
     that:
-      - projects.openstack_projects|length == 1
-      - projects.openstack_projects.0.name == "demo"
+      - projects.projects|length == 1
+      - projects.projects.0.name == "demo"
 
 - name: Grant access to flavor
   openstack.cloud.compute_flavor_access:
@@ -47,7 +47,7 @@
   assert:
     that:
       - (flavor_show.stdout | from_json).name == 'ansible_flavor'
-      - projects.openstack_projects.0.id in (flavor_show.stdout | from_json).access_project_ids
+      - projects.projects.0.id in (flavor_show.stdout | from_json).access_project_ids
 
 - name: Grant access to flavor again
   openstack.cloud.compute_flavor_access:

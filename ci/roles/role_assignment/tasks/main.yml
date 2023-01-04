@@ -5,9 +5,8 @@
      state: present
      name: ansible_project
      description: dummy description
-     domain_id: default
-     enabled: True
-  register: project
+     domain: default
+     is_enabled: True
 
 - name: Grant an admin role on the user admin in the project ansible_project
   openstack.cloud.role_assignment:
