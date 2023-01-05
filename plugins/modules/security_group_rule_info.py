@@ -4,13 +4,13 @@
 # Copyright (c) 2020 by Tino Schreiber (Open Telekom Cloud), operated by T-Systems International GmbH
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: security_group_rule_info
-short_description: Querying security group rules
+short_description: Fetch OpenStack network (Neutron) security group rules
 author: OpenStack Ansible SIG
 description:
-   - Querying security group rules
+  - Fetch security group rules from OpenStack network (Neutron) API.
 options:
   description:
     description:
@@ -69,23 +69,20 @@ options:
     description:
       - Name or ID of the security group
     type: str
-
 requirements:
   - "python >= 3.6"
   - "openstacksdk"
-
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
-# Get all security group rules
-- openstack.cloud.security_group_rule_info:
+EXAMPLES = r'''
+- name: Fetch all security group rules
+  openstack.cloud.security_group_rule_info:
     cloud: devstack
-  register: sg
 
-# Filter security group rules for port 80 and name
-- openstack.cloud.security_group_rule_info:
+- name: Filter security group rules for port 80 and name
+  openstack.cloud.security_group_rule_info:
     cloud: devstack
     security_group: foo
     protocol: tcp
@@ -93,13 +90,13 @@ EXAMPLES = '''
     port_range_max: 80
     remote_ip_prefix: 0.0.0.0/0
 
-# Filter for ICMP rules
-- openstack.cloud.security_group_rule_info:
+- name: Filter for ICMP rules
+  openstack.cloud.security_group_rule_info:
     cloud: devstack
     protocol: icmp
 '''
 
-RETURN = '''
+RETURN = r'''
 security_group_rules:
   description: List of dictionaries describing security group rules.
   type: list
@@ -213,29 +210,32 @@ class SecurityGroupRuleInfoModule(OpenStackModule):
     def run(self):
         filters = dict((k, self.params[k])
                        for k in ['description', 'direction', 'ether_type',
-                                 'port_range_min', 'port_range_max',
+                                 'id', 'port_range_min', 'port_range_max',
                                  'protocol', 'remote_group',
                                  'revision_number', 'remote_ip_prefix']
                        if self.params[k] is not None)
 
-        if self.params['id']:
-            filters['id'] = self.params['id']
-        if self.params['project']:
-            proj = self.conn.find_project(self.params['project'],
-                                          ignore_missing=False)
-            filters['project_id'] = proj.id
-        if self.params['security_group']:
-            sec_grp = self.conn.network.find_security_group(
-                name_or_id=self.params['security_group'],
-                ignore_missing=False)
-            filters['security_group_id'] = sec_grp.id
+        project_name_or_id = self.params['project']
+        if project_name_or_id is not None:
+            project = self.conn.find_project(project_name_or_id)
+            if not project:
+                self.exit_json(changed=False, security_group_rules=[])
+            filters['project_id'] = project.id
 
-        security_group_rules = [
-            rule.to_dict(computed=False)
-            for rule in self.conn.network.security_group_rules(**filters)]
+        security_group_name_or_id = self.params['security_group']
+        if security_group_name_or_id is not None:
+            security_group = self.conn.network.\
+                find_security_group(security_group_name_or_id)
+            if not security_group:
+                self.exit_json(changed=False, security_group_rules=[])
+            filters['security_group_id'] = security_group.id
+
+        security_group_rules = \
+            self.conn.network.security_group_rules(**filters)
 
         self.exit_json(changed=False,
-                       security_group_rules=security_group_rules)
+                       security_group_rules=[r.to_dict(computed=False)
+                                             for r in security_group_rules])
 
 
 def main():
