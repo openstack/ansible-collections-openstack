@@ -1111,8 +1111,9 @@ class ServerModule(OpenStackModule):
             for ip in remove_ips:
                 ip_id = self.conn.network.find_ip(name_or_id=ip,
                                                   ignore_missing=False).id
-                # self.network.update_ip(ip_id, port_id=None) would not handle
-                # nova network which self.conn.detach_ip_from_server() does
+                # self.conn.network.update_ip(ip_id, port_id=None) does not
+                # handle nova network but self.conn.detach_ip_from_server()
+                # does so
                 self.conn.detach_ip_from_server(server_id=server.id,
                                                 floating_ip_id=ip_id)
         return server

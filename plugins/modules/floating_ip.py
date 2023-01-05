@@ -368,8 +368,12 @@ class NetworkingFloatingIPModule(OpenStackModule):
         for ip in ips:
             if ip['fixed_ip_address']:
                 # Silently ignore that ip might not be attached to server
-                self.conn.compute.remove_floating_ip_from_server(
-                    self.server, ip['floating_ip_address'])
+                #
+                # self.conn.network.update_ip(ip_id, port_id=None) does not
+                # handle nova network but self.conn.detach_ip_from_server()
+                # does so
+                self.conn.detach_ip_from_server(server_id=self.server['id'],
+                                                floating_ip_id=ip['id'])
 
                 # OpenStackSDK sets {"port_id": None} to detach a floating
                 # ip from an instance, but there might be a delay until a
