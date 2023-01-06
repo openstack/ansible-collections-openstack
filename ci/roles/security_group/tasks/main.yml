@@ -71,3 +71,5 @@
      cloud: "{{ cloud }}"
      name: ansible_security_group
      state: absent
+
+- include_tasks: rules.yml

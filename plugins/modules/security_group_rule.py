@@ -13,6 +13,11 @@ author: OpenStack Ansible SIG
 description:
   - Add or remove security group rule to/from OpenStack network (Neutron)
     service.
+  - Use I(security_group_rules) in M(openstack.cloud.security_group) to define
+    a set of security group rules. It will be much faster than using this
+    module when creating or removing several security group rules because the
+    latter will do individual calls to OpenStack network (Neutron) API for each
+    security group rule.
 options:
   description:
     description:
@@ -243,6 +248,9 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
 
 
 class SecurityGroupRuleModule(OpenStackModule):
+    # NOTE: Keep handling of security group rules synchronized with
+    #       security_group.py!
+
     argument_spec = dict(
         description=dict(),
         direction=dict(default='ingress', choices=['egress', 'ingress']),

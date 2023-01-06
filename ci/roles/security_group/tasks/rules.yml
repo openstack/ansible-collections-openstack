@@ -1,0 +1,350 @@
+---
+- name: Create security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    state: present
+  register: security_group
+
+- name: Assert return values of security_group module
+  assert:
+    that:
+      - security_group is changed
+
+- name: Create security group again
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    state: present
+  register: security_group
+
+- name: Assert return values of security_group module
+  assert:
+    that:
+      - security_group is not changed
+
+- name: Fetch security group rules
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert return values of security_group_rule_info module
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 0
+
+- name: Delete security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    state: absent
+  register: security_group
+
+- name: Assert return values of security_group module
+  assert:
+    that:
+      - security_group is changed
+
+- name: Delete security group again
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    state: absent
+  register: security_group
+
+- name: Assert return values of security_group module
+  assert:
+    that:
+      - security_group is not changed
+
+- name: Create security group including security group rules
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules:
+      - ether_type: IPv6
+        direction: egress
+      - ether_type: IPv4
+        direction: egress
+  register: security_group
+
+- name: Assert return values of security_group module
+  assert:
+    that:
+      - security_group is changed
+
+- name: Create security group including security group rules again
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules:
+      - ether_type: IPv6
+        direction: egress
+      - ether_type: IPv4
+        direction: egress
+  register: security_group
+
+- name: Assert return values of security_group module
+  assert:
+    that:
+      - security_group is not changed
+
+- name: Fetch security group rules
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert return values of security_group_rule_info module
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 2
+      - security_group_rules.security_group_rules | map(attribute='ether_type') | list | sort == ['IPv4', 'IPv6']
+
+- name: Update security group with new set of security group rules, dropping egress rules for IPv4 and IPv6
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules:
+      - protocol: udp
+        ether_type: IPv6
+        direction: ingress
+        port_range_min: 547
+        port_range_max: 547
+      - protocol: tcp
+        ether_type: IPv4
+        direction: ingress
+        port_range_min: 22
+        port_range_max: 22
+        remote_ip_prefix: 1.2.3.40/32
+      - protocol: tcp
+        ether_type: IPv4
+        direction: ingress
+        port_range_min: 22
+        port_range_max: 22
+        remote_ip_prefix: 1.2.3.41/32
+      - protocol: tcp
+        ether_type: IPv4
+        direction: ingress
+        port_range_min: 22
+        port_range_max: 22
+        remote_ip_prefix: 1.2.3.42/32
+
+- name: Fetch security group rules
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert return values of security_group_rule_info module
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 4
+      - security_group_rules.security_group_rules | map(attribute='direction') | list | unique == ['ingress']
+
+- name: Remove all security group rules from security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules: []
+  register: security_group
+
+- name: Fetch security group rules
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert return values of security_group_rule_info module
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 0
+
+- name: Delete security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    state: absent
+
+- name: Create security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules:
+      - ether_type: IPv6
+        direction: egress
+      - ether_type: IPv4
+        direction: egress
+    state: present
+  register: security_group
+
+- name: Assert return values of security_group_rule_info module
+  assert:
+    that:
+      - security_group.security_group.security_group_rules | length == 2
+
+- name: Define set of additional security group rules
+  set_fact:
+    security_group_rules:
+      - protocol: udp
+        ether_type: IPv6
+        direction: ingress
+        port_range_min: 547
+        port_range_max: 547
+      - protocol: tcp
+        ether_type: IPv4
+        direction: ingress
+        port_range_min: 22
+        port_range_max: 22
+        remote_ip_prefix: 1.2.3.40/32
+
+- name: Prepare existing security group rules for appending
+  loop: '{{ security_group.security_group.security_group_rules | default([]) }}'
+  set_fact:
+    security_group_rule:
+      description: '{{ item.description or omit }}'
+      direction: '{{ item.direction or omit }}'
+      ether_type: '{{ item.ethertype or omit }}'
+      port_range_max: '{{ item.port_range_max or omit }}'
+      port_range_min: '{{ item.port_range_min or omit }}'
+      protocol: '{{ item.protocol or omit }}'
+      remote_group: '{{ item.remote_group_id or omit }}'
+      remote_ip_prefix: '{{ item.remote_ip_prefix or omit }}'
+  register: previous_security_group_rules
+
+- name: Flatten existing security group rules
+  set_fact:
+    previous_security_group_rules: "{{
+        previous_security_group_rules.results
+        | map(attribute='ansible_facts.security_group_rule')
+        | flatten(levels=1)
+    }}"
+
+- name: Append security group rules to security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules: '{{ previous_security_group_rules + security_group_rules }}'
+  register: security_group
+
+- name: Assert return values of security_group module
+  assert:
+    that:
+      - security_group is changed
+
+- name: Append security group rules to security group again
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules: '{{ previous_security_group_rules + security_group_rules }}'
+  register: security_group
+
+- name: Assert return values of security_group module
+  assert:
+    that:
+      - security_group is not changed
+
+- name: Fetch security group rules
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert return values of security_group_rule_info module
+  assert:
+    that:
+      # 2 ingress rules and egress rules for IPv4 and IPv6
+      - security_group_rules.security_group_rules | length == 4
+
+- name: Delete security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    state: absent
+
+- name: Create security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    state: present
+  register: security_group
+
+- name: Fetch security group rules
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert return values of security_group_rule_info module
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 0
+
+- name: Define dense representation of security group rules with multiple remote ip prefixes per rule
+  set_fact:
+    security_group_rules:
+      - protocol: udp
+        ether_type: IPv6
+        direction: ingress
+        port_range_min: 547
+        port_range_max: 547
+      - protocol: tcp
+        ether_type: IPv4
+        direction: ingress
+        port_range_min: 22
+        port_range_max: 22
+        remote_ip_prefixes:
+          - 1.2.3.40/32
+          - 1.2.3.41/32
+          - 1.2.3.42/32
+
+- name: Convert dense representation into default representation of security group rules
+  loop: '{{ security_group_rules }}'
+  set_fact:
+    security_group_rules: >-
+      {{ [item]
+         if 'remote_ip_prefixes' not in item
+         else item.remote_ip_prefixes
+              | map('community.general.dict_kv', 'remote_ip_prefix')
+              | map('combine', item | dict2items | rejectattr('key', 'eq', 'remote_ip_prefixes') | list | items2dict)
+              | list
+      }}
+  register: security_group_rules
+
+- name: Flatten security group rules
+  set_fact:
+    security_group_rules: "{{
+        security_group_rules.results
+        | map(attribute='ansible_facts.security_group_rules')
+        | flatten(levels=1) | list
+      }}"
+
+- name: Update security group with set of security group rules
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules: '{{ security_group_rules }}'
+  register: security_group
+
+- name: Assert return values of security_group module
+  assert:
+    that:
+      - security_group is changed
+
+- name: Fetch security group rules
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert return values of security_group_rule_info module
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 4
+
+- name: Delete security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    state: absent

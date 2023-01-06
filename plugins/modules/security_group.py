@@ -27,6 +27,83 @@ options:
     description:
       - Unique name or ID of the project.
     type: str
+  security_group_rules:
+    description:
+      - List of security group rules.
+      - When I(security_group_rules) is not defined, Neutron might create this
+        security group with a default set of rules.
+      - Security group rules which are listed in I(security_group_rules)
+        but not defined in this security group will be created.
+      - Existing security group rules which are not listed in
+        I(security_group_rules) will be deleted.
+      - When updating a security group, one has to explicitly list rules from
+        Neutron's defaults in I(security_group_rules) if those rules should be
+        kept. Rules which are not listed in I(security_group_rules) will be
+        deleted.
+    type: list
+    elements: dict
+    suboptions:
+      description:
+        description:
+          - Description of the security group rule.
+        type: str
+      direction:
+        description:
+          - The direction in which the security group rule is applied.
+          - Not all providers support C(egress).
+        choices: ['egress', 'ingress']
+        default: ingress
+        type: str
+      ether_type:
+        description:
+          - Must be IPv4 or IPv6, and addresses represented in CIDR must
+            match the ingress or egress rules. Not all providers support IPv6.
+        choices: ['IPv4', 'IPv6']
+        default: IPv4
+        type: str
+      port_range_max:
+        description:
+          - The maximum port number in the range that is matched by the
+            security group rule.
+          - If the protocol is TCP, UDP, DCCP, SCTP or UDP-Lite this value must
+            be greater than or equal to the I(port_range_min) attribute value.
+          - If the protocol is ICMP, this value must be an ICMP code.
+        type: int
+      port_range_min:
+        description:
+          - The minimum port number in the range that is matched by the
+            security group rule.
+          - If the protocol is TCP, UDP, DCCP, SCTP or UDP-Lite this value must
+            be less than or equal to the port_range_max attribute value.
+          - If the protocol is ICMP, this value must be an ICMP type.
+        type: int
+      protocol:
+        description:
+          - The IP protocol can be represented by a string, an integer, or
+            null.
+          - Valid string or integer values are C(any) or C(0), C(ah) or C(51),
+            C(dccp) or C(33), C(egp) or C(8), C(esp) or C(50), C(gre) or C(47),
+            C(icmp) or C(1), C(icmpv6) or C(58), C(igmp) or C(2), C(ipip) or
+            C(4), C(ipv6-encap) or C(41), C(ipv6-frag) or C(44), C(ipv6-icmp)
+            or C(58), C(ipv6-nonxt) or C(59), C(ipv6-opts) or C(60),
+            C(ipv6-route) or C(43), C(ospf) or C(89), C(pgm) or C(113), C(rsvp)
+            or C(46), C(sctp) or C(132), C(tcp) or C(6), C(udp) or C(17),
+            C(udplite) or C(136), C(vrrp) or C(112).
+          - Additionally, any integer value between C([0-255]) is also valid.
+          - The string any (or integer 0) means all IP protocols.
+          - See the constants in neutron_lib.constants for the most up-to-date
+            list of supported strings.
+        type: str
+      remote_group:
+        description:
+          - Name or ID of the security group to link.
+          - Mutually exclusive with I(remote_ip_prefix).
+        type: str
+      remote_ip_prefix:
+        description:
+          - Source IP address(es) in CIDR notation.
+          - Mutually exclusive with I(remote_group).
+        type: str
   state:
     description:
       - Should the resource be present or absent.
@@ -137,17 +214,51 @@ EXAMPLES = r'''
     state: present
     name: foo
     project: myproj
+
+- name: Create (or update) a security group with security group rules
+  openstack.cloud.security_group:
+    cloud: mordred
+    state: present
+    name: foo
+    security_group_rules:
+      - ether_type: IPv6
+        direction: egress
+      - ether_type: IPv4
+        direction: egress
+
+- name: Create (or update) security group without security group rules
+  openstack.cloud.security_group:
+    cloud: mordred
+    state: present
+    name: foo
+    security_group_rules: []
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
 
 
 class SecurityGroupModule(OpenStackModule):
+    # NOTE: Keep handling of security group rules synchronized with
+    #       security_group_rule.py!
 
     argument_spec = dict(
         description=dict(),
         name=dict(required=True),
         project=dict(),
+        security_group_rules=dict(
+            type="list", elements="dict",
+            options=dict(
+                description=dict(),
+                direction=dict(default="ingress",
+                               choices=["egress", "ingress"]),
+                ether_type=dict(default="IPv4", choices=["IPv4", "IPv6"]),
+                port_range_max=dict(type="int"),
+                port_range_min=dict(type="int"),
+                protocol=dict(),
+                remote_group=dict(),
+                remote_ip_prefix=dict(),
+            ),
+        ),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
@@ -190,6 +301,11 @@ class SecurityGroupModule(OpenStackModule):
             self.exit_json(changed=False)
 
     def _build_update(self, security_group):
+        return {
+            **self._build_update_security_group(security_group),
+            **self._build_update_security_group_rules(security_group)}
+
+    def _build_update_security_group(self, security_group):
         update = {}
 
         # module options name and project are used to find security group
@@ -213,6 +329,80 @@ class SecurityGroupModule(OpenStackModule):
 
         return update
 
+    def _build_update_security_group_rules(self, security_group):
+
+        def find_security_group_rule_match(prototype, security_group_rules):
+            matches = [r for r in security_group_rules
+                       if is_security_group_rule_match(prototype, r)]
+            if len(matches) > 1:
+                self.fail_json(msg='Found more a single matching security'
+                                   ' group rule which match the given'
+                                   ' parameters.')
+            elif len(matches) == 1:
+                return matches[0]
+            else:  # len(matches) == 0
+                return None
+
+        def is_security_group_rule_match(prototype, security_group_rule):
+            skip_keys = ['ether_type']
+            if 'ether_type' in prototype \
+               and security_group_rule['ethertype'] != prototype['ether_type']:
+                return False
+
+            if 'protocol' in prototype \
+               and prototype['protocol'] in ['any', '0']:
+                if security_group_rule['protocol'] is not None:
+                    return False
+                skip_keys.append('protocol')
+
+            if 'protocol' in prototype \
+               and prototype['protocol'] in ['tcp', 'udp']:
+                # Check if the user is supplying -1, 1 to 65535 or None values
+                # for full TPC or UDP port range.
+                # (None, None) == (1, 65535) == (-1, -1)
+                if 'port_range_max' in prototype \
+                   and prototype['port_range_max'] in [-1, 65535]:
+                    if security_group_rule['port_range_max'] is not None:
+                        return False
+                    skip_keys.append('port_range_max')
+                if 'port_range_min' in prototype \
+                   and prototype['port_range_min'] in [-1, 1]:
+                    if security_group_rule['port_range_min'] is not None:
+                        return False
+                    skip_keys.append('port_range_min')
+
+            if all(security_group_rule[k] == prototype[k]
+                   for k in (set(prototype.keys()) - set(skip_keys))):
+                return security_group_rule
+            else:
+                return None
+
+        update = {}
+        keep_security_group_rules = {}
+        create_security_group_rules = []
+        delete_security_group_rules = []
+
+        for prototype in self._generate_security_group_rules(security_group):
+            match = find_security_group_rule_match(
+                prototype, security_group.security_group_rules)
+            if match:
+                keep_security_group_rules[match['id']] = match
+            else:
+                create_security_group_rules.append(prototype)
+
+        for security_group_rule in security_group.security_group_rules:
+            if (security_group_rule['id']
+               not in keep_security_group_rules.keys()):
+                delete_security_group_rules.append(security_group_rule)
+
+        if create_security_group_rules:
+            update['create_security_group_rules'] = create_security_group_rules
+
+        if delete_security_group_rules:
+            update['delete_security_group_rules'] = delete_security_group_rules
+
+        return update
+
     def _create(self):
         kwargs = dict((k, self.params[k])
                       for k in ['description', 'name']
@@ -224,7 +414,14 @@ class SecurityGroupModule(OpenStackModule):
                 name_or_id=project_name_or_id, ignore_missing=False)
             kwargs['project_id'] = project.id
 
-        return self.conn.network.create_security_group(**kwargs)
+        security_group = self.conn.network.create_security_group(**kwargs)
+
+        update = self._build_update_security_group_rules(security_group)
+        if update:
+            security_group = self._update_security_group_rules(security_group,
+                                                               update)
+
+        return security_group
 
     def _delete(self, security_group):
         self.conn.network.delete_security_group(security_group.id)
@@ -240,13 +437,95 @@ class SecurityGroupModule(OpenStackModule):
 
         return self.conn.network.find_security_group(**kwargs)
 
+    def _generate_security_group_rules(self, security_group):
+        security_group_cache = {}
+        security_group_cache[security_group.name] = security_group
+        security_group_cache[security_group.id] = security_group
+
+        def _generate_security_group_rule(params):
+            prototype = dict(
+                (k, params[k])
+                for k in ['direction', 'protocol', 'remote_ip_prefix']
+                if params[k] is not None)
+
+            prototype['project_id'] = security_group.project_id
+            prototype['security_group_id'] = security_group.id
+
+            remote_group_name_or_id = params['remote_group']
+            if remote_group_name_or_id is not None:
+                if remote_group_name_or_id in security_group_cache:
+                    remote_group = \
+                        security_group_cache[remote_group_name_or_id]
+                else:
+                    remote_group = self.conn.network.find_security_group(
+                        remote_group_name_or_id, ignore_missing=False)
+                    security_group_cache[remote_group_name_or_id] = \
+                        remote_group
+
+                prototype['remote_group_id'] = remote_group.id
+
+            ether_type = params['ether_type']
+            if ether_type is not None:
+                prototype['ether_type'] = ether_type
+
+            protocol = params['protocol']
+            port_range_max = params['port_range_max']
+            port_range_min = params['port_range_min']
+
+            if protocol in ['icmp', 'ipv6-icmp']:
+                # Check if the user is supplying -1 for ICMP.
+                if port_range_max is not None and int(port_range_max) != -1:
+                    prototype['port_range_max'] = int(port_range_max)
+                if port_range_min is not None and int(port_range_min) != -1:
+                    prototype['port_range_min'] = int(port_range_min)
+            elif protocol in ['tcp', 'udp']:
+                if port_range_max is not None and int(port_range_max) != -1:
+                    prototype['port_range_max'] = int(port_range_max)
+                if port_range_min is not None and int(port_range_min) != -1:
+                    prototype['port_range_min'] = int(port_range_min)
+            elif protocol in ['any', '0']:
+                # Rules with 'any' protocol do not match ports
+                pass
+            else:
+                if port_range_max is not None:
+                    prototype['port_range_max'] = int(port_range_max)
+                if port_range_min is not None:
+                    prototype['port_range_min'] = int(port_range_min)
+
+            return prototype
+
+        return [_generate_security_group_rule(r)
+                for r in (self.params['security_group_rules'] or [])]
+
     def _update(self, security_group, update):
+        security_group = self._update_security_group(security_group, update)
+        return self._update_security_group_rules(security_group, update)
+
+    def _update_security_group(self, security_group, update):
         attributes = update.get('attributes')
         if attributes:
             security_group = self.conn.network.update_security_group(
                 security_group.id, **attributes)
 
         return security_group
+
+    def _update_security_group_rules(self, security_group, update):
+        create_security_group_rules = update.get('create_security_group_rules')
+        if create_security_group_rules:
+            self.conn.network.\
+                create_security_group_rules(create_security_group_rules)
+
+        delete_security_group_rules = update.get('delete_security_group_rules')
+        if delete_security_group_rules:
+            for security_group_rule in delete_security_group_rules:
+                self.conn.network.\
+                    delete_security_group_rule(security_group_rule['id'])
+
+        if create_security_group_rules or delete_security_group_rules:
+            # Update security group with created and deleted rules
+            return self.conn.network.get_security_group(security_group.id)
+        else:
+            return security_group
 
     def _will_change(self, state, security_group):
         if state == 'present' and not security_group:
