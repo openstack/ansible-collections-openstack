@@ -28,7 +28,7 @@ collection across several SDK releases.
 [ansible-tags]: https://docs.ansible.com/ansible/latest/user_guide/playbooks_tags.html
 [openstacksdk-cloud-layer-stays]: https://meetings.opendev.org/irclogs/%23openstack-sdks/%23openstack-sdks.2022-04-27.log.html
 [openstacksdk-release-notes-zed]: https://docs.openstack.org/releasenotes/openstacksdk/zed.html
-[openstacksdk-to-dict]: https://opendev.org/openstack/openstacksdk/src/branch/master/openstack/resource.py#L990
+[openstacksdk-to-dict]: https://opendev.org/openstack/openstacksdk/src/branch/master/openstack/resource.py
 [openstacksdk]: https://opendev.org/openstack/openstacksdk
 
 ## Notable changes between release series 2.x.x and 1.x.x

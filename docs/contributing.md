@@ -7,7 +7,7 @@ We, and the OpenStack community in general, use OpenDev for its development. Pat
 opendev-gerrit]. Pull requests submitted through GitHub will be ignored. Please read OpenStack's [Developer Workflow][
 openstack-developer-workflow] for details.
 
-For hacking on the Ansible OpenStack collection it helps to [prepare a DevStack environment](DEVSTACK.md) first.
+For hacking on the Ansible OpenStack collection it helps to [prepare a DevStack environment](devstack.md) first.
 
 ## Hosting
 
@@ -27,7 +27,7 @@ openstacksdk], please read our [branching docs](branching.md).
 * For an example on how to write a `*_info` module, have a look at module
   [`openstack.cloud.neutron_rbac_policies_info`](../plugins/modules/neutron_rbac_policies_info.py).
 * For an example on how to write a regular non-`*_info` module, have a look at module
-  [`openstack.cloud.neutron_rbac_policies_info`](../plugins/modules/neutron_rbac_policies.py) or any other module which
+  [`openstack.cloud.neutron_rbac_policy`](../plugins/modules/neutron_rbac_policy.py) or any other module which
   contains a `_will_change` method.
 * Do NOT use modules which define a `_system_state_change` function as examples, because they often do not properly
   define Ansible's check mode, idempotency and/or updates. Refer to modules which define a `_will_change` function
@@ -144,7 +144,7 @@ openstacksdk], please read our [branching docs](branching.md).
   `federation_mapping_info` can be found in role `federation_mapping`.
 * Zuul CI jobs are defined in [`.zuul.yaml`](../.zuul.yaml).
 * Add assertions on return values from Ansible modules in integration tests. For an example, refer to
-  [`ci/roles/floating_ip_info/tasks/main.yml`](../ci/roles/floating_ip_info/tasks/main.yml).
+  [`ci/roles/floating_ip/tasks/main.yml`](../ci/roles/floating_ip/tasks/main.yml).
   We need those checks to validate return values from [openstacksdk][openstacksdk], which might change across releases.
   Adding those assertions will be done in minutes, while checking the output manually during code reviews takes much
   more time.
@@ -184,6 +184,6 @@ Read [Release Guide](releasing.md) on how to publish new releases.
 [openstack-discuss]: http://lists.openstack.org/cgi-bin/mailman/listinfo/openstack-discuss
 [openstackclient]: https://docs.openstack.org/python-openstackclient/latest/
 [openstacksdk-cloud-layer-stays]: https://meetings.opendev.org/irclogs/%23openstack-sdks/%23openstack-sdks.2022-04-27.log.html
-[openstacksdk-to-dict]: https://opendev.org/openstack/openstacksdk/src/branch/master/openstack/resource.py#L990
+[openstacksdk-to-dict]: https://opendev.org/openstack/openstacksdk/src/branch/master/openstack/resource.py
 [openstacksdk]: https://opendev.org/openstack/openstacksdk
 [storyboard]: https://storyboard.openstack.org/#!/project/openstack/ansible-collections-openstack
