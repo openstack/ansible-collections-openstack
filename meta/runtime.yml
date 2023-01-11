@@ -60,6 +60,8 @@ action_groups:
     - project_info
     - quota
     - recordset
+    - resource
+    - resources
     - role_assignment
     - router
     - routers_info

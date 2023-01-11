@@ -42,6 +42,8 @@
     - { role: port, tags: port }
     - { role: project, tags: project }
     - { role: recordset, tags: recordset }
+    - { role: resource, tags: resource }
+    - { role: resources, tags: resources }
     - { role: role_assignment, tags: role_assignment }
     - { role: router, tags: router }
     - { role: security_group, tags: security_group }

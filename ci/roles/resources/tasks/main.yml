@@ -1,0 +1,53 @@
+---
+- module_defaults:
+    group/openstack.cloud.openstack:
+      cloud: "{{ cloud }}"
+    # Listing modules individually is required for
+    # backward compatibility with Ansible 2.9 only
+    openstack.cloud.resources:
+      cloud: "{{ cloud }}"
+  block:
+    - name: List images
+      openstack.cloud.resources:
+        service: image
+        type: image
+      register: images
+
+    - name: Identify CirrOS image id
+      set_fact:
+        image_id: "{{ images.resources|community.general.json_query(query)|first }}"
+      vars:
+        query: "[?starts_with(name, 'cirros')].id"
+
+    - name: Assert return values of resources module
+      assert:
+        that:
+          - images is not changed
+          # allow new fields to be introduced but prevent fields from being removed
+          - expected_fields|difference(images.keys())|length == 0
+
+    - name: List compute flavors
+      openstack.cloud.resources:
+        service: compute
+        type: flavor
+      register: flavors
+
+    - name: Identify m1.tiny flavor id
+      set_fact:
+        flavor_id: "{{ flavors.resources|community.general.json_query(query)|first }}"
+      vars:
+        query: "[?name == 'm1.tiny'].id"
+
+    - name: List public network
+      openstack.cloud.resources:
+        service: network
+        type: network
+        parameters:
+          name: public
+      register: networks
+
+    - name: Assert public network
+      assert:
+        that:
+          - networks.resources|length == 1
+          - networks.resources.0.name == 'public'

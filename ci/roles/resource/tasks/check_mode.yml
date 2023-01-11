@@ -1,0 +1,194 @@
+---
+- module_defaults:
+    group/openstack.cloud.openstack:
+      cloud: "{{ cloud }}"
+    # Listing modules individually is required for
+    # backward compatibility with Ansible 2.9 only
+    openstack.cloud.resource:
+      cloud: "{{ cloud }}"
+    openstack.cloud.resources:
+      cloud: "{{ cloud }}"
+  block:
+    - name: Create security group
+      check_mode: false
+      openstack.cloud.resource:
+        service: network
+        type: security_group
+        attributes:
+          name: ansible_security_group
+          description: 'ansible security group'
+      register: security_group
+
+    - name: Assert created security group
+      assert:
+        that:
+          - security_group.resource.name == 'ansible_security_group'
+          - security_group.resource.description == 'ansible security group'
+
+    - name: Find created security group
+      openstack.cloud.resources:
+        service: network
+        type: security_group
+        parameters:
+          name: ansible_security_group
+      register: security_groups
+
+    - name: Assert created security group independently
+      assert:
+        that:
+          - security_groups.resources | length == 1
+          - security_groups.resources.0.name == 'ansible_security_group'
+          - security_groups.resources.0.description == 'ansible security group'
+
+    - name: Update security group simulation
+      check_mode: true
+      openstack.cloud.resource:
+        service: network
+        type: security_group
+        attributes:
+          name: ansible_security_group
+          description: 'ansible neutron security group'
+      register: security_group
+
+    - name: Assert security group update simulation
+      assert:
+        that:
+          - security_group is changed
+          - security_group.resource.description == 'ansible neutron security group'
+
+    - name: Find non-updated security group
+      openstack.cloud.resources:
+        service: network
+        type: security_group
+        parameters:
+          name: ansible_security_group
+      register: security_groups
+
+    - name: Assert security group non-update
+      assert:
+        that:
+          - security_groups.resources | length == 1
+          - security_groups.resources.0.name == 'ansible_security_group'
+          - security_groups.resources.0.description == 'ansible security group'
+
+    - name: Update security group
+      check_mode: false
+      openstack.cloud.resource:
+        service: network
+        type: security_group
+        attributes:
+          name: ansible_security_group
+          description: 'ansible neutron security group'
+      register: security_group
+
+    - name: Assert security group update
+      assert:
+        that:
+          - security_group is changed
+          - security_group.resource.description == 'ansible neutron security group'
+
+    - name: Find updated security group
+      openstack.cloud.resources:
+        service: network
+        type: security_group
+        parameters:
+          name: ansible_security_group
+      register: security_groups
+
+    - name: Assert security group update
+      assert:
+        that:
+          - security_groups.resources | length == 1
+          - security_groups.resources.0.name == 'ansible_security_group'
+          - security_groups.resources.0.description == 'ansible neutron security group'
+
+    - name: Delete security group simulation
+      check_mode: true
+      openstack.cloud.resource:
+        service: network
+        type: security_group
+        attributes:
+          name: ansible_security_group
+        state: absent
+      register: security_group
+
+    - name: Assert security group delete simulation
+      assert:
+        that:
+          - security_group is changed
+          - "'security_group' not in security_group"
+
+    - name: Find non-deleted security group
+      openstack.cloud.resources:
+        service: network
+        type: security_group
+        parameters:
+          name: ansible_security_group
+      register: security_groups
+
+    - name: Assert security group non-deletion
+      assert:
+        that:
+          - security_groups.resources | length == 1
+          - security_groups.resources.0.name == 'ansible_security_group'
+          - security_groups.resources.0.description == 'ansible neutron security group'
+
+    - name: Delete security group
+      check_mode: false
+      openstack.cloud.resource:
+        service: network
+        type: security_group
+        attributes:
+          name: ansible_security_group
+        state: absent
+      register: security_group
+
+    - name: Assert security group deletion
+      assert:
+        that:
+          - security_group is changed
+          - "'resource' not in security_group"
+
+    - name: Find deleted security group
+      openstack.cloud.resources:
+        service: network
+        type: security_group
+        parameters:
+          name: ansible_security_group
+      register: security_groups
+
+    - name: Assert security group deletion
+      assert:
+        that:
+          - security_groups.resources | length == 0
+
+    - name: Create security group simulation
+      check_mode: true
+      openstack.cloud.resource:
+        service: network
+        type: security_group
+        attributes:
+          name: ansible_security_group
+          description: 'ansible security group'
+      register: security_group
+
+    - name: Assert security group creation simulation
+      assert:
+        that:
+          - security_group is changed
+          - security_group.resource.name == 'ansible_security_group'
+          - security_group.resource.description == 'ansible security group'
+          - security_group.resource.keys() | sort == ['description', 'name']  | sort
+
+    - name: Find non-created security group
+      openstack.cloud.resources:
+        service: network
+        type: security_group
+        parameters:
+          name: ansible_security_group
+      register: security_groups
+
+    - name: Assert security group non-creation
+      assert:
+        that:
+          - security_groups.resources | length == 0
