@@ -5,7 +5,7 @@
      name: "{{ network_name }}"
      state: present
      shared: "{{ network_shared }}"
-     external: "{{ network_external }}"
+     external: false
   register: infonet
 
 - name: Check output of creating network
@@ -58,7 +58,7 @@
       - "'is_shared' in result.networks.0"
       - result.networks.0['is_shared']|lower == network_shared|lower
       - "'is_router_external' in result.networks.0"
-      - result.networks[0]['is_router_external'] == {{ network_external }}
+      - not (result.networks[0]['is_router_external'] | bool)
 
 - name: Create network - with new SDK params
   openstack.cloud.network:
@@ -66,7 +66,7 @@
      name: "{{ network_name_newparams }}"
      state: present
      shared: "{{ network_shared }}"
-     external: "{{ network_external }}"
+     external: false
      mtu: "{{ mtu }}"
      port_security_enabled: "{{ port_security_enabled }}"
   register: result_create_nw_with_new_params
@@ -112,7 +112,7 @@
      name: "{{ network_name_updates }}"
      state: present
      shared: "{{ network_shared }}"
-     external: "{{ network_external }}"
+     external: false
      mtu: "{{ mtu }}"
      port_security_enabled: "{{ port_security_enabled }}"
   register: result_create_nw_for_updates
@@ -123,7 +123,7 @@
      name: "{{ network_name_updates }}"
      state: present
      shared: "{{ network_shared }}"
-     external: "{{ network_external }}"
+     external: false
      mtu: "{{ mtu }}"
      port_security_enabled: "{{ port_security_enabled }}"
      # You cannot update this property.
@@ -142,7 +142,7 @@
      name: "{{ network_name_updates }}"
      state: present
      shared: "{{ network_shared }}"
-     external: "{{ network_external }}"
+     external: false
      # NOTE: This property should be updated
      mtu: "{{ mtu - 50 }}"
      # NOTE: This property should be updated

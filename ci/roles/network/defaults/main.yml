@@ -28,7 +28,6 @@ expected_fields:
   - updated_at
 dns_domain: example.opendev.org
 mtu: 1250
-network_external: false
 network_name: shade_network
 network_name_newparams: newparams_network
 network_name_updates: update_network

@@ -39,7 +39,6 @@ expected_fields:
   - tenant_id
   - trunk_details
   - updated_at
-network_external: true
 network_name: ansible_port_network
 no_security_groups: True
 port_name: ansible_port

@@ -19,7 +19,6 @@ expected_fields:
   - updated_at
 network_name: ansible_net
 external_network_name: ansible_external_net
-network_external: true
 router_name: ansible_router
 test_subnets:
   - cloud: "{{ cloud }}"

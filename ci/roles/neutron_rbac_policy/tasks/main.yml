@@ -16,7 +16,7 @@
      state: present
      project: "{{ source_project.project.id }}"
      shared: false
-     external: "{{ network_external }}"
+     external: true
   register: network
 
 - name: Create target project

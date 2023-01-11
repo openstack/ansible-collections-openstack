@@ -331,9 +331,7 @@
      cloud: "{{ cloud }}"
      state: present
      name: "{{ external_network_name }}"
-     external: "{{ network_external }}"
-  when:
-    - network_external
+     external: true
 
 - name: Create subnet5
   openstack.cloud.subnet:
@@ -342,8 +340,6 @@
      network_name: "{{ external_network_name }}"
      name: shade_subnet5
      cidr: 10.6.6.0/24
-  when:
-    - network_external
 
 - name: Update router (add external gateway)
   openstack.cloud.router:
@@ -353,8 +349,6 @@
      network: "{{ external_network_name }}"
      interfaces:
          - shade_subnet1
-  when:
-    - network_external
 
 - name: Gather routers info
   openstack.cloud.routers_info:
@@ -392,8 +386,6 @@
      external_fixed_ips:
         - subnet: shade_subnet5
           ip: 10.6.6.100
-  when:
-    - network_external
 
 - name: Gather routers info
   openstack.cloud.routers_info:
@@ -409,8 +401,6 @@
       - info.routers.0.name == router_name
       - (info.routers.0.external_gateway_info.external_fixed_ips|length) == 1
       - info.routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.100"
-  when:
-    - network_external
 
 - name: Update router (add external fixed ips)
   openstack.cloud.router:
@@ -426,8 +416,6 @@
              ip: 10.6.6.100
            - subnet: shade_subnet5
              ip: 10.6.6.101
-  when:
-    - network_external
 
 - name: Update router (add external fixed ips) again
   openstack.cloud.router:
@@ -442,8 +430,6 @@
           ip: 10.6.6.100
         - subnet: shade_subnet5
           ip: 10.6.6.101
-  when:
-    - network_external
   register: router
 
 - name: Assert idempotent module
@@ -465,8 +451,6 @@
       - (info.routers.0.external_gateway_info.external_fixed_ips|length) == 2
       - info.routers.0.external_gateway_info.external_fixed_ips|map(attribute='ip_address')|sort|list ==
         ["10.6.6.100", "10.6.6.101"]
-  when:
-    - network_external
 
 - name: Update router (remove external fixed ips)
   openstack.cloud.router:
@@ -479,8 +463,6 @@
      external_fixed_ips:
         - subnet: shade_subnet5
           ip: 10.6.6.101
-  when:
-    - network_external
 
 - name: Update router (remove external fixed ips) again
   openstack.cloud.router:
@@ -493,8 +475,6 @@
      external_fixed_ips:
         - subnet: shade_subnet5
           ip: 10.6.6.101
-  when:
-    - network_external
   register: router
 
 - name: Assert idempotent module
@@ -515,8 +495,6 @@
       - info.routers.0.name == router_name
       - (info.routers.0.external_gateway_info.external_fixed_ips|length) == 1
       - info.routers.0.external_gateway_info.external_fixed_ips.0.ip_address == "10.6.6.101"
-  when:
-    - network_external
 
 - name: Update router (disable external snat)
   openstack.cloud.router:
@@ -530,8 +508,6 @@
      external_fixed_ips:
         - subnet: shade_subnet5
           ip: 10.6.6.101
-  when:
-    - network_external
 
 - name: Gather routers info
   openstack.cloud.routers_info:
@@ -546,8 +522,6 @@
     that:
       - info.routers.0.name == router_name
       - not info.routers.0.external_gateway_info.enable_snat
-  when:
-    - network_external
 
 - name: Update router (disable external snat) again
   openstack.cloud.router:
@@ -561,8 +535,6 @@
      external_fixed_ips:
         - subnet: shade_subnet5
           ip: 10.6.6.101
-  when:
-    - network_external
   register: router
 
 - name: Assert idempotent module
@@ -727,8 +699,6 @@
      cloud: "{{ cloud }}"
      state: absent
      name: shade_subnet5
-  when:
-    - network_external
 
 - name: Delete subnets 1-4
   openstack.cloud.subnet:
@@ -748,7 +718,5 @@
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ external_network_name }}"
-  when:
-    - network_external
 
 - include_tasks: shared_network.yml
