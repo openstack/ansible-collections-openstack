@@ -82,6 +82,9 @@ options:
   remote_ip_prefix:
     description:
       - Source IP address(es) in CIDR notation.
+      - When a netmask such as C(/32) is missing from I(remote_ip_prefix), then
+        this module will fail on updates with OpenStack error message
+        C(Security group rule already exists.).
       - Mutually exclusive with I(remote_group).
     type: str
   security_group:
@@ -308,8 +311,22 @@ class SecurityGroupRuleModule(OpenStackModule):
     def _define_prototype(self):
         filters = {}
         prototype = dict((k, self.params[k])
-                         for k in ['direction', 'protocol', 'remote_ip_prefix']
+                         for k in ['direction', 'remote_ip_prefix']
                          if self.params[k] is not None)
+
+        # When remote_ip_prefix is missing a netmask, then Neutron will add
+        # a netmask using Python library netaddr [0] and its IPNetwork
+        # class [1]. We do not want to introduce additional Python
+        # dependencies to our code base and neither want to replicate
+        # netaddr's parse_ip_network code here. So we do not handle
+        # remote_ip_prefix without a netmask and instead let Neutron handle
+        # it.
+        # [0] https://opendev.org/openstack/neutron/src/commit/\
+        #     43d94640568828f5e98bbb1e9df985ec3f1bb2d2/neutron/db/securitygroups_db.py#L775
+        # [1] https://github.com/netaddr/netaddr/blob/\
+        #     b1d8f016abee00c8a93e35b928acdc22797c800a/netaddr/ip/__init__.py#L841
+        # [2] https://github.com/netaddr/netaddr/blob/\
+        #     b1d8f016abee00c8a93e35b928acdc22797c800a/netaddr/ip/__init__.py#L773
 
         project_name_or_id = self.params['project']
         if project_name_or_id is not None:
@@ -335,6 +352,9 @@ class SecurityGroupRuleModule(OpenStackModule):
             prototype['ether_type'] = ether_type
 
         protocol = self.params['protocol']
+        if protocol is not None and protocol not in ['any', '0']:
+            prototype['protocol'] = protocol
+
         port_range_max = self.params['port_range_max']
         port_range_min = self.params['port_range_min']
 
@@ -383,9 +403,6 @@ class SecurityGroupRuleModule(OpenStackModule):
 
         if 'ether_type' in prototype:
             prototype['ethertype'] = prototype.pop('ether_type')
-
-        if 'protocol' in prototype and prototype['protocol'] in ['any', '0']:
-            prototype.pop('protocol')
 
         if 'protocol' in prototype and prototype['protocol'] in ['tcp', 'udp']:
             # Check if the user is supplying -1, 1 to 65535 or None values

@@ -296,3 +296,166 @@
     cloud: "{{ cloud }}"
     name: ansible_security_group
     state: absent
+
+- name: Create security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules: []
+    state: present
+
+- name: List all available rules of a specific security group
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert security group without rules
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 0
+
+- name: Create 'any' rule
+  openstack.cloud.security_group_rule:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+    state: present
+    protocol: any
+    remote_ip_prefix: 0.0.0.0/0
+  register: security_group_rule
+
+- name: Assert 'any' rule
+  assert:
+    that:
+      - security_group_rule is changed
+
+- name: List all available rules of a specific security group
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert security group with a single rule
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 1
+
+- name: Create 'any' rule with port range [-1, -1]
+  openstack.cloud.security_group_rule:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+    state: present
+    protocol: any
+    port_range_min: -1
+    port_range_max: -1
+    remote_ip_prefix: 0.0.0.0/0
+  register: security_group_rule
+
+- name: Assert 'any' rule with port range [-1, -1]
+  assert:
+    that:
+      - security_group_rule is not changed
+
+- name: List all available rules of a specific security group
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert security group with a single rule
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 1
+
+- name: Delete security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    state: absent
+
+- name: Create security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules: []
+    state: present
+
+- name: List all available rules of a specific security group
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert security group without rules
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 0
+
+- name: Create rule with remote ip prefix having no cidr slash
+  openstack.cloud.security_group_rule:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+    state: present
+    protocol: any
+    remote_ip_prefix: 5.6.7.8
+  register: security_group_rule
+
+- name: List all available rules of a specific security group
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert security group with a rule with remote ip prefix having no cidr slash
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 1
+      - security_group_rules.security_group_rules.0.remote_ip_prefix == '5.6.7.8/32'
+
+- name: Create rule with remote ip prefix having no cidr slash again
+  openstack.cloud.security_group_rule:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+    state: present
+    protocol: any
+    remote_ip_prefix: 5.6.7.8
+  register: security_group_rule
+  ignore_errors: true
+
+- name: Assert rule with remote ip prefix having no cidr slash
+  assert:
+    that:
+      - security_group_rule is failed
+      - "'Security group rule already exists.' in security_group_rule.msg"
+
+- name: Create rule with remote ip prefix having a cidr slash again
+  openstack.cloud.security_group_rule:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+    state: present
+    protocol: any
+    remote_ip_prefix: 5.6.7.8/32
+  register: security_group_rule
+
+- name: Assert rule with remote ip prefix having a cidr slash
+  assert:
+    that:
+      - security_group_rule is not changed
+
+- name: List all available rules of a specific security group
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert security group with a rule with remote ip prefix having a cidr slash again
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 1
+      - security_group_rules.security_group_rules.0.remote_ip_prefix == '5.6.7.8/32'
+
+- name: Delete security group
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    state: absent
