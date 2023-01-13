@@ -20,7 +20,6 @@
     - { role: host_aggregate, tags: host_aggregate }
     - { role: identity_domain, tags: identity_domain }
     - { role: identity_group, tags: identity_group }
-    - { role: identity_group_info, tags: identity_group_info }
     - { role: identity_user, tags: identity_user }
     - { role: identity_user_info, tags: identity_user_info }
     - { role: identity_role, tags: identity_role }

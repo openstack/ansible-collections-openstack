@@ -4,108 +4,74 @@
 # Copyright (c) 2019, Phillipe Smith <phillipelnx@gmail.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: identity_group_info
-short_description: Retrieve info about one or more OpenStack groups
+short_description: Fetch OpenStack identity (Keystone) groups
 author: OpenStack Ansible SIG
 description:
-    - Retrieve info about a one or more OpenStack groups.
+  - Fetch OpenStack identity (Keystone) groups.
 options:
-   name:
-     description:
-        - Name or ID of the group.
-     type: str
-   domain:
-     description:
-        - Name or ID of the domain containing the group if the cloud supports domains
-     type: str
-   filters:
-     description:
-        - A dictionary of meta data to use for further filtering.  Elements of
-          this dictionary may be additional dictionaries.
-     type: dict
+  domain:
+    description:
+      - Name or ID of the domain containing the group.
+    type: str
+  filters:
+    description:
+      - A dictionary of meta data to use for further filtering. Elements of
+        this dictionary may be additional dictionaries.
+    type: dict
+  name:
+    description:
+      - Name or ID of the group.
+    type: str
 extends_documentation_fragment:
-- openstack.cloud.openstack
+  - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
-# Gather info about previously created groups
-- name: gather info
-  hosts: localhost
-  tasks:
-    - name: Gather info about previously created groups
-      openstack.cloud.identity_group_info:
-        cloud: awesomecloud
-      register: openstack_groups
-    - debug:
-        var: openstack_groups
+EXAMPLES = r'''
+- name: Gather previously created groups
+  openstack.cloud.identity_group_info:
+    cloud: awesomecloud
 
-# Gather info about a previously created group by name
-- name: gather info
-  hosts: localhost
-  tasks:
-    - name: Gather info about a previously created group by name
-      openstack.cloud.identity_group_info:
-        cloud: awesomecloud
-        name: demogroup
-      register: openstack_groups
-    - debug:
-        var: openstack_groups
+- name: Gather previously created groups by name
+  openstack.cloud.identity_group_info:
+    cloud: awesomecloud
+    name: demogroup
 
-# Gather info about a previously created group in a specific domain
-- name: gather info
-  hosts: localhost
-  tasks:
-    - name: Gather info about a previously created group in a specific domain
-      openstack.cloud.identity_group_info:
-        cloud: awesomecloud
-        name: demogroup
-        domain: admindomain
-      register: openstack_groups
-    - debug:
-        var: openstack_groups
+- name: Gather previously created groups in a specific domain
+  openstack.cloud.identity_group_info:
+    cloud: awesomecloud
+    domain: admindomain
 
-# Gather info about a previously created group in a specific domain with filter
-- name: gather info
-  hosts: localhost
-  tasks:
-    - name: Gather info about a previously created group in a specific domain with filter
-      openstack.cloud.identity_group_info:
-        cloud: awesomecloud
-        name: demogroup
-        domain: admindomain
-        filters:
-          enabled: False
-      register: openstack_groups
-    - debug:
-        var: openstack_groups
+- name: Gather and filter previously created groups
+  openstack.cloud.identity_group_info:
+    cloud: awesomecloud
+    name: demogroup
+    domain: admindomain
+    filters:
+      is_enabled: False
 '''
 
-
-RETURN = '''
+RETURN = r'''
 groups:
-    description: Dictionary describing all the matching groups.
-    returned: always, but can be an empty list
-    type: list
-    elements: dict
-    contains:
-        name:
-            description: Name given to the group.
-            returned: success
-            type: str
-        description:
-            description: Description of the group.
-            returned: success
-            type: str
-        id:
-            description: Unique UUID.
-            returned: success
-            type: str
-        domain_id:
-            description: Domain ID containing the group (keystone v3 clouds only)
-            returned: success
-            type: bool
+  description: Dictionary describing all matching identity groups.
+  returned: always
+  type: list
+  elements: dict
+  contains:
+    name:
+      description: Name given to the group.
+      type: str
+    description:
+      description: Description of the group.
+      type: str
+    id:
+      description: Unique UUID.
+      type: str
+    domain_id:
+      description: Domain ID containing the group (keystone v3 clouds only)
+      type: bool
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -113,9 +79,9 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class IdentityGroupInfoModule(OpenStackModule):
     argument_spec = dict(
-        name=dict(),
         domain=dict(),
         filters=dict(type='dict'),
+        name=dict(),
     )
     module_kwargs = dict(
         supports_check_mode=True
@@ -123,20 +89,19 @@ class IdentityGroupInfoModule(OpenStackModule):
 
     def run(self):
         name = self.params['name']
-        domain = self.params['domain']
         filters = self.params['filters'] or {}
 
-        args = {}
-        if domain:
-            dom = self.conn.identity.find_domain(domain)
-            if dom:
-                args['domain_id'] = dom['id']
-            else:
-                self.fail_json(msg='Domain name or ID does not exist')
+        kwargs = {}
+        domain_name_or_id = self.params['domain']
+        if domain_name_or_id:
+            domain = self.conn.identity.find_domain(domain_name_or_id)
+            if domain is None:
+                self.exit_json(changed=False, groups=[])
+            kwargs['domain_id'] = domain['id']
 
-        groups = self.conn.search_groups(name, filters, **args)
-        groups = [g.to_dict(computed=False) for g in groups]
-        self.exit_json(changed=False, groups=groups)
+        groups = self.conn.search_groups(name, filters, **kwargs)
+        self.exit_json(changed=False,
+                       groups=[g.to_dict(computed=False) for g in groups])
 
 
 def main():

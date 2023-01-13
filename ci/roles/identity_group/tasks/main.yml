@@ -1,138 +1,220 @@
 ---
-- name: Create domain
-  openstack.cloud.identity_domain:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ domain_name }}"
-  register: domain
-
 - name: Create group
   openstack.cloud.identity_group:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ group_name }}"
-  register: group_result
+    cloud: "{{ cloud }}"
+    state: present
+    description: "ansible group"
+    name: ansible_group
+  register: group
 
-- name: Assert changed
+- name: Assert return values of identity_group module
   assert:
-    that: group_result is changed
-
-- name: Assert returned fields
-  assert:
-    that: item in group_result.group
-  loop: "{{ expected_fields }}"
+    that:
+      - group.group.name == 'ansible_group'
+      - group.group.description == "ansible group"
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(group.group.keys())|length == 0
 
 - name: Create group again
   openstack.cloud.identity_group:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ group_name }}"
-  register: group_result
+    cloud: "{{ cloud }}"
+    state: present
+    description: "ansible group"
+    name: ansible_group
+  register: group
 
-- name: Assert not changed
+- name: Assert group did not change
   assert:
-    that: group_result is not changed
+    that:
+      - group is not changed
 
 - name: Update group
   openstack.cloud.identity_group:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ group_name }}"
-     description: "updated description"
-  register: group_result
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_group
+    description: "updated description"
+  register: group
 
 - name: Assert changed
   assert:
     that:
-      - group_result is changed
-      - group_result.group.description == "updated description"
+      - group is changed
+      - group.group.description == "updated description"
+
+- name: Fetch all groups
+  openstack.cloud.identity_group_info:
+    cloud: "{{ cloud }}"
+  register: _groups
+
+- name: Assert return values of identity_group_info module
+  assert:
+    that:
+      - _groups.groups | length > 0
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(_groups.groups.0.keys())|length == 0
+
+- name: List group with filters
+  openstack.cloud.identity_group_info:
+    cloud: "{{ cloud }}"
+    domain: default
+    filters:
+      name: ansible_group
+  register: _groups
+
+- name: Assert group with filters
+  assert:
+    that:
+      - _groups.groups | length == 1
+      - _groups.groups.0.id == group.group.id
+
+- name: Create domain
+  openstack.cloud.identity_domain:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_domain
+  register: domain
 
 - name: Create group in specific domain
   openstack.cloud.identity_group:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ group_name }}"
-     domain_id: "{{ domain.domain.id }}"
-  register: group_result
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_group
+    domain_id: "{{ domain.domain.id }}"
+  register: group
 
 - name: Assert results
   assert:
     that:
-      - group_result is changed
-      - group_result.group.domain_id == domain.domain.id
+      - group is changed
+      - group.group.domain_id == domain.domain.id
+
+- name: List group by group name
+  openstack.cloud.identity_group_info:
+    cloud: "{{ cloud }}"
+    name: ansible_group
+  register: _groups
+
+- name: Assert groups by group name
+  assert:
+    that:
+      - _groups.groups | length == 2
+
+- name: List group by domain_id
+  openstack.cloud.identity_group_info:
+    cloud: "{{ cloud }}"
+    domain: ansible_domain
+  register: _groups
+
+- name: Assert groups by domain_id
+  assert:
+    that:
+      - _groups.groups | length == 1
+      - _groups.groups.0.id == group.group.id
+      - _groups.groups.0.domain_id == domain.domain.id
+
+- name: List group by domain_id and group name
+  openstack.cloud.identity_group_info:
+    cloud: "{{ cloud }}"
+    domain: ansible_domain
+    name: ansible_group
+  register: _groups
+
+- name: Assert groups by domain_id and group name
+  assert:
+    that:
+      - _groups.groups | length == 1
+      - _groups.groups.0.id == group.group.id
 
 - name: Create group in specific domain again
   openstack.cloud.identity_group:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ group_name }}"
-     domain_id: "{{ domain.domain.id }}"
-  register: group_result
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_group
+    domain_id: "{{ domain.domain.id }}"
+  register: group
 
 - name: Assert not changed
   assert:
-    that: group_result is not changed
+    that:
+      - group is not changed
 
-- name: Delete ambiguous domain
+- name: Delete ambiguous group
   openstack.cloud.identity_group:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ group_name }}"
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_group
   ignore_errors: true
-  register: group_result
+  register: group
 
 - name: Assert failed
   assert:
-    that: group_result is failed
+    that:
+      - group is failed
 
 - name: Delete group in specific domain
   openstack.cloud.identity_group:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ group_name }}"
-     domain_id: "{{ domain.domain.id }}"
-  register: group_result
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_group
+    domain_id: "{{ domain.domain.id }}"
+  register: group
 
 - name: Assert changed
   assert:
-    that: group_result is changed
+    that:
+      - group is changed
 
 - name: Delete group in specific domain again
   openstack.cloud.identity_group:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ group_name }}"
-     domain_id: "{{ domain.domain.id }}"
-  register: group_result
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_group
+    domain_id: "{{ domain.domain.id }}"
+  register: group
 
 - name: Assert not changed
   assert:
-    that: group_result is not changed
-
-- name: Delete group
-  openstack.cloud.identity_group:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ group_name }}"
-  register: group_result
-
-- name: Assert changed
-  assert:
-    that: group_result is changed
-
-- name: Delete group again
-  openstack.cloud.identity_group:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: "{{ group_name }}"
-  register: group_result
-
-- name: Assert not changed
-  assert:
-    that: group_result is not changed
+    that:
+      - group is not changed
 
 - name: Delete domain
   openstack.cloud.identity_domain:
     cloud: "{{ cloud }}"
     state: absent
-    name: "{{ domain_name }}"
+    name: ansible_domain
+
+- name: Delete group
+  openstack.cloud.identity_group:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_group
+  register: group
+
+- name: Assert changed
+  assert:
+    that:
+      - group is changed
+
+- name: Delete group again
+  openstack.cloud.identity_group:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_group
+  register: group
+
+- name: Assert not changed
+  assert:
+    that:
+      - group is not changed
+
+- name: List group
+  openstack.cloud.identity_group_info:
+    cloud: "{{ cloud }}"
+    name: ansible_group
+  register: _groups
+
+- name: Assert group does not exist
+  assert:
+    that:
+      - _groups.groups | length == 0

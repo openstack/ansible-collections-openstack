@@ -1,5 +1,3 @@
-group_name: ansible_group
-domain_name: ansible_domain
 expected_fields:
   - description
   - domain_id
