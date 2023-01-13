@@ -238,7 +238,7 @@
   register: flavor_info
 
 - assert:
-    that: item in flavor_info.openstack_flavors[0]
+    that: item in flavor_info.flavors[0]
   loop: "{{ expected_fields }}"
 
 - name: List flavors with filter
@@ -250,5 +250,5 @@
 - name: Check output of list flavors with filter
   assert:
     that:
-      - flavor.openstack_flavors | length == 1
-      - flavor.openstack_flavors.0.name == "m1.tiny"
+      - flavor.flavors | length == 1
+      - flavor.flavors.0.name == "m1.tiny"
