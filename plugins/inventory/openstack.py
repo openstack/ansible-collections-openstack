@@ -8,410 +8,453 @@
 # Copyright (c) 2017 Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-
-DOCUMENTATION = '''
----
+DOCUMENTATION = r'''
 name: openstack
 author: OpenStack Ansible SIG
 short_description: OpenStack inventory source
 description:
-    - Get inventory hosts from OpenStack clouds
-    - Uses openstack.(yml|yaml) YAML configuration file to configure the inventory plugin
-    - Uses standard clouds.yaml YAML configuration file to configure cloud credentials
+  - Gather servers from OpenStack clouds and add them as Ansible hosts to your
+    inventory.
+  - Use YAML configuration file C(openstack.{yaml,yml}) to configure this
+    inventory plugin.
+  - Consumes cloud credentials from standard YAML configuration files
+    C(clouds{,-public}.yaml).
 options:
-    plugin:
-        description: token that ensures this is a source file for the 'openstack' plugin.
-        required: True
-        choices: ['openstack', 'openstack.cloud.openstack']
-    show_all:
-        description: toggles showing all vms vs only those with a working IP
-        type: bool
-        default: false
-    inventory_hostname:
-        description: |
-            What to register as the inventory hostname.
-            If set to 'uuid' the uuid of the server will be used and a
-            group will be created for the server name.
-            If set to 'name' the name of the server will be used unless
-            there are more than one server with the same name in which
-            case the 'uuid' logic will be used.
-            Default is to do 'name', which is the opposite of the old
-            openstack.py inventory script's option use_hostnames)
-        type: string
-        choices:
-            - name
-            - uuid
-        default: "name"
-    use_names:
-        description: |
-            Use the host's 'name' instead of 'interface_ip' for the 'ansible_host' and
-            'ansible_ssh_host' facts. This might be desired when using jump or
-            bastion hosts and the name is the FQDN of the host.
-        type: bool
-        default: false
-    expand_hostvars:
-        description: |
-            Run extra commands on each host to fill in additional
-            information about the host. May interrogate cinder and
-            neutron and can be expensive for people with many hosts.
-            (Note, the default value of this is opposite from the default
-            old openstack.py inventory script's option expand_hostvars)
-        type: bool
-        default: false
-    private:
-        description: |
-            Use the private interface of each server, if it has one, as
-            the host's IP in the inventory. This can be useful if you are
-            running ansible inside a server in the cloud and would rather
-            communicate to your servers over the private network.
-        type: bool
-        default: false
-    only_clouds:
-        description: |
-            List of clouds from clouds.yaml to use, instead of using
-            the whole list.
-        type: list
-        elements: str
-        default: []
-    fail_on_errors:
-        description: |
-            Causes the inventory to fail and return no hosts if one cloud
-            has failed (for example, bad credentials or being offline).
-            When set to False, the inventory will return as many hosts as
-            it can from as many clouds as it can contact. (Note, the
-            default value of this is opposite from the old openstack.py
-            inventory script's option fail_on_errors)
-        type: bool
-        default: false
-    all_projects:
-        description: |
-            Lists servers from all projects
-        type: bool
-        default: false
-    clouds_yaml_path:
-        description: |
-            Override path to clouds.yaml file. If this value is given it
-            will be searched first. The default path for the
-            ansible inventory adds /etc/ansible/openstack.yaml and
-            /etc/ansible/openstack.yml to the regular locations documented
-            at https://docs.openstack.org/os-client-config/latest/user/configuration.html#config-files
-        type: list
-        elements: str
-        env:
-            - name: OS_CLIENT_CONFIG_FILE
-    compose:
-        description: Create vars from jinja2 expressions.
-        type: dictionary
-        default: {}
-    groups:
-        description: Add hosts to group based on Jinja2 conditionals.
-        type: dictionary
-        default: {}
-    legacy_groups:
-        description: Automatically create groups from host variables.
-        type: bool
-        default: true
+  all_projects:
+    description:
+      -  Lists servers from all projects
+    type: bool
+    default: false
+  clouds_yaml_path:
+    description:
+      - Override path to C(clouds.yaml) file.
+      - If this value is given it will be searched first.
+      - Search paths for cloud credentials are complemented with files
+        C(/etc/ansible/openstack.{yaml,yml}).
+      - Default search paths are documented in
+        U(https://docs.openstack.org/os-client-config/latest/user/configuration.html#config-files).
+    type: list
+    elements: str
+    env:
+      - name: OS_CLIENT_CONFIG_FILE
+  expand_hostvars:
+    description:
+      - Enrich server facts with additional queries to OpenStack services. This
+        includes requests to Cinder and Neutron which can be time-consuming
+        for clouds with many servers.
+      - Default value of I(expand_hostvars) is opposite of the default value
+        for option C(expand_hostvars) in legacy openstack.py inventory script.
+    type: bool
+    default: false
+  fail_on_errors:
+    description:
+      - Whether the inventory script fails, returning no hosts, when connection
+        to a cloud failed, for example due to bad credentials or connectivity
+        issues.
+      - When I(fail_on_errors) is C(false) this inventory script will return
+        all hosts it could fetch from clouds on a best effort basis.
+      - Default value of I(fail_on_errors) is opposite of the default value
+        for option C(fail_on_errors) in legacy openstack.py inventory script.
+    type: bool
+    default: false
+  inventory_hostname:
+    description:
+      - What to register as inventory hostname.
+      - When set to C(uuid) the ID of a server will be used and a group will
+        be created for a server name.
+      - When set to C(name) the name of a server will be used. When multiple
+        servers share the same name, then the servers IDs will be used.
+      - Default value of I(inventory_hostname) is opposite of the default value
+        for option C(use_hostnames) in legacy openstack.py inventory script.
+    type: string
+    choices: ['name', 'uuid']
+    default: 'name'
+  legacy_groups:
+    description:
+      - Automatically create groups from host variables.
+    type: bool
+    default: true
+  only_clouds:
+    description:
+      - List of clouds in C(clouds.yaml) which will be contacted to use instead
+        of using all clouds.
+    type: list
+    elements: str
+    default: []
+  plugin:
+    description:
+      - Token which marks a given YAML configuration file as a valid input file
+        for this inventory plugin.
+    required: true
+    choices: ['openstack', 'openstack.cloud.openstack']
+  private:
+    description:
+      - Use private interfaces of servers, if available, when determining ip
+        addresses for Ansible hosts.
+      - Using I(private) helps when running Ansible from a server in the cloud
+        and one wants to ensure that servers communicate over private networks
+        only.
+    type: bool
+    default: false
+  show_all:
+    description:
+      - Whether all servers should be listed or not.
+      - When I(show_all) is C(false) then only servers with a valid ip
+        address, regardless it is private or public, will be listed.
+    type: bool
+    default: false
+  use_names:
+    description:
+      - "When I(use_names) is C(false), its default value, then a server's
+         first floating ip address will be used for both facts C(ansible_host)
+         and C(ansible_ssh_host). When no floating ip address is attached to a
+         server, then its first non-floating ip addresses is used instead. If
+         no addresses are attached to a server, then both facts will not be
+         defined."
+      - "When I(use_names) is C(true), then the server name will be for both
+         C(ansible_host) and C(ansible_ssh_host) facts. This is useful for
+         jump or bastion hosts where each server name is actually a server's
+         FQDN."
+    type: bool
+    default: false
 requirements:
   - "python >= 3.6"
   - "openstacksdk >= 0.103.0"
 extends_documentation_fragment:
-- inventory_cache
-- constructed
-
+  - inventory_cache
+  - constructed
 '''
 
-EXAMPLES = '''
-# file must be named openstack.yaml or openstack.yml
-# Make the plugin behave like the default behavior of the old script
+EXAMPLES = r'''
+# Create a file called openstack.yaml, add the following content and run
+# $> ansible-inventory --list -vvv -i openstack.yaml
 plugin: openstack.cloud.openstack
-expand_hostvars: yes
-fail_on_errors: yes
-all_projects: yes
+
+all_projects: false
+expand_hostvars: true
+fail_on_errors: true
+only_clouds:
+  - "devstack-admin"
+strict: true
 '''
 
 import collections
 import sys
-import logging
 
 from ansible.errors import AnsibleParserError
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable, Cacheable
-from ansible.utils.display import Display
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
     ensure_compatibility
 )
 
-display = Display()
-os_logger = logging.getLogger("openstack")
-
 try:
-    # Due to the name shadowing we should import other way
-    import importlib
-    sdk = importlib.import_module('openstack')
-    sdk_inventory = importlib.import_module('openstack.cloud.inventory')
-    client_config = importlib.import_module('openstack.config.loader')
-    sdk_exceptions = importlib.import_module("openstack.exceptions")
+    import openstack
     HAS_SDK = True
 except ImportError:
-    display.vvvv("Couldn't import Openstack SDK modules")
     HAS_SDK = False
 
 
 class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
-    ''' Host inventory provider for ansible using OpenStack clouds. '''
 
     NAME = 'openstack.cloud.openstack'
 
     def parse(self, inventory, loader, path, cache=True):
 
-        super(InventoryModule, self).parse(inventory, loader, path)
+        super(InventoryModule, self).parse(inventory, loader, path,
+                                           cache=cache)
 
-        cache_key = self._get_cache_prefix(path)
+        if not HAS_SDK:
+            raise AnsibleParserError(
+                'Could not import Python library openstacksdk')
 
-        # file is config file
-        self._config_data = self._read_config_data(path)
+        try:
+            ensure_compatibility(openstack.version.__version__)
+        except ImportError as e:
+            raise AnsibleParserError(
+                'Incompatible openstacksdk library found: {0}'.format(e))
 
-        msg = ''
-        if not self._config_data:
-            msg = 'File empty. this is not my config file'
-        elif 'plugin' in self._config_data and self._config_data['plugin'] not in (self.NAME, 'openstack'):
-            msg = 'plugin config file, but not for us: %s' % self._config_data['plugin']
-        elif 'plugin' not in self._config_data and 'clouds' not in self._config_data:
-            msg = "it's not a plugin configuration nor a clouds.yaml file"
-        elif not HAS_SDK:
-            msg = "openstacksdk is required for the OpenStack inventory plugin. OpenStack inventory sources will be skipped."
+        # Redirect logging to stderr so it does not mix with output, in
+        # particular JSON output of ansible-inventory.
+        # TODO: Integrate openstack's logging with Ansible's logging.
+        if self.display.verbosity > 3:
+            openstack.enable_logging(debug=True, stream=sys.stderr)
+        else:
+            openstack.enable_logging(stream=sys.stderr)
 
-        if not msg:
-            try:
-                ensure_compatibility(sdk.version.__version__)
-            except ImportError as e:
-                msg = ("Incompatible openstacksdk library found: {error}."
-                       .format(error=str(e)))
+        config = self._read_config_data(path)
 
-        if msg:
-            display.vvvv(msg)
-            raise AnsibleParserError(msg)
+        if 'plugin' not in config and 'clouds' not in config:
+            raise AnsibleParserError(
+                "Invalid OpenStack inventory configuration file found,"
+                " missing 'plugin' and 'clouds' keys.")
 
-        if 'clouds' in self._config_data:
+        # TODO: It it wise to disregard a potential user configuration error?
+        if 'clouds' in config:
             self.display.vvvv(
-                "Found clouds config file instead of plugin config. "
-                "Using default configuration."
-            )
-            self._config_data = {}
+                'Found combined plugin config and clouds config file.')
 
-        # update cache if the user has caching enabled and the cache is being refreshed
-        # will update variable below in the case of an expired cache
-        cache_needs_update = not cache and self.get_option('cache')
+        servers = self._fetch_servers(path, cache)
 
-        if cache:
-            cache = self.get_option('cache')
-        source_data = None
-        if cache:
-            self.display.vvvv("Reading inventory data from cache: %s" % cache_key)
-            try:
-                source_data = self._cache[cache_key]
-            except KeyError:
-                # cache expired or doesn't exist yet
-                display.vvvv("Inventory data cache not found")
-                cache_needs_update = True
+        # determine inventory hostnames
+        if self.get_option('inventory_hostname') == 'name':
+            count = collections.Counter(s['name'] for s in servers)
 
-        if not source_data:
-            self.display.vvvv("Getting hosts from Openstack clouds")
-            clouds_yaml_path = self._config_data.get('clouds_yaml_path')
-            if clouds_yaml_path:
-                config_files = (
-                    clouds_yaml_path
-                    + client_config.CONFIG_FILES
-                )
-            else:
-                config_files = None
+            inventory = dict(((server['name'], server)
+                              if count[server['name']] == 1
+                              else (server['id'], server))
+                             for server in servers)
 
-            # Redict logging to stderr so it does not mix with output
-            # particular ansible-inventory JSON output
-            # TODO(mordred) Integrate openstack's logging with ansible's logging
-            if self.display.verbosity > 3:
-                sdk.enable_logging(debug=True, stream=sys.stderr)
-            else:
-                sdk.enable_logging(stream=sys.stderr)
+        else:  # self.get_option('inventory_hostname') == 'uuid'
+            inventory = dict((server['id'], server)
+                             for server in servers)
 
-            cloud_inventory = sdk_inventory.OpenStackInventory(
-                config_files=config_files,
-                private=self._config_data.get('private', False))
-            self.display.vvvv("Found %d cloud(s) in Openstack" %
-                              len(cloud_inventory.clouds))
-            only_clouds = self._config_data.get('only_clouds', [])
-            if only_clouds and not isinstance(only_clouds, list):
-                raise ValueError(
-                    'OpenStack Inventory Config Error: only_clouds must be'
-                    ' a list')
-            if only_clouds:
-                new_clouds = []
-                for cloud in cloud_inventory.clouds:
-                    self.display.vvvv("Looking at cloud : %s" % cloud.name)
-                    if cloud.name in only_clouds:
-                        self.display.vvvv("Selecting cloud : %s" % cloud.name)
-                        new_clouds.append(cloud)
-                cloud_inventory.clouds = new_clouds
+        # drop servers without addresses
+        show_all = self.get_option('show_all')
+        inventory = dict((k, v)
+                         for k, v in inventory.items()
+                         if show_all or v['addresses'])
 
-            self.display.vvvv("Selected %d cloud(s)" %
-                              len(cloud_inventory.clouds))
+        for hostname, server in inventory.items():
+            host_vars = self._generate_host_vars(hostname, server)
+            self._add_host(hostname, host_vars)
 
-            expand_hostvars = self._config_data.get('expand_hostvars', False)
-            fail_on_errors = self._config_data.get('fail_on_errors', False)
-            all_projects = self._config_data.get('all_projects', False)
-            self.use_names = self._config_data.get('use_names', False)
+        if self.get_option('legacy_groups'):
+            for hostname, server in inventory.items():
+                for group in self._generate_legacy_groups(server):
+                    group_name = self.inventory.add_group(group)
+                    if group_name == hostname:
+                        self.display.vvvv(
+                            'Same name for host {0} and group {1}'
+                            .format(hostname, group_name))
+                        self.inventory.add_host(hostname, group_name)
+                    else:
+                        self.inventory.add_child(group_name, hostname)
 
-            source_data = []
-            try:
-                source_data = cloud_inventory.list_hosts(
-                    expand=expand_hostvars, fail_on_cloud_config=fail_on_errors,
-                    all_projects=all_projects)
-            except Exception as e:
-                self.display.warning("Couldn't list Openstack hosts. "
-                                     "See logs for details")
-                os_logger.error(e.message)
-            finally:
-                if cache_needs_update:
-                    self._cache[cache_key] = source_data
+    def _add_host(self, hostname, host_vars):
+        # Ref.: https://docs.ansible.com/ansible/latest/dev_guide/
+        #       developing_inventory.html#constructed-features
 
-        self._populate_from_source(source_data)
+        self.inventory.add_host(hostname, group='all')
 
-    def _populate_from_source(self, source_data):
-        groups = collections.defaultdict(list)
-        firstpass = collections.defaultdict(list)
-        hostvars = {}
-
-        use_server_id = (
-            self._config_data.get('inventory_hostname', 'name') != 'name')
-        show_all = self._config_data.get('show_all', False)
-
-        for server in source_data:
-            if 'interface_ip' not in server and not show_all:
-                continue
-            firstpass[server['name']].append(server)
-
-        for name, servers in firstpass.items():
-            if len(servers) == 1 and not use_server_id:
-                self._append_hostvars(hostvars, groups, name, servers[0])
-            else:
-                server_ids = set()
-                # Trap for duplicate results
-                for server in servers:
-                    server_ids.add(server['id'])
-                if len(server_ids) == 1 and not use_server_id:
-                    self._append_hostvars(hostvars, groups, name, servers[0])
-                else:
-                    for server in servers:
-                        self._append_hostvars(
-                            hostvars, groups, server['id'], server,
-                            namegroup=True)
-
-        self._set_variables(hostvars, groups)
-
-    def _set_variables(self, hostvars, groups):
+        for k, v in host_vars.items():
+            self.inventory.set_variable(hostname, k, v)
 
         strict = self.get_option('strict')
 
-        # set vars in inventory from hostvars
-        for host in hostvars:
+        self._set_composite_vars(
+            self.get_option('compose'), host_vars, hostname, strict=True)
 
-            # actually update inventory
-            for key in hostvars[host]:
-                self.inventory.set_variable(host, key, hostvars[host][key])
+        self._add_host_to_composed_groups(
+            self.get_option('groups'), host_vars, hostname, strict=strict)
 
-            # create composite vars
-            self._set_composite_vars(
-                self._config_data.get('compose'), self.inventory.get_host(host).get_vars(), host, strict)
+        self._add_host_to_keyed_groups(
+            self.get_option('keyed_groups'), host_vars, hostname,
+            strict=strict)
 
-            # constructed groups based on conditionals
-            self._add_host_to_composed_groups(
-                self._config_data.get('groups'), hostvars[host], host, strict)
+    def _fetch_servers(self, path, cache):
+        cache_key = self._get_cache_prefix(path)
+        user_cache_setting = self.get_option('cache')
+        attempt_to_read_cache = user_cache_setting and cache
+        cache_needs_update = not cache and user_cache_setting
 
-            # constructed groups based on jinja expressions
-            self._add_host_to_keyed_groups(
-                self._config_data.get('keyed_groups'), hostvars[host], host, strict)
+        servers = None
 
-        for group_name, group_hosts in groups.items():
-            gname = self.inventory.add_group(group_name)
-            for host in group_hosts:
-                if gname == host:
-                    display.vvvv("Same name for host %s and group %s" % (host, gname))
-                    self.inventory.add_host(host, gname)
+        if attempt_to_read_cache:
+            self.display.vvvv('Reading OpenStack inventory cache key {0}'
+                              .format(cache_key))
+            try:
+                servers = self._cache[cache_key]
+            except KeyError:
+                self.display.vvvv("OpenStack inventory cache not found")
+                cache_needs_update = True
+
+        if not attempt_to_read_cache or cache_needs_update:
+            self.display.vvvv('Retrieving servers from Openstack clouds')
+            clouds_yaml_path = self.get_option('clouds_yaml_path')
+            config_files = (
+                openstack.config.loader.CONFIG_FILES
+                + ([clouds_yaml_path] if clouds_yaml_path else []))
+
+            config = openstack.config.loader.OpenStackConfig(
+                config_files=config_files)
+
+            only_clouds = self.get_option('only_clouds', [])
+            if only_clouds:
+                if not isinstance(only_clouds, list):
+                    raise AnsibleParserError(
+                        'Option only_clouds in OpenStack inventory'
+                        ' configuration is not a list')
+
+                cloud_regions = [config.get_one(cloud=cloud)
+                                 for cloud in only_clouds]
+            else:
+                cloud_regions = config.get_all()
+
+            clouds = [openstack.connection.Connection(config=cloud_region)
+                      for cloud_region in cloud_regions]
+
+            if self.get_option('private'):
+                for cloud in self.clouds:
+                    cloud.private = True
+
+            self.display.vvvv(
+                'Found {0} OpenStack cloud(s)'
+                .format(len(clouds)))
+
+            self.display.vvvv(
+                'Using {0} OpenStack cloud(s)'
+                .format(len(clouds)))
+
+            expand_hostvars = self.get_option('expand_hostvars')
+            all_projects = self.get_option('all_projects')
+            servers = []
+
+            def _expand_server(server, cloud, volumes):
+                # calling openstacksdk's compute.servers() with
+                # details=True already fetched most facts
+
+                # cloud dict is used for legacy_groups option
+                server['cloud'] = dict(name=cloud.name)
+                region = cloud.config.get_region_name()
+                if region:
+                    server['cloud']['region'] = region
+
+                if not expand_hostvars:
+                    # do not query OpenStack API for additional data
+                    return server
+
+                # TODO: Consider expanding 'flavor', 'image' and
+                #       'security_groups' when users still require this
+                #       functionality.
+                # Ref.: https://opendev.org/openstack/openstacksdk/src/commit/\
+                #       289e5c2d3cba0eb1c008988ae5dccab5be05d9b6/openstack/cloud/meta.py#L482
+
+                server['volumes'] = [v for v in volumes
+                                     if any(a['server_id'] == server['id']
+                                            for a in v['attachments'])]
+
+                return server
+
+            for cloud in clouds:
+                if expand_hostvars:
+                    volumes = [v.to_dict(computed=False)
+                               for v in cloud.block_storage.volumes()]
                 else:
-                    self.inventory.add_child(gname, host)
+                    volumes = []
 
-    def _get_groups_from_server(self, server_vars, namegroup=True):
+                try:
+                    for server in [
+                        # convert to dict before expanding servers
+                        # to allow us to attach attributes
+                        _expand_server(server.to_dict(computed=False),
+                                       cloud,
+                                       volumes)
+                        for server in cloud.compute.servers(
+                            all_projects=all_projects,
+                            # details are required because 'addresses'
+                            # attribute must be populated
+                            details=True)
+                    ]:
+                        servers.append(server)
+                except openstack.exceptions.OpenStackCloudException as e:
+                    self.display.warning(
+                        'Fetching servers for cloud {0} failed with: {1}'
+                        .format(cloud.name, str(e)))
+                    if self.get_option('fail_on_errors'):
+                        raise
+
+        if cache_needs_update:
+            self._cache[cache_key] = servers
+
+        return servers
+
+    def _generate_host_vars(self, hostname, server):
+        # populate host_vars with 'ansible_host', 'ansible_ssh_host' and
+        # 'openstack' facts
+
+        host_vars = dict(openstack=server)
+
+        if self.get_option('use_names'):
+            host_vars['ansible_ssh_host'] = server['name']
+            host_vars['ansible_host'] = server['name']
+        else:
+            # flatten addresses dictionary
+            addresses = [a
+                         for addresses in (server['addresses'] or {}).values()
+                         for a in addresses]
+
+            floating_ip = next(
+                (address['addr'] for address in addresses
+                 if address['OS-EXT-IPS:type'] == 'floating'),
+                None)
+
+            fixed_ip = next(
+                (address['addr'] for address in addresses
+                 if address['OS-EXT-IPS:type'] == 'fixed'),
+                None)
+
+            ip = floating_ip if floating_ip is not None else fixed_ip
+
+            if ip is not None:
+                host_vars['ansible_ssh_host'] = ip
+                host_vars['ansible_host'] = ip
+
+        return host_vars
+
+    def _generate_legacy_groups(self, server):
         groups = []
 
-        region = server_vars['region']
-        cloud = server_vars['cloud']
-        metadata = server_vars.get('metadata', {})
+        # cloud was added by _expand_server()
+        cloud = server['cloud']
 
-        # Create a group for the cloud
-        groups.append(cloud)
+        cloud_name = cloud['name']
+        groups.append(cloud_name)
 
-        # Create a group on region
-        if region:
+        region = cloud['region'] if 'region' in cloud else None
+        if region is not None:
             groups.append(region)
+            groups.append('{cloud}_{region}'.format(cloud=cloud_name,
+                                                    region=region))
 
-        # And one by cloud_region
-        groups.append("%s_%s" % (cloud, region))
-
-        # Check if group metadata key in servers' metadata
+        metadata = server.get('metadata', {})
         if 'group' in metadata:
             groups.append(metadata['group'])
-
         for extra_group in metadata.get('groups', '').split(','):
             if extra_group:
                 groups.append(extra_group.strip())
+        for k, v in metadata.items():
+            groups.append('meta-{k}_{v}'.format(k=k, v=v))
 
-        groups.append('instance-%s' % server_vars['id'])
-        if namegroup:
-            groups.append(server_vars['name'])
+        groups.append('instance-{id}'.format(id=server['id']))
 
-        for key in ('flavor', 'image'):
-            if 'name' in server_vars[key]:
-                groups.append('%s-%s' % (key, server_vars[key]['name']))
+        for k in ('flavor', 'image'):
+            if 'name' in server[k]:
+                groups.append('{k}-{v}'.format(k=k, v=server[k]['name']))
 
-        for key, value in iter(metadata.items()):
-            groups.append('meta-%s_%s' % (key, value))
+        availability_zone = server['availability_zone']
+        if availability_zone:
+            groups.append(availability_zone)
+            if region:
+                groups.append(
+                    '{region}_{availability_zone}'
+                    .format(region=region,
+                            availability_zone=availability_zone))
+                groups.append(
+                    '{cloud}_{region}_{availability_zone}'
+                    .format(cloud=cloud_name,
+                            region=region,
+                            availability_zone=availability_zone))
 
-        az = server_vars.get('az', None)
-        if az:
-            # Make groups for az, region_az and cloud_region_az
-            groups.append(az)
-            groups.append('%s_%s' % (region, az))
-            groups.append('%s_%s_%s' % (cloud, region, az))
         return groups
 
-    def _append_hostvars(self, hostvars, groups, current_host,
-                         server, namegroup=False):
-        if not self.use_names:
-            hostvars[current_host] = dict(
-                ansible_ssh_host=server['interface_ip'],
-                ansible_host=server['interface_ip'],
-                openstack=server,
-            )
-
-        if self.use_names:
-            hostvars[current_host] = dict(
-                ansible_ssh_host=server['name'],
-                ansible_host=server['name'],
-                openstack=server,
-            )
-
-        self.inventory.add_host(current_host)
-
-        if self.get_option('legacy_groups'):
-            for group in self._get_groups_from_server(server, namegroup=namegroup):
-                groups[group].append(current_host)
-
     def verify_file(self, path):
-
         if super(InventoryModule, self).verify_file(path):
             for fn in ('openstack', 'clouds'):
                 for suffix in ('yaml', 'yml'):
                     maybe = '{fn}.{suffix}'.format(fn=fn, suffix=suffix)
                     if path.endswith(maybe):
-                        self.display.vvvv("Valid plugin config file found")
+                        self.display.vvvv(
+                            'OpenStack inventory configuration file found:'
+                            ' {0}'.format(maybe))
                         return True
         return False

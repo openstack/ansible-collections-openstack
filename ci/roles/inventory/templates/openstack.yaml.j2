@@ -1,0 +1,11 @@
+plugin: openstack.cloud.openstack
+
+all_projects: true
+compose:
+  ci_compose_id: openstack.id
+  ci_compose_project_id: openstack.project_id
+expand_hostvars: true
+fail_on_errors: true
+only_clouds:
+  - "{{ cloud }}"
+strict: true

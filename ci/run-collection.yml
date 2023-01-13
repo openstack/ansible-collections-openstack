@@ -24,6 +24,7 @@
     - { role: identity_role, tags: identity_role }
     - { role: identity_user, tags: identity_user }
     - { role: image, tags: image }
+    - { role: inventory, tags: inventory }
     - { role: keypair, tags: keypair }
     - { role: keystone_federation_protocol, tags: keystone_federation_protocol }
     - { role: keystone_idp, tags: keystone_idp }

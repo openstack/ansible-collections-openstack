@@ -1,0 +1,393 @@
+---
+- module_defaults:
+    group/openstack.cloud.openstack:
+      cloud: "{{ cloud }}"
+    # Listing modules individually is required for
+    # backward compatibility with Ansible 2.9 only
+    openstack.cloud.resource:
+      cloud: "{{ cloud }}"
+    openstack.cloud.resources:
+      cloud: "{{ cloud }}"
+    openstack.cloud.router:
+      cloud: "{{ cloud }}"
+  block:
+    - name: Create external network
+      openstack.cloud.resource:
+        service: network
+        type: network
+        attributes:
+          name: ansible_network_external
+          is_router_external: true
+        wait: true
+      register: network_external
+
+    - name: Create external subnet
+      openstack.cloud.resource:
+        service: network
+        type: subnet
+        attributes:
+          cidr: 10.6.6.0/24
+          ip_version: 4
+          name: ansible_external_subnet
+          network_id: "{{ network_external.resource.id }}"
+      register: subnet_external
+
+    - name: Create external port
+      openstack.cloud.resource:
+        service: network
+        type: port
+        attributes:
+          name: ansible_port_external
+          network_id: "{{ network_external.resource.id }}"
+          fixed_ips:
+            - ip_address: 10.6.6.50
+        non_updateable_attributes:
+          - fixed_ips
+      register: port_external
+
+    - name: Create internal network
+      openstack.cloud.resource:
+        service: network
+        type: network
+        attributes:
+          name: ansible_network_internal
+          is_router_external: false
+        wait: true
+      register: network_internal
+
+    - name: Create internal subnet
+      openstack.cloud.resource:
+        service: network
+        type: subnet
+        attributes:
+          cidr: 10.7.7.0/24
+          ip_version: 4
+          name: ansible_internal_subnet
+          network_id: "{{ network_internal.resource.id }}"
+      register: subnet_internal
+
+    - name: Create internal port 1
+      openstack.cloud.resource:
+        service: network
+        type: port
+        attributes:
+          name: ansible_port_internal1
+          network_id: "{{ network_internal.resource.id }}"
+          fixed_ips:
+            - ip_address: 10.7.7.100
+              subnet_id: "{{ subnet_internal.resource.id }}"
+      register: port_internal1
+
+    - name: Create internal port 2
+      openstack.cloud.resource:
+        service: network
+        type: port
+        attributes:
+          name: ansible_port_internal2
+          network_id: "{{ network_internal.resource.id }}"
+          fixed_ips:
+            - ip_address: 10.7.7.101
+              subnet_id: "{{ subnet_internal.resource.id }}"
+      register: port_internal2
+
+    - name: Create router
+      openstack.cloud.resource:
+        service: network
+        type: router
+        attributes:
+          name: ansible_router
+          external_gateway_info:
+            enable_snat: true
+            external_fixed_ips:
+              - ip_address: 10.6.6.10
+                subnet_id: "{{ subnet_external.resource.id }}"
+            network_id: "{{ network_external.resource.id }}"
+        wait: true
+      register: router
+
+    - name: Attach router to internal subnet
+      openstack.cloud.router:
+        name: ansible_router
+        network: "{{ network_external.resource.id }}"
+        external_fixed_ips:
+          - ip: 10.6.6.10
+            subnet: "{{ subnet_external.resource.id }}"
+        interfaces:
+          - net: "{{ network_internal.resource.id }}"
+            subnet: "{{ subnet_internal.resource.id }}"
+            portip: 10.7.7.1
+
+    - name: Create floating ip address 1
+      openstack.cloud.resource:
+        service: network
+        type: ip
+        attributes:
+          name: 10.6.6.150
+          floating_ip_address: 10.6.6.150
+          floating_network_id: "{{ network_external.resource.id }}"
+          port_id: "{{ port_internal1.resource.id }}"
+      register: ip1
+
+    - name: List images
+      openstack.cloud.resources:
+        service: image
+        type: image
+      register: images
+
+    - name: Identify CirrOS image id
+      set_fact:
+        image_id: "{{ images.resources|community.general.json_query(query)|first }}"
+      vars:
+        query: "[?starts_with(name, 'cirros')].id"
+
+    - name: List compute flavors
+      openstack.cloud.resources:
+        service: compute
+        type: flavor
+      register: flavors
+
+    - name: Identify m1.tiny flavor id
+      set_fact:
+        flavor_id: "{{ flavors.resources|community.general.json_query(query)|first }}"
+      vars:
+        query: "[?name == 'm1.tiny'].id"
+
+    - name: Create server 1
+      openstack.cloud.resource:
+        service: compute
+        type: server
+        attributes:
+          name: ansible_server1
+          image_id: "{{ image_id }}"
+          flavor_id: "{{ flavor_id }}"
+          networks:
+            - uuid: "{{ network_internal.resource.id }}"
+              port: "{{ port_internal1.resource.id }}"
+            - uuid: "{{ network_internal.resource.id }}"
+              port: "{{ port_internal2.resource.id }}"
+        non_updateable_attributes:
+          - name
+          - image_id
+          - flavor_id
+          - networks
+        wait: true
+      register: server1
+
+    - name: Create server 2
+      openstack.cloud.resource:
+        service: compute
+        type: server
+        attributes:
+          name: ansible_server2
+          image_id: "{{ image_id }}"
+          flavor_id: "{{ flavor_id }}"
+          networks:
+            - uuid: "{{ network_internal.resource.id }}"
+        non_updateable_attributes:
+          - name
+          - image_id
+          - flavor_id
+          - networks
+        wait: true
+      register: server2
+
+    - name: Run inventory plugin tests
+      always:
+        - name: Remove temporary inventory directory after block execution
+          ansible.builtin.file:
+            path: "{{ tmp_dir.path }}"
+            state: absent
+          when: tmp_dir is defined and 'path' in tmp_dir
+
+      block:
+        - name: Ensure clean environment
+          ansible.builtin.set_fact:
+            tmp_dir: !!null
+
+        - name: Create temporary inventory directory
+          ansible.builtin.tempfile:
+            state: directory
+          register: tmp_dir
+
+        - name: Copy ansible.cfg file
+          ansible.builtin.copy:
+            src: ansible.cfg
+            dest: '{{ tmp_dir.path }}/'
+            mode: '0644'
+
+        - name: Create inventory config file
+          ansible.builtin.template:
+            src: openstack.yaml.j2
+            dest: '{{ tmp_dir.path }}/openstack.yaml'
+            mode: '0644'
+
+        - name: List servers with inventory plugin
+          ansible.builtin.command:
+            cmd: ansible-inventory --list --yaml --inventory-file openstack.yaml
+            chdir: "{{ tmp_dir.path }}"
+          environment:
+            ANSIBLE_INVENTORY_CACHE: "True"
+            ANSIBLE_INVENTORY_CACHE_PLUGIN: "jsonfile"
+            ANSIBLE_CACHE_PLUGIN_CONNECTION: "{{ tmp_dir.path }}/.cache/"
+          register: inventory
+
+        - name: Read YAML output from inventory plugin
+          ansible.builtin.set_fact:
+            inventory: "{{ inventory.stdout | from_yaml }}"
+
+        - name: Check YAML output from inventory plugin
+          assert:
+            that:
+              - inventory.all.children.RegionOne.hosts.keys() | sort == ['ansible_server1', 'ansible_server2'] | sort
+              - inventory.all.children.RegionOne.hosts.ansible_server1.ansible_host == '10.6.6.150'
+              - "'10.7.7.' in inventory.all.children.RegionOne.hosts.ansible_server2.ansible_host"
+              - inventory.all.children.RegionOne.hosts.ansible_server1.ci_compose_id
+                == inventory.all.children.RegionOne.hosts.ansible_server1.openstack.id
+              - inventory.all.children.RegionOne.hosts.ansible_server1.ci_compose_project_id
+                == inventory.all.children.RegionOne.hosts.ansible_server1.openstack.project_id
+
+        - name: Find Ansible's cache file
+          ansible.builtin.find:
+            paths: "{{ tmp_dir.path }}/.cache/"
+            patterns: 'ansible_inventory_*'
+          register: files
+
+        - name: Assert a single cache file only
+          assert:
+            that:
+              - files.files | length == 1
+
+        - name: Read Ansible's cache file
+          ansible.builtin.slurp:
+            src: "{{ files.files.0.path }}"
+          register: cache
+
+        - name: Process Ansible cache
+          ansible.builtin.set_fact:
+            cache: "{{ cache.content | b64decode | from_yaml }}"
+
+        - name: Check Ansible's cache
+          assert:
+            that:
+              - cache | map(attribute='name') | list | sort == ['ansible_server1', 'ansible_server2'] | sort
+
+        - name: List servers with inventory plugin again
+          ansible.builtin.command:
+            cmd: ansible-inventory --list --yaml --inventory-file openstack.yaml
+            chdir: "{{ tmp_dir.path }}"
+          environment:
+            ANSIBLE_INVENTORY_CACHE: "True"
+            ANSIBLE_INVENTORY_CACHE_PLUGIN: "jsonfile"
+            ANSIBLE_CACHE_PLUGIN_CONNECTION: "{{ tmp_dir.path }}/.cache/"
+          register: inventory
+
+        - name: Read YAML output from inventory plugin again
+          ansible.builtin.set_fact:
+            inventory: "{{ inventory.stdout | from_yaml }}"
+
+        - name: Check YAML output from inventory plugin again
+          assert:
+            that:
+              - inventory.all.children.RegionOne.hosts.keys() | sort == ['ansible_server1', 'ansible_server2'] | sort
+
+    - name: Delete server 2
+      openstack.cloud.resource:
+        service: compute
+        type: server
+        attributes:
+          name: ansible_server2
+        state: absent
+        wait: true
+
+    - name: Delete server 1
+      openstack.cloud.resource:
+        service: compute
+        type: server
+        attributes:
+          name: ansible_server1
+        state: absent
+        wait: true
+
+    - name: Delete floating ip address 1
+      openstack.cloud.resource:
+        service: network
+        type: ip
+        attributes:
+          floating_ip_address: 10.6.6.150
+        state: absent
+
+    - name: Detach router from internal subnet
+      openstack.cloud.router:
+        name: ansible_router
+        network: "{{ network_external.resource.id }}"
+        external_fixed_ips:
+          - ip: 10.6.6.10
+            subnet: "{{ subnet_external.resource.id }}"
+        interfaces: []
+
+    - name: Delete router
+      openstack.cloud.resource:
+        service: network
+        type: router
+        attributes:
+          name: ansible_router
+        state: absent
+        wait: true
+
+    - name: Delete internal port 2
+      openstack.cloud.resource:
+        service: network
+        type: port
+        attributes:
+          name: ansible_port_internal2
+        state: absent
+
+    - name: Delete internal port 1
+      openstack.cloud.resource:
+        service: network
+        type: port
+        attributes:
+          name: ansible_port_internal1
+        state: absent
+
+    - name: Delete internal subnet
+      openstack.cloud.resource:
+        service: network
+        type: subnet
+        attributes:
+          name: ansible_internal_subnet
+        state: absent
+
+    - name: Delete internal network
+      openstack.cloud.resource:
+        service: network
+        type: network
+        attributes:
+          name: ansible_network_internal
+        state: absent
+        wait: true
+
+    - name: Delete external port
+      openstack.cloud.resource:
+        service: network
+        type: port
+        attributes:
+          name: ansible_port_external
+        state: absent
+
+    - name: Delete external subnet
+      openstack.cloud.resource:
+        service: network
+        type: subnet
+        attributes:
+          name: ansible_external_subnet
+        state: absent
+
+    - name: Delete external network
+      openstack.cloud.resource:
+        service: network
+        type: network
+        attributes:
+          name: ansible_network_external
+        state: absent
+        wait: true
