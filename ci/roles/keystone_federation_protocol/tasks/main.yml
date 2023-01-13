@@ -33,7 +33,7 @@
       openstack.cloud.federation_idp:
         state: 'present'
         name: '{{ idp_name }}'
-        domain_id: '{{ create_domain.id }}'
+        domain_id: '{{ create_domain.domain.id }}'
 
     - name: 'Create test mapping (1)'
       openstack.cloud.federation_mapping:

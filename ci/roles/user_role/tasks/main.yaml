@@ -17,7 +17,7 @@
      cloud: "{{ cloud }}"
      state: present
      name: "{{ group_name }}"
-     domain_id: "{{ domain.id }}"
+     domain_id: "{{ domain.domain.id }}"
 
 - name: Create user in default domain
   openstack.cloud.identity_user:
@@ -31,7 +31,7 @@
      cloud: "{{ cloud }}"
      state: present
      name: "{{ user_name }}"
-     domain: "{{ domain.id }}"
+     domain: "{{ domain.domain.id }}"
 
 - name: Assign role to group in default domain
   openstack.cloud.role_assignment:
@@ -45,7 +45,7 @@
     cloud: "{{ cloud }}"
     role: "{{ keystone_role_name }}"
     group: "{{ group_name }}"
-    domain: "{{ domain.id }}"
+    domain: "{{ domain.domain.id }}"
 
 - name: Assign role to user in default domain
   openstack.cloud.role_assignment:
@@ -59,7 +59,7 @@
     cloud: "{{ cloud }}"
     role: "{{ keystone_role_name }}"
     user: "{{ user_name }}"
-    domain: "{{ domain.id }}"
+    domain: "{{ domain.domain.id }}"
 
 - name: Delete group in default domain
   openstack.cloud.identity_group:
@@ -73,7 +73,7 @@
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ group_name }}"
-     domain_id: "{{ domain.id }}"
+     domain_id: "{{ domain.domain.id }}"
 
 - name: Delete user in default domain
   openstack.cloud.identity_user:
@@ -87,7 +87,7 @@
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ user_name }}"
-     domain: "{{ domain.id }}"
+     domain: "{{ domain.domain.id }}"
 
 - name: Delete domain
   openstack.cloud.identity_domain:

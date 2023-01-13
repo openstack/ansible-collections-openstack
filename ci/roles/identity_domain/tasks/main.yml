@@ -1,0 +1,123 @@
+---
+- name: Create keystone domain
+  openstack.cloud.identity_domain:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_domain
+    description: "test description"
+  register: domain
+
+- name: Assert return values of identity_domain module
+  assert:
+    that:
+      - domain.domain.name == 'ansible_domain'
+      - domain.domain.description == "test description"
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(domain.domain.keys())|length == 0
+
+- name: Update keystone domain
+  openstack.cloud.identity_domain:
+    cloud: "{{ cloud }}"
+    name: ansible_domain
+    description: "updated description"
+  register: domain
+
+- name: Assert updated domain
+  assert:
+    that:
+      - domain.domain.description == "updated description"
+
+- name: Fetch domains
+  openstack.cloud.identity_domain_info:
+    cloud: "{{ cloud }}"
+  register: domains
+
+- name: Assert return values of identity_domain_info module
+  assert:
+    that:
+      - domains.domains | length > 0
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(domains.domains.0.keys())|length == 0
+
+- name: Fetch domain by name
+  openstack.cloud.identity_domain_info:
+    cloud: "{{ cloud }}"
+    name: ansible_domain
+  register: domains
+
+- name: Assert named domain
+  assert:
+    that:
+      - domains.domains | length == 1
+
+- name: Create disabled domain
+  openstack.cloud.identity_domain:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_domain_disabled
+    is_enabled: false
+    description: "test description"
+  register: domain
+
+- name: Fetch all domains
+  openstack.cloud.identity_domain_info:
+    cloud: "{{ cloud }}"
+  register: domains
+
+- name: Assert both ansible domains exist
+  assert:
+    that:
+      - domains.domains | length >= 2
+
+- name: Fetch disabled domains
+  openstack.cloud.identity_domain_info:
+    cloud: "{{ cloud }}"
+    filters:
+      is_enabled: false
+  register: domains
+
+- name: Assert at least one disabled domain exists
+  assert:
+    that:
+      - domains.domains | length >= 1
+
+- name: Fetch enabled domains
+  openstack.cloud.identity_domain_info:
+    cloud: "{{ cloud }}"
+    filters:
+      is_enabled: true
+  register: domains
+
+- name: Assert returned value
+  assert:
+    that:
+      - item.is_enabled
+  loop: "{{ domains.domains }}"
+
+- name: Delete disabled domain
+  openstack.cloud.identity_domain:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_domain_disabled
+
+- name: Assert domain is disabled
+  assert:
+    that:
+      - not domain.domain.is_enabled
+
+- name: Delete domain
+  openstack.cloud.identity_domain:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_domain
+
+- name: Get non-existing domain
+  openstack.cloud.identity_domain_info:
+    cloud: "{{ cloud }}"
+    name: ansible_domain
+  register: domains
+
+- name: Assert no results returned
+  assert:
+    that:
+      - domains.domains | length == 0

@@ -22,13 +22,9 @@
       openstack.cloud.identity_domain:
         name: '{{ domain_name }}'
       register: create_domain
-    - assert:
-        that:
-        - create_domain is successful
-        - '"id" in create_domain'
     - name: 'Store domain ID as fact'
       set_fact:
-        domain_id: '{{ create_domain.id }}'
+        domain_id: '{{ create_domain.domain.id }}'
 
     # We *should* have a blank slate to start with, but we also shouldn't
     # explode if I(state=absent) and the IDP doesn't exist

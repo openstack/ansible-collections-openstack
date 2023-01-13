@@ -52,21 +52,21 @@
      cloud: "{{ cloud }}"
      state: present
      name: "{{ group_name }}"
-     domain_id: "{{ domain.id }}"
+     domain_id: "{{ domain.domain.id }}"
   register: group_result
 
 - name: Assert results
   assert:
     that:
       - group_result is changed
-      - group_result.group.domain_id == domain.id
+      - group_result.group.domain_id == domain.domain.id
 
 - name: Create group in specific domain again
   openstack.cloud.identity_group:
      cloud: "{{ cloud }}"
      state: present
      name: "{{ group_name }}"
-     domain_id: "{{ domain.id }}"
+     domain_id: "{{ domain.domain.id }}"
   register: group_result
 
 - name: Assert not changed
@@ -90,7 +90,7 @@
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ group_name }}"
-     domain_id: "{{ domain.id }}"
+     domain_id: "{{ domain.domain.id }}"
   register: group_result
 
 - name: Assert changed
@@ -102,7 +102,7 @@
      cloud: "{{ cloud }}"
      state: absent
      name: "{{ group_name }}"
-     domain_id: "{{ domain.id }}"
+     domain_id: "{{ domain.domain.id }}"
   register: group_result
 
 - name: Assert not changed

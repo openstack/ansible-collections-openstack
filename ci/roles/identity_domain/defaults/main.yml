@@ -1,0 +1,6 @@
+expected_fields:
+  - description
+  - id
+  - is_enabled
+  - name
+  - links
