@@ -1,317 +1,331 @@
 ---
-- name: Ensure image does not exist before tests
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: ansible_image
+- name: Test images
+  block:
+    - name: List all images
+      openstack.cloud.image_info:
+        cloud: "{{ cloud }}"
+      register: images
 
-- name: Create a test image file
-  shell: mktemp
-  register: tmp_file
+    - name: Assert existence of CirrOS image
+      assert:
+        that:
+          - images.images | length > 0
 
-- name: Fill test image file to 1MB
-  shell: truncate -s 1048576 {{ tmp_file.stdout }}
+    - name: Ensure clean environment
+      ansible.builtin.set_fact:
+        tmp_file: !!null
 
-- name: ensure mock kernel and ramdisk images (defaults)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     name: "{{ item }}"
-     filename: "{{ tmp_file.stdout }}"
-     disk_format: raw
-  loop:
-    - cirros-vmlinuz
-    - cirros-initrd
+    - name: Create a test image file
+      ansible.builtin.tempfile:
+      register: tmp_file
 
-- name: Create raw image (defaults)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_image
-     filename: "{{ tmp_file.stdout }}"
-     is_protected: true
-     disk_format: raw
-     tags:
-       - test
-       - ansible
-  register: returned_image
+    - name: Fill test image file to 1MB
+      community.general.filesize:
+        path: '{{ tmp_file.path }}'
+        size: 1M
 
-- debug:
-    var: returned_image
+    - name: Ensure mock kernel and ramdisk images (defaults)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: "{{ item }}"
+         filename: "{{ tmp_file.path }}"
+         disk_format: raw
+      loop:
+        - cirros-vmlinuz
+        - cirros-initrd
 
-- name: Assert changed
-  assert:
-    that: returned_image is changed
+    - name: Create raw image (defaults)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_image
+         filename: "{{ tmp_file.path }}"
+         is_protected: true
+         disk_format: raw
+         tags:
+           - test
+           - ansible
+      register: image
 
-- name: Assert fields
-  assert:
-    that:
-      - item in returned_image.image
-  loop: "{{ expected_fields }}"
+    - name: Assert changed
+      assert:
+        that:
+          - image is changed
 
-- name: Get details of created image
-  openstack.cloud.image_info:
-    cloud: "{{ cloud }}"
-    image: ansible_image
-  register: image_info_result
+    - name: Assert return values of image module
+      assert:
+        that:
+          - image is changed
+          - image.image.name == 'ansible_image'
+          # allow new fields to be introduced but prevent fields from being removed
+          - expected_fields|difference(image.image.keys())|length == 0
 
-- name: Verify image info
-  assert:
-    that:
-      - image_info_result.images[0].name == "ansible_image"
-      - image_info_result.images[0].tags | sort == ['test', 'ansible'] | sort
+    - name: Get details of created image
+      openstack.cloud.image_info:
+        cloud: "{{ cloud }}"
+        image: ansible_image
+      register: images
 
-- name: Create raw image again (defaults)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_image
-     filename: "{{ tmp_file.stdout }}"
-     is_protected: true
-     disk_format: raw
-     tags:
-       - test
-       - ansible
-  register: returned_image
+    - name: Assert return values of image_info module
+      assert:
+        that:
+          - images.images | length > 0
+          - images.images.0.name == "ansible_image"
+          - images.images.0.tags | sort == ['test', 'ansible'] | sort
+          # allow new fields to be introduced but prevent fields from being removed
+          - expected_fields|difference(images.images.0.keys())|length == 0
 
-- name: Assert not changed
-  assert:
-    that: returned_image is not changed
+    - name: Create raw image again (defaults)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_image
+         filename: "{{ tmp_file.path }}"
+         is_protected: true
+         disk_format: raw
+         tags:
+           - test
+           - ansible
+      register: image
 
-- name: Assert fields
-  assert:
-    that:
-      - item in returned_image.image
-  loop: "{{ expected_fields }}"
+    - name: Assert not changed
+      assert:
+        that:
+          - image is not changed
 
-- name: Update is_protected on raw image (defaults)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_image
-     is_protected: false
-  register: returned_image
+    - name: Update is_protected on raw image (defaults)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_image
+         is_protected: false
+      register: image
 
-- name: Assert changed
-  assert:
-    that:
-      - returned_image is changed
-      - returned_image.image.is_protected == false
+    - name: Assert changed
+      assert:
+        that:
+          - image is changed
+          - image.image.is_protected == false
 
-- name: Assert changed
-  assert:
-    that:
-      - returned_image is changed
+    - name: Assert changed
+      assert:
+        that:
+          - image is changed
 
-- name: Update visibility on raw image (defaults)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_image
-     is_public: false
-  register: returned_image
+    - name: Update visibility on raw image (defaults)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_image
+         is_public: false
+      register: image
 
-- name: Assert changed
-  assert:
-    that:
-      - returned_image.image.visibility == 'private'
+    - name: Assert changed
+      assert:
+        that:
+          - image.image.visibility == 'private'
 
-- name: Update again visibility on raw image (defaults)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_image
-     is_public: true
-  register: returned_image
+    - name: Update again visibility on raw image (defaults)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_image
+         is_public: true
+      register: image
 
-- name: Assert changed
-  assert:
-    that:
-      - returned_image is changed
-      - returned_image.image.visibility == 'public'
+    - name: Assert changed
+      assert:
+        that:
+          - image is changed
+          - image.image.visibility == 'public'
 
-- name: Define visibility on raw image (defaults)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_image
-     visibility: shared
-  register: returned_image
+    - name: Define visibility on raw image (defaults)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_image
+         visibility: shared
+      register: image
 
-- name: Assert changed
-  assert:
-    that:
-      - returned_image is changed
-      - returned_image.image.visibility == 'shared'
+    - name: Assert changed
+      assert:
+        that:
+          - image is changed
+          - image.image.visibility == 'shared'
 
-- name: Rename raw image (defaults)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     id: "{{ returned_image.id }}"
-     name: 'ansible_image-changed'
-  register: returned_image
+    - name: Rename raw image (defaults)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         id: "{{ image.image.id }}"
+         name: 'ansible_image-changed'
+      register: image
 
-- name: Assert changed
-  assert:
-    that:
-      - returned_image is changed
-      - returned_image.image.name == 'ansible_image-changed'
+    - name: Assert changed
+      assert:
+        that:
+          - image is changed
+          - image.image.name == 'ansible_image-changed'
 
-- name: Rename back raw image (defaults)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     id: "{{ returned_image.id }}"
-     name: ansible_image
-  register: returned_image
+    - name: Rename back raw image (defaults)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         id: "{{ image.image.id }}"
+         name: ansible_image
+      register: image
 
-- name: Delete raw image (defaults)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: ansible_image
-  register: returned_image
+    - name: Delete raw image (defaults)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: absent
+         name: ansible_image
+      register: image
 
-- name: assert image changed
-  assert:
-    that: returned_image is changed
+    - name: assert image changed
+      assert:
+        that:
+          - image is changed
 
-- name: Delete raw image again (defaults)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: ansible_image
-  register: returned_image
+    - name: Delete raw image again (defaults)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: absent
+         name: ansible_image
+      register: image
 
-- name: assert image not changed
-  assert:
-    that: returned_image is not changed
+    - name: assert image not changed
+      assert:
+        that:
+          - image is not changed
 
-- name: Create raw image (complex)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_image
-     filename: "{{ tmp_file.stdout }}"
-     disk_format: raw
-     is_public: True
-     min_disk: 10
-     min_ram: 1024
-     # TODO(rcastillo): upload cirros-vmlinuz, cirros-initrd in test setup
-     kernel: cirros-vmlinuz
-     ramdisk: cirros-initrd
-     properties:
-        cpu_arch: x86_64
-        distro: ubuntu
-  register: returned_image
+    - name: Create raw image (complex)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_image
+         filename: "{{ tmp_file.path }}"
+         disk_format: raw
+         is_public: True
+         min_disk: 10
+         min_ram: 1024
+         # TODO(rcastillo): upload cirros-vmlinuz, cirros-initrd in test setup
+         kernel: cirros-vmlinuz
+         ramdisk: cirros-initrd
+         properties:
+            cpu_arch: x86_64
+            distro: ubuntu
+      register: image
 
-- name: Assert visibility
-  assert:
-     that: returned_image.image.visibility == 'public'
+    - name: Assert visibility
+      assert:
+         that:
+          - image.image.visibility == 'public'
 
-- name: Assert fields
-  assert:
-    that:
-      - item in returned_image.image
-  loop: "{{ expected_fields }}"
+    - name: Delete raw image (complex)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: absent
+         name: ansible_image
 
-- name: Delete raw image (complex)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: ansible_image
+    - name: Try to get details of deleted image
+      openstack.cloud.image_info:
+        cloud: "{{ cloud }}"
+        image: ansible_image
+      register: images
 
-- name: Try to get details of deleted image
-  openstack.cloud.image_info:
-    cloud: "{{ cloud }}"
-    image: ansible_image
-  register: deleted_image_info_result
+    - name: Verify image is deleted
+      assert:
+        that:
+          - images.images | length == 0
 
-- name: Verify image is deleted
-  assert:
-    that:
-      - not deleted_image_info_result.images
+    - name: Create owner project
+      openstack.cloud.project:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_project
+         description: Project owning test image
+         domain: default
+         is_enabled: True
+      register: project
 
-- name: Create owner project
-  openstack.cloud.project:
-     cloud: "{{ cloud }}"
-     state: present
-     name: image_owner_project
-     description: Project owning test image
-     domain: default
-     is_enabled: True
-  register: owner_project
+    - name: Create raw image (owner by project name)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_image
+         filename: "{{ tmp_file.path }}"
+         disk_format: raw
+         tags:
+           - test
+           - ansible
+         project: ansible_project
+      register: image
 
-- name: Create raw image (owner by project name)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_image
-     filename: "{{ tmp_file.stdout }}"
-     disk_format: raw
-     tags:
-       - test
-       - ansible
-     project: image_owner_project
-  register: returned_image
+    - name: Get details of created image (owner by project name)
+      openstack.cloud.image_info:
+        cloud: "{{ cloud }}"
+        image: ansible_image
+      register: images
 
-- name: Get details of created image (owner by project name)
-  openstack.cloud.image_info:
-    cloud: "{{ cloud }}"
-    image: ansible_image
-  register: image_info_result
+    - name: Verify image owner (owner by project name)
+      assert:
+        that:
+          - images.images.0.owner == project.project.id
 
-- name: Verify image owner (owner by project name)
-  assert:
-    that:
-      - image_info_result.images[0].owner == owner_project.project.id
+    - name: Delete raw image (owner by project name)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: absent
+         name: ansible_image
 
-- name: Delete raw image (owner by project name)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: ansible_image
+    - name: Create raw image (owner by project name and domain name)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_image
+         filename: "{{ tmp_file.path }}"
+         disk_format: raw
+         tags:
+           - test
+           - ansible
+         project: ansible_project
+         project_domain: default
+      register: image
 
-- name: Create raw image (owner by project name and domain name)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: present
-     name: ansible_image
-     filename: "{{ tmp_file.stdout }}"
-     disk_format: raw
-     tags:
-       - test
-       - ansible
-     project: image_owner_project
-     project_domain: default
-  register: returned_image
+    - name: Get details of created image (owner by project name and domain name)
+      openstack.cloud.image_info:
+        cloud: "{{ cloud }}"
+        image: ansible_image
+      register: images
 
-- name: Get details of created image (owner by project name and domain name)
-  openstack.cloud.image_info:
-    cloud: "{{ cloud }}"
-    image: ansible_image
-  register: image_info_result
+    - name: Verify image owner (owner by project name and domain name)
+      assert:
+        that:
+          - images.images.0.owner == project.project.id
 
-- name: Verify image owner (owner by project name and domain name)
-  assert:
-    that:
-      - image_info_result.images[0].owner == owner_project.project.id
+    - name: Delete raw image (owner by project name and domain name)
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: absent
+         name: ansible_image
 
-- name: Delete raw image (owner by project name and domain name)
-  openstack.cloud.image:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: ansible_image
+    - name: Delete owner project
+      openstack.cloud.project:
+         cloud: "{{ cloud }}"
+         state: absent
+         name: ansible_project
+         domain: default
 
-- name: Delete owner project
-  openstack.cloud.project:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: image_owner_project
-     domain: default
+    - name: Delete test image file
+      file:
+         name: "{{ tmp_file.path }}"
+         state: absent
 
-- name: Delete test image file
-  file:
-     name: "{{ tmp_file.stdout }}"
-     state: absent
+  always:
+    - name: Remove temporary image file
+      ansible.builtin.file:
+        path: "{{ tmp_file.path }}"
+        state: absent
+      when: tmp_file is defined and 'path' in tmp_file
