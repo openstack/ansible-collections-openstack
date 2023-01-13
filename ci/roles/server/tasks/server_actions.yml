@@ -216,11 +216,7 @@
   assert:
     that:
       - info10.servers.0.status == 'ACTIVE'
-      # not in all versions 'locked' is supported
-      - >-
-        (info10.openstack_server[0]['locked'] is defined and
-         info10.openstack_server[0]['locked']|bool) or
-        (info10.openstack_server[0]['locked'] is not defined)
+      - info10.servers.0.is_locked
       - server is changed
 
 - name: Lock server again
@@ -241,11 +237,7 @@
   assert:
     that:
       - info11.servers.0.status == 'ACTIVE'
-      # not in all versions 'locked' is supported
-      - >-
-        (info11.openstack_server[0]['locked'] is defined and
-         info11.openstack_server[0]['locked']|bool) or
-        (info11.openstack_server[0]['locked'] is not defined)
+      - info11.servers.0.is_locked
       - server is changed  # no support for lock idempotency
 
 - name: Unock server
@@ -266,11 +258,7 @@
   assert:
     that:
       - info12.servers.0.status == 'ACTIVE'
-      # not in all versions 'locked' is supported
-      - >-
-        (info12.openstack_server[0]['locked'] is defined and
-         not info12.openstack_server[0]['locked']|bool) or
-        (info12.openstack_server[0]['locked'] is not defined)
+      - not info12.servers.0.is_locked
       - server is changed
 
 - name: Unlock server again
@@ -292,11 +280,7 @@
     that:
       - info13.servers.0.status == 'ACTIVE'
       - server is changed  # no support for unlock idempotency
-      # not in all versions 'locked' is supported
-      - >-
-        (info13.openstack_server[0]['locked'] is defined and
-         not info13.openstack_server[0]['locked']|bool) or
-        (info13.openstack_server[0]['locked'] is not defined)
+      - not info13.servers.0.is_locked
 
 - name: Suspend server
   openstack.cloud.server_action:
