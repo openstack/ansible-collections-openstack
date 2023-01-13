@@ -1,4 +1,4 @@
-os_identity_user_fields:
+expected_fields:
   - default_project_id
   - description
   - domain_id

@@ -21,7 +21,6 @@
     - { role: identity_domain, tags: identity_domain }
     - { role: identity_group, tags: identity_group }
     - { role: identity_user, tags: identity_user }
-    - { role: identity_user_info, tags: identity_user_info }
     - { role: identity_role, tags: identity_role }
     - { role: image, tags: image }
     - { role: keypair, tags: keypair }

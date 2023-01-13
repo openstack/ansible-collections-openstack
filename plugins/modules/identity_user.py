@@ -4,69 +4,68 @@
 # Copyright (c) 2015 Hewlett-Packard Development Company, L.P.
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-DOCUMENTATION = '''
+DOCUMENTATION = r'''
 ---
 module: identity_user
-short_description: Manage OpenStack Identity Users
+short_description: Manage a OpenStack identity (Keystone) user
 author: OpenStack Ansible SIG
 description:
-    - Manage OpenStack Identity users. Users can be created,
-      updated or deleted using this module. A user will be updated
-      if I(name) matches an existing user and I(state) is present.
-      The value for I(name) cannot be updated without deleting and
-      re-creating the user.
+  - Create, update or delete a OpenStack identity (Keystone) user.
 options:
-   name:
-     description:
-        - Username for the user
-     required: true
-     type: str
-   password:
-     description:
-        - Password for the user
-     type: str
-   update_password:
-     required: false
-     choices: ['always', 'on_create']
-     default: on_create
-     description:
-        - C(always) will attempt to update password.  C(on_create) will only
-          set the password for newly created users.
-     type: str
-   email:
-     description:
-        - Email address for the user
-     type: str
-   description:
-     description:
-        - Description about the user
-     type: str
-   default_project:
-     description:
-        - Project name or ID that the user should be associated with by default
-     type: str
-   domain:
-     description:
-        - Domain to create the user in if the cloud supports domains
-     type: str
-   enabled:
-     description:
-        - Is the user enabled
-     type: bool
-     default: 'yes'
-   state:
-     description:
-       - Should the resource be present or absent.
-     choices: [present, absent]
-     default: present
-     type: str
+  default_project:
+    description:
+      - Name or ID of the project, the user should be created in.
+    type: str
+  description:
+    description:
+      - Description about the user.
+    type: str
+  domain:
+    description:
+      - Domain to create the user in if the cloud supports domains.
+    type: str
+  email:
+    description:
+      - Email address for the user.
+    type: str
+  is_enabled:
+    description:
+      - Whether the user is enabled or not.
+    type: bool
+    default: 'yes'
+    aliases: ['enabled']
+  name:
+    description:
+      - Name of the user.
+      - I(name) cannot be updated without deleting and re-creating the user.
+    required: true
+    type: str
+  password:
+    description:
+      - Password for the user.
+    type: str
+  state:
+    description:
+      - Should the resource be present or absent.
+    choices: [present, absent]
+    default: present
+    type: str
+  update_password:
+    choices: ['always', 'on_create']
+    default: on_create
+    description:
+      - When I(update_password) is C(always), then the password will always be
+        updated.
+      - When I(update_password) is C(on_create), the the password is only set
+        when creating a user.
+    type: str
 extends_documentation_fragment:
-- openstack.cloud.openstack
+  - openstack.cloud.openstack
 '''
 
-EXAMPLES = '''
-# Create a user
-- openstack.cloud.identity_user:
+EXAMPLES = r'''
+- name: Create a user
+  openstack.cloud.identity_user:
     cloud: mycloud
     state: present
     name: demouser
@@ -75,14 +74,14 @@ EXAMPLES = '''
     domain: default
     default_project: demo
 
-# Delete a user
-- openstack.cloud.identity_user:
+- name: Delete a user
+  openstack.cloud.identity_user:
     cloud: mycloud
     state: absent
     name: demouser
 
-# Create a user but don't update password if user exists
-- openstack.cloud.identity_user:
+- name: Create a user but don't update password if user exists
+  openstack.cloud.identity_user:
     cloud: mycloud
     state: present
     name: demouser
@@ -92,8 +91,8 @@ EXAMPLES = '''
     domain: default
     default_project: demo
 
-# Create a user without password
-- openstack.cloud.identity_user:
+- name: Create a user without password
+  openstack.cloud.identity_user:
     cloud: mycloud
     state: present
     name: demouser
@@ -102,158 +101,137 @@ EXAMPLES = '''
     default_project: demo
 '''
 
-
-RETURN = '''
+RETURN = r'''
 user:
-    description: Dictionary describing the user.
-    returned: On success when I(state) is 'present'
-    type: dict
-    contains:
-        default_project_id:
-            description: User default project ID. Only present with Keystone >= v3.
-            returned: success
-            type: str
-            sample: "4427115787be45f08f0ec22a03bfc735"
-        description:
-            description: The description of this user
-            returned: success
-            type: str
-            sample: "a user"
-        domain_id:
-            description: User domain ID. Only present with Keystone >= v3.
-            returned: success
-            type: str
-            sample: "default"
-        email:
-            description: User email address
-            returned: success
-            type: str
-            sample: "demo@example.com"
-        id:
-            description: User ID
-            returned: success
-            type: str
-            sample: "f59382db809c43139982ca4189404650"
-        is_enabled:
-            description: Indicates whether the user is enabled
-            type: bool
-        links:
-            description: The links for the user resource
-            returned: success
-            type: dict
-            elements: str
-        name:
-            description: Unique user name, within the owning domain
-            returned: success
-            type: str
-            sample: "demouser"
-        password:
-            description: Credential used during authentication
-            returned: success
-            type: str
-        password_expires_at:
-            description: The date and time when the password expires. The time zone is UTC. A none value means the password never expires
-            returned: success
-            type: str
-
+  description: Dictionary describing the identity user.
+  returned: On success when I(state) is C(present).
+  type: dict
+  contains:
+    default_project_id:
+      description: User default project ID. Only present with Keystone >= v3.
+      type: str
+      sample: "4427115787be45f08f0ec22a03bfc735"
+    description:
+      description: The description of this user
+      type: str
+      sample: "a user"
+    domain_id:
+      description: User domain ID. Only present with Keystone >= v3.
+      type: str
+      sample: "default"
+    email:
+      description: User email address
+      type: str
+      sample: "demo@example.com"
+    id:
+      description: User ID
+      type: str
+      sample: "f59382db809c43139982ca4189404650"
+    is_enabled:
+      description: Indicates whether the user is enabled
+      type: bool
+    links:
+      description: The links for the user resource
+      type: dict
+      elements: str
+    name:
+      description: Unique user name, within the owning domain
+      type: str
+      sample: "demouser"
+    password:
+      description: Credential used during authentication
+      type: str
+    password_expires_at:
+      description: The date and time when the password expires. The time zone
+                   is UTC. A none value means the password never expires
+      type: str
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
+from ansible_collections.openstack.cloud.plugins.module_utils.resource import StateMachine
 
 
 class IdentityUserModule(OpenStackModule):
     argument_spec = dict(
-        name=dict(required=True),
-        password=dict(no_log=True),
-        email=dict(),
         default_project=dict(),
         description=dict(),
         domain=dict(),
-        enabled=dict(default=True, type='bool'),
+        email=dict(),
+        is_enabled=dict(default=True, type='bool', aliases=['enabled']),
+        name=dict(required=True),
+        password=dict(no_log=True),
         state=dict(default='present', choices=['absent', 'present']),
-        update_password=dict(default='on_create', choices=['always', 'on_create']),
+        update_password=dict(default='on_create',
+                             choices=['always', 'on_create']),
     )
 
     module_kwargs = dict()
 
-    def _needs_update(self, params_dict, user):
-        for k in params_dict:
-            # We don't get password back in the user object, so assume any supplied
-            # password is a change.
-            if k == 'password':
-                return True
-            if user[k] != params_dict[k]:
-                return True
-        return False
+    class _StateMachine(StateMachine):
+        def _build_update(self, resource, attributes, updateable_attributes,
+                          non_updateable_attributes,
+                          update_password='on_create', **kwargs):
+            if update_password == 'always' and 'password' not in attributes:
+                self.ansible.fail_json(msg="update_password is 'always'"
+                                           " but password is missing")
+            elif update_password == 'on_create' and 'password' in attributes:
+                attributes.pop('password')
 
-    def _get_domain_id(self, domain):
-        dom_obj = self.conn.identity.find_domain(domain)
-        if dom_obj is None:
-            # Ok, let's hope the user is non-admin and passing a sane id
-            return domain
-        return dom_obj.id
+            return super()._build_update(resource, attributes,
+                                         updateable_attributes,
+                                         non_updateable_attributes, **kwargs)
 
-    def _get_default_project_id(self, default_project, domain_id):
-        project = self.conn.identity.find_project(default_project, domain_id=domain_id)
-        if not project:
-            self.fail_json(msg='Default project %s is not valid' % default_project)
-        return project['id']
+        def _find(self, attributes, **kwargs):
+            query_args = dict((k, attributes[k])
+                              for k in ['domain_id']
+                              if k in attributes and attributes[k] is not None)
+
+            return self.find_function(attributes['name'], **query_args)
 
     def run(self):
-        name = self.params['name']
-        password = self.params.get('password')
-        email = self.params['email']
-        default_project = self.params['default_project']
-        domain = self.params['domain']
-        enabled = self.params['enabled']
-        state = self.params['state']
-        update_password = self.params['update_password']
-        description = self.params['description']
+        sm = self._StateMachine(connection=self.conn,
+                                service_name='identity',
+                                type_name='user',
+                                sdk=self.sdk,
+                                ansible=self.ansible)
 
-        domain_id = None
-        if domain:
-            domain_id = self._get_domain_id(domain)
-        user = self.conn.identity.find_user(name, domain_id=domain_id)
+        kwargs = dict((k, self.params[k])
+                      for k in ['state', 'timeout', 'update_password']
+                      if self.params[k] is not None)
 
-        changed = False
-        if state == 'present':
-            user_args = {
-                'name': name,
-                'email': email,
-                'domain_id': domain_id,
-                'description': description,
-                'is_enabled': enabled,
-            }
-            if default_project:
-                default_project_id = self._get_default_project_id(
-                    default_project, domain_id)
-                user_args['default_project_id'] = default_project_id
-            user_args = {k: v for k, v in user_args.items() if v is not None}
+        kwargs['attributes'] = \
+            dict((k, self.params[k])
+                 for k in ['description', 'email', 'is_enabled', 'name',
+                           'password']
+                 if self.params[k] is not None)
 
-            changed = False
-            if user is None:
-                if password:
-                    user_args['password'] = password
+        domain_name_or_id = self.params['domain']
+        if domain_name_or_id is not None:
+            domain = self.conn.identity.find_domain(domain_name_or_id,
+                                                    ignore_missing=False)
+            kwargs['attributes']['domain_id'] = domain.id
 
-                user = self.conn.identity.create_user(**user_args)
-                changed = True
-            else:
-                if update_password == 'always':
-                    if not password:
-                        self.fail_json(msg="update_password is always but a password value is missing")
-                    user_args['password'] = password
-                # else we do not want to update the password
+        default_project_name_or_id = self.params['default_project']
+        if default_project_name_or_id is not None:
+            query_args = dict((k, kwargs['attributes'][k])
+                              for k in ['domain_id']
+                              if k in kwargs['attributes']
+                              and kwargs['attributes'][k] is not None)
+            project = self.conn.identity.find_project(
+                default_project_name_or_id, ignore_missing=False, **query_args)
+            kwargs['attributes']['default_project_id'] = project.id
 
-                if self._needs_update(user_args, user):
-                    user = self.conn.identity.update_user(user['id'], **user_args)
-                    changed = True
+        user, is_changed = sm(check_mode=self.ansible.check_mode,
+                              updateable_attributes=None,
+                              non_updateable_attributes=['domain_id'],
+                              wait=False,
+                              **kwargs)
 
-            user = user.to_dict(computed=False)
-            self.exit_json(changed=changed, user=user)
-        elif state == 'absent' and user is not None:
-            self.conn.identity.delete_user(user)
-            changed = True
-        self.exit_json(changed=changed)
+        if user is None:
+            self.exit_json(changed=is_changed)
+        else:
+            self.exit_json(changed=is_changed,
+                           user=user.to_dict(computed=False))
 
 
 def main():
