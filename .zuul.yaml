@@ -282,59 +282,6 @@
         name: openstack/openstacksdk
         override-checkout: master
 
-# TripleO jobs
-- job:
-    name: tripleo-ci-centos-9-standalone-osa
-    parent: tripleo-ci-centos-9-standalone-build
-    branches: master
-    vars: &tripleo_vars
-      consumer_job: false
-      branch_override: master
-      force_non_periodic: true
-      artg_change_list:
-        - host: "https://opendev.org"
-          project: "openstack/openstacksdk"
-          branch: "master"
-          refspec: "+refs/heads/*:refs/remotes/origin/*"
-    required-projects: &tripleo_required_projects
-      - # Required for TripleO Quickstart to install current patchset of the collection
-        # Ref.: https://opendev.org/openstack/tripleo-quickstart/src/commit/b48d869e14de40444d69a107a0b718b5f721e912/quickstart.sh#L123
-        openstack/ansible-collections-openstack
-      - # always use master branch when collecting parent job variants, refer to git blame for rationale.
-        name: openstack/tripleo-ci
-        override-checkout: master
-    irrelevant-files: &tripleo_irrelevant_files
-      - .*molecule.*
-      - ^.*\.md$
-      - ^.*\.rst$
-      - ^changelogs/.*$
-      - ^docs/.*$
-      - ^meta/.*$
-      - ^requirements.*$
-      - ^setup.*$
-      - ^tests/.*$
-      - ^tools/.*$
-      - tox.ini
-    # Run only on files used in TripleO
-    files: &tripleo_files
-      - ^.zuul.yaml$
-      - ^plugins/module_utils/openstack.*$
-      - ^plugins/modules/catalog_service.*$
-      - ^plugins/modules/compute_flavor.*$
-      - ^plugins/modules/endpoint.*$
-      - ^plugins/modules/identity_domain.*$
-      - ^plugins/modules/identity_domain_info.*$
-      - ^plugins/modules/identity_role.*$
-      - ^plugins/modules/identity_user.*$
-      - ^plugins/modules/image.*$
-      - ^plugins/modules/keypair.*$
-      - ^plugins/modules/network.*$
-      - ^plugins/modules/project.*$
-      - ^plugins/modules/role_assignment.*$
-      - ^plugins/modules/router.*$
-      - ^plugins/modules/stack.*$
-      - ^plugins/modules/subnet.*$
-
 - job:
     name: ansible-collections-openstack-release
     parent: base
@@ -391,10 +338,6 @@
             dependencies: *deps_unit_lint
             irrelevant-files: *ignore_files
 
-        - tripleo-ci-centos-9-standalone-osa:
-            voting: false
-            dependencies: *deps_unit_lint
-
     gate:
       jobs:
         - tox-pep8
@@ -419,18 +362,6 @@
         - bifrost-keystone-collections-src
         - ansible-collections-openstack-functional-devstack-magnum
         - ansible-collections-openstack-functional-devstack-octavia
-        - tripleo-ci-centos-9-standalone-osa:
-            vars:
-              artg_change_list:
-                - host: "https://opendev.org"
-                  project: "openstack/openstacksdk"
-                  branch: "master"
-                  refspec: "+refs/heads/*:refs/remotes/origin/*"
-                # needed so build-test-packages builds master version
-                - host: "https://opendev.org"
-                  project: "openstack/ansible-collections-openstack"
-                  branch: "master"
-                  refspec: "+refs/heads/*:refs/remotes/origin/*"
 
     experimental:
       jobs:
