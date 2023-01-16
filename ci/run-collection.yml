@@ -17,6 +17,7 @@
     - { role: endpoint, tags: endpoint }
     - { role: federation_mapping, tags: federation_mapping }
     - { role: floating_ip, tags: floating_ip }
+    - { role: group_assignment, tags: group_assignment }
     - { role: host_aggregate, tags: host_aggregate }
     - { role: identity_domain, tags: identity_domain }
     - { role: identity_group, tags: identity_group }
@@ -50,8 +51,6 @@
     - { role: stack, tags: stack }
     - { role: subnet, tags: subnet }
     - { role: subnet_pool, tags: subnet_pool }
-    - { role: user_group, tags: user_group }
-    - { role: user_role, tags: user_role }
     - { role: volume, tags: volume }
     - { role: volume_backup, tags: volume_backup }
     - { role: volume_snapshot, tags: volume_snapshot }

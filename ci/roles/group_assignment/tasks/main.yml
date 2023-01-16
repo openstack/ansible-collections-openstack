@@ -1,0 +1,68 @@
+---
+- name: Create user
+  openstack.cloud.identity_user:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_user
+    password: secret
+    email: ansible.user@nowhere.net
+    domain: default
+    default_project: demo
+
+- name: Assign user to nonadmins group
+  openstack.cloud.group_assignment:
+    cloud: "{{ cloud }}"
+    state: present
+    user: ansible_user
+    group: nonadmins
+  register: group_assignment
+
+- name: Assert group assignment
+  assert:
+    that:
+      - group_assignment is changed
+
+- name: Assign user to nonadmins group again
+  openstack.cloud.group_assignment:
+    cloud: "{{ cloud }}"
+    state: present
+    user: ansible_user
+    group: nonadmins
+  register: group_assignment
+
+- name: Assert group assignment
+  assert:
+    that:
+      - group_assignment is not changed
+
+- name: Remove user from nonadmins group
+  openstack.cloud.group_assignment:
+    cloud: "{{ cloud }}"
+    state: absent
+    user: ansible_user
+    group: nonadmins
+  register: group_assignment
+
+- name: Assert group assignment
+  assert:
+    that:
+      - group_assignment is changed
+
+- name: Remove user from nonadmins group again
+  openstack.cloud.group_assignment:
+    cloud: "{{ cloud }}"
+    state: absent
+    user: ansible_user
+    group: nonadmins
+  register: group_assignment
+
+- name: Assert group assignment
+  assert:
+    that:
+      - group_assignment is not changed
+
+- name: Delete user
+  openstack.cloud.identity_user:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_user

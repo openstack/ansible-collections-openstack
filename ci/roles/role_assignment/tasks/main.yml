@@ -15,6 +15,12 @@
     project: ansible_project
     role: admin
     user: admin
+  register: role_assignment
+
+- name: Assert role assignment
+  assert:
+    that:
+      - role_assignment is changed
 
 - name: Grant an admin role on the user admin in the project ansible_project again
   openstack.cloud.role_assignment:
@@ -23,12 +29,12 @@
     project: ansible_project
     role: admin
     user: admin
-  register: grant_again
+  register: role_assignment
 
-- name: Ensure grant again doesn't change anything
+- name: Ensure grant again did not change anything
   assert:
     that:
-      - not grant_again.changed
+      - role_assignment is not changed
 
 - name: Revoke the admin role on the user admin in the project ansible_project
   openstack.cloud.role_assignment:
@@ -44,3 +50,124 @@
      cloud: "{{ cloud }}"
      state: absent
      name: ansible_project
+
+- name: Create domain
+  openstack.cloud.identity_domain:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_domain
+  register: domain
+
+- name: Create group in default domain
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_group
+     domain_id: default
+
+- name: Create group in specific domain
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_group
+     domain_id: "{{ domain.domain.id }}"
+
+- name: Create user in default domain
+  openstack.cloud.identity_user:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_user
+     domain: default
+
+- name: Create user in specific domain
+  openstack.cloud.identity_user:
+     cloud: "{{ cloud }}"
+     state: present
+     name: ansible_user
+     domain: "{{ domain.domain.id }}"
+
+- name: Assign role to group in default domain
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud }}"
+    role: anotherrole
+    group: ansible_group
+    domain: default
+  register: role_assignment
+
+- name: Assert role assignment
+  assert:
+    that:
+      - role_assignment is changed
+
+- name: Assign role to group in specific domain
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud }}"
+    role: anotherrole
+    group: ansible_group
+    domain: "{{ domain.domain.id }}"
+  register: role_assignment
+
+- name: Assert role assignment
+  assert:
+    that:
+      - role_assignment is changed
+
+- name: Assign role to user in default domain
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud }}"
+    role: anotherrole
+    user: ansible_user
+    domain: default
+  register: role_assignment
+
+- name: Assert role assignment
+  assert:
+    that:
+      - role_assignment is changed
+
+- name: Assign role to user in specific domain
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud }}"
+    role: anotherrole
+    user: ansible_user
+    domain: "{{ domain.domain.id }}"
+  register: role_assignment
+
+- name: Assert role assignment
+  assert:
+    that:
+      - role_assignment is changed
+
+- name: Delete group in default domain
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_group
+     domain_id: default
+
+- name: Delete group in specific domain
+  openstack.cloud.identity_group:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_group
+     domain_id: "{{ domain.domain.id }}"
+
+- name: Delete user in default domain
+  openstack.cloud.identity_user:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_user
+     domain: default
+
+- name: Delete user in specific domain
+  openstack.cloud.identity_user:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_user
+     domain: "{{ domain.domain.id }}"
+
+- name: Delete domain
+  openstack.cloud.identity_domain:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_domain
