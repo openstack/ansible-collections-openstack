@@ -10,10 +10,10 @@
       cloud: "{{ cloud }}"
     openstack.cloud.keystone_federation_protocol:
       cloud: "{{ cloud }}"  # Backward compatibility with Ansible 2.9
-      idp_id: "{{ idp_name }}"
+      idp_id: ansible_idp
     openstack.cloud.keystone_federation_protocol_info:
       cloud: "{{ cloud }}"  # Backward compatibility with Ansible 2.9
-      idp_id: "{{ idp_name }}"
+      idp_id: ansible_idp
     # Backward compatibility with Ansible 2.9
     openstack.cloud.identity_domain:
       cloud: "{{ cloud }}"
@@ -24,300 +24,318 @@
   block:
     # ========================================================================
     #   Initial setup
-    - name: 'Create test Domain'
+    - name: Create test Domain
       openstack.cloud.identity_domain:
-        name: '{{ domain_name }}'
-      register: create_domain
+        name: ansible_domain
+      register: domain
 
-    - name: 'Create test Identity Provider'
+    - name: Create test Identity Provider
       openstack.cloud.federation_idp:
-        state: 'present'
-        name: '{{ idp_name }}'
-        domain_id: '{{ create_domain.domain.id }}'
+        state: present
+        name: ansible_idp
+        domain_id: '{{ domain.domain.id }}'
 
-    - name: 'Create test mapping (1)'
+    - name: Create test mapping (1)
       openstack.cloud.federation_mapping:
-        state: 'present'
-        name: '{{ mapping_name_1 }}'
-        rules: '{{ mapping_rules_1 }}'
+        state: present
+        name: ansible_mapping1
+        rules:
+          - local:
+            - group:
+                domain:
+                  name: example_domain
+                name: example-group
+            remote:
+            - type: HTTP_OIDC_GROUPS
+              any_one_of:
+              - group1
+              - group2
 
-    - name: 'Create test mapping (2)'
+    - name: Create test mapping (2)
       openstack.cloud.federation_mapping:
-        state: 'present'
-        name: '{{ mapping_name_2 }}'
-        rules: '{{ mapping_rules_2 }}'
+        state: present
+        name: ansible_mapping2
+        rules:
+          - local:
+            - group:
+                domain:
+                  name: example_domain
+                name: example_group
+            remote:
+            - type: HTTP_OIDC_GROUPS
+              any_one_of:
+              - group1
+
 
     # We *should* have a blank slate to start with, but we also shouldn't
     # explode if I(state=absent) and the IDP doesn't exist
-    - name: "Ensure Protocol doesn't exist to start"
+    - name: Ensure Protocol does not exist to start
       openstack.cloud.keystone_federation_protocol:
-        state: 'absent'
-        name: '{{ protocol_name }}'
+        state: absent
+        name: ansible_protocol1
 
     # ========================================================================
     #   Creation
 
-    - name: 'Create protocol - CHECK MODE'
+    - name: Create protocol - CHECK MODE
       check_mode: yes
       openstack.cloud.keystone_federation_protocol:
-        state: 'present'
-        name: '{{ protocol_name }}'
-        mapping_id: '{{ mapping_name_1 }}'
-      register: create_protocol
+        state: present
+        name: ansible_protocol1
+        mapping_id: ansible_mapping1
+      register: protocol
 
     - assert:
         that:
-        - create_protocol is changed
+          - protocol is changed
 
-    - name: 'Fetch Protocol info (should be absent)'
+    - name: Fetch Protocol info (should be absent)
       openstack.cloud.keystone_federation_protocol_info:
-        name: '{{ protocol_name }}'
-      register: protocol_info
+        name: ansible_protocol1
+      register: protocols
 
     - assert:
         that:
-        - protocol_info.protocols | length == 0
+          - protocols.protocols | length == 0
 
-    - name: 'Create protocol'
+    - name: Create protocol
       openstack.cloud.keystone_federation_protocol:
-        state: 'present'
-        name: '{{ protocol_name }}'
-        mapping_id: '{{ mapping_name_1 }}'
-      register: create_protocol
+        state: present
+        name: ansible_protocol1
+        mapping_id: ansible_mapping1
+      register: protocol
 
     - assert:
         that:
-        - create_protocol is changed
-        - create_protocol.protocol.id == protocol_name
-        - create_protocol.protocol.name == protocol_name
-        - create_protocol.protocol.mapping_id == mapping_name_1
+          - protocol is changed
+          - protocol.protocol.id == 'ansible_protocol1'
+          - protocol.protocol.name == 'ansible_protocol1'
+          - protocol.protocol.mapping_id == 'ansible_mapping1'
 
     - name: assert return values of keystone_federation_protocol module
       assert:
         that:
           # allow new fields to be introduced but prevent fields from being removed
-          - expected_fields|difference(create_protocol.protocol.keys())|length == 0
+          - expected_fields|difference(protocol.protocol.keys())|length == 0
 
-    - name: 'Create protocol (retry - no change) - CHECK MODE'
+    - name: Create protocol (retry - no change) - CHECK MODE
       check_mode: yes
       openstack.cloud.keystone_federation_protocol:
-        state: 'present'
-        name: '{{ protocol_name }}'
-        mapping_id: '{{ mapping_name_1 }}'
-      register: create_protocol
+        state: present
+        name: ansible_protocol1
+        mapping_id: ansible_mapping1
+      register: protocol
 
     - assert:
         that:
-        - create_protocol is not changed
+          - protocol is not changed
 
-    - name: 'Create protocol (retry - no change)'
+    - name: Create protocol (retry - no change)
       openstack.cloud.keystone_federation_protocol:
-        state: 'present'
-        name: '{{ protocol_name }}'
-        mapping_id: '{{ mapping_name_1 }}'
-      register: create_protocol
+        state: present
+        name: ansible_protocol1
+        mapping_id: ansible_mapping1
+      register: protocol
 
     - assert:
         that:
-        - create_protocol is not changed
-        - create_protocol.protocol.id == protocol_name
-        - create_protocol.protocol.name == protocol_name
-        - create_protocol.protocol.mapping_id == mapping_name_1
+          - protocol is not changed
+          - protocol.protocol.id == 'ansible_protocol1'
+          - protocol.protocol.name == 'ansible_protocol1'
+          - protocol.protocol.mapping_id == 'ansible_mapping1'
 
     # ========================================================================
     #   Update
 
-    - name: 'Update protocol - CHECK MODE'
+    - name: Update protocol - CHECK MODE
       check_mode: yes
       openstack.cloud.keystone_federation_protocol:
-        state: 'present'
-        name: '{{ protocol_name }}'
-        mapping_id: '{{ mapping_name_2 }}'
-      register: update_protocol
+        state: present
+        name: ansible_protocol1
+        mapping_id: ansible_mapping2
+      register: protocol
 
     - assert:
         that:
-        - update_protocol is changed
+          - protocol is changed
 
-    - name: 'Update protocol'
+    - name: Update protocol
       openstack.cloud.keystone_federation_protocol:
-        state: 'present'
-        name: '{{ protocol_name }}'
-        mapping_id: '{{ mapping_name_2 }}'
-      register: update_protocol
+        state: present
+        name: ansible_protocol1
+        mapping_id: ansible_mapping2
+      register: protocol
 
     - assert:
         that:
-        - update_protocol is changed
-        - update_protocol.protocol.id == protocol_name
-        - update_protocol.protocol.name == protocol_name
-        - update_protocol.protocol.mapping_id == mapping_name_2
+          - protocol is changed
+          - protocol.protocol.id == 'ansible_protocol1'
+          - protocol.protocol.name == 'ansible_protocol1'
+          - protocol.protocol.mapping_id == 'ansible_mapping2'
 
-    - name: 'Update protocol (retry - no change) - CHECK MODE'
+    - name: Update protocol (retry - no change) - CHECK MODE
       check_mode: yes
       openstack.cloud.keystone_federation_protocol:
-        state: 'present'
-        name: '{{ protocol_name }}'
-        mapping_id: '{{ mapping_name_2 }}'
-      register: update_protocol
+        state: present
+        name: ansible_protocol1
+        mapping_id: ansible_mapping2
+      register: protocol
 
     - assert:
         that:
-        - update_protocol is not changed
+          - protocol is not changed
 
-    - name: 'Update protocol (retry - no change)'
+    - name: Update protocol (retry - no change)
       openstack.cloud.keystone_federation_protocol:
-        state: 'present'
-        name: '{{ protocol_name }}'
-        mapping_id: '{{ mapping_name_2 }}'
-      register: update_protocol
+        state: present
+        name: ansible_protocol1
+        mapping_id: ansible_mapping2
+      register: protocol
 
     - assert:
         that:
-        - update_protocol is not changed
-        - update_protocol.protocol.id == protocol_name
-        - update_protocol.protocol.name == protocol_name
-        - update_protocol.protocol.mapping_id == mapping_name_2
+          - protocol is not changed
+          - protocol.protocol.id == 'ansible_protocol1'
+          - protocol.protocol.name == 'ansible_protocol1'
+          - protocol.protocol.mapping_id == 'ansible_mapping2'
 
     # ========================================================================
     #   Create second protocol to test openstack.cloud.keystone_federation_protocol_info
 
-    - name: 'Create protocol (2)'
+    - name: Create protocol (2)
       openstack.cloud.keystone_federation_protocol:
-        state: 'present'
-        name: '{{ protocol_name_2 }}'
-        mapping_id: '{{ mapping_name_1 }}'
-      register: create_protocol_2
+        state: present
+        name: ansible_protocol2
+        mapping_id: ansible_mapping1
+      register: protocol
+
     - assert:
         that:
-        - create_protocol_2 is changed
-        - create_protocol_2.protocol.id == protocol_name_2
-        - create_protocol_2.protocol.name == protocol_name_2
-        - create_protocol_2.protocol.mapping_id == mapping_name_1
+          - protocol is changed
+          - protocol.protocol.id == 'ansible_protocol2'
+          - protocol.protocol.name == 'ansible_protocol2'
+          - protocol.protocol.mapping_id == 'ansible_mapping1'
 
     # ========================================================================
     #   Basic tests of openstack.cloud.keystone_federation_protocol_info
 
-    - name: 'Fetch Protocol info (a specific protocol)'
+    - name: Fetch Protocol info (a specific protocol)
       openstack.cloud.keystone_federation_protocol_info:
-        name: '{{ protocol_name }}'
-      register: protocol_info
+        name: ansible_protocol1
+      register: protocols
 
     - name: Check info about protocols
       assert:
         that:
-          - protocol_info.protocols|length > 0
+          - protocols.protocols|length > 0
           # allow new fields to be introduced but prevent fields from being removed
-          - expected_fields|difference(protocol_info.protocols[0].keys())|length == 0
+          - expected_fields|difference(protocols.protocols[0].keys())|length == 0
 
     - assert:
         that:
-        - protocol_info.protocols[0].id == protocol_name
-        - protocol_info.protocols[0].name == protocol_name
-        - protocol_info.protocols[0].mapping_id == mapping_name_2
+          - protocols.protocols[0].id == 'ansible_protocol1'
+          - protocols.protocols[0].name == 'ansible_protocol1'
+          - protocols.protocols[0].mapping_id == 'ansible_mapping2'
 
-    - name: 'Fetch Protocol info (all protocols on our test IDP)'
+    - name: Fetch Protocol info (all protocols on our test IDP)
       openstack.cloud.keystone_federation_protocol_info: {}
         # idp_id defined in defaults at the start
-      register: protocol_info
+      register: protocols
 
     - assert:
         that:
-        # We created the IDP, and we're going to delete it:
-        # we should be able to trust what's attached to it
-        - protocol_info.protocols | length == 2
-        - protocol_name in (protocol_info.protocols | map(attribute='id'))
-        - protocol_name in (protocol_info.protocols | map(attribute='id'))
-        - protocol_name_2 in (protocol_info.protocols | map(attribute='name'))
-        - protocol_name_2 in (protocol_info.protocols | map(attribute='name'))
-        - mapping_name_1 in (protocol_info.protocols | map(attribute='mapping_id'))
-        - mapping_name_2 in (protocol_info.protocols | map(attribute='mapping_id'))
-      vars:
-        protocol_1: '{{ protocol_info.protocols[0] }}'
-        protocol_2: '{{ protocol_info.protocols[1] }}'
+          # We created the IDP, and we're going to delete it:
+          # we should be able to trust what's attached to it
+          - protocols.protocols | length == 2
+          - "'ansible_protocol1' in (protocols.protocols | map(attribute='id'))"
+          - "'ansible_protocol1' in (protocols.protocols | map(attribute='id'))"
+          - "'ansible_protocol2' in (protocols.protocols | map(attribute='name'))"
+          - "'ansible_protocol2' in (protocols.protocols | map(attribute='name'))"
+          - "'ansible_mapping1' in (protocols.protocols | map(attribute='mapping_id'))"
+          - "'ansible_mapping2' in (protocols.protocols | map(attribute='mapping_id'))"
 
     # ========================================================================
     #   Deletion
 
-    - name: 'Delete protocol - CHECK MODE'
+    - name: Delete protocol - CHECK MODE
       check_mode: yes
       openstack.cloud.keystone_federation_protocol:
-        state: 'absent'
-        name: '{{ protocol_name }}'
-      register: update_protocol
+        state: absent
+        name: ansible_protocol1
+      register: protocol
 
     - assert:
         that:
-        - update_protocol is changed
+          - protocol is changed
 
-    - name: 'Delete protocol'
+    - name: Delete protocol
       openstack.cloud.keystone_federation_protocol:
-        state: 'absent'
-        name: '{{ protocol_name }}'
-      register: update_protocol
+        state: absent
+        name: ansible_protocol1
+      register: protocol
 
     - assert:
         that:
-        - update_protocol is changed
+          - protocol is changed
 
-    - name: 'Delete protocol (retry - no change) - CHECK MODE'
+    - name: Delete protocol (retry - no change) - CHECK MODE
       check_mode: yes
       openstack.cloud.keystone_federation_protocol:
-        state: 'absent'
-        name: '{{ protocol_name }}'
-      register: update_protocol
+        state: absent
+        name: ansible_protocol1
+      register: protocol
 
     - assert:
         that:
-        - update_protocol is not changed
+          - protocol is not changed
 
-    - name: 'Delete protocol (retry - no change)'
+    - name: Delete protocol (retry - no change)
       openstack.cloud.keystone_federation_protocol:
-        state: 'absent'
-        name: '{{ protocol_name }}'
-      register: update_protocol
+        state: absent
+        name: ansible_protocol1
+      register: protocol
 
     - assert:
         that:
-        - update_protocol is not changed
+          - protocol is not changed
 
     # ========================================================================
     #   Clean up after ourselves
   always:
-    - name: 'Delete protocol'
+    - name: Delete protocol
       openstack.cloud.keystone_federation_protocol:
-         state: 'absent'
-         name: '{{ protocol_name }}'
-         idp_id: '{{ idp_name }}'
+         state: absent
+         name: ansible_protocol1
+         idp_id: ansible_idp
       ignore_errors: yes
 
-    - name: 'Delete protocol (2)'
+    - name: Delete protocol (2)
       openstack.cloud.keystone_federation_protocol:
-         state: 'absent'
-         name: '{{ protocol_name_2 }}'
-         idp_id: '{{ idp_name }}'
+         state: absent
+         name: ansible_protocol2
+         idp_id: ansible_idp
       ignore_errors: yes
 
-    - name: 'Delete mapping 1'
+    - name: Delete mapping 1
       openstack.cloud.federation_mapping:
-         state: 'absent'
-         name: '{{ mapping_name_1 }}'
+         state: absent
+         name: ansible_mapping1
       ignore_errors: yes
 
-    - name: 'Delete mapping 2'
+    - name: Delete mapping 2
       openstack.cloud.federation_mapping:
-         state: 'absent'
-         name: '{{ mapping_name_2 }}'
+         state: absent
+         name: ansible_mapping2
       ignore_errors: yes
 
-    - name: 'Delete idp'
+    - name: Delete idp
       openstack.cloud.federation_idp:
-         state: 'absent'
-         name: '{{ idp_name }}'
+         state: absent
+         name: ansible_idp
       ignore_errors: yes
 
-    - name: 'Delete domain'
+    - name: Delete domain
       openstack.cloud.identity_domain:
-         state: 'absent'
-         name: '{{ domain_name }}'
+         state: absent
+         name: ansible_domain
       ignore_errors: yes
