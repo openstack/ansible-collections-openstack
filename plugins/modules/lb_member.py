@@ -64,9 +64,6 @@ options:
         connections. A valid value is from 0 to 256.
       - "Octavia's default for I(weight) is C(1)."
     type: int
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

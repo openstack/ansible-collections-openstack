@@ -38,10 +38,6 @@ options:
         scoped project.
     type: bool
     default: 'no'
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

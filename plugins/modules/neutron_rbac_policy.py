@@ -13,8 +13,6 @@ author: OpenStack Ansible SIG
 description:
   - Create, update or delete a policy to apply a RBAC rule against a network,
     security group or QoS Policy.
-
-
 options:
   action:
     description:
@@ -73,7 +71,6 @@ options:
     choices: ['present', 'absent']
     default: present
     type: str
-
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

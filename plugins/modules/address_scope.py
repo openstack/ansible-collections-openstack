@@ -47,10 +47,6 @@ options:
         - Dictionary with extra key/value pairs passed to the API
      default: {}
      type: dict
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

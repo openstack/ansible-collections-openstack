@@ -44,9 +44,6 @@ options:
       - Filter flavors based on the number of virtual CPUs.
       - I(vcpus) supports same format as I(ram) option.
     type: str
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

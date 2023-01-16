@@ -48,9 +48,6 @@ options:
     type: str
 notes:
     - Name equals the ID of a mapping.
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

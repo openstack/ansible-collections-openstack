@@ -21,10 +21,6 @@ options:
         - Name or ID of the baremetal node.
       type: str
       aliases: ['node']
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

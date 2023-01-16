@@ -40,13 +40,8 @@ options:
       - Volume name or ID to create the snapshot from.
       - Required when I(state) is C(present).
     type: str
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 notes:
     - Updating existing volume snapshots has not been implemented yet.
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

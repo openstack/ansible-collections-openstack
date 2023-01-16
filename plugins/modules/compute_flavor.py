@@ -76,10 +76,6 @@ options:
        - Number of virtual CPUs.
        - Required when I(state) is C(present).
     type: int
-requirements:
-   - "python >= 3.6"
-   - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

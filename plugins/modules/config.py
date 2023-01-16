@@ -22,8 +22,8 @@ options:
      type: list
      elements: str
 requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
+  - "python >= 3.6"
+  - "openstacksdk >= 0.103.0"
 '''
 
 RETURN = r'''

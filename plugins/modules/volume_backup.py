@@ -50,14 +50,8 @@ options:
       - Name or ID of the volume.
       - Required when I(state) is C(present).
     type: str
-
 notes:
     - This module does not support updates to existing backups.
-
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

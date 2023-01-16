@@ -57,7 +57,6 @@ options:
       - Filters the RBAC rules based on the target project id.
       - Logically AND'ed with other filters.
     type: str
-
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

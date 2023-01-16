@@ -26,9 +26,6 @@ options:
 notes:
     - Name equals the ID of a federation protocol.
     - Name equals the ID of an identity provider.
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

@@ -18,9 +18,6 @@ options:
       - The name of the identity provider to fetch.
     type: str
     aliases: ['id']
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

@@ -19,9 +19,6 @@ options:
     aliases: ['id']
 notes:
     - Name equals the ID of a federation mapping.
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

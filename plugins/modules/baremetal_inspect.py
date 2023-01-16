@@ -25,11 +25,6 @@ options:
         - Mutually exclusive with I(mac)
       type: str
       aliases: [id, uuid]
-
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

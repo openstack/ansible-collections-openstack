@@ -22,10 +22,6 @@ options:
               of this dictionary will be matched passed to the API as query
               parameter filters.
         type: dict
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

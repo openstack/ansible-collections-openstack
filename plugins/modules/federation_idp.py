@@ -47,9 +47,6 @@ options:
       - Will default to an empty list when creating a new Identity Provider.
     type: list
     elements: str
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk >= 0.44"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

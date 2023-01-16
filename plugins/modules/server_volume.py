@@ -32,10 +32,6 @@ options:
       - Name or id of volume you want to attach to a server
      required: true
      type: str
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

@@ -22,9 +22,6 @@ options:
       - Dict of properties of the images used for query
     type: dict
     aliases: ['properties']
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

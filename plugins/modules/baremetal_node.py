@@ -164,10 +164,6 @@ options:
         - Interface for all vendor-specific actions on this node, e.g.
           C(no-vendor).
       type: str
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

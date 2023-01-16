@@ -81,10 +81,6 @@ options:
           to complete.
       type: int
       default: 1800
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

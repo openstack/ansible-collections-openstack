@@ -70,9 +70,6 @@ options:
     description:
       - Member inactivity timeout in milliseconds.
     type: int
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

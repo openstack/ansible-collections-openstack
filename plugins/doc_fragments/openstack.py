@@ -96,8 +96,8 @@ options:
     default: INFO
     choices: [INFO, DEBUG]
 requirements:
-  - python >= 3.6
-  - openstacksdk >= 0.103.0
+  - "python >= 3.6"
+  - "openstacksdk >= 0.103.0"
 notes:
   - The standard OpenStack environment variables, such as C(OS_USERNAME)
     may be used instead of providing explicit values.

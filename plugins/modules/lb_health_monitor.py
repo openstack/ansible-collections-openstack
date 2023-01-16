@@ -89,9 +89,6 @@ options:
       - Must be a string that begins with a forward slash (C(/)).
       - "Octavia's default URL path is C(/)."
     type: str
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

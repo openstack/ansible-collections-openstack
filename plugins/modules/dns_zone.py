@@ -49,9 +49,6 @@ options:
     choices: ['primary', 'secondary']
     type: str
     aliases: ['zone_type']
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

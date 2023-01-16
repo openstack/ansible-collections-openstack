@@ -144,9 +144,6 @@ notes:
   - Return values of this module are preliminary and will most likely change
     when openstacksdk has finished its transition of cloud layer functions to
     resource proxies.
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

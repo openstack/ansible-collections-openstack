@@ -62,10 +62,6 @@ options:
         - Maximum number of seconds to wait for the stack creation
       default: 3600
       type: int
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

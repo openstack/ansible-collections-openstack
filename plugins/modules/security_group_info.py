@@ -52,9 +52,6 @@ options:
       - Resources that match all tags in this list will be returned.
     type: list
     elements: str
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

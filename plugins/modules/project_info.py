@@ -26,9 +26,6 @@ options:
       - Elements of I(filters) are passed as query parameters to
         OpenStack Identity API.
     type: dict
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

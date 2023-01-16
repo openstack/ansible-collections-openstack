@@ -35,9 +35,6 @@ options:
     choices: ['present', 'absent']
 notes:
     - A compute flavor must not be private to manage project access.
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

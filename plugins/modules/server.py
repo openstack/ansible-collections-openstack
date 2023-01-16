@@ -241,10 +241,6 @@ options:
         - If the module should wait for the instance to be created.
       type: bool
       default: 'yes'
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

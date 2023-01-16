@@ -133,11 +133,6 @@ options:
     volumes:
         description: Number of volumes to allow.
         type: int
-
-requirements:
-    - "python >= 3.6"
-    - openstacksdk
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

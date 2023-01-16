@@ -127,10 +127,6 @@ options:
             - The subnet pool name or ID from which to obtain a CIDR
         type: str
         required: false
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

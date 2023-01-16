@@ -35,10 +35,6 @@ options:
           C(max_server_per_host) rule is supported for the C(anti-affinity)
           policy.
      type: dict
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
