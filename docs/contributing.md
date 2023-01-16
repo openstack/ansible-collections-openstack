@@ -24,14 +24,16 @@ openstacksdk], please read our [branching docs](branching.md).
 
 ## Examples
 
-* For an example on how to write a `*_info` module, have a look at module
-  [`openstack.cloud.neutron_rbac_policies_info`](../plugins/modules/neutron_rbac_policies_info.py).
+* For an example on how to write a `*_info` module, have a look at modules [`openstack.cloud.identity_role_info`](
+  ../plugins/modules/identity_role_info.py) or [`openstack.cloud.neutron_rbac_policies_info`](
+  ../plugins/modules/neutron_rbac_policies_info.py).
 * For an example on how to write a regular non-`*_info` module, have a look at module
-  [`openstack.cloud.neutron_rbac_policy`](../plugins/modules/neutron_rbac_policy.py) or any other module which
-  contains a `_will_change` method.
+  [`openstack.cloud.federation_idp`](../plugins/modules/federation_idp.py) or any other module which uses
+  [`class StateMachine`](../plugins/module_utils/resource.py).
 * Do NOT use modules which define a `_system_state_change` function as examples, because they often do not properly
-  define Ansible's check mode, idempotency and/or updates. Refer to modules which define a `_will_change` function
-  instead.
+  define Ansible's check mode, idempotency and/or updates. Refer to modules which use [`class StateMachine`](
+  ../plugins/module_utils/resource.py). In cases where using `class StateMachine` would cause code bloat, it might help
+  to look at modules which define a `_will_change` function instead.
 
 ## Naming
 

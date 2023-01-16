@@ -64,15 +64,15 @@ ansible-galaxy collection install -r requirements.yml
 
 ## Usage
 
-To use a module from the OpenStack Cloud collection, please reference the full namespace, collection name, and module
-name that you want to use:
+To use a module from the Ansible OpenStack collection, call them by their Fully Qualified Collection Name (FQCN),
+composed of their namespace, collection name and module name:
 
 ```yaml
 ---
-- name: Using OpenStack Cloud collection
-  hosts: localhost
+- hosts: localhost
   tasks:
-    - openstack.cloud.server:
+    - name: Create server in an OpenStack cloud
+      openstack.cloud.server:
         name: vm
         state: present
         cloud: openstack
@@ -87,17 +87,79 @@ Or you can add the full namespace and collection name in the `collections` eleme
 
 ```yaml
 ---
-- name: Using the Ansible OpenStack Collection
-  hosts: localhost
+- hosts: localhost
   collections:
     - openstack.cloud
   tasks:
-    - server_volume:
+    - name: Create server in an OpenStack cloud
+      server_volume:
         state: present
         cloud: openstack
         server: Mysql-server
         volume: mysql-data
         device: /dev/vdb
+```
+
+For powerful generic [CRUD][crud]-style resource management use Ansible module
+[`openstack.cloud.resource`](plugins/modules/resource.py):
+
+```yaml
+---
+- hosts: localhost
+  tasks:
+    - name: Create security group
+      openstack.cloud.resource:
+        cloud: openstack
+        service: network
+        type: security_group
+        attributes:
+          name: ansible_security_group
+          description: 'ansible security group'
+
+    - name: Update security group description
+      openstack.cloud.resource:
+        cloud: openstack
+        service: network
+        type: security_group
+        attributes:
+          name: ansible_security_group
+          description: 'ansible neutron security group'
+
+    - name: Delete security group
+      openstack.cloud.resource:
+        cloud: openstack
+        service: network
+        type: security_group
+        attributes:
+          name: ansible_security_group
+        state: absent
+```
+
+For generic resource listing use Ansible module [`openstack.cloud.resources`](plugins/modules/resources.py):
+
+```yaml
+---
+- hosts: localhost
+  tasks:
+    - name: List images
+      openstack.cloud.resources:
+        cloud: openstack
+        service: image
+        type: image
+
+    - name: List compute flavors
+      openstack.cloud.resources:
+        cloud: openstack
+        service: compute
+        type: flavor
+
+    - name: List networks with name 'public'
+      openstack.cloud.resources:
+        cloud: openstack
+        service: network
+        type: network
+        parameters:
+          name: public
 ```
 
 [Ansible module defaults][ansible-module-defaults] are supported as well:
@@ -124,6 +186,7 @@ Or you can add the full namespace and collection name in the `collections` eleme
 ```
 
 [ansible-module-defaults]: https://docs.ansible.com/ansible/latest/user_guide/playbooks_module_defaults.html
+[crud]: https://en.wikipedia.org/wiki/CRUD
 
 ## Documentation
 
