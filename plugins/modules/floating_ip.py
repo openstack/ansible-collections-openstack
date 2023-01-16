@@ -71,10 +71,6 @@ options:
           IP completely, or only detach it from the server. Default is to detach only.
      type: bool
      default: 'no'
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

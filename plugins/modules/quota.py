@@ -133,12 +133,8 @@ options:
     project:
         description: Unused, kept for compatability
         type: int
-
 requirements:
-    - "python >= 3.6"
-    - "openstacksdk >= 0.13.0"
     - "keystoneauth1 >= 3.4.0"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

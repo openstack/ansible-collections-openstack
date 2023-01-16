@@ -26,10 +26,6 @@ options:
           this dictionary may be additional dictionaries.
      required: false
      type: dict
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

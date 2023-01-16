@@ -33,10 +33,6 @@ options:
         - Unique name or ID of the project.
      required: false
      type: str
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

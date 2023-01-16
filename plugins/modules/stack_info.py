@@ -32,11 +32,6 @@ options:
       - Owner (parent) of the stack to be used as a filter
     type: str
     required: false
-
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
-
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

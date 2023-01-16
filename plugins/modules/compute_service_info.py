@@ -18,10 +18,6 @@ options:
      description:
         - Filter by service host. Requires openstacksdk>=0.53.
      type: str
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

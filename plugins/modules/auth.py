@@ -10,9 +10,6 @@ short_description: Retrieve an auth token
 author: OpenStack Ansible SIG
 description:
     - Retrieve an auth token from an OpenStack Cloud
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

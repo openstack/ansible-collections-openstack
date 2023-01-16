@@ -91,10 +91,6 @@ options:
           wait for the node activation or deactivation to complete.
       default: 1800
       type: int
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

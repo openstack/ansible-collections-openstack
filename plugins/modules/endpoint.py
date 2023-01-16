@@ -44,10 +44,6 @@ options:
      choices: [present, absent]
      default: present
      type: str
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk >= 0.13.0"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

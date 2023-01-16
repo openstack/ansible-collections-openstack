@@ -54,8 +54,6 @@ options:
       - Resources that match any tag in this list will be excluded.
     type: list
     elements: str
-
-requirements: ["openstacksdk"]
 '''
 
 RETURN = '''

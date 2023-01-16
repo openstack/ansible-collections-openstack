@@ -165,10 +165,7 @@ options:
       aliases:
         - skip_update_of_driver_password
 requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
     - "jsonpatch"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

@@ -23,10 +23,6 @@ options:
               dictionaries. Matching is currently limited to strings within
               the port dictionary, or strings within nested dictionaries.
         type: dict
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

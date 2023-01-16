@@ -59,10 +59,6 @@ options:
      description:
         - Port used to monitor this member
      type: int
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

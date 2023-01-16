@@ -33,10 +33,6 @@ options:
      description:
       - Device you want to attach. Defaults to auto finding a device name.
      type: str
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

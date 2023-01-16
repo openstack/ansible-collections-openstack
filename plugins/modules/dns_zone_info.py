@@ -34,11 +34,6 @@ options:
      description:
         -  TTL (Time To Live) value in seconds.
      type: int
-
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

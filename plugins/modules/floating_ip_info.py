@@ -45,10 +45,6 @@ options:
       - The status of a floating IP, which can be ``ACTIVE``or ``DOWN``.
     choices: ['active', 'down']
     type: str
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

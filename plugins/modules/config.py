@@ -21,8 +21,8 @@ options:
      type: list
      elements: str
 requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
+  - "python >= 3.6"
+  - "openstacksdk >= 0.36, < 0.99.0"
 author: OpenStack Ansible SIG
 '''
 

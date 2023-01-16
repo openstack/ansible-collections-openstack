@@ -78,7 +78,6 @@ options:
      description:
        - The HTTP URL path of the request sent by the monitor to test the health of a backend member.
          Must be a string that begins with a forward slash (/). The default URL path is /.
-requirements: ["openstacksdk"]
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

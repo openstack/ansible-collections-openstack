@@ -19,8 +19,7 @@ options:
     type: str
     aliases: ['id']
 requirements:
-  - "python >= 3.6"
-  - "openstacksdk >= 0.44"
+  - "openstacksdk >= 0.44, < 0.99.0"
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

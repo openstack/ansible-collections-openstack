@@ -110,10 +110,6 @@ options:
      required: false
      default: {}
      type: dict
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

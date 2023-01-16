@@ -55,10 +55,6 @@ options:
        - A string used for filtering flavors based on the amount of ephemeral
          storage. Format is the same as the I(ram) parameter
      type: str
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

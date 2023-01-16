@@ -21,10 +21,6 @@ options:
         - A dictionary of meta data to use for filtering. Elements of
           this dictionary may be additional dictionaries.
      type: dict
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

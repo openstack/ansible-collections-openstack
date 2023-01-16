@@ -30,11 +30,6 @@ options:
     - Value of the status of the volume so that you can filter on "available" for example
     type: str
     required: false
-
-requirements:
-  - "python >= 3.6"
-  - "openstacksdk"
-
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

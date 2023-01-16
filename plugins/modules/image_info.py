@@ -24,10 +24,6 @@ options:
      type: dict
      required: false
      aliases: ['properties']
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

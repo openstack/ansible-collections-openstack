@@ -52,7 +52,6 @@ options:
     description: The backup mode
     type: bool
     default: False
-requirements: ["openstacksdk"]
 '''
 
 RETURN = '''

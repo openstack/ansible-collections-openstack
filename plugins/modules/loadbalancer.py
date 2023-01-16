@@ -135,10 +135,6 @@ options:
       - The amount of time the module should wait.
     default: 180
     type: int
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

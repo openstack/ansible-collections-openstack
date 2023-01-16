@@ -36,11 +36,6 @@ options:
         - A timeout in seconds to tell the role to wait for the node to complete introspection if wait is set to True.
       default: 1200
       type: int
-
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

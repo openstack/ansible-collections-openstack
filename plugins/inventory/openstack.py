@@ -111,11 +111,10 @@ options:
         default: true
 requirements:
     - "python >= 3.6"
-    - "openstacksdk >= 0.28, < 0.99.0"
+    - "openstacksdk >= 0.36, < 0.99.0"
 extends_documentation_fragment:
 - inventory_cache
 - constructed
-
 '''
 
 EXAMPLES = '''

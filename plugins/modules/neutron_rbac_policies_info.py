@@ -61,7 +61,6 @@ options:
       - Logically AND'ed with other filters
     choices: ['access_as_shared', 'access_as_external']
     type: str
-
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

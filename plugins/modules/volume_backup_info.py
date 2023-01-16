@@ -21,7 +21,6 @@ options:
     description:
       - Name of the volume.
     type: str
-requirements: ["openstacksdk"]
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

@@ -55,10 +55,6 @@ options:
           into ACTIVE state.
      default: 180
      type: int
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

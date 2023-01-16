@@ -31,7 +31,6 @@ options:
     choices: [creating, available, error, deleting,
               error_deleting, rollbacking, backing-up]
     type: str
-requirements: ["openstacksdk"]
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

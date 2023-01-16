@@ -131,10 +131,6 @@ options:
      description:
        - The dns domain of the port ( only with dns-integration enabled )
      type: str
-requirements:
-    - "python >= 3.6"
-    - "openstacksdk"
-
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
