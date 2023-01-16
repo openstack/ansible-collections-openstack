@@ -20,12 +20,13 @@
     - { role: host_aggregate, tags: host_aggregate }
     - { role: identity_domain, tags: identity_domain }
     - { role: identity_group, tags: identity_group }
-    - { role: identity_user, tags: identity_user }
     - { role: identity_role, tags: identity_role }
+    - { role: identity_user, tags: identity_user }
     - { role: image, tags: image }
     - { role: keypair, tags: keypair }
-    - { role: keystone_idp, tags: keystone_idp }
     - { role: keystone_federation_protocol, tags: keystone_federation_protocol }
+    - { role: keystone_idp, tags: keystone_idp }
+    - { role: loadbalancer, tags: loadbalancer }
     - { role: logging, tags: logging }
     - { role: network, tags: network }
     - { role: neutron_rbac_policy, tags: neutron_rbac_policy }
@@ -33,6 +34,7 @@
     - { role: object_container, tags: object_container }
     - { role: port, tags: port }
     - { role: project, tags: project }
+    - { role: quota, tags: quota }
     - { role: recordset, tags: recordset }
     - { role: resource, tags: resource }
     - { role: resources, tags: resources }
@@ -54,6 +56,3 @@
     - { role: volume_backup, tags: volume_backup }
     - { role: volume_snapshot, tags: volume_snapshot }
     - { role: volume_type_access, tags: volume_type_access }
-    - role: loadbalancer
-      tags: loadbalancer
-    - { role: quota, tags: quota }
