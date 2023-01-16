@@ -8,11 +8,11 @@ DOCUMENTATION = '''
 ---
 module: floating_ip
 author: OpenStack Ansible SIG
-short_description: Add/Remove floating IP from an instance
+short_description: Manage floating IP addresses for OpenStack servers
 description:
-   - Add or Remove a floating IP to an instance.
-   - Returns the floating IP when attaching only if I(wait=true).
-   - When detaching a floating IP there might be a delay until an instance
+   - Add or remove an floating ip address to/from an OpenStack server.
+   - Returns the floating IP when attaching only if I(wait) is C(true).
+   - When detaching a floating IP there might be a delay until an server
      does not list the floating IP any more.
 options:
    fixed_address:
@@ -55,7 +55,7 @@ options:
      default: 'no'
    server:
      description:
-        - The name or ID of the instance to which the IP address
+        - The name or ID of the server to which the IP address
           should be assigned.
      required: true
      type: str
@@ -81,7 +81,7 @@ EXAMPLES = '''
      cloud: dguerri
      server: cattle001
 
-# Assign a new floating IP to the instance fixed ip `192.0.2.3` of
+# Assign a new floating IP to the server fixed ip `192.0.2.3` of
 # `cattle001`. If a free floating IP is already allocated to the project, it is
 # reused; if not, a new one is created.
 - openstack.cloud.floating_ip:
@@ -94,7 +94,7 @@ EXAMPLES = '''
      wait: true
      timeout: 180
 
-# Assign a new floating IP from the network `ext_net` to the instance fixed
+# Assign a new floating IP from the network `ext_net` to the server fixed
 # ip in network `private_net` of `cattle001`.
 - openstack.cloud.floating_ip:
      cloud: dguerri
@@ -376,7 +376,7 @@ class NetworkingFloatingIPModule(OpenStackModule):
                                                 floating_ip_id=ip['id'])
 
                 # OpenStackSDK sets {"port_id": None} to detach a floating
-                # ip from an instance, but there might be a delay until a
+                # ip from a device, but there might be a delay until a
                 # server does not list it in addresses any more.
                 changed = True
 

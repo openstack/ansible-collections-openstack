@@ -22,6 +22,10 @@ options:
           attach the server to a public network.
         - Requires I(wait) to be C(True) during server creation.
         - Floating IP support is unstable in this module, use with caution.
+        - Options I(auto_ip), I(floating_ip_pools) and I(floating_ips) interact
+          in non-obvious ways and undocumentable depth. For explicit and safe
+          attaching and detaching of floating ip addresses use module
+          I(openstack.cloud.resource) instead.
       type: bool
       default: 'yes'
       aliases: ['auto_floating_ip', 'public_ip']
@@ -91,6 +95,10 @@ options:
         - Name of floating IP pool from which to choose a floating IP.
         - Requires I(wait) to be C(True) during server creation.
         - Floating IP support is unstable in this module, use with caution.
+        - Options I(auto_ip), I(floating_ip_pools) and I(floating_ips) interact
+          in non-obvious ways and undocumentable depth. For explicit and safe
+          attaching and detaching of floating ip addresses use module
+          I(openstack.cloud.resource) instead.
       type: list
       elements: str
     floating_ips:
@@ -98,6 +106,10 @@ options:
         - list of valid floating IPs that pre-exist to assign to this node.
         - Requires I(wait) to be C(True) during server creation.
         - Floating IP support is unstable in this module, use with caution.
+        - Options I(auto_ip), I(floating_ip_pools) and I(floating_ips) interact
+          in non-obvious ways and undocumentable depth. For explicit and safe
+          attaching and detaching of floating ip addresses use module
+          I(openstack.cloud.resource) instead.
       type: list
       elements: str
     image:
