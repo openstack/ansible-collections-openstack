@@ -21,7 +21,7 @@
   openstack.cloud.coe_cluster_template:
     cloud: "{{ cloud }}"
     coe: kubernetes
-    floating_ip_enabled: false
+    is_floating_ip_enabled: false
     image_id: '{{ image_id }}'
     keypair_id: '{{ keypair.keypair.id }}'
     name: k8s
@@ -38,7 +38,7 @@
   openstack.cloud.coe_cluster_template:
     cloud: "{{ cloud }}"
     coe: kubernetes
-    floating_ip_enabled: false
+    is_floating_ip_enabled: false
     image_id: '{{ image_id }}'
     keypair_id: '{{ keypair.keypair.id }}'
     name: k8s

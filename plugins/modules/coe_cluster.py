@@ -22,25 +22,22 @@ options:
     description:
       - URL used for cluster node discovery.
     type: str
-  docker_volume_size:
-    description:
-      - The size in GB of the docker volume.
-    type: int
   flavor_id:
     description:
       - The flavor of the minion node for this cluster template.
     type: str
-  floating_ip_enabled:
+  is_floating_ip_enabled:
     description:
       - Indicates whether created cluster should have a floating ip.
       - Whether enable or not using the floating IP of cloud provider. Some
         cloud providers used floating IP, some used public IP, thus Magnum
         provide this option for specifying the choice of using floating IP.
-      - If not set, the value of I(floating_ip_enabled) of the cluster template
+      - If not set, the value of I(is_floating_ip_enabled) of the cluster template
         specified with I(cluster_template_id) will be used.
-      - When I(floating_ip_enabled) is set to C(true), then
+      - When I(is_floating_ip_enabled) is set to C(true), then
         I(external_network_id) in cluster template must be defined.
     type: bool
+    aliases: ['floating_ip_enabled']
   keypair:
     description:
       - Name of the keypair to use.
@@ -74,82 +71,131 @@ options:
     choices: [present, absent]
     default: present
     type: str
-notes:
-  - Return values of this module are preliminary and will most likely change
-    when openstacksdk has finished its transition of cloud layer functions to
-    resource proxies.
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''
 
-# TODO: Update return values when coe related functions in openstacksdk
-#       have been ported to resource proxies.
 RETURN = r'''
 cluster:
   description: Dictionary describing the cluster.
   returned: On success when I(state) is C(present).
-  type: complex
+  type: dict
   contains:
+    api_address:
+      description: The endpoint URL of COE API exposed to end-users.
+      type: str
+      sample: https://172.24.4.30:6443
     cluster_template_id:
-      description: The cluster_template UUID
+      description: The UUID of the cluster template.
       type: str
       sample: '7b1418c8-cea8-48fc-995d-52b66af9a9aa'
+    coe_version:
+      description: Version info of chosen COE in bay/cluster for helping
+                   client in picking the right version of client.
+      type: str
+      sample: v1.11.1
     create_timeout:
       description: Timeout for creating the cluster in minutes.
                    Default to 60 if not set.
       type: int
       sample: 60
+    created_at:
+      description: The date and time in UTC at which the cluster is created.
+      type: str
+      sample: "2018-08-16T10:29:45+00:00"
+    discovery_url:
+      description: The custom discovery url for node discovery. This is used
+                   by the COE to discover the servers that have been created
+                   to host the containers. The actual discovery mechanism
+                   varies with the COE. In some cases, the service fills in
+                   the server info in the discovery service. In other cases,
+                   if the discovery_url is not specified, the service will
+                   use the public discovery service at
+                   U(https://discovery.etcd.io). In this case, the service
+                   will generate a unique url here for each bay and store the
+                   info for the servers.
+      type: str
+      sample: https://discovery.etcd.io/a42ee38e7113f31f4d6324f24367aae5
+    fixed_network:
+      description: The name or ID of the network to provide connectivity to the
+                   internal network for the bay/cluster.
+      type: str
+    fixed_subnet:
+      description: The fixed subnet to use when allocating network addresses
+                   for nodes in bay/cluster.
+      type: str
+    flavor_id:
+      description: The flavor name or ID to use when booting the node servers.
+                   Defaults to m1.small.
+      type: str
     id:
       description: Unique UUID for this cluster.
       type: str
       sample: '86246a4d-a16c-4a58-9e96ad7719fe0f9d'
+    is_floating_ip_enabled:
+      description: Indicates whether created clusters should have a
+                   floating ip or not.
+      type: bool
+      sample: true
+    is_master_lb_enabled:
+      description: Indicates whether created clusters should have a load
+                   balancer for master nodes or not.
+      type: bool
+      sample: true
     keypair:
       description: Name of the keypair to use.
       type: str
       sample: mykey
-    location:
-      description: The OpenStack location of this resource.
-      type: str
+    labels:
+      description: One or more key/value pairs.
+      type: dict
+      sample: {'key1': 'value1', 'key2': 'value2'}
+    master_addresses:
+      description: A list of floating IPs of all master nodes.
+      type: list
+      sample: ['172.24.4.5']
     master_count:
-      description: The number of master nodes for this cluster.
+      description: The number of servers that will serve as master for the
+                   bay/cluster. Set to more than 1 master to enable High
+                   Availability. If the option master-lb-enabled is specified
+                   in the baymodel/cluster template, the master servers will
+                   be placed in a load balancer pool. Defaults to 1.
       type: int
       sample: 1
+    master_flavor_id:
+      description: The flavor of the master node for this baymodel/cluster
+                   template.
+      type: str
+      sample: c1.c1r1
     name:
       description: Name that has to be given to the cluster.
       type: str
       sample: k8scluster
+    node_addresses:
+      description: A list of floating IPs of all servers that serve as nodes.
+      type: list
+      sample: ['172.24.4.8']
     node_count:
       description: The number of master nodes for this cluster.
       type: int
       sample: 1
-    properties:
-      description: Additional properties of the cluster template.
-      type: dict
-      sample: |
-        {
-          'api_address': 'https://172.24.4.30:6443',
-          'coe_version': 'v1.11.1',
-          'container_version': '1.12.6',
-          'created_at': '2018-08-16T10:29:45+00:00',
-          'discovery_url': 'https://discovery.etcd.io/a42...aae5',
-          'faults': {'0': 'ResourceInError: resources[0].resources...'},
-          'flavor_id': 'c1.c1r1',
-          'floating_ip_enabled': true,
-          'labels': {'key1': 'value1', 'key2': 'value2'},
-          'master_addresses': ['172.24.4.5'],
-          'master_flavor_id': 'c1.c1r1',
-          'node_addresses': ['172.24.4.8'],
-          'status_reason': 'Stack CREATE completed successfully',
-          'updated_at': '2018-08-16T10:39:25+00:00',
-        }
     stack_id:
-      description: Stack id of the Heat stack.
+      description: The reference UUID of orchestration stack from Heat
+                   orchestration service.
       type: str
       sample: '07767ec6-85f5-44cb-bd63-242a8e7f0d9d'
     status:
       description: Status of the cluster from the heat stack.
       type: str
       sample: 'CREATE_COMLETE'
+    status_reason:
+      description: Status reason of the cluster from the heat stack
+      type: str
+      sample: 'Stack CREATE completed successfully'
+    updated_at:
+      description: The date and time in UTC at which the cluster was updated.
+      type: str
+      sample: '2018-08-16T10:39:25+00:00'
     uuid:
       description: Unique UUID for this cluster.
       type: str
@@ -174,9 +220,9 @@ class COEClusterModule(OpenStackModule):
     argument_spec = dict(
         cluster_template_id=dict(),
         discovery_url=dict(),
-        docker_volume_size=dict(type='int'),
         flavor_id=dict(),
-        floating_ip_enabled=dict(type='bool'),
+        is_floating_ip_enabled=dict(type='bool',
+                                    aliases=['floating_ip_enabled']),
         keypair=dict(no_log=False),  # := noqa no-log-needed
         labels=dict(type='raw'),
         master_count=dict(type='int'),
@@ -204,10 +250,7 @@ class COEClusterModule(OpenStackModule):
             # Create cluster
             cluster = self._create()
             self.exit_json(changed=True,
-                           # TODO: Add .to_dict(computed=False) when Munch
-                           #       object has been replaced with openstacksdk
-                           #       resource object.
-                           cluster=cluster)
+                           cluster=cluster.to_dict(computed=False))
 
         elif state == 'present' and cluster:
             # Update cluster
@@ -216,10 +259,7 @@ class COEClusterModule(OpenStackModule):
                 cluster = self._update(cluster, update)
 
             self.exit_json(changed=bool(update),
-                           # TODO: Add .to_dict(computed=False) when Munch
-                           #       object has been replaced with openstacksdk
-                           #       resource object.
-                           cluster=cluster)
+                           cluster=cluster.to_dict(computed=False))
 
         elif state == 'absent' and cluster:
             # Delete cluster
@@ -235,9 +275,8 @@ class COEClusterModule(OpenStackModule):
 
         # TODO: Implement support for updates.
         non_updateable_keys = [k for k in ['cluster_template_id',
-                                           'discovery_url',
-                                           'docker_volume_size', 'flavor_id',
-                                           'floating_ip_enabled', 'keypair',
+                                           'discovery_url', 'flavor_id',
+                                           'is_floating_ip_enabled', 'keypair',
                                            'master_count', 'master_flavor_id',
                                            'name', 'node_count']
                                if self.params[k] is not None
@@ -270,9 +309,8 @@ class COEClusterModule(OpenStackModule):
         #       specifying names in addition to IDs.
         kwargs = dict((k, self.params[k])
                       for k in ['cluster_template_id', 'discovery_url',
-                                'docker_volume_size', 'flavor_id',
-                                'floating_ip_enabled', 'keypair',
-                                'master_count', 'master_flavor_id',
+                                'flavor_id', 'is_floating_ip_enabled',
+                                'keypair', 'master_count', 'master_flavor_id',
                                 'name', 'node_count']
                       if self.params[k] is not None)
 
@@ -285,57 +323,33 @@ class COEClusterModule(OpenStackModule):
 
         kwargs['create_timeout'] = self.params['timeout']
 
-        # TODO: Replace with self.conn.container_infrastructure_management.\
-        #       create_cluster() when available in openstacksdk.
-        cluster = self.conn.create_coe_cluster(**kwargs)
+        cluster = self.conn.container_infrastructure_management.\
+            create_cluster(**kwargs)
 
         if not self.params['wait']:
-            # openstacksdk's create_coe_cluster() returns a cluster's uuid only
-            # but we cannot use self.conn.get_coe_cluster(cluster_id) because
-            # it might return None as long as the cluster is being set up.
+            # openstacksdk's create_cluster() returns a cluster's id only
+            # but we cannot use self.conn.container_infrastructure_management.\
+            # get_cluster(cluster_id) because it might return None as long as
+            # the cluster is being set up.
             return cluster
 
-        cluster_id = cluster['id']
-
         if self.params['wait']:
-            # TODO: Replace with self.sdk.resource.wait_for_status() when
-            #       resource creation has been ported to self.conn.\
-            #       container_infrastructure_management.create_cluster()
-            for count in self.sdk.utils.iterate_timeout(
-                timeout=self.params['timeout'],
-                message="Timeout waiting for cluster to be present"
-            ):
-                # Fetch cluster again
-                cluster = self.conn.get_coe_cluster(cluster_id)
-
-                if cluster is None:
-                    continue
-                elif cluster.status.lower() == 'active':
-                    break
-                elif cluster.status.lower() in ['error']:
-                    self.fail_json(msg="{0} transitioned to failure state {1}"
-                                       .format(cluster.name, 'error'))
+            cluster = self.sdk.resource.wait_for_status(
+                self.conn.container_infrastructure_management, cluster,
+                status='active',
+                failures=['error'],
+                wait=self.params['timeout'])
 
         return cluster
 
     def _delete(self, cluster):
-        # TODO: Replace with self.conn.container_infrastructure_management.\
-        #       delete_cluster() when available in openstacksdk.
-        self.conn.delete_coe_cluster(cluster.name)
+        self.conn.container_infrastructure_management.\
+            delete_cluster(cluster['id'])
 
-        # TODO: Replace with self.sdk.resource.wait_for_delete() when
-        #       resource fetch has been ported to self.conn.\
-        #       container_infrastructure_management.find_cluster()
         if self.params['wait']:
-            for count in self.sdk.utils.iterate_timeout(
-                timeout=self.params['timeout'],
-                message="Timeout waiting for cluster to be absent"
-            ):
-                cluster = self.conn.get_coe_cluster(cluster.id)
-                if cluster is None:
-                    break
-                elif cluster['status'].lower() == 'deleted':
-                    break
+            self.sdk.resource.wait_for_delete(
+                self.conn.container_infrastructure_management, cluster,
+                interval=None, wait=self.params['timeout'])
 
     def _find(self):
         name = self.params['name']
@@ -345,18 +359,14 @@ class COEClusterModule(OpenStackModule):
         if cluster_template_id is not None:
             filters['cluster_template_id'] = cluster_template_id
 
-        # TODO: Replace with self.conn.container_infrastructure_management.\
-        #       find_cluster() when available in openstacksdk.
         return self.conn.get_coe_cluster(name_or_id=name, filters=filters)
 
     def _update(self, cluster, update):
         attributes = update.get('attributes')
         if attributes:
             # TODO: Implement support for updates.
-            # TODO: Replace with self.conn.\
-            #       container_infrastructure_management.\
-            #       update_cluster() when available in openstacksdk.
-            # cluster = self.conn.update_coe_cluster(...)
+            # cluster = self.conn.container_infrastructure_management.\
+            # update_cluster(...)
             pass
 
         return cluster

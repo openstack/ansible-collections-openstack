@@ -69,8 +69,8 @@
     external_network_id: '{{ external_network.network.id }}'
     fixed_network: ansible_internal_network
     fixed_subnet: ansible_internal_subnet
-    floating_ip_enabled: true
     image_id: '{{ image_id }}'
+    is_floating_ip_enabled: true
     keypair_id: '{{ keypair.keypair.id }}'
     name: k8s
     state: present
@@ -90,8 +90,8 @@
 - name: Assert return values of coe_cluster module
   assert:
     that:
-      # openstack.cloud.coe_cluster will only return 'id' on cluster creation when wait is false
-      - "['id']|difference(coe_cluster.cluster.keys())|length == 0"
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(coe_cluster.cluster.keys())|length == 0
 
 - name: Pause for 1 minutes to allow Magnum to create the Kubernetes cluster
   ansible.builtin.pause:

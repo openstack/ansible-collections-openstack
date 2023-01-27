@@ -1,18 +1,26 @@
 expected_fields:
-# Magnum might return more fields according to its documentation [0] but
-# openstacksdk normalizes coe cluster resources, moving most fields from
-# top level into a 'properties' field [1].
-# [0] https://docs.openstack.org/api-ref/container-infrastructure-management/#create-new-cluster
-# [1] https://opendev.org/openstack/openstacksdk/src/commit/d57c1fcab3b6cbe806cbae735fefa4983b200ab2/openstack/cloud/_normalize.py#L484
+  - api_address
   - cluster_template_id
+  - coe_version
   - create_timeout
+  - created_at
+  - discovery_url
+  - fixed_network
+  - fixed_subnet
+  - flavor_id
   - id
+  - is_floating_ip_enabled
+  - is_master_lb_enabled
   - keypair
-  - location
+  - labels
+  - master_addresses
   - master_count
+  - master_flavor_id
   - name
+  - node_addresses
   - node_count
-  - properties
   - stack_id
   - status
+  - status_reason
+  - updated_at
   - uuid
