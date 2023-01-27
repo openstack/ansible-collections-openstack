@@ -24,7 +24,7 @@ echo "Running test with Python version ${PY_VER}"
 
 rm -rf "${ANSIBLE_COLLECTIONS_PATH}"
 mkdir -p ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud
-cp -a ${TOXDIR}/{plugins,meta,scripts,tests,docs} ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud
+cp -a ${TOXDIR}/{plugins,meta,tests,docs} ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud
 cd ${ANSIBLE_COLLECTIONS_PATH}/ansible_collections/openstack/cloud/
 echo "Running ansible-test with version:"
 ansible --version
@@ -33,4 +33,4 @@ ansible-test sanity -v \
     --python ${PY_VER} \
     --skip-test metaclass-boilerplate \
     --skip-test future-import-boilerplate \
-    plugins/ docs/ meta/ scripts/
+    plugins/ docs/ meta/
