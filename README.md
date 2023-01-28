@@ -29,7 +29,7 @@ For using this collection, first you have to install both Python packages `ansib
 controller:
 
 ```sh
-pip install "ansible>=2.9" "openstacksdk>=0.103.0"
+pip install "ansible>=2.9" "openstacksdk>=1.0.0"
 ```
 
 [OpenStack SDK][openstacksdk] has to be available on the Ansible host running the OpenStack modules. Depending on the

@@ -166,7 +166,7 @@ class ServerActionModule(OpenStackModule):
             #       merged.
             # [0] https://review.opendev.org/c/openstack/openstacksdk/+/857947
 
-            # shelve_offload is not supported in openstacksdk <= 0.103.0
+            # shelve_offload is not supported in openstacksdk <= 1.0.0
             response = self.conn.compute.post(
                 '/servers/{server_id}/action'.format(server_id=server['id']),
                 json={'shelveOffload': None})
