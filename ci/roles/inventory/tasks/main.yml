@@ -239,12 +239,25 @@
           assert:
             that:
               - inventory.all.children.RegionOne.hosts.keys() | sort == ['ansible_server1', 'ansible_server2'] | sort
-              - inventory.all.children.RegionOne.hosts.ansible_server1.ansible_host == '10.6.6.150'
-              - "'10.7.7.' in inventory.all.children.RegionOne.hosts.ansible_server2.ansible_host"
-              - inventory.all.children.RegionOne.hosts.ansible_server1.ci_compose_id
-                == inventory.all.children.RegionOne.hosts.ansible_server1.openstack.id
-              - inventory.all.children.RegionOne.hosts.ansible_server1.ci_compose_project_id
-                == inventory.all.children.RegionOne.hosts.ansible_server1.openstack.project_id
+              - ansible_server1.ansible_host == '10.6.6.150'
+              - "'10.7.7.' in ansible_server2.ansible_host"
+              - ansible_server1.ci_compose_id == ansible_server1.openstack.id
+              - ansible_server1.ci_compose_project_id == ansible_server1.openstack.project_id
+          vars:
+            ansible_server1: "{{
+                (inventory.all.children.values()
+                 | map(attribute='hosts', default={})
+                 | map(attribute='ansible_server1', default={})
+                 | reject('equalto', {})
+                 | list
+                )[0] }}"
+            ansible_server2: "{{
+                (inventory.all.children.values()
+                 | map(attribute='hosts', default={})
+                 | map(attribute='ansible_server2', default={})
+                 | reject('equalto', {})
+                 | list
+                )[0] }}"
 
         - name: Find Ansible's cache file
           ansible.builtin.find:
