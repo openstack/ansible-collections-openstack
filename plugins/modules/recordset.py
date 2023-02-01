@@ -181,6 +181,10 @@ class DnsRecordsetModule(OpenStackModule):
     module_min_sdk_version = '0.28.0'
 
     def _needs_update(self, params, recordset):
+        if params['records'] is not None:
+            params['records'] = sorted(params['records'])
+        if recordset['records'] is not None:
+            recordset['records'] = sorted(recordset['records'])
         for k in ('description', 'records', 'ttl', 'type'):
             if k not in params:
                 continue

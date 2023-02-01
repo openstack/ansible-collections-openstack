@@ -29,7 +29,7 @@
       - recordset is changed
       - recordset["recordset"].name == recordset_name
       - recordset["recordset"].zone_name ==  dns_zone.zone.name
-      - recordset["recordset"].records == records
+      - recordset["recordset"].records | list | sort == records | list | sort
 
 - name: Assert recordset fields
   assert:
@@ -71,7 +71,7 @@
       - recordset is changed
       - recordset["recordset"].zone_name == dns_zone.zone.name
       - recordset["recordset"].name == recordset_name
-      - recordset["recordset"].records == updated_records
+      - recordset["recordset"].records | list | sort == updated_records | list | sort
 
 - name: Assert recordset fields
   assert:

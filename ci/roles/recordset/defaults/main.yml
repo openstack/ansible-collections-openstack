@@ -1,7 +1,7 @@
 dns_zone_name: test.dns.zone.
 recordset_name: testrecordset.test.dns.zone.
-records: ['10.0.0.0']
-updated_records: ['10.1.1.1']
+records: ['10.0.0.0', '10.0.0.2']
+updated_records: ['10.1.1.1', '10.0.0.2']
 
 recordset_fields:
   - action
