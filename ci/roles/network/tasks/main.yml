@@ -23,7 +23,7 @@
 
 - name: Check output of network info
   # TODO: Remove ignore_errors once SDK's search_networks() (re)implemented searching by id
-  ignore_errors: yes
+  ignore_errors: true
   assert:
     that:
     - result.networks|length == 1

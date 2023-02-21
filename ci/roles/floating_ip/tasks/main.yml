@@ -214,7 +214,7 @@
     cloud: "{{ cloud }}"
     state: present
     server: ansible_server1
-    wait: yes
+    wait: true
 
 - name: Get floating ip attached to server 1
   openstack.cloud.floating_ip_info:
@@ -302,7 +302,7 @@
   openstack.cloud.floating_ip:
     cloud: "{{ cloud }}"
     state: present
-    reuse: no  # else fixed_address will be ignored
+    reuse: false  # else fixed_address will be ignored
     server: ansible_server2
     network: public
     fixed_address: "{{ port2.port.fixed_ips[0].ip_address }}"
@@ -347,12 +347,12 @@
   openstack.cloud.floating_ip:
     cloud: "{{ cloud }}"
     state: present
-    reuse: no  # else fixed_address will be ignored
+    reuse: false  # else fixed_address will be ignored
     server: ansible_server2
     network: ansible_external
     fixed_address: "{{ port3.port.fixed_ips[0].ip_address }}"
     floating_ip_address: "10.6.6.150"
-    wait: no # does not work anyway and causes issues in local testing
+    wait: false # does not work anyway and causes issues in local testing
 
 - name: Get floating ip attached to server 2
   openstack.cloud.floating_ip_info:

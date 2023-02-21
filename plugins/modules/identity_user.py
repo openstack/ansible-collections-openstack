@@ -32,7 +32,7 @@ options:
     description:
       - Whether the user is enabled or not.
     type: bool
-    default: 'yes'
+    default: 'true'
     aliases: ['enabled']
   name:
     description:

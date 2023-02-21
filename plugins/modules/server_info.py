@@ -25,7 +25,7 @@ options:
       - when true, return additional detail about servers at the expense
         of additional API calls.
     type: bool
-    default: 'no'
+    default: 'false'
   filters:
     description: |
       Used for further filtering of results. Either a string containing a
@@ -37,7 +37,7 @@ options:
       - Whether to list servers from all projects or just the current auth
         scoped project.
     type: bool
-    default: 'no'
+    default: 'false'
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

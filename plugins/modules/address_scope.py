@@ -40,7 +40,7 @@ options:
      description:
         - Whether this address scope is shared or not.
      type: bool
-     default: 'no'
+     default: 'false'
      aliases: ['shared']
    extra_specs:
      description:

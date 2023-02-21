@@ -78,7 +78,7 @@
     #   Creation
 
     - name: Create protocol - CHECK MODE
-      check_mode: yes
+      check_mode: true
       openstack.cloud.keystone_federation_protocol:
         state: present
         name: ansible_protocol1
@@ -119,7 +119,7 @@
           - expected_fields|difference(protocol.protocol.keys())|length == 0
 
     - name: Create protocol (retry - no change) - CHECK MODE
-      check_mode: yes
+      check_mode: true
       openstack.cloud.keystone_federation_protocol:
         state: present
         name: ansible_protocol1
@@ -148,7 +148,7 @@
     #   Update
 
     - name: Update protocol - CHECK MODE
-      check_mode: yes
+      check_mode: true
       openstack.cloud.keystone_federation_protocol:
         state: present
         name: ansible_protocol1
@@ -174,7 +174,7 @@
           - protocol.protocol.mapping_id == 'ansible_mapping2'
 
     - name: Update protocol (retry - no change) - CHECK MODE
-      check_mode: yes
+      check_mode: true
       openstack.cloud.keystone_federation_protocol:
         state: present
         name: ansible_protocol1
@@ -258,7 +258,7 @@
     #   Deletion
 
     - name: Delete protocol - CHECK MODE
-      check_mode: yes
+      check_mode: true
       openstack.cloud.keystone_federation_protocol:
         state: absent
         name: ansible_protocol1
@@ -279,7 +279,7 @@
           - protocol is changed
 
     - name: Delete protocol (retry - no change) - CHECK MODE
-      check_mode: yes
+      check_mode: true
       openstack.cloud.keystone_federation_protocol:
         state: absent
         name: ansible_protocol1
@@ -307,35 +307,35 @@
          state: absent
          name: ansible_protocol1
          idp_id: ansible_idp
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Delete protocol (2)
       openstack.cloud.keystone_federation_protocol:
          state: absent
          name: ansible_protocol2
          idp_id: ansible_idp
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Delete mapping 1
       openstack.cloud.federation_mapping:
          state: absent
          name: ansible_mapping1
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Delete mapping 2
       openstack.cloud.federation_mapping:
          state: absent
          name: ansible_mapping2
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Delete idp
       openstack.cloud.federation_idp:
          state: absent
          name: ansible_idp
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Delete domain
       openstack.cloud.identity_domain:
          state: absent
          name: ansible_domain
-      ignore_errors: yes
+      ignore_errors: true

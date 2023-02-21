@@ -43,7 +43,7 @@ options:
             - The gateway IP would not be assigned for this subnet
         type: bool
         aliases: ['no_gateway_ip']
-        default: 'no'
+        default: 'false'
     dns_nameservers:
         description:
             - List of DNS nameservers for this subnet.
@@ -85,7 +85,7 @@ options:
             - Whether DHCP should be enabled for this subnet.
         type: bool
         aliases: ['enable_dhcp']
-        default: 'yes'
+        default: 'true'
     ipv6_ra_mode:
         description:
             - IPv6 router advertisement mode

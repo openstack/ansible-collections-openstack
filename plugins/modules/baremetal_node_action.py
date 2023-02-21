@@ -93,10 +93,10 @@ EXAMPLES = r'''
       image_checksum: "356a6b55ecc511a20c33c946c4e678af"
       image_disk_format: "qcow"
     delegate_to: localhost
-    deploy: yes
+    deploy: true
     cloud: "openstack"
     config_drive: "http://192.168.1.1/host-configdrive.iso"
-    maintenance: no
+    maintenance: false
     power: present
     uuid: "d44666e1-35b3-4f6b-acb0-88ab7052da69"
     state: present

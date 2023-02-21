@@ -27,7 +27,7 @@ options:
           attaching and detaching of floating ip addresses use module
           I(openstack.cloud.resource) instead.
       type: bool
-      default: 'yes'
+      default: 'true'
       aliases: ['auto_floating_ip', 'public_ip']
     availability_zone:
       description:
@@ -40,7 +40,7 @@ options:
           the image given. Mutually exclusive with boot_volume.
         - This server attribute cannot be updated.
       type: bool
-      default: 'no'
+      default: 'false'
     boot_volume:
       description:
         - Volume name or id to use as the volume to boot from. Implies
@@ -53,7 +53,7 @@ options:
         - Whether to boot the server with config drive enabled.
         - This server attribute cannot be updated.
       type: bool
-      default: 'no'
+      default: 'false'
     delete_ips:
       description:
         - When I(state) is C(absent) and this option is true, any floating IP
@@ -61,7 +61,7 @@ options:
         - Floating IP support is unstable in this module, use with caution.
       type: bool
       aliases: ['delete_fip']
-      default: 'no'
+      default: 'false'
     description:
       description:
         - Description of the server.
@@ -183,7 +183,7 @@ options:
         - Floating IP support is unstable in this module, use with caution.
         - This server attribute cannot be updated.
       type: bool
-      default: 'yes'
+      default: 'true'
     scheduler_hints:
       description:
         - Arbitrary key/value pairs to the scheduler for custom use.
@@ -207,11 +207,11 @@ options:
       type: str
     terminate_volume:
       description:
-        - If C(yes), delete volume when deleting the instance and if it has
+        - If C(true), delete volume when deleting the instance and if it has
           been booted from volume(s).
         - This server attribute cannot be updated.
       type: bool
-      default: 'no'
+      default: 'false'
     timeout:
       description:
         - The amount of time the module should wait for the instance to get
@@ -240,7 +240,7 @@ options:
       description:
         - If the module should wait for the instance to be created.
       type: bool
-      default: 'yes'
+      default: 'true'
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
@@ -288,7 +288,7 @@ EXAMPLES = '''
         flavor: 101
         security_groups:
         - default
-        auto_ip: yes
+        auto_ip: true
 
 # Create a new instance in named cloud mordred availability zone az2
 # and assigns a pre-known floating IP
@@ -1038,7 +1038,7 @@ class ServerModule(OpenStackModule):
                 # we wait until the server has been created
                 # Ref.: https://opendev.org/openstack/openstacksdk/src/commit/3f81d0001dd994cde990d38f6e2671ee0694d7d5/openstack/cloud/_compute.py#L945
                 self.fail_json(
-                    msg="Option '{0}' requires 'wait: yes'".format(k))
+                    msg="Option '{0}' requires 'wait: true'".format(k))
 
         flavor_name_or_id = self.params['flavor']
 

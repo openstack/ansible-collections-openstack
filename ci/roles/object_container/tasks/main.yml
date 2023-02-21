@@ -90,4 +90,4 @@
     cloud: "{{ cloud }}"
     state: absent
     name: ansible_container2
-    delete_with_all_objects: yes
+    delete_with_all_objects: true

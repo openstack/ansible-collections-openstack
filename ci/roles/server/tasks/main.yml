@@ -224,7 +224,7 @@
   register: info
   # TODO: Drop ignore_errors once openstacksdk's bug #2010135 has been solved.
   #       Ref.: https://storyboard.openstack.org/#!/story/2010135
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Check info about server image name
   assert:
@@ -232,7 +232,7 @@
       - info.servers[0].image.name == image_name
   # TODO: Drop ignore_errors once openstacksdk's bug #2010135 has been solved.
   #       Ref.: https://storyboard.openstack.org/#!/story/2010135
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Delete server (FIP from pool/network)
   openstack.cloud.server:
@@ -375,7 +375,7 @@
     state: present
     name: "{{ server_port }}"
     network: "{{ server_network }}"
-    no_security_groups: yes
+    no_security_groups: true
     fixed_ips:
       - ip_address: 192.168.0.42
   register: port
@@ -555,7 +555,7 @@
 - name: Delete updated server
   openstack.cloud.server:
     cloud: "{{ cloud }}"
-    delete_ips: yes
+    delete_ips: true
     name: "{{ server_name }}"
     state: absent
     wait: true

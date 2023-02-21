@@ -258,7 +258,7 @@ EXAMPLES = r'''
 - name: Delete a load balancer, its related resources and its floating ip
   openstack.cloud.loadbalancer:
     cloud: devstack
-    delete_floating_ip: yes
+    delete_floating_ip: true
     name: my_lb
     state: absent
 '''

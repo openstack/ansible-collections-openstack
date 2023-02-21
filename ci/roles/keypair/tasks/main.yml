@@ -78,7 +78,7 @@
 - name: Generate test key file
   user:
     name: "{{ ansible_env.USER }}"
-    generate_ssh_key: yes
+    generate_ssh_key: true
     ssh_key_file: .ssh/shade_id_rsa
 
 - name: Create keypair (file)

@@ -116,7 +116,7 @@
         _idps: '{{ idps.identity_providers }}'
 
     - name: 'Create identity_provider (retry - no change) - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider'
@@ -150,7 +150,7 @@
     #   Update (simple cases)
 
     - name: 'Update IDP set description - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider'
@@ -181,7 +181,7 @@
         _idp: '{{ idp.identity_provider }}'
 
     - name: 'Update IDP set description (retry - no change) - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider'
@@ -213,7 +213,7 @@
 
 
     - name: 'Update IDP set Remote IDs - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider'
@@ -244,7 +244,7 @@
         _idp: '{{ idp.identity_provider }}'
 
     - name: 'Update IDP set Remote IDs (retry - no change) - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider'
@@ -275,7 +275,7 @@
         _idp: '{{ idp.identity_provider }}'
 
     - name: 'Update IDP set Enabled - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider'
@@ -306,7 +306,7 @@
         _idp: '{{ idp.identity_provider }}'
 
     - name: 'Update IDP set Enabled (retry - no change) - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider'
@@ -338,7 +338,7 @@
 
     # If we don't specify anything to change, then nothing should change...
     - name: 'Minimal call to IDP (no change) - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider'
@@ -371,7 +371,7 @@
     #   Update (mass-update)
 
     - name: 'Update all updatable IDP parameters - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider'
@@ -406,7 +406,7 @@
         _idp: '{{ idp.identity_provider }}'
 
     - name: 'Update all updatable IDP parameters (no change) - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider'
@@ -444,7 +444,7 @@
     #   Create complex IDP
 
     - name: 'Create complex IDP - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider2'
@@ -481,7 +481,7 @@
         _idp: '{{ idp.identity_provider }}'
 
     - name: 'Create complex IDP (retry - no change) - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: present
         name: 'ansible_identity_provider2'
@@ -558,7 +558,7 @@
         - False in (idps.identity_providers | map(attribute='is_enabled'))
 
     - name: 'Delete identity_provider - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: absent
         name: 'ansible_identity_provider'
@@ -579,7 +579,7 @@
         - idp is changed
 
     - name: 'Delete identity_provider (retry - no change) - CHECK_MODE'
-      check_mode: yes
+      check_mode: true
       openstack.cloud.federation_idp:
         state: absent
         name: 'ansible_identity_provider'

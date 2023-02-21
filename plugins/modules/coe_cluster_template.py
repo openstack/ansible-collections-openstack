@@ -317,7 +317,7 @@ EXAMPLES = r'''
     image_id: 2a8c9888-9054-4b06-a1ca-2bb61f9adb72
     keypair_id: mykey
     name: k8s
-    is_public: no
+    is_public: false
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule

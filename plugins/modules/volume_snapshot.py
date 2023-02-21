@@ -22,7 +22,7 @@ options:
        - Allows or disallows snapshot of a volume to be created,
          when the volume is attached to an instance.
     type: bool
-    default: 'no'
+    default: 'false'
   name:
     description:
       - Name of the snapshot

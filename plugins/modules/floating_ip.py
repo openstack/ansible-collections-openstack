@@ -42,7 +42,7 @@ options:
           floating IP completely, or only detach it from the server.
           Default is to detach only.
      type: bool
-     default: 'no'
+     default: 'false'
    reuse:
      description:
         - When I(state) is present, and I(floating_ip_address) is not present,
@@ -52,7 +52,7 @@ options:
           I(floating_ip_address) is undefined, then C(nat_destination) and
           C(fixed_address) will be ignored.
      type: bool
-     default: 'no'
+     default: 'false'
    server:
      description:
         - The name or ID of the server to which the IP address
@@ -83,7 +83,7 @@ EXAMPLES = '''
 - openstack.cloud.floating_ip:
      cloud: dguerri
      state: present
-     reuse: yes
+     reuse: true
      server: cattle001
      network: ext_net
      fixed_address: 192.0.2.3

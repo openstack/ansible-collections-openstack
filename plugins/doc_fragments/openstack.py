@@ -46,7 +46,7 @@ options:
     description:
       - Should ansible wait until the requested resource is complete.
     type: bool
-    default: yes
+    default: true
   timeout:
     description:
       - How long should ansible wait for the requested resource.
@@ -60,7 +60,7 @@ options:
   validate_certs:
     description:
       - Whether or not SSL API requests should be verified.
-      - Before Ansible 2.3 this defaulted to C(yes).
+      - Before Ansible 2.3 this defaulted to C(true).
     type: bool
     aliases: [ verify ]
   ca_cert:

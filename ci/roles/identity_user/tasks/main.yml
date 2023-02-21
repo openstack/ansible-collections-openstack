@@ -28,7 +28,7 @@
     domain: default
     default_project: demo
   register: user
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Assert that update failed
   assert:
@@ -93,7 +93,7 @@
     update_password: always
     email: updated.ansible.user@nowhere.net
   register: user
-  ignore_errors: yes
+  ignore_errors: true
 
 - name: Assert user update failed
   assert:

@@ -135,9 +135,9 @@ options:
         description:
           - Do not associate a security group with this port.
           - "Deprecated. Use I(security_groups): C([]) instead
-            of I(no_security_groups): C(yes)."
+            of I(no_security_groups): C(true)."
         type: bool
-        default: 'no'
+        default: 'false'
     port_security_enabled:
         description:
           - Whether to enable or disable the port security on the network.

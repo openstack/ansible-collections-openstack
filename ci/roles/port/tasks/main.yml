@@ -169,7 +169,7 @@
       - ip_address: 10.5.5.69
     name: "{{ port_name }}"
     network: "{{ network_name }}"
-    no_security_groups: yes
+    no_security_groups: true
     state: present
   register: port
 
@@ -192,7 +192,7 @@
         subnet_id: "{{ subnet.subnet.id }}"
     name: "{{ port_name }}"
     network: "{{ network_name }}"
-    no_security_groups: yes
+    no_security_groups: true
     state: present
   register: port_again
 

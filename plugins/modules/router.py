@@ -87,7 +87,7 @@ options:
       description:
         - Desired admin state of the created or existing router.
       type: bool
-      default: 'yes'
+      default: 'true'
       aliases: ['admin_state_up']
     name:
       description:

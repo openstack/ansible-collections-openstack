@@ -19,7 +19,7 @@
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_1 }}'
       register: create_mapping
-      check_mode: yes
+      check_mode: true
 
     - assert:
         that:
@@ -91,7 +91,7 @@
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_1 }}'
       register: create_mapping
-      check_mode: yes
+      check_mode: true
 
     - assert:
         that:
@@ -117,7 +117,7 @@
         name: '{{ mapping_name }}'
         rules: '{{ mapping_rules_2 }}'
       register: update_mapping
-      check_mode: yes
+      check_mode: true
 
     - assert:
         that:
@@ -196,7 +196,7 @@
         state: 'absent'
         name: '{{ mapping_name }}'
       register: delete_mapping
-      check_mode: yes
+      check_mode: true
 
     - assert:
         that:
@@ -217,7 +217,7 @@
         state: 'absent'
         name: '{{ mapping_name }}'
       register: delete_mapping
-      check_mode: yes
+      check_mode: true
 
     - assert:
         that:
@@ -257,10 +257,10 @@
       openstack.cloud.federation_mapping:
          state: 'absent'
          name: '{{ mapping_name }}'
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: 'Delete second mapping'
       openstack.cloud.federation_mapping:
          state: 'absent'
          name: '{{ mapping_name_2 }}'
-      ignore_errors: yes
+      ignore_errors: true
