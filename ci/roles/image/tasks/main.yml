@@ -318,6 +318,15 @@
          name: ansible_project
          domain: default
 
+    - name: Delete mock kernel and ramdisk images
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: absent
+         name: "{{ item }}"
+      loop:
+        - cirros-vmlinuz
+        - cirros-initrd
+
     - name: Delete test image file
       file:
          name: "{{ tmp_file.path }}"
