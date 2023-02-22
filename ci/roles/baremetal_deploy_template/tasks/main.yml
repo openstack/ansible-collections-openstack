@@ -1,0 +1,58 @@
+---
+# TODO: Actually run this role in CI. Atm we do not have DevStack's ironic plugin enabled.
+- name: Create baremetal deploy template
+  openstack.cloud.baremetal_deploy_template:
+    cloud: "{{ cloud }}"
+    state: present
+    name: CUSTOM_ANSIBLE_DEPLOY_TEMPLATE
+    steps:
+      - interface: bios
+        step: apply_configuration
+        args:
+          settings:
+            - name: some-setting
+              value: some-value
+        priority: 110
+  register: template
+
+- debug: var=template
+
+- name: Assert return values of baremetal_deploy_template module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(template.template.keys())|length == 0
+
+- name: Update baremetal deploy template
+  openstack.cloud.baremetal_deploy_template:
+    cloud: "{{ cloud }}"
+    state: present
+    id: "{{ template.template.id }}"
+    extra:
+      foo: bar
+  register: updated_template
+
+- name: Assert return values of updated baremetal deploy template
+  assert:
+    that:
+      - updated_template is changed
+      - updated_template.template.id == template.template.id
+
+- name: Update baremetal deploy template again
+  openstack.cloud.baremetal_deploy_template:
+    cloud: "{{ cloud }}"
+    state: present
+    id: "{{ template.template.id }}"
+  register: updated_template
+
+- name: Assert return values of updated baremetal deploy template
+  assert:
+    that:
+      - updated_template is not changed
+      - updated_template.template.id == template.template.id
+
+- name: Delete Bare Metal deploy template
+  openstack.cloud.baremetal_deploy_template:
+    cloud: "{{ cloud }}"
+    state: absent
+    id: "{{ template.template.id }}"
