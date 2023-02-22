@@ -85,6 +85,7 @@ action_groups:
     - volume_backup
     - volume_backup_info
     - volume_info
+    - volume_service_info
     - volume_snapshot
     - volume_snapshot_info
     - volume_type_access

@@ -57,5 +57,6 @@
     - { role: volume, tags: volume }
     - { role: volume_type, tags: volume_type }
     - { role: volume_backup, tags: volume_backup }
+    - { role: volume_service, tags: volume_service }
     - { role: volume_snapshot, tags: volume_snapshot }
     - { role: volume_type_access, tags: volume_type_access }
