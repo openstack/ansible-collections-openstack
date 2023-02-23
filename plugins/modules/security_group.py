@@ -439,7 +439,7 @@ class SecurityGroupModule(OpenStackModule):
         def _generate_security_group_rule(params):
             prototype = dict(
                 (k, params[k])
-                for k in ['direction', 'remote_ip_prefix']
+                for k in ['description', 'direction', 'remote_ip_prefix']
                 if params[k] is not None)
 
             # When remote_ip_prefix is missing a netmask, then Neutron will add
@@ -521,16 +521,16 @@ class SecurityGroupModule(OpenStackModule):
         return security_group
 
     def _update_security_group_rules(self, security_group, update):
-        create_security_group_rules = update.get('create_security_group_rules')
-        if create_security_group_rules:
-            self.conn.network.\
-                create_security_group_rules(create_security_group_rules)
-
         delete_security_group_rules = update.get('delete_security_group_rules')
         if delete_security_group_rules:
             for security_group_rule in delete_security_group_rules:
                 self.conn.network.\
                     delete_security_group_rule(security_group_rule['id'])
+
+        create_security_group_rules = update.get('create_security_group_rules')
+        if create_security_group_rules:
+            self.conn.network.\
+                create_security_group_rules(create_security_group_rules)
 
         if create_security_group_rules or delete_security_group_rules:
             # Update security group with created and deleted rules

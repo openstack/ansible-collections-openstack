@@ -308,7 +308,8 @@ class SecurityGroupRuleModule(OpenStackModule):
     def _define_prototype(self):
         filters = {}
         prototype = dict((k, self.params[k])
-                         for k in ['direction', 'remote_ip_prefix']
+                         for k in ['description', 'direction',
+                                   'remote_ip_prefix']
                          if self.params[k] is not None)
 
         # When remote_ip_prefix is missing a netmask, then Neutron will add
