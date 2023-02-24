@@ -244,7 +244,7 @@ class NetworkingFloatingIPModule(OpenStackModule):
             else:  # ip
                 # Requested floating ip address exists already
 
-                if ip.port_details and (ip.port_details.status == 'ACTIVE') \
+                if ip.port_details and (ip.port_details['status'] == 'ACTIVE') \
                    and (floating_ip_address not in self._filter_ips(
                         self.server)):
                     # Floating ip address exists and has been attached
