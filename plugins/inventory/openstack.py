@@ -293,10 +293,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             clouds = [openstack.connection.Connection(config=cloud_region)
                       for cloud_region in cloud_regions]
 
-            if self.get_option('private'):
-                for cloud in self.clouds:
-                    cloud.private = True
-
             self.display.vvvv(
                 'Found {0} OpenStack cloud(s)'
                 .format(len(clouds)))
@@ -393,7 +389,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                  if address['OS-EXT-IPS:type'] == 'fixed'),
                 None)
 
-            ip = floating_ip if floating_ip is not None else fixed_ip
+            ip = floating_ip if floating_ip is not None and not self.get_option('private') else fixed_ip
 
             if ip is not None:
                 host_vars['ansible_ssh_host'] = ip
