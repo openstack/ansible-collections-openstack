@@ -142,7 +142,7 @@ pool:
 '''
 
 EXAMPLES = r'''
-- name: Create a load-balander pool
+- name: Create a load-balancer pool
   openstack.cloud.lb_pool:
     cloud: mycloud
     lb_algorithm: ROUND_ROBIN
@@ -151,7 +151,7 @@ EXAMPLES = r'''
     protocol: HTTP
     state: present
 
-- name: Delete a load-balander pool
+- name: Delete a load-balancer pool
   openstack.cloud.lb_pool:
     cloud: mycloud
     name: test-pool
