@@ -34,7 +34,7 @@ options:
     type: str
     choices: ['present', 'absent']
 notes:
-    - A compute flavor must not be private to manage project access.
+    - A compute flavor must be private to manage project access.
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
