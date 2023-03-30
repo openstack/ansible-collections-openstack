@@ -6,6 +6,12 @@ http://zuul.opendev.org/t/openstack/builds?project=openstack%2Fansible-collectio
 Ansible OpenStack collection aka `openstack.cloud` provides Ansible modules and Ansible plugins for managing OpenStack
 clouds. It is supported and maintained by the OpenStack community.
 
+**NOTE:** We need and value your contributions! Maintaining this collection is a community effort. We are all both users
+and developers of this collection at the same time. If you find a bug, please report it. If you have fixed a bug, please
+submit a patch. If you need new functionality which is not covered by this collection yet, please extend an existing
+module or submit a new one. Our [Contributing](#contributing) section below has tons of docs to check out. Please get in
+touch!
+
 ## Branches and Non Backward Compatibility ⚠️
 
 Our codebase has been split into two separate release series, `2.x.x` and `1.x.x`:
@@ -216,8 +222,7 @@ docs/reviewing.md) (⚠️) before sending your first patch. Pull requests submi
 ## Communication
 
 We have a Special Interest Group for the Ansible OpenStack collection. Join us in `#openstack-ansible-sig` on
-[OFTC IRC](https://www.oftc.net/) and ping Artem Goncharov <artem.goncharov@gmail.com> (gtema), Jakob Meng
-<mail@jakobmeng.de> (jm1) or Sagi Shnaidman <sshnaidm@redhat.com> (sshnaidm) 🍪
+[OFTC IRC](https://www.oftc.net/) 🍪
 
 ## License
 
