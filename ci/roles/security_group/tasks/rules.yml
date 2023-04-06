@@ -32,7 +32,9 @@
 - name: Assert return values of security_group_rule_info module
   assert:
     that:
-      - security_group_rules.security_group_rules | length == 0
+      - security_group_rules.security_group_rules | length in [1, 2]
+      - security_group_rules.security_group_rules | map(attribute='ether_type') | list | sort in
+        [['IPv4'], ['IPv6'], ['IPv4', 'IPv6']]
 
 - name: Delete security group
   openstack.cloud.security_group:
@@ -57,6 +59,47 @@
   assert:
     that:
       - security_group is not changed
+
+- name: Create security group without security group rules
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules: []
+  register: security_group
+
+- name: Assert return values of security_group module
+  assert:
+    that:
+      - security_group is changed
+
+- name: Create security group without security group rules again
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    security_group_rules: []
+  register: security_group
+
+- name: Assert return values of security_group module
+  assert:
+    that:
+      - security_group is not changed
+
+- name: Fetch security group rules
+  openstack.cloud.security_group_rule_info:
+    cloud: "{{ cloud }}"
+    security_group: ansible_security_group
+  register: security_group_rules
+
+- name: Assert return values of security_group_rule_info module
+  assert:
+    that:
+      - security_group_rules.security_group_rules | length == 0
+
+- name: Delete security group without security group rules
+  openstack.cloud.security_group:
+    cloud: "{{ cloud }}"
+    name: ansible_security_group
+    state: absent
 
 - name: Create security group including security group rules
   openstack.cloud.security_group:
@@ -263,10 +306,11 @@
     name: ansible_security_group
     state: absent
 
-- name: Create security group
+- name: Create security group without security group rules
   openstack.cloud.security_group:
     cloud: "{{ cloud }}"
     name: ansible_security_group
+    security_group_rules: []
     state: present
   register: security_group
 

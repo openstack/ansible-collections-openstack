@@ -34,8 +34,8 @@ options:
         security group with a default set of rules.
       - Security group rules which are listed in I(security_group_rules)
         but not defined in this security group will be created.
-      - Existing security group rules which are not listed in
-        I(security_group_rules) will be deleted.
+      - When I(security_group_rules) is not set, existing security group rules
+        which are not listed in I(security_group_rules) will be deleted.
       - When updating a security group, one has to explicitly list rules from
         Neutron's defaults in I(security_group_rules) if those rules should be
         kept. Rules which are not listed in I(security_group_rules) will be
@@ -330,6 +330,12 @@ class SecurityGroupModule(OpenStackModule):
         return update
 
     def _build_update_security_group_rules(self, security_group):
+
+        if self.params['security_group_rules'] is None:
+            # Consider a change of security group rules only when option
+            # 'security_group_rules' was defined explicitly, because undefined
+            # options in our Ansible modules denote "apply no change"
+            return {}
 
         def find_security_group_rule_match(prototype, security_group_rules):
             matches = [r for r in security_group_rules
