@@ -1,0 +1,7 @@
+expected_fields:
+  - created_at
+  - extra
+  - id
+  - name
+  - steps
+  - updated_at

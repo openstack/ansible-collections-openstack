@@ -3,6 +3,7 @@ action_groups:
   openstack:
     - address_scope
     - auth
+    - baremetal_deploy_template
     - baremetal_inspect
     - baremetal_node
     - baremetal_node_action
