@@ -500,3 +500,18 @@ releases:
         directory which could be used to generate and develop new Ansible modules
         for this collection have been removed.
     release_date: '2023-01-31'
+  2.1.0:
+    changes:
+      bugfixes:
+      - Change security group rules only when instructed to do so
+      - 'Fix for AttributeError: ''dict'' object has no attribute ''status'''
+      - Fix issue with multiple records in recordset
+      - Fix mistake in compute_flavor_access notes
+      - Fixed private option in inventory plugin
+      - Respect description option and delete security group rules first
+      - Use true and false instead of yes and no for boolean values
+      minor_changes:
+      - Add baremetal_deploy_template module
+      - Highlight our mode of operation more prominently
+      release_summary: New module for Ironic and bugfixes
+    release_date: '2023-04-19'

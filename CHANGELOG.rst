@@ -5,6 +5,31 @@ Ansible OpenStack Collection Release Notes
 .. contents:: Topics
 
 
+v2.1.0
+======
+
+Release Summary
+---------------
+
+New module for Ironic and bugfixes
+
+Minor Changes
+-------------
+
+- Add baremetal_deploy_template module
+- Highlight our mode of operation more prominently
+
+Bugfixes
+--------
+
+- Change security group rules only when instructed to do so
+- Fix for AttributeError: 'dict' object has no attribute 'status'
+- Fix issue with multiple records in recordset
+- Fix mistake in compute_flavor_access notes
+- Fixed private option in inventory plugin
+- Respect description option and delete security group rules first
+- Use true and false instead of yes and no for boolean values
+
 v2.0.0
 ======
 
