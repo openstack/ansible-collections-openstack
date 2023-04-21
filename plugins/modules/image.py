@@ -100,8 +100,8 @@ options:
     type: str
   state:
     description:
-      - Should the resource be present or absent.
-    choices: [present, absent]
+      - Should the resource be present, absent or inactive.
+    choices: [present, absent, inactive]
     default: present
     type: str
   tags:
@@ -153,7 +153,7 @@ EXAMPLES = r'''
 RETURN = r'''
 image:
   description: Dictionary describing the Glance image.
-  returned: On success when I(state) is C(present).
+  returned: On success when I(state) is C(present) or C(inactive).
   type: dict
   contains:
     id:
@@ -394,7 +394,7 @@ class ImageModule(OpenStackModule):
         owner_domain=dict(aliases=['project_domain']),
         properties=dict(type='dict', default={}),
         ramdisk=dict(),
-        state=dict(default='present', choices=['absent', 'present']),
+        state=dict(default='present', choices=['absent', 'present', 'inactive']),
         tags=dict(type='list', default=[], elements='str'),
         visibility=dict(choices=['public', 'private', 'shared', 'community']),
         volume=dict(),
@@ -510,6 +510,10 @@ class ImageModule(OpenStackModule):
                     self.exit_json(changed=changed,
                                    image=self._return_value(image.id))
 
+            if image['status'] == 'deactivated':
+                self.conn.image.reactivate_image(image)
+                changed = True
+
             update_payload = self._build_update(image)
 
             if update_payload:
@@ -525,6 +529,20 @@ class ImageModule(OpenStackModule):
                 wait=self.params['wait'],
                 timeout=self.params['timeout'])
             changed = True
+
+        elif self.params['state'] == 'inactive' and image is not None:
+            if image['status'] == 'active':
+                self.conn.image.deactivate_image(image)
+                changed = True
+
+            update_payload = self._build_update(image)
+
+            if update_payload:
+                self.conn.image.update_image(image.id, **update_payload)
+                changed = True
+
+            self.exit_json(changed=changed, image=self._return_value(image.id))
+
         self.exit_json(changed=changed)
 
 
