@@ -271,9 +271,9 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
         if not attempt_to_read_cache or cache_needs_update:
             self.display.vvvv('Retrieving servers from Openstack clouds')
             clouds_yaml_path = self.get_option('clouds_yaml_path')
-            config_files = (
-                openstack.config.loader.CONFIG_FILES
-                + ([clouds_yaml_path] if clouds_yaml_path else []))
+            config_files = openstack.config.loader.CONFIG_FILES
+            if clouds_yaml_path:
+                config_files += clouds_yaml_path
 
             config = openstack.config.loader.OpenStackConfig(
                 config_files=config_files)
