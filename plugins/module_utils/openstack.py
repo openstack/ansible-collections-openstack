@@ -416,6 +416,9 @@ class OpenStackModule:
             if results and isinstance(results, dict):
                 self.ansible.exit_json(**results)
         except self.sdk.exceptions.OpenStackCloudException as e:
+            if isinstance(e, self.sdk.exceptions.ResourceNotFound) and self.params['state'] == 'absent':
+                # When state==absent no resource found is already the desired state
+                self.ansible.exit_json(changed=False)
             params = {
                 'msg': str(e),
                 'extra_data': {
