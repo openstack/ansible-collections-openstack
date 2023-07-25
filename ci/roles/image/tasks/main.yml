@@ -24,6 +24,13 @@
         path: '{{ tmp_file.path }}'
         size: 1M
 
+    - name: Calculating file checksum
+      ansible.builtin.stat:
+        path: "{{ tmp_file.path }}"
+        checksum_algorithm: sha512
+        get_checksum: true
+      register: image_details
+
     - name: Ensure mock kernel and ramdisk images (defaults)
       openstack.cloud.image:
          cloud: "{{ cloud }}"
@@ -42,6 +49,7 @@
          name: ansible_image
          filename: "{{ tmp_file.path }}"
          is_protected: true
+         checksum: "{{ image_details.stat.checksum }}"
          disk_format: raw
          tags:
            - test
