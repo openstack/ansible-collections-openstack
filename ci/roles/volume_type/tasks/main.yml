@@ -1,0 +1,82 @@
+---
+- name: Create volume type
+  openstack.cloud.volume_type:
+    name: "{{ volume_type_name }}"
+    cloud: "{{ cloud }}"
+    state: present
+    extra_specs:
+      volume_backend_name: "{{ volume_backend_name }}"
+    description: "{{ volume_type_description }}"
+    is_public: true
+  register: the_result
+- name: Check created volume type
+  vars:
+    the_volume: "{{ the_result.volume_type }}"
+  ansible.builtin.assert:
+    that:
+      - "'id' in the_result.volume_type"
+      - the_volume.description == volume_type_description
+      - the_volume.is_public == True
+      - the_volume.name == volume_type_name
+      - the_volume.extra_specs['volume_backend_name'] == volume_backend_name
+    success_msg: >-
+      Created volume: {{ the_result.volume_type.id }},
+      Name: {{ the_result.volume_type.name }},
+      Description: {{ the_result.volume_type.description }}
+
+- name: Test, check idempotency
+  openstack.cloud.volume_type:
+    name: "{{ volume_type_name }}"
+    cloud: "{{ cloud }}"
+    state: present
+    extra_specs:
+      volume_backend_name: "{{ volume_backend_name }}"
+    description: "{{ volume_type_description }}"
+    is_public: true
+  register: the_result
+- name: Check result.changed is false
+  ansible.builtin.assert:
+    that:
+      - the_result.changed == false
+    success_msg: "Request with the same details lead to no changes"
+
+- name: Add extra spec
+  openstack.cloud.volume_type:
+    cloud: "{{ cloud }}"
+    name: "{{ volume_type_name }}"
+    state: present
+    extra_specs:
+      volume_backend_name: "{{ volume_backend_name }}"
+      some_spec: fake_spec
+    description: "{{ volume_type_alt_description }}"
+    is_public: true
+  register: the_result
+- name: Check volume type extra spec
+  ansible.builtin.assert:
+    that:
+      - "'some_spec' in the_result.volume_type.extra_specs"
+      - the_result.volume_type.extra_specs["some_spec"] == "fake_spec"
+    success_msg: >-
+      New extra specs: {{ the_result.volume_type.extra_specs }}
+
+# is_public update attempt using openstacksdk result in unexpected attribute
+# error... TODO: Find solution
+#
+# - name: Make volume type private
+#   openstack.cloud.volume_type:
+#     cloud: "{{ cloud }}"
+#     name: "{{ volume_type_alt_name }}"
+#     state: present
+#     extra_specs:
+#       volume_backend_name: "{{ volume_backend_name }}"
+#       # some_other_spec: test
+#     description: Changed 3rd time test volume type
+#     is_public: true
+#   register: the_result
+
+- name: Delete volume type
+  openstack.cloud.volume_type:
+    cloud: "{{ cloud }}"
+    name: "{{ volume_type_name }}"
+    state: absent
+  register: the_result

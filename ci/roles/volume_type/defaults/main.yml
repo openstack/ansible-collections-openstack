@@ -1,0 +1,12 @@
+---
+volume_backend_name: LVM_iSCSI
+volume_type_name: test_type
+volume_type_description: Test volume type
+volume_type_alt_name: changed_type
+volume_type_alt_description: Changed test volume type
+
+enc_provider_name: nova.volume.encryptors.luks.LuksEncryptor
+enc_cipher: aes-xts-plain64
+enc_control_location: front-end
+enc_control_alt_location: back-end
+enc_key_size: 256

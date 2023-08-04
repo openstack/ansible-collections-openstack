@@ -53,6 +53,7 @@
     - { role: subnet, tags: subnet }
     - { role: subnet_pool, tags: subnet_pool }
     - { role: volume, tags: volume }
+    - { role: volume_type, tags: volume_type }
     - { role: volume_backup, tags: volume_backup }
     - { role: volume_snapshot, tags: volume_snapshot }
     - { role: volume_type_access, tags: volume_type_access }
