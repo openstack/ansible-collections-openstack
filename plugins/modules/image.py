@@ -485,7 +485,7 @@ class ImageModule(OpenStackModule):
         if image_name_or_id:
             image = self.conn.get_image(
                 image_name_or_id,
-                filters={(k, self.params[k])
+                filters={k: self.params[k]
                          for k in ['checksum'] if self.params[k] is not None})
 
         changed = False
