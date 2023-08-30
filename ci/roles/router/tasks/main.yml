@@ -384,7 +384,7 @@
          - shade_subnet1
      network: "{{ external_network_name }}"
      external_fixed_ips:
-        - subnet: shade_subnet5
+        - subnet_id: shade_subnet5
           ip: 10.6.6.100
 
 - name: Gather routers info
@@ -412,7 +412,7 @@
      external_gateway_info:
         network: "{{ external_network_name }}"
         external_fixed_ips:
-           - subnet: shade_subnet5
+           - subnet_id: shade_subnet5
              ip: 10.6.6.100
            - subnet: shade_subnet5
              ip: 10.6.6.101
@@ -426,7 +426,7 @@
          - shade_subnet1
      network: "{{ external_network_name }}"
      external_fixed_ips:
-        - subnet: shade_subnet5
+        - subnet_id: shade_subnet5
           ip: 10.6.6.100
         - subnet: shade_subnet5
           ip: 10.6.6.101
@@ -461,7 +461,7 @@
          - shade_subnet1
      network: "{{ external_network_name }}"
      external_fixed_ips:
-        - subnet: shade_subnet5
+        - subnet_id: shade_subnet5
           ip: 10.6.6.101
 
 - name: Update router (remove external fixed ips) again
@@ -473,7 +473,7 @@
          - shade_subnet1
      network: "{{ external_network_name }}"
      external_fixed_ips:
-        - subnet: shade_subnet5
+        - subnet_id: shade_subnet5
           ip: 10.6.6.101
   register: router
 
@@ -506,7 +506,7 @@
          - shade_subnet1
      network: "{{ external_network_name }}"
      external_fixed_ips:
-        - subnet: shade_subnet5
+        - subnet_id: shade_subnet5
           ip: 10.6.6.101
 
 - name: Gather routers info
@@ -533,7 +533,7 @@
          - shade_subnet1
      network: "{{ external_network_name }}"
      external_fixed_ips:
-        - subnet: shade_subnet5
+        - subnet_id: shade_subnet5
           ip: 10.6.6.101
   register: router
 

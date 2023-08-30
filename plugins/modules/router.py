@@ -461,7 +461,7 @@ class RouterModule(OpenStackModule):
         if ext_fixed_ips:
             for iface in ext_fixed_ips:
                 subnet = self.conn.network.find_subnet(
-                    iface['subnet'], ignore_missing=False, **filters)
+                    iface['subnet_id'], ignore_missing=False, **filters)
                 fip = dict(subnet_id=subnet.id)
                 if 'ip_address' in iface:
                     fip['ip_address'] = iface['ip_address']
