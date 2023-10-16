@@ -366,38 +366,36 @@ class RouterModule(OpenStackModule):
             if 'ip_address' in p:
                 cur_fip_map[p['subnet_id']].add(p['ip_address'])
         req_fip_map = defaultdict(set)
-        for p in external_fixed_ips:
-            if 'ip_address' in p:
-                req_fip_map[p['subnet_id']].add(p['ip_address'])
+        if external_fixed_ips is not None:
+            # User passed expected external_fixed_ips configuration.
+            # Build map of requested ips/subnets.
+            for p in external_fixed_ips:
+                if 'ip_address' in p:
+                    req_fip_map[p['subnet_id']].add(p['ip_address'])
 
-        # Check if external ip addresses need to be added
-        for fip in external_fixed_ips:
-            subnet = fip['subnet_id']
-            ip = fip.get('ip_address', None)
-            if subnet in cur_fip_map:
-                if ip is not None and ip not in cur_fip_map[subnet]:
-                    # mismatching ip for subnet
+            # Check if external ip addresses need to be added
+            for fip in external_fixed_ips:
+                subnet = fip['subnet_id']
+                ip = fip.get('ip_address', None)
+                if subnet in cur_fip_map:
+                    if ip is not None and ip not in cur_fip_map[subnet]:
+                        # mismatching ip for subnet
+                        return True
+                else:
+                    # adding ext ip with subnet 'subnet'
                     return True
-            else:
-                # adding ext ip with subnet 'subnet'
-                return True
 
-        # Check if external ip addresses need to be removed
-        for fip in cur_ext_fips:
-            subnet = fip['subnet_id']
-            ip = fip['ip_address']
-            if subnet in req_fip_map:
-                if ip not in req_fip_map[subnet]:
-                    # removing ext ip with subnet (ip clash)
+            # Check if external ip addresses need to be removed.
+            for fip in cur_ext_fips:
+                subnet = fip['subnet_id']
+                ip = fip['ip_address']
+                if subnet in req_fip_map:
+                    if ip not in req_fip_map[subnet]:
+                        # removing ext ip with subnet (ip clash)
+                        return True
+                else:
+                    # removing ext ip with subnet
                     return True
-            else:
-                # removing ext ip with subnet
-                return True
-
-        if not external_fixed_ips and len(cur_ext_fips) > 1:
-            # No external fixed ips requested but
-            # router has several external fixed ips
-            return True
 
         # Check if internal interfaces need update
         if to_add or to_remove or missing_port_ids:
@@ -448,7 +446,8 @@ class RouterModule(OpenStackModule):
         return kwargs
 
     def _build_router_interface_config(self, filters):
-        external_fixed_ips = []
+        # Undefine external_fixed_ips to have possibility to unset them
+        external_fixed_ips = None
         internal_ports_missing = []
         internal_ifaces = []
 
@@ -459,6 +458,8 @@ class RouterModule(OpenStackModule):
                 .get('external_fixed_ips')
         ext_fixed_ips = ext_fixed_ips or self.params['external_fixed_ips']
         if ext_fixed_ips:
+            # User passed external_fixed_ips configuration. Initialize ips list
+            external_fixed_ips = []
             for iface in ext_fixed_ips:
                 subnet = self.conn.network.find_subnet(
                     iface['subnet_id'], ignore_missing=False, **filters)
