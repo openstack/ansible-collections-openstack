@@ -48,7 +48,7 @@
     extra_specs:
       volume_backend_name: "{{ volume_backend_name }}"
       some_spec: fake_spec
-    description: "{{ volume_type_alt_description }}"
+    description: "{{ volume_type_description }}"
     is_public: true
   register: the_result
 - name: Check volume type extra spec
@@ -73,6 +73,9 @@
 #     description: Changed 3rd time test volume type
 #     is_public: true
 #   register: the_result
+
+- name: Volume encryption tests
+  ansible.builtin.include_tasks: volume_encryption.yml
 
 - name: Delete volume type
   openstack.cloud.volume_type:

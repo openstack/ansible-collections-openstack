@@ -1,0 +1,67 @@
+---
+- name: Test, Volume type has no encryption
+  openstack.cloud.volume_type_info:
+    cloud: "{{ cloud }}"
+    name: "{{ volume_type_name }}"
+  register: the_result
+- name: Check volume type has no encryption
+  ansible.builtin.assert:
+    that:
+      - the_result.encryption.id == None
+    success_msg: >-
+      Success: Volume type has no encryption at the moment
+
+- name: Test, create volume type encryption
+  openstack.cloud.volume_type_encryption:
+    cloud: "{{ cloud }}"
+    volume_type: "{{ volume_type_name }}"
+    state: present
+    encryption_provider: "{{ enc_provider_name }}"
+    encryption_cipher: "{{ enc_cipher }}"
+    encryption_control_location: "{{ enc_control_location }}"
+    encryption_key_size: "{{ enc_key_size }}"
+  register: the_result
+- name: Check volume type encryption
+  ansible.builtin.assert:
+    that:
+      - the_result.encryption.cipher == enc_cipher
+      - the_result.encryption.control_location == enc_control_location
+      - the_result.encryption.key_size == enc_key_size
+      - the_result.encryption.provider == enc_provider_name
+    success_msg: >-
+      Success: {{ the_result.encryption.encryption_id }}
+
+- name: Test, update volume type encryption
+  openstack.cloud.volume_type_encryption:
+    cloud: "{{ cloud }}"
+    volume_type: "{{ volume_type_name }}"
+    state: present
+    encryption_provider: "{{ enc_provider_name }}"
+    encryption_cipher: "{{ enc_cipher }}"
+    encryption_control_location: "{{ enc_control_alt_location }}"
+    encryption_key_size: "{{ enc_key_size }}"
+  register: the_result
+- name: Check volume type encryption change
+  ansible.builtin.assert:
+    that:
+      - the_result.encryption.control_location == enc_control_alt_location
+    success_msg: >-
+      New location: {{ the_result.encryption.control_location }}
+
+- name: Test, delete volume type encryption
+  openstack.cloud.volume_type_encryption:
+    cloud: "{{ cloud }}"
+    volume_type: "{{ volume_type_name }}"
+    state: absent
+  register: the_result
+- name: Get volume type details
+  openstack.cloud.volume_type_info:
+    cloud: "{{ cloud }}"
+    name: "{{ volume_type_name }}"
+  register: the_result
+- name: Check volume type has no encryption
+  ansible.builtin.assert:
+    that:
+      - the_result.encryption.id == None
+    success_msg: >-
+      Success: Volume type has no encryption
