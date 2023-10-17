@@ -138,10 +138,11 @@ options:
             of I(no_security_groups): C(true)."
         type: bool
         default: 'false'
-    port_security_enabled:
+    is_port_security_enabled:
         description:
           - Whether to enable or disable the port security on the network.
         type: bool
+        aliases: ['port_security_enabled']
     security_groups:
         description:
           - Security group(s) ID(s) or name(s) associated with the port.
@@ -479,7 +480,7 @@ class PortModule(OpenStackModule):
         name=dict(required=True),
         network=dict(),
         no_security_groups=dict(default=False, type='bool'),
-        port_security_enabled=dict(type='bool'),
+        is_port_security_enabled=dict(type='bool', aliases=['port_security_enabled']),
         security_groups=dict(type='list', elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
     )
@@ -655,7 +656,7 @@ class PortModule(OpenStackModule):
                   'extra_dhcp_opts',
                   'is_admin_state_up',
                   'mac_address',
-                  'port_security_enabled',
+                  'is_port_security_enabled',
                   'fixed_ips',
                   'name']:
             if self.params[k] is not None:
