@@ -595,13 +595,31 @@ class PortModule(OpenStackModule):
         # need special handling using self.conn.network.find_qos_policy()
 
         # Compare attributes which are lists of dictionaries
-        for k in ['allowed_address_pairs', 'extra_dhcp_opts', 'fixed_ips']:
+        for k in ['allowed_address_pairs', 'extra_dhcp_opts']:
             if self.params[k] is None:
                 continue
 
             if (self.params[k] or port[k]) \
                and self.params[k] != port[k]:
                 port_attributes[k] = self.params[k]
+
+        # Compare fixed ips
+        if self.params['fixed_ips'] is not None:
+            for item in self.params['fixed_ips']:
+                if 'ip_address' in item:
+                    # if ip_address in request does not match any in existing port,
+                    # update is required.
+                    if not any(match['ip_address'] == item['ip_address']
+                               for match in port['fixed_ips']):
+                        port_attributes['fixed_ips'] = self.params['fixed_ips']
+                if 'subnet_id' in item:
+                    port_attributes['fixed_ips'] = self.params['fixed_ips']
+            for item in port['fixed_ips']:
+                # if ip_address in existing port does not match any in request,
+                # update is required.
+                if not any(match.get('ip_address') == item['ip_address']
+                           for match in self.params['fixed_ips']):
+                    port_attributes['fixed_ips'] = self.params['fixed_ips']
 
         # Compare security groups
         if self.params['no_security_groups']:
