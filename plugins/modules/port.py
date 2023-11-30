@@ -613,11 +613,15 @@ class PortModule(OpenStackModule):
                                for match in port['fixed_ips']):
                         port_attributes['fixed_ips'] = self.params['fixed_ips']
                 if 'subnet_id' in item:
-                    port_attributes['fixed_ips'] = self.params['fixed_ips']
+                    # if request has a subnet_id, it has to fully match an existing port,
+                    # or an update is required.
+                    if not any(match == item
+                               for match in port['fixed_ips']):
+                        port_attributes['fixed_ips'] = self.params['fixed_ips']
             for item in port['fixed_ips']:
                 # if ip_address in existing port does not match any in request,
                 # update is required.
-                if not any(match.get('ip_address') == item['ip_address']
+                if not any(match['ip_address'] == item['ip_address']
                            for match in self.params['fixed_ips']):
                     port_attributes['fixed_ips'] = self.params['fixed_ips']
 
