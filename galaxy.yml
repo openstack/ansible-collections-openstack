@@ -32,4 +32,4 @@ build_ignore:
   - .vscode
   - ansible_collections_openstack.egg-info
   - changelogs
-version: 2.1.0
+version: 2.2.0

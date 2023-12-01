@@ -5,6 +5,27 @@ Ansible OpenStack Collection Release Notes
 .. contents:: Topics
 
 
+v2.2.0
+======
+
+Release Summary
+---------------
+
+New module for volume_type and bugfixes
+
+Minor Changes
+-------------
+
+- Add volume_encryption_type modules
+- Add volume_type modules
+
+Bugfixes
+--------
+
+- Fix image module filter
+- Fix port module idempotency
+- Fix router module idempotency
+
 v2.1.0
 ======
 
