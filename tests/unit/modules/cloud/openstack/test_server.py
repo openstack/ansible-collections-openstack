@@ -220,3 +220,45 @@ class TestCreateServer(object):
             os_server._create_server(self.module, self.cloud)
 
         assert 'missing_network' in self.module.fail_json.call_args[1]['msg']
+
+    def test_create_server_auto_ip_wait(self):
+        '''
+        - openstack.cloud.server:
+            image: cirros
+            auto_ip: true
+            wait: false
+            nics:
+              - net-name: network1
+        '''
+        with pytest.raises(AnsibleFail):
+            os_server._create_server(self.module, self.cloud)
+
+        assert 'auto_ip' in self.module.fail_json.call_args[1]['msg']
+
+    def test_create_server_floating_ips_wait(self):
+        '''
+        - openstack.cloud.server:
+            image: cirros
+            floating_ips: ['0.0.0.0']
+            wait: false
+            nics:
+              - net-name: network1
+        '''
+        with pytest.raises(AnsibleFail):
+            os_server._create_server(self.module, self.cloud)
+
+        assert 'floating_ips' in self.module.fail_json.call_args[1]['msg']
+
+    def test_create_server_floating_ip_pools_wait(self):
+        '''
+        - openstack.cloud.server:
+            image: cirros
+            floating_ip_pools: ['name-of-pool']
+            wait: false
+            nics:
+              - net-name: network1
+        '''
+        with pytest.raises(AnsibleFail):
+            os_server._create_server(self.module, self.cloud)
+
+        assert 'floating_ip_pools' in self.module.fail_json.call_args[1]['msg']
