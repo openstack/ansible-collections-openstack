@@ -37,7 +37,7 @@
 - name: Check info
   assert:
     that:
-      - info1.volumes | selectattr("id", "equalto", "{{ info.volumes.0.id }}") | list | length == 1
+      - info1.volumes | selectattr("id", "equalto", info.volumes.0.id) | list | length == 1
       - info1.volumes.0.name == 'ansible_test'
       - info1.volumes.0.status == None
 
