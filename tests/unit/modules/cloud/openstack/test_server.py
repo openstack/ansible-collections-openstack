@@ -1,7 +1,7 @@
 import collections
 import inspect
-import mock
 import pytest
+from unittest import mock
 import yaml
 
 from ansible.module_utils.six import string_types
