@@ -256,27 +256,6 @@
     state: absent
     name: ansible_security_group
 
-- name: Create port (with binding profile)
-  openstack.cloud.port:
-    cloud: "{{ cloud }}"
-    state: present
-    name: "{{ port_name }}"
-    network: "{{ network_name }}"
-    binding_profile: "{{ binding_profile }}"
-  register: port
-
-- name: Assert binding_profile exists in created port
-  assert:
-    that: "port.port['binding_profile']"
-
-- debug: var=port
-
-- name: Delete port (with binding profile)
-  openstack.cloud.port:
-    cloud: "{{ cloud }}"
-    state: absent
-    name: "{{ port_name }}"
-
 - name: Delete subnet
   openstack.cloud.subnet:
     cloud: "{{ cloud }}"

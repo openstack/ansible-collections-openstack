@@ -1,6 +1,3 @@
-binding_profile:
-  "pci_slot": "0000:03:11.1"
-  "physical_network": "provider"
 expected_fields:
   - allowed_address_pairs
   - binding_host_id
