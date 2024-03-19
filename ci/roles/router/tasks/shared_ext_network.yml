@@ -1,0 +1,99 @@
+---
+# Test the case where we have a shared external network in one project used as
+# the gateway on a router in a second project.
+# See https://bugs.launchpad.net/ansible-collections-openstack/+bug/2049658
+
+- name: Create the first project
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "shared_ext_net_test_1"
+    description: "Project that contains the external network to be shared"
+    domain: default
+    is_enabled: True
+  register: project_1
+
+- name: Create the external network to be shared
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ external_network_name }}"
+    project: "shared_ext_net_test_1"
+    external: true
+    shared: true
+  register: shared_ext_network
+
+- name: Create subnet on external network
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: present
+    network_name: "{{ shared_ext_network.id }}"
+    name: "shared_ext_subnet"
+    project: "shared_ext_net_test_1"
+    cidr: "10.6.6.0/24"
+  register: shared_subnet
+
+- name: Create the second project
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "shared_ext_net_test_2"
+    description: "Project that contains the subnet to be shared"
+    domain: default
+    is_enabled: True
+  register: project_2
+
+- name: Create router with gateway on shared external network
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "shared_ext_net_test2_router"
+    project: "shared_ext_net_test_2"
+    network: "{{ external_network_name }}"
+  register: router
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "shared_ext_net_test2_router"
+  register: routers
+
+- name: Verify routers info
+  assert:
+    that:
+      - routers.routers.0.id == router.router.id
+      - routers.routers.0.external_gateway_info.external_fixed_ips|length == 1
+
+- name: Delete router
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "shared_ext_net_test2_router"
+    project: "shared_ext_net_test_2"
+
+- name: Delete subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: absent
+    network_name: "{{ shared_ext_network.id }}"
+    name: "shared_ext_subnet"
+    project: "shared_ext_net_test_1"
+
+- name: Delete network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ external_network_name }}"
+    project: "shared_ext_net_test_1"
+
+- name: Delete project 2
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "shared_ext_net_test_2"
+
+- name: Delete project 1
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "shared_ext_net_test_1"

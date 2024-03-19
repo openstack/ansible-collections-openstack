@@ -720,3 +720,5 @@
      name: "{{ external_network_name }}"
 
 - include_tasks: shared_network.yml
+
+- include_tasks: shared_ext_network.yml

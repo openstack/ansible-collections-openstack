@@ -616,9 +616,13 @@ class RouterModule(OpenStackModule):
         router = self.conn.network.find_router(name, **query_filters)
         network = None
         if network_name_or_id:
+            # First try to find a network in the specified project.
             network = self.conn.network.find_network(network_name_or_id,
-                                                     ignore_missing=False,
                                                      **query_filters)
+            if not network:
+                # Fall back to a global search for the network.
+                network = self.conn.network.find_network(network_name_or_id,
+                                                         ignore_missing=False)
 
         # Validate and cache the subnet IDs so we can avoid duplicate checks
         # and expensive API calls.
