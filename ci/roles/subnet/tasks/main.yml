@@ -150,3 +150,6 @@
 
 - name: Subnet Allocation
   include_tasks: subnet-allocation.yml
+
+- name: Subnet Allocations from Subnet Pool
+  include_tasks: subnet-pool.yaml

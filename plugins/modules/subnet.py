@@ -321,7 +321,7 @@ class SubnetModule(OpenStackModule):
              ('cidr', 'use_default_subnet_pool', 'subnet_pool'), True),
         ],
         mutually_exclusive=[
-            ('cidr', 'use_default_subnet_pool', 'subnet_pool')
+            ('use_default_subnet_pool', 'subnet_pool')
         ]
     )
 

@@ -1,0 +1,103 @@
+---
+# This test cover case when subnet is constructed
+# with few prefixes and neutron API is required
+# CIDR parameter to be used together with subnet pool.
+
+- name: Create network {{ network_name }}
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: "{{ network_name }}"
+    state: present
+
+- name: Create address_scope
+  openstack.cloud.address_scope:
+    cloud: "{{ cloud }}"
+    name: "{{ address_scope_name }}"
+    shared: false
+    ip_version: "4"
+  register: create_address_scope
+
+- name: Create subnet pool
+  openstack.cloud.subnet_pool:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_pool_name }}"
+    is_shared: false
+    address_scope: "{{ address_scope_name }}"
+    prefixes:
+      - 192.168.0.0/24
+      - 192.168.42.0/24
+  register: subnet_pool
+
+- name: Create subnet {{ subnet_name }} on network {{ network_name }} from subnet pool {{ subnet_pool_name }}
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    network_name: "{{ network_name }}"
+    enable_dhcp: "{{ enable_subnet_dhcp }}"
+    name: "{{ subnet_name }}"
+    state: present
+    cidr: 192.168.42.0/24  # we want specific cidr from subnet pool
+    ip_version: 4
+    subnet_pool: "{{ subnet_pool_name }}"
+    gateway_ip: 192.168.42.1
+    allocation_pool_start: 192.168.42.2
+    allocation_pool_end: 192.168.42.4
+
+- name: Create subnet {{ subnet_name }} on network {{ network_name }} from subnet pool {{ subnet_pool_name }} again
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    network_name: "{{ network_name }}"
+    enable_dhcp: "{{ enable_subnet_dhcp }}"
+    name: "{{ subnet_name }}"
+    state: present
+    cidr: 192.168.42.0/24
+    ip_version: 4
+    subnet_pool: "{{ subnet_pool_name }}"
+    gateway_ip: 192.168.42.1
+    allocation_pool_start: 192.168.42.2
+    allocation_pool_end: 192.168.42.4
+  register: idem1
+
+- name: Get Subnet Info
+  openstack.cloud.subnets_info:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_name }}"
+  register: subnet_result
+
+- name: Verify Subnet Allocation Pools Exist
+  assert:
+    that:
+      - idem1 is not changed
+      - subnet_result.subnets is defined
+      - subnet_result.subnets | length == 1
+      - subnet_result.subnets[0].allocation_pools is defined
+      - subnet_result.subnets[0].allocation_pools | length == 1
+
+- name: Verify Subnet Allocation Pools
+  assert:
+    that:
+      - subnet_result.subnets[0].allocation_pools.0.start ==  '192.168.42.2'
+      - subnet_result.subnets[0].allocation_pools.0.end == '192.168.42.4'
+
+- name: Delete subnet {{ subnet_name }}
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_name }}"
+    state: absent
+
+- name: Delete created subnet pool
+  openstack.cloud.subnet_pool:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_pool_name }}"
+    state: absent
+
+- name: Delete created address scope
+  openstack.cloud.address_scope:
+    cloud: "{{ cloud }}"
+    name: "{{ address_scope_name }}"
+    state: absent
+
+- name: Delete network {{ network_name }}
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: "{{ network_name }}"
+    state: absent
