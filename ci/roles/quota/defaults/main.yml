@@ -28,3 +28,9 @@ test_compute_quota:
   ram: 5
   server_group_members: 5
   server_groups: 5
+test_load_balancer_quota:
+  load_balancers: 5
+  health_monitors: 5
+  listeners: 5
+  pools: 5
+  members: 5

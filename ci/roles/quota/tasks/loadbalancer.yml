@@ -79,6 +79,27 @@
       openstack.cloud.quota: "{{ test_compute_quota }}"
       register: quotas
 
+    - name: Set load_balancer quotas
+      openstack.cloud.quota: "{{ test_load_balancer_quota }}"
+      register: quotas
+
+    - name: Assert changed
+      assert:
+        that: quotas is changed
+
+    - name: Assert field values
+      assert:
+        that: quotas.quotas.load_balancer[item.key] == item.value
+      loop: "{{ test_load_balancer_quota | dict2items }}"
+
+    - name: Set load_balancer quotas again
+      openstack.cloud.quota: "{{ test_load_balancer_quota }}"
+      register: quotas
+
+    - name: Assert not changed
+      assert:
+        that: quotas is not changed
+
     - name: Unset all quotas
       openstack.cloud.quota:
         state: absent
@@ -90,7 +111,7 @@
 
     - name: Set all quotas at once
       openstack.cloud.quota:
-        "{{ [test_network_quota, test_volume_quota, test_compute_quota] | combine }}"
+        "{{ [test_network_quota, test_volume_quota, test_compute_quota, test_load_balancer_quota] | combine }}"
       register: quotas
 
     - name: Assert changed
@@ -112,9 +133,14 @@
         that: quotas.quotas.compute[item.key] == item.value
       loop: "{{ test_compute_quota | dict2items }}"
 
+    - name: Assert load_balancer values
+      assert:
+        that: quotas.quotas.load_balancer[item.key] == item.value
+      loop: "{{ test_load_balancer_quota | dict2items }}"
+
     - name: Set all quotas at once again
       openstack.cloud.quota:
-        "{{ [test_network_quota, test_volume_quota, test_compute_quota] | combine }}"
+        "{{ [test_network_quota, test_volume_quota, test_compute_quota, test_load_balancer_quota] | combine }}"
       register: quotas
 
     - name: Assert not changed
@@ -128,9 +154,5 @@
 
     - name: Delete test project
       openstack.cloud.project:
-        state: absent
-
-- import_tasks: loadbalancer.yml
-  tags:
-    - loadbalancer
+         state: absent
 
