@@ -30,6 +30,11 @@ options:
      description:
         - Whether this network is externally accessible.
      type: bool
+   is_default:
+     description:
+        - Whether this network is default network or not. This is only effective
+          with external networks.
+     type: bool
    state:
      description:
         - Indicate desired state of the resource.
@@ -190,6 +195,7 @@ class NetworkModule(OpenStackModule):
         shared=dict(type='bool'),
         admin_state_up=dict(type='bool'),
         external=dict(type='bool'),
+        is_default=dict(type='bool'),
         provider_physical_network=dict(),
         provider_network_type=dict(),
         provider_segmentation_id=dict(type='int'),
@@ -207,6 +213,7 @@ class NetworkModule(OpenStackModule):
         shared = self.params['shared']
         admin_state_up = self.params['admin_state_up']
         external = self.params['external']
+        is_default = self.params['is_default']
         provider_physical_network = self.params['provider_physical_network']
         provider_network_type = self.params['provider_network_type']
         provider_segmentation_id = self.params['provider_segmentation_id']
@@ -244,6 +251,8 @@ class NetworkModule(OpenStackModule):
                 kwargs["admin_state_up"] = admin_state_up
             if external is not None:
                 kwargs["is_router_external"] = external
+            if is_default is not None:
+                kwargs["is_default"] = is_default
 
             if not net:
                 net = self.conn.network.create_network(name=name, **kwargs)
