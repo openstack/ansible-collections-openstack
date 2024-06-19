@@ -35,6 +35,10 @@ options:
         - Whether this network is default network or not. This is only effective
           with external networks.
      type: bool
+   is_vlan_transparent:
+     description:
+        - Whether this network is vlan_transparent or not.
+     type: bool
    state:
      description:
         - Indicate desired state of the resource.
@@ -196,6 +200,7 @@ class NetworkModule(OpenStackModule):
         admin_state_up=dict(type='bool'),
         external=dict(type='bool'),
         is_default=dict(type='bool'),
+        is_vlan_transparent=dict(type='bool'),
         provider_physical_network=dict(),
         provider_network_type=dict(),
         provider_segmentation_id=dict(type='int'),
@@ -214,6 +219,7 @@ class NetworkModule(OpenStackModule):
         admin_state_up = self.params['admin_state_up']
         external = self.params['external']
         is_default = self.params['is_default']
+        is_vlan_transparent = self.params['is_vlan_transparent']
         provider_physical_network = self.params['provider_physical_network']
         provider_network_type = self.params['provider_network_type']
         provider_segmentation_id = self.params['provider_segmentation_id']
@@ -253,6 +259,8 @@ class NetworkModule(OpenStackModule):
                 kwargs["is_router_external"] = external
             if is_default is not None:
                 kwargs["is_default"] = is_default
+            if is_vlan_transparent is not None:
+                kwargs["is_vlan_transparent"] = is_vlan_transparent
 
             if not net:
                 net = self.conn.network.create_network(name=name, **kwargs)
