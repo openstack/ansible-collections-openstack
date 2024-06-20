@@ -377,7 +377,9 @@ class ServerInfoModule(OpenStackModule):
         kwargs['name_or_id'] = self.params['name']
 
         self.exit(changed=False,
-                  servers=[server.to_dict(computed=False) for server in
+                  servers=[server.to_dict(computed=False)
+                           if hasattr(server, "to_dict") else server
+                           for server in
                            self.conn.search_servers(**kwargs)])
 
 
