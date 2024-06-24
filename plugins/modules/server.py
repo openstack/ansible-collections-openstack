@@ -1091,6 +1091,15 @@ class ServerModule(OpenStackModule):
             server.id,
             **dict((k, self.params[k])
                    for k in ['wait', 'timeout', 'delete_ips']))
+        # Nova returns server for some time with the "DELETED" state. Our tests
+        # are not able to handle this, so wait for server to really disappear.
+        if self.params['wait']:
+            for count in self.sdk.utils.iterate_timeout(
+                timeout=self.params['timeout'],
+                message="Timeout waiting for server to be absent"
+            ):
+                if self.conn.compute.find_server(server.id) is None:
+                    break
 
     def _update(self, server, update):
         server = self._update_ips(server, update)
