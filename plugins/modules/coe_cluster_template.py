@@ -80,6 +80,10 @@ options:
       - Magnum's default value for I(is_registry_enabled) is C(false).
     type: bool
     aliases: ['registry_enabled']
+  insecure_registry:
+    description:
+      - The URL pointing to users own private insecure docker registry.
+    type: str
   is_tls_disabled:
     description:
       - Indicates whether the TLS should be disabled.
@@ -342,6 +346,7 @@ class COEClusterTemplateModule(OpenStackModule):
         keypair_id=dict(),
         labels=dict(type='raw'),
         master_flavor_id=dict(),
+        insecure_registry=dict(),
         is_master_lb_enabled=dict(type='bool', default=False,
                                   aliases=['master_lb_enabled']),
         is_public=dict(type='bool', aliases=['public']),
@@ -412,6 +417,7 @@ class COEClusterTemplateModule(OpenStackModule):
                                            'fixed_subnet', 'flavor_id',
                                            'http_proxy', 'https_proxy',
                                            'image_id',
+                                           'insecure_registry',
                                            'is_floating_ip_enabled',
                                            'is_master_lb_enabled',
                                            'is_public', 'is_registry_enabled',
@@ -458,7 +464,7 @@ class COEClusterTemplateModule(OpenStackModule):
                                 'external_network_id', 'fixed_network',
                                 'fixed_subnet', 'flavor_id', 'http_proxy',
                                 'https_proxy', 'image_id',
-                                'is_floating_ip_enabled',
+                                'insecure_registry', 'is_floating_ip_enabled',
                                 'is_master_lb_enabled', 'is_public',
                                 'is_registry_enabled', 'is_tls_disabled',
                                 'keypair_id', 'master_flavor_id', 'name',
