@@ -1,0 +1,131 @@
+---
+- name: Create parent network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ parent_network_name }}"
+    external: true
+  register: parent_network
+
+- name: Create parent subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ parent_subnet_name }}"
+    network_name: "{{ parent_network_name }}"
+    cidr: 10.5.5.0/24
+  register: parent_subnet
+
+- name: Create parent port
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ parent_port_name }}"
+    network: "{{ parent_network_name }}"
+    fixed_ips:
+      - ip_address: 10.5.5.69
+  register: parent_port
+
+- name: Create subport network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ subport_network_name }}"
+    external: true
+  register: subport_network
+
+- name: Create subport subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ subport_subnet_name }}"
+    network_name: "{{ subport_network_name }}"
+    cidr: 10.5.6.0/24
+  register: subport_subnet
+
+- name: Create subport
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ subport_name }}"
+    network: "{{ subport_network_name }}"
+    fixed_ips:
+      - ip_address: 10.5.6.55
+  register: subport
+
+- name: Create trunk
+  openstack.cloud.trunk:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ trunk_name }}"
+    port: "{{ parent_port_name }}"
+  register: trunk
+
+- debug: var=trunk
+
+- name: assert return values of trunk module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(trunk.trunk.keys())|length == 0
+
+- name: Add subport to trunk
+  openstack.cloud.trunk:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ trunk_name }}"
+    port: "{{ parent_port_name }}"
+    sub_ports:
+      - port: "{{ subport_name }}"
+        segmentation_type: vlan
+        segmentation_id: 123
+
+- name: Update subport from trunk
+  openstack.cloud.trunk:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ trunk_name }}"
+    port: "{{ parent_port_name }}"
+    sub_ports: []
+
+- name: Delete trunk
+  openstack.cloud.trunk:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ trunk_name }}"
+
+- name: Delete subport
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ subport_name }}"
+
+- name: Delete subport subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ subport_subnet_name }}"
+
+- name: Delete subport network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ subport_network_name }}"
+
+- name: Delete parent port
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ parent_port_name }}"
+
+- name: Delete parent subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ parent_subnet_name }}"
+
+- name: Delete parent network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ parent_network_name }}"

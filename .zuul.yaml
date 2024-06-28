@@ -47,6 +47,7 @@
       devstack_services:
         designate: true
         neutron-dns: true
+        neutron-trunk: true
       zuul_copy_output:
         '{{ devstack_log_dir }}/test_output.log': 'logs'
       extensions_to_txt:

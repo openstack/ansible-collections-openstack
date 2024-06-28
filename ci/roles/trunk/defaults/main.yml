@@ -1,0 +1,21 @@
+expected_fields:
+  - created_at
+  - description
+  - id
+  - is_admin_state_up
+  - name
+  - port_id
+  - project_id
+  - revision_number
+  - status
+  - sub_ports
+  - tags
+  - tenant_id
+  - updated_at
+trunk_name: ansible_trunk
+parent_network_name: ansible_parent_port_network
+parent_subnet_name: ansible_parent_port_subnet
+parent_port_name: ansible_parent_port
+subport_network_name: ansible_subport_network
+subport_subnet_name: ansible_subport_subnet
+subport_name: ansible_subport

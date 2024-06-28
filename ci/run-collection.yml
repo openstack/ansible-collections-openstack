@@ -36,6 +36,7 @@
     - { role: object, tags: object }
     - { role: object_container, tags: object_container }
     - { role: port, tags: port }
+    - { role: trunk, tags: trunk }
     - { role: project, tags: project }
     - { role: quota, tags: quota }
     - { role: recordset, tags: recordset }
