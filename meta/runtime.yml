@@ -56,6 +56,7 @@ action_groups:
     - neutron_rbac_policy
     - object
     - object_container
+    - object_containers_info
     - port
     - port_info
     - project

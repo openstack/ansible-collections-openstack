@@ -1,0 +1,37 @@
+---
+
+test_container_unprefixed_name: ansible-test-container
+test_container_prefixed_prefix: ansible-prefixed-test-container
+test_container_prefixed_num: 2
+
+test_object_data: "Hello, world!"
+
+expected_fields_single:
+  - bytes
+  - bytes_used
+  - content_type
+  - count
+  - history_location
+  - id
+  - if_none_match
+  - is_content_type_detected
+  - is_newest
+  - meta_temp_url_key
+  - meta_temp_url_key_2
+  - name
+  - object_count
+  - read_ACL
+  - storage_policy
+  - sync_key
+  - sync_to
+  - timestamp
+  - versions_location
+  - write_ACL
+
+expected_fields_multiple:
+  - bytes
+  - bytes_used
+  - count
+  - id
+  - name
+  - object_count

@@ -1,0 +1,124 @@
+---
+
+- name: Generate list of containers to create
+  ansible.builtin.set_fact:
+    all_test_containers: >-
+      {{
+        [test_container_unprefixed_name]
+        + (
+            [test_container_prefixed_prefix + '-']
+            | product(range(test_container_prefixed_num) | map('string'))
+            | map('join', '')
+          )
+      }}
+
+- name: Run checks
+  block:
+
+    - name: Create all containers
+      openstack.cloud.object_container:
+        cloud: "{{ cloud }}"
+        name: "{{ item }}"
+        read_ACL: ".r:*,.rlistings"
+      loop: "{{ all_test_containers }}"
+
+    - name: Create an object in all containers
+      openstack.cloud.object:
+        cloud: "{{ cloud }}"
+        container: "{{ item }}"
+        name: hello.txt
+        data: "{{ test_object_data }}"
+      loop: "{{ all_test_containers }}"
+
+    - name: Fetch single containers by name
+      openstack.cloud.object_containers_info:
+        cloud: "{{ cloud }}"
+        name: "{{ item }}"
+      register: single_containers
+      loop: "{{ all_test_containers }}"
+
+    - name: Check that all fields are returned for single containers
+      ansible.builtin.assert:
+        that:
+          - (item.containers | length) == 1
+          - item.containers[0].name == item.item
+          - item.containers[0].bytes == (test_object_data | length)
+          - item.containers[0].read_ACL == ".r:*,.rlistings"
+          # allow new fields to be introduced but prevent fields from being removed
+          - (expected_fields_single | difference(item.containers[0].keys()) | length) == 0
+        quiet: true
+      loop: "{{ single_containers.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Fetch multiple containers by prefix
+      openstack.cloud.object_containers_info:
+        cloud: "{{ cloud }}"
+        prefix: "{{ test_container_prefixed_prefix }}"
+      register: multiple_containers
+
+    - name: Check that the correct number of prefixed containers were returned
+      ansible.builtin.assert:
+        that:
+          - (multiple_containers.containers | length) == test_container_prefixed_num
+        fail_msg: >-
+          Incorrect number of containers found
+          (found {{ multiple_containers.containers | length }},
+          expected {{ test_container_prefixed_num }})
+        quiet: true
+
+    - name: Check that all prefixed containers exist
+      ansible.builtin.assert:
+        that:
+          - >-
+            (test_container_prefixed_prefix + '-' + (item | string))
+            in (multiple_containers.containers | map(attribute='name'))
+        fail_msg: "Container not found: {{ test_container_prefixed_prefix + '-' + (item | string) }}"
+        quiet: true
+      loop: "{{ range(test_container_prefixed_num) | list }}"
+      loop_control:
+        label: "{{ test_container_prefixed_prefix + '-' + (item | string) }}"
+
+    - name: Check that the expected fields are returned for all prefixed containers
+      ansible.builtin.assert:
+        that:
+          - item.name.startswith(test_container_prefixed_prefix)
+          # allow new fields to be introduced but prevent fields from being removed
+          - (expected_fields_multiple | difference(item.keys()) | length) == 0
+        quiet: true
+      loop: "{{ multiple_containers.containers | sort(attribute='name') }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Fetch all containers
+      openstack.cloud.object_containers_info:
+        cloud: "{{ cloud }}"
+      register: all_containers
+
+    - name: Check that all expected containers were returned
+      ansible.builtin.assert:
+        that:
+          - item in (all_containers.containers | map(attribute='name'))
+        fail_msg: "Container not found: {{ item }}"
+        quiet: true
+      loop: "{{ all_test_containers }}"
+
+    - name: Check that the expected fields are returned for all containers
+      ansible.builtin.assert:
+        that:
+          # allow new fields to be introduced but prevent fields from being removed
+          - (expected_fields_multiple | difference(item.keys()) | length) == 0
+        quiet: true
+      loop: "{{ all_containers.containers | selectattr('name', 'in', all_test_containers) }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+  always:
+
+    - name: Delete all containers
+      openstack.cloud.object_container:
+        cloud: "{{ cloud }}"
+        name: "{{ item }}"
+        state: absent
+        delete_with_all_objects: true
+      loop: "{{ all_test_containers }}"
