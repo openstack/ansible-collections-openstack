@@ -269,7 +269,7 @@ class ContainerModule(OpenStackModule):
         if metadata is not None:
             # Swift metadata keys must be treated as case-insensitive
             old_metadata = dict((k.lower(), v)
-                                for k, v in (container.metadata or {}))
+                                for k, v in (container.metadata or {}).items())
             new_metadata = dict((k, v) for k, v in metadata.items()
                                 if k.lower() not in old_metadata
                                 or v != old_metadata[k.lower()])

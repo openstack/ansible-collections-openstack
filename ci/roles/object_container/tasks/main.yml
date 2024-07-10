@@ -31,6 +31,21 @@
       - ('cache-control' in container.container.metadata.keys()|map('lower'))
       - container.container.metadata['foo'] == 'bar'
 
+- name: Update container metadata
+  openstack.cloud.object_container:
+    cloud: "{{ cloud }}"
+    name: ansible_container
+    metadata:
+      'foo': 'baz'
+  register: container
+
+- name: Verify container metadata was updated
+  assert:
+    that:
+      - container is changed
+      - ('cache-control' in container.container.metadata.keys()|map('lower'))
+      - container.container.metadata['foo'] == 'baz'
+
 - name: Update a container
   openstack.cloud.object_container:
     cloud: "{{ cloud }}"
@@ -45,7 +60,7 @@
     that:
       - container is changed
       - ('cache-control' not in container.container.metadata.keys()|map('lower'))
-      - "container.container.metadata == {'foo': 'bar'}"
+      - "container.container.metadata == {'foo': 'baz'}"
       - container.container.read_ACL is none or container.container.read_ACL == ""
 
 - name: Delete container
