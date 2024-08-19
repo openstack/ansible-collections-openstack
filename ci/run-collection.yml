@@ -36,8 +36,7 @@
     - { role: object_container, tags: object_container }
     - { role: port, tags: port }
     - { role: project, tags: project }
-    # TODO(sshnaidm): Uncomment when the issue with the this test is fixed
-    # - { role: quota, tags: quota }
+    - { role: quota, tags: quota }
     - { role: recordset, tags: recordset }
     - { role: resource, tags: resource }
     - { role: resources, tags: resources }
