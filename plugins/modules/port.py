@@ -511,7 +511,7 @@ class PortModule(OpenStackModule):
             **(dict(network_id=network.id) if network else dict()))
 
         if self.ansible.check_mode:
-            self.exit_json(changed=self._will_change(network, port, state))
+            self.exit_json(changed=self._will_change(port, state))
 
         if state == 'present' and not port:
             # create port
