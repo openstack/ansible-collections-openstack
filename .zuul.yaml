@@ -162,33 +162,6 @@
       tox_constraints_file: '{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/tests/constraints-openstacksdk-1.x.x.txt'
       tox_install_siblings: false
 
-# Job with Ansible 2.9 for checking backward compatibility
-- job:
-    name: ansible-collections-openstack-functional-devstack-ansible-2.9
-    parent: ansible-collections-openstack-functional-devstack-base
-    branches: master
-    description: |
-      Run openstack collections functional tests against a master devstack
-      using master of openstacksdk and stable 2.9 branch of ansible
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.9
-    vars:
-      tox_envlist: ansible_2_9
-
-- job:
-    name: ansible-collections-openstack-functional-devstack-ansible-2.11
-    parent: ansible-collections-openstack-functional-devstack-base
-    branches: master
-    description: |
-      Run openstack collections functional tests against a master devstack
-      using master of openstacksdk and stable 2.12 branch of ansible
-    required-projects:
-      - name: github.com/ansible/ansible
-        override-checkout: stable-2.11
-    vars:
-      tox_envlist: ansible_2_11
-
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-2.12
     parent: ansible-collections-openstack-functional-devstack-base
@@ -355,17 +328,12 @@
         - openstack-tox-linters-ansible-2.12
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
-        - ansible-collections-openstack-functional-devstack-ansible-2.9
         - ansible-collections-openstack-functional-devstack-ansible-2.12
         - ansible-collections-openstack-functional-devstack-ansible-devel
         - bifrost-collections-src
         - bifrost-keystone-collections-src
         - ansible-collections-openstack-functional-devstack-magnum
         - ansible-collections-openstack-functional-devstack-octavia
-
-    experimental:
-      jobs:
-        - ansible-collections-openstack-functional-devstack-ansible-2.11
 
     tag:
       jobs:
