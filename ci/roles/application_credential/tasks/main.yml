@@ -1,0 +1,61 @@
+---
+
+- name: Create application credentials
+  openstack.cloud.application_credential:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_creds
+    description: dummy description
+  register: appcred
+
+- name: Assert return values of application_credential module
+  assert:
+    that:
+      - appcred is changed
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(appcred.application_credential.keys())|length == 0
+
+- name: Create the application credential again
+  openstack.cloud.application_credential:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_creds
+    description: dummy description
+  register: appcred
+
+- name: Assert return values of ansible_credential module
+  assert:
+    that:
+      # credentials are immutable so creating twice will cause delete and create
+      - appcred is changed
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(appcred.application_credential.keys())|length == 0
+
+- name: Update the application credential again
+  openstack.cloud.application_credential:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_creds
+    description: new description
+  register: appcred
+
+- name: Assert application credential changed
+  assert:
+     that:
+       - appcred is changed
+       - appcred.application_credential.description == 'new description'
+
+- name: Get list of all keypairs using application credential
+  openstack.cloud.keypair_info:
+    cloud: "{{ appcred.cloud }}"
+
+- name: Delete application credential
+  openstack.cloud.application_credential:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_creds
+  register: appcred
+
+- name: Assert application credential changed
+  assert:
+     that: appcred is changed

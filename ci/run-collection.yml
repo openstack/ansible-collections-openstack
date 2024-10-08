@@ -5,6 +5,7 @@
 
   roles:
     - { role: address_scope, tags: address_scope }
+    - { role: application_credential, tags: application_credential }
     - { role: auth, tags: auth }
     - { role: catalog_service, tags: catalog_service }
     - { role: coe_cluster, tags: coe_cluster }

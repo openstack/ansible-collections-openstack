@@ -1,0 +1,9 @@
+expected_fields:
+  - description
+  - expires_at
+  - id
+  - name
+  - project_id
+  - roles
+  - secret
+  - unrestricted
