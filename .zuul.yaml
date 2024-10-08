@@ -286,7 +286,6 @@
         - openstack-tox-linters-ansible-2.12
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
-        - ansible-collections-openstack-functional-devstack-ansible-2.9
         - ansible-collections-openstack-functional-devstack-ansible-2.12
         - ansible-collections-openstack-functional-devstack-ansible-devel
         - ansible-collections-openstack-functional-devstack-magnum
@@ -305,7 +304,6 @@
         - openstack-tox-linters-ansible-2.12
         # - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
-        # - ansible-collections-openstack-functional-devstack-ansible-2.9
         # - ansible-collections-openstack-functional-devstack-ansible-2.12
         - ansible-collections-openstack-functional-devstack-magnum
         - ansible-collections-openstack-functional-devstack-octavia
