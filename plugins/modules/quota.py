@@ -404,7 +404,7 @@ class QuotaModule(OpenStackModule):
     def _get_quotas(self, project):
         quota = {}
         if self.conn.has_service('block-storage'):
-            quota['volume'] = self.conn.block_storage.get_quota_set(project)
+            quota['volume'] = self.conn.block_storage.get_quota_set(project.id)
         else:
             self.warn('Block storage service aka volume service is not'
                       ' supported by your cloud. Ignoring volume quotas.')
@@ -477,11 +477,11 @@ class QuotaModule(OpenStackModule):
 
             if changes:
                 if 'volume' in changes:
-                    self.conn.block_storage.update_quota_set(
-                        quotas['volume'], **changes['volume'])
+                    quotas['volume'] = self.conn.block_storage.update_quota_set(
+                        project.id, **changes['volume'])
                 if 'compute' in changes:
-                    self.conn.compute.update_quota_set(
-                        quotas['compute'], **changes['compute'])
+                    quotas['compute'] = self.conn.compute.update_quota_set(
+                        project.id, **changes['compute'])
                 if 'network' in changes:
                     quotas['network'] = self.conn.network.update_quota(
                         project.id, **changes['network'])
