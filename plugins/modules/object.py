@@ -295,8 +295,11 @@ class ObjectModule(OpenStackModule):
                       for k in ['data', 'filename']
                       if self.params[k] is not None)
 
-        return self.conn.object_store.create_object(container_name, name,
-                                                    **kwargs)
+        object = self.conn.object_store.create_object(container_name, name,
+                                                      **kwargs)
+        if not object:
+            object = self._find()
+        return object
 
     def _delete(self, object):
         container_name = self.params['container']

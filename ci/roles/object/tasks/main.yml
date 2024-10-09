@@ -5,7 +5,7 @@
     state: present
     name: ansible_container
 
-- name: Create object
+- name: Create object from data
   openstack.cloud.object:
     cloud: "{{ cloud }}"
     state: present
@@ -13,6 +13,47 @@
     data: "this is a test"
     container: ansible_container
   register: object
+
+- name: Assert return values of object module
+  assert:
+    that:
+      - object.object.id == "ansible_object"
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(object.object.keys())|length == 0
+
+- name: Delete object
+  openstack.cloud.object:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: ansible_object
+    container: ansible_container
+
+- name: Create object from file
+  block:
+    - name: Create temporary data file
+      ansible.builtin.tempfile:
+      register: tmp_file
+
+    - name: Populate data file
+      ansible.builtin.copy:
+        content: "this is a test"
+        dest: "{{ tmp_file.path }}"
+
+    - name: Create object from data file
+      openstack.cloud.object:
+        cloud: "{{ cloud }}"
+        state: present
+        name: ansible_object
+        filename: "{{ tmp_file.path }}"
+        container: ansible_container
+      register: object
+
+  always:
+    - name: Remove temporary data file
+      ansible.builtin.file:
+        path: "{{ tmp_file.path }}"
+        state: absent
+      when: tmp_file is defined and 'path' in tmp_file
 
 - name: Assert return values of object module
   assert:
