@@ -56,7 +56,7 @@ options:
     description:
       - When I(update_password) is C(always), then the password will always be
         updated.
-      - When I(update_password) is C(on_create), the the password is only set
+      - When I(update_password) is C(on_create), then the password is only set
         when creating a user.
     type: str
 extends_documentation_fragment:
