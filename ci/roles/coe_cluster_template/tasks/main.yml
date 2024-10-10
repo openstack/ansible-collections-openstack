@@ -26,6 +26,9 @@
     keypair_id: '{{ keypair.keypair.id }}'
     name: k8s
     state: present
+    labels:
+      docker_volume_size: 10
+      cloud_provider_tag: v1.23.1
   register: coe_cluster_template
 
 - name: Assert return values of coe_cluster_template module
@@ -43,6 +46,9 @@
     keypair_id: '{{ keypair.keypair.id }}'
     name: k8s
     state: present
+    labels:
+      docker_volume_size: 10
+      cloud_provider_tag: v1.23.1
   register: coe_cluster_template
 
 - name: Assert return values of coe_cluster_template module

@@ -433,6 +433,9 @@ class COEClusterTemplateModule(OpenStackModule):
             if isinstance(labels, str):
                 labels = dict([tuple(kv.split(":"))
                                for kv in labels.split(",")])
+            elif isinstance(labels, dict):
+                labels = dict({str(k): str(v)
+                               for k, v in labels.items()})
             if labels != cluster_template['labels']:
                 non_updateable_keys.append('labels')
 
