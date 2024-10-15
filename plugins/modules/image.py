@@ -122,6 +122,12 @@ options:
       - I(volume) has been deprecated. Use module M(openstack.cloud.volume)
         instead.
     type: str
+  use_import:
+    description:
+      - Use the 'glance-direct' method of the interoperable image import mechanism.
+      - Should only be used when needed, such as when the user needs the cloud to
+        transform image format.
+    type: bool
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''
@@ -392,6 +398,7 @@ class ImageModule(OpenStackModule):
         tags=dict(type='list', default=[], elements='str'),
         visibility=dict(choices=['public', 'private', 'shared', 'community']),
         volume=dict(),
+        use_import=dict(type='bool'),
     )
 
     module_kwargs = dict(
@@ -404,7 +411,8 @@ class ImageModule(OpenStackModule):
     # resource attributes obtainable directly from params
     attr_params = ('id', 'name', 'filename', 'disk_format',
                    'container_format', 'wait', 'timeout', 'is_public',
-                   'is_protected', 'min_disk', 'min_ram', 'volume', 'tags')
+                   'is_protected', 'min_disk', 'min_ram', 'volume', 'tags',
+                   'use_import')
 
     def _resolve_visibility(self):
         """resolve a visibility value to be compatible with older versions"""
