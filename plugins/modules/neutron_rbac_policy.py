@@ -65,6 +65,12 @@ options:
       - Required when creating or updating a RBAC policy rule, ignored when
         deleting a policy.
     type: str
+  target_all_project:
+    description:
+      - Whether all projects are targted for access.
+      - If this option set to true, C(target_project_id) is ignored.
+    type: bool
+    default: 'false'
   state:
     description:
       - Whether the RBAC rule should be C(present) or C(absent).
@@ -145,6 +151,8 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 
 class NeutronRBACPolicy(OpenStackModule):
+    all_project_symbol = '*'
+
     argument_spec = dict(
         action=dict(choices=['access_as_external', 'access_as_shared']),
         id=dict(aliases=['policy_id']),
@@ -153,17 +161,22 @@ class NeutronRBACPolicy(OpenStackModule):
         project_id=dict(),
         state=dict(default='present', choices=['absent', 'present']),
         target_project_id=dict(),
+        target_all_project=dict(type='bool', default=False),
     )
 
     module_kwargs = dict(
         required_if=[
-            ('state', 'present', ('target_project_id',)),
+            ('state', 'present', ('target_project_id', 'target_all_project',), True),
             ('state', 'absent', ('id',)),
         ],
         supports_check_mode=True,
     )
 
     def run(self):
+        target_all_project = self.params.get('target_all_project')
+        if target_all_project:
+            self.params['target_project_id'] = self.all_project_symbol
+
         state = self.params['state']
 
         policy = self._find()
@@ -262,7 +275,7 @@ class NeutronRBACPolicy(OpenStackModule):
 
         return [p for p in policies
                 if any(p[k] == self.params[k]
-                       for k in ['object_id', 'target_project_id'])]
+                       for k in ['object_id'])]
 
     def _update(self, policy, update):
         attributes = update.get('attributes')

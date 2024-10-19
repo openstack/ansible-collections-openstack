@@ -69,6 +69,29 @@
     id: "{{ rbac_policy.rbac_policy.id }}"
     state: absent
 
+- name: Create a new network RBAC policy by targeting all projects
+  openstack.cloud.neutron_rbac_policy:
+    cloud: "{{ cloud }}"
+    object_id: "{{ network.network.id }}"
+    object_type: 'network'
+    action: 'access_as_shared'
+    target_all_project: true
+    project_id: "{{ source_project.project.id }}"
+  register: rbac_policy
+
+- name: Assert return values of neutron_rbac_policy module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(rbac_policy.rbac_policy.keys())|length == 0
+      - rbac_policy.rbac_policy.target_project_id == all_project_symbol
+
+- name: Delete RBAC policy
+  openstack.cloud.neutron_rbac_policy:
+    cloud: "{{ cloud }}"
+    id: "{{ rbac_policy.rbac_policy.id }}"
+    state: absent
+
 - name: Get all rbac policies for {{ source_project.project.name }} - after deletion
   openstack.cloud.neutron_rbac_policies_info:
     cloud: "{{ cloud }}"
