@@ -466,7 +466,8 @@
       - ((server is success)
          or (server is not success
              and "Cannot 'shelveOffload' instance" in server.msg
-             and "while it is in vm_state shelved_offloaded" in server.msg))
+             and ("while it is in vm_state shelved_offloaded" in server.msg
+             or "while it is in task_state shelving_offloading" in server.msg )))
 
 - name: Get info about server
   openstack.cloud.server_info:
