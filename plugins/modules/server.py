@@ -1032,7 +1032,7 @@ class ServerModule(OpenStackModule):
 
     def _create(self):
         for k in ['auto_ip', 'floating_ips', 'floating_ip_pools']:
-            if self.params[k] is not None \
+            if self.params[k] \
                and self.params['wait'] is False:
                 # floating ip addresses will only be added if
                 # we wait until the server has been created
