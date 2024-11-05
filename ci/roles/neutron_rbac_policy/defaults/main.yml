@@ -7,3 +7,4 @@ expected_fields:
   - project_id
   - target_project_id
   - tenant_id
+all_project_symbol: '*'
