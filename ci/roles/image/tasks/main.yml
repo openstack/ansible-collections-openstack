@@ -176,6 +176,34 @@
           - image is changed
           - image.image.name == 'ansible_image-changed'
 
+    - name: Deactivate raw image
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: inactive
+         id: "{{ image.image.id }}"
+         name: 'ansible_image-changed'
+      register: image
+
+    - name: Assert changed
+      assert:
+        that:
+          - image is changed
+          - image.image.status == 'deactivated'
+
+    - name: Reactivate raw image
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         id: "{{ image.image.id }}"
+         name: 'ansible_image-changed'
+      register: image
+
+    - name: Assert changed
+      assert:
+        that:
+          - image is changed
+          - image.image.status == 'active'
+
     - name: Rename back raw image (defaults)
       openstack.cloud.image:
          cloud: "{{ cloud }}"
