@@ -84,6 +84,70 @@
     name: "{{ subnet_name }}"
     state: absent
 
+- name: Create subnet {{ subnet_name }} with multiple allocation pools on network {{ network_name }} from subnet pool {{ subnet_pool_name }}
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    network_name: "{{ network_name }}"
+    enable_dhcp: "{{ enable_subnet_dhcp }}"
+    name: "{{ subnet_name }}"
+    state: present
+    cidr: 192.168.42.0/24  # we want specific cidr from subnet pool
+    ip_version: 4
+    subnet_pool: "{{ subnet_pool_name }}"
+    gateway_ip: 192.168.42.1
+    allocation_pools:
+      - start: 192.168.42.2
+        end: 192.168.42.4
+      - start: 192.168.42.6
+        end: 192.168.42.8
+
+- name: Create subnet {{ subnet_name }} on network {{ network_name }} from subnet pool {{ subnet_pool_name }} again
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    network_name: "{{ network_name }}"
+    enable_dhcp: "{{ enable_subnet_dhcp }}"
+    name: "{{ subnet_name }}"
+    state: present
+    cidr: 192.168.42.0/24
+    ip_version: 4
+    subnet_pool: "{{ subnet_pool_name }}"
+    gateway_ip: 192.168.42.1
+    allocation_pools:
+      - start: 192.168.42.2
+        end: 192.168.42.4
+      - start: 192.168.42.6
+        end: 192.168.42.8
+  register: idem2
+
+- name: Get Subnet Info
+  openstack.cloud.subnets_info:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_name }}"
+  register: subnet_result
+
+- name: Verify Subnet Allocation Pools Exist
+  assert:
+    that:
+      - idem2 is not changed
+      - subnet_result.subnets is defined
+      - subnet_result.subnets | length == 1
+      - subnet_result.subnets[0].allocation_pools is defined
+      - subnet_result.subnets[0].allocation_pools | length == 2
+
+- name: Verify Subnet Allocation Pools
+  assert:
+    that:
+      - (subnet_result.subnets[0].allocation_pools.0.start == '192.168.42.2' and subnet_result.subnets[0].allocation_pools.0.end == '192.168.42.4') or
+        (subnet_result.subnets[0].allocation_pools.0.start == '192.168.42.6' and subnet_result.subnets[0].allocation_pools.0.end == '192.168.42.8')
+      - (subnet_result.subnets[0].allocation_pools.1.start == '192.168.42.2' and subnet_result.subnets[0].allocation_pools.1.end == '192.168.42.4') or
+        (subnet_result.subnets[0].allocation_pools.1.start == '192.168.42.6' and subnet_result.subnets[0].allocation_pools.1.end == '192.168.42.8')
+
+- name: Delete subnet {{ subnet_name }}
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_name }}"
+    state: absent
+
 - name: Delete created subnet pool
   openstack.cloud.subnet_pool:
     cloud: "{{ cloud }}"

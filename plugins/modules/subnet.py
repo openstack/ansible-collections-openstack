@@ -28,6 +28,12 @@ options:
             - From the subnet pool the last IP that should be assigned to the
               virtual machines.
         type: str
+    allocation_pools:
+        description:
+            - List of allocation pools to assign to the subnet. Each element
+              consists of a 'start' and 'end' value.
+        type: list
+        elements: dict
     cidr:
         description:
             - The CIDR representation of the subnet that should be assigned to
@@ -299,6 +305,7 @@ class SubnetModule(OpenStackModule):
         dns_nameservers=dict(type='list', elements='str'),
         allocation_pool_start=dict(),
         allocation_pool_end=dict(),
+        allocation_pools=dict(type='list', elements='dict'),
         host_routes=dict(type='list', elements='dict'),
         ipv6_ra_mode=dict(choices=ipv6_mode_choices),
         ipv6_address_mode=dict(choices=ipv6_mode_choices),
@@ -321,7 +328,9 @@ class SubnetModule(OpenStackModule):
              ('cidr', 'use_default_subnet_pool', 'subnet_pool'), True),
         ],
         mutually_exclusive=[
-            ('use_default_subnet_pool', 'subnet_pool')
+            ('use_default_subnet_pool', 'subnet_pool'),
+            ('allocation_pool_start', 'allocation_pools'),
+            ('allocation_pool_end', 'allocation_pools')
         ]
     )
 
@@ -367,7 +376,10 @@ class SubnetModule(OpenStackModule):
             params['project_id'] = project.id
         if subnet_pool:
             params['subnet_pool_id'] = subnet_pool.id
-        params['allocation_pools'] = self._build_pool()
+        if self.params['allocation_pool_start']:
+            params['allocation_pools'] = self._build_pool()
+        else:
+            params['allocation_pools'] = self.params['allocation_pools']
         params = self._add_extra_attrs(params)
         params = {k: v for k, v in params.items() if v is not None}
         return params
@@ -381,6 +393,10 @@ class SubnetModule(OpenStackModule):
         if 'host_routes' in params:
             params['host_routes'].sort(key=lambda r: sorted(r.items()))
             subnet['host_routes'].sort(key=lambda r: sorted(r.items()))
+
+        if 'allocation_pools' in params:
+            params['allocation_pools'].sort(key=lambda r: sorted(r.items()))
+            subnet['allocation_pools'].sort(key=lambda r: sorted(r.items()))
 
         updates = {k: params[k] for k in params if params[k] != subnet[k]}
         if self.params['disable_gateway_ip'] and subnet.gateway_ip:
