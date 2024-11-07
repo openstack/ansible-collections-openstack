@@ -1,0 +1,23 @@
+---
+- name: Fetch volume services
+  openstack.cloud.volume_service_info:
+    cloud: "{{ cloud }}"
+  register: volume_services
+
+- name: Assert return values of volume_service_info module
+  assert:
+    that:
+      - volume_services.volume_services | length > 0
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(volume_services.volume_services[0].keys())|length == 0
+
+- name: Fetch volume services with filters
+  openstack.cloud.volume_service_info:
+    cloud: "{{ cloud }}"
+    binary: "cinder-volume"
+  register: volume_services
+
+- name: Assert return values of volume_service_info module
+  assert:
+    that:
+      - volume_services.volume_services | length > 0
