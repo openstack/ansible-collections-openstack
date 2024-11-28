@@ -2,6 +2,7 @@ requires_ansible: ">=2.8"
 action_groups:
   openstack:
     - address_scope
+    - application_credential
     - auth
     - baremetal_deploy_template
     - baremetal_inspect
@@ -81,6 +82,7 @@ action_groups:
     - subnet
     - subnet_pool
     - subnets_info
+    - trunk
     - volume
     - volume_backup
     - volume_backup_info

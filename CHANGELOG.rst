@@ -5,6 +5,62 @@ Ansible OpenStack Collection Release Notes
 .. contents:: Topics
 
 
+v2.3.0
+======
+
+Release Summary
+---------------
+
+Bugfixes and new modules
+
+Major Changes
+-------------
+
+- Add Neutron trunk module
+- Add application_credential module
+- Add module to filter available volume services
+
+Minor Changes
+-------------
+
+- Add inactive state for the images
+- Add insecure_registry property to coe_cluster_templates
+- Add support for creation of the default external networks
+- Add target_all_project option
+- Add vlan_tranparency for creation networks
+- Allow munch results in server_info module
+- Allow to specify multiple allocation pools when creating a subnet
+- CI - Disable auto-discovery for setuptools
+- CI - Don't create port with binding profile
+- CI - Fix CI in collection
+- CI - Fix linters-devel and devstack tests
+- CI - Fix regression in quota module
+- CI - Fix test for server shelve
+- CI - Migrate Bifrost jobs to Ubuntu Jammy
+- CI - Remove 2.9 jobs from Zuul config
+- CI - Run functional testing regardless of pep8/linter results
+- Enable glance-direct interop image import
+- Ensure coe_cluster_template compare labels properly
+- Wait for deleted server to disappear from results
+- router - Allow specifying external network name in a different project
+
+Bugfixes
+--------
+
+- Allow wait false when auto_ip is false
+- Fix exception when creating object from file
+- Fix exception when updating container with metadata
+- Fix typo in openstack.cloud.lb_pool
+- Fix typo in parameter description
+- fix subnet module - allow cidr option with subnet_pool
+
+New Modules
+-----------
+
+- openstack.cloud.application_credential - Manage OpenStack Identity (Keystone) application credentials
+- openstack.cloud.trunk - Add or delete trunks from an OpenStack cloud
+- openstack.cloud.volume_service_info - Fetch OpenStack Volume (Cinder) services
+
 v2.2.0
 ======
 
