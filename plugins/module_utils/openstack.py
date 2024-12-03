@@ -183,7 +183,7 @@ def openstack_cloud_from_module(module, min_version=None, max_version=None):
                 " excluded.")
             for param in (
                     'auth', 'region_name', 'validate_certs',
-                    'ca_cert', 'client_key', 'api_timeout', 'auth_type'):
+                    'ca_cert', 'client_cert', 'client_key', 'api_timeout', 'auth_type'):
                 if module.params[param] is not None:
                     module.fail_json(msg=fail_message.format(param=param))
             # For 'interface' parameter, fail if we receive a non-default value
@@ -199,6 +199,7 @@ def openstack_cloud_from_module(module, min_version=None, max_version=None):
                 verify=module.params['validate_certs'],
                 cacert=module.params['ca_cert'],
                 key=module.params['client_key'],
+                cert=module.params['client_cert'],
                 api_timeout=module.params['api_timeout'],
                 interface=module.params['interface'],
             )
@@ -358,7 +359,7 @@ class OpenStackModule:
                 " excluded.")
             for param in (
                     'auth', 'region_name', 'validate_certs',
-                    'ca_cert', 'client_key', 'api_timeout', 'auth_type'):
+                    'ca_cert', 'client_cert', 'client_key', 'api_timeout', 'auth_type'):
                 if self.params[param] is not None:
                     self.fail_json(msg=fail_message.format(param=param))
             # For 'interface' parameter, fail if we receive a non-default value
