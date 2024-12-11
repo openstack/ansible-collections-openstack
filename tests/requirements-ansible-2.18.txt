@@ -1,0 +1,12 @@
+ansible-core>=2.18.0,<2.19.0
+flake8
+galaxy-importer
+openstacksdk
+pycodestyle
+pylint
+rstcheck
+ruamel.yaml
+tox
+voluptuous
+yamllint
+setuptools

@@ -164,7 +164,7 @@
       tox_install_siblings: false
 
 - job:
-    name: ansible-collections-openstack-functional-devstack-ansible-2.16
+    name: ansible-collections-openstack-functional-devstack-ansible-2.18
     parent: ansible-collections-openstack-functional-devstack-base
     branches: master
     description: |
@@ -172,9 +172,9 @@
       using master of openstacksdk and stable 2.16 branch of ansible
     required-projects:
       - name: github.com/ansible/ansible
-        override-checkout: stable-2.16
+        override-checkout: stable-2.18
     vars:
-      tox_envlist: ansible_2_16
+      tox_envlist: ansible_2_18
 
 - job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
@@ -218,16 +218,15 @@
       bindep_profile: test py310
 
 - job:
-    name: openstack-tox-linters-ansible-2.16
+    name: openstack-tox-linters-ansible-2.18
     parent: openstack-tox-linters-ansible
     description: |
-      Run openstack collections linter tests using the 2.16 branch of ansible
+      Run openstack collections linter tests using the 2.18 branch of ansible
     required-projects:
       - name: github.com/ansible/ansible
-        override-checkout: stable-2.16
+        override-checkout: stable-2.18
     vars:
-      # ensure_tox_version: '<4'
-      tox_envlist: linters_2_16
+      tox_envlist: linters_2_18
       python_version: "3.12"
       bindep_profile: test py312
 
@@ -283,10 +282,10 @@
       jobs:
         - tox-pep8
         - openstack-tox-linters-ansible-devel
-        - openstack-tox-linters-ansible-2.16
+        - openstack-tox-linters-ansible-2.18
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
-        - ansible-collections-openstack-functional-devstack-ansible-2.16
+        - ansible-collections-openstack-functional-devstack-ansible-2.18
         - ansible-collections-openstack-functional-devstack-ansible-devel
         - ansible-collections-openstack-functional-devstack-magnum
         - ansible-collections-openstack-functional-devstack-octavia
@@ -301,20 +300,18 @@
     gate:
       jobs:
         - tox-pep8
-        - openstack-tox-linters-ansible-2.16
-        # - ansible-collections-openstack-functional-devstack
+        - openstack-tox-linters-ansible-2.18
         - ansible-collections-openstack-functional-devstack-releases
-        # - ansible-collections-openstack-functional-devstack-ansible-2.12
         - ansible-collections-openstack-functional-devstack-magnum
         - ansible-collections-openstack-functional-devstack-octavia
 
     periodic:
       jobs:
         - openstack-tox-linters-ansible-devel
-        - openstack-tox-linters-ansible-2.16
+        - openstack-tox-linters-ansible-2.18
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
-        - ansible-collections-openstack-functional-devstack-ansible-2.16
+        - ansible-collections-openstack-functional-devstack-ansible-2.18
         - ansible-collections-openstack-functional-devstack-ansible-devel
         - bifrost-collections-src
         - bifrost-keystone-collections-src
