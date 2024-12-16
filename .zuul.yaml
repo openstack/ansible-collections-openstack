@@ -266,16 +266,16 @@
     data:
       url: https://galaxy.ansible.com
       token: !encrypted/pkcs1-oaep
-        - lZFzfoCbuwqV1k6qRfl/VS7E+knUW7+zpg7BptrenK4n0g7UY0HtdVkYq0pV0Tj/LbhzG
-          jHD0mehcV1iS6B7ORKg4criJkdDfEx09BD8z8yv0EleiIMmhlrCoMcY593OZMBtVbGi0D
-          CwQtNO98QIsfZogChfLfvRNiBmUV98mEb/p6p3EtGx8J7qcAsqfWxc/CzB8GCleLAHHHT
-          FuikMM03ZnV0ew7E+TPkHbzzPhBZOqS5HYF0HtgttHwIXdfIWp/XdTuEEk7uRRgYZ2Iao
-          ifWRzoKaOQmhM++e1ydCqw9D4y9dZEFNMQLwSqcrvtb8cNwT1kl7SCFqYNE2lbutj4ne6
-          PTBQRsKegMB4Y3ena14fNF6tCynvJLPhF/cjPH2Jhs+B19XQhWkL3TgiOY02W24YHwRcP
-          +LdkM8inAvyVi3DEbEqdjBPO9OFJcBOKPlCdkGvuwdNCuEpEwctWs0gV3voflG2CDKzmJ
-          wu9JJOAWnq/0l1WpuDqWreKeQ/BUGZC2Gb4xRAqofulgvhs4WuYoEccjH4EJFIZ90S1EP
-          R/ZLadqZaEhmjwGM5sMWbBbjT23XsRgg0Tzt9m8DENYMuYDqkMdRbt2jYZa+32p4hyxVe
-          Y6H/pqYq5b9uOzumnShaK4WlmkQyXcNPkoSlMC1h4OGvqX/WUixpI38jyMA5Tc=
+        - QJ3c5LfmM4YmqwwLKv4wK5lroWDLGeMyPkmHXhvf0ry3vGjKZvZxVpbIhFXJHXevHov/r
+          nvlqwmG8D5msynQKZDFg2ZwSMIQWRKfSbsSLe7A6NWI2wC+QtZSPiRiBcBcHY1QbNNW21
+          84cssYa1oHOA0WXpomBz1qXuPV48aKLjMnWysgFhNSx3Oog+ZOSCczyyVVuXP1lIWIO26
+          AtRTrEcr37K3JY9usE2PCbZKFOq/+IDPz9fbS7PtBOv7iXOHOf3AfBiJiaJe3q/ecoaaq
+          ejk2WTKWfvq/3rY4pU1976kUcxgcd+jj9ReFyw8edCsc1ecL0qmZFbdHmC03jEcVo4p8I
+          WJQ0D5wk4/u2Fu9texNuBvb62Yu3Y028Zhm5rz8Zl/ISsdaA3losn5S7C7iAH/yKlGQEI
+          N/1X4M0tVPaMtsIhZyyz+JMbeNyVR9ZarqbtpzRtVhjxL7KOiAQbEzAmZcBbCJ2Z5iI+P
+          bTp03f9Y/tZNtkohARvx1TKhv8CvsmyGkMm+r5Y8aWz3SNy8LL6bSwtGun/ifbnadHmw/
+          TD5/UUXHHjBGkeAu9HTtwUZ5Qdkfg92PnPgruAAuOkF1Y4RyRS9qvwhtqyHO8TwU0INRY
+          5MHEzeOQWemoQb/qdENp+J/Q9oMEbpFYv9TkrWkxVoKop6Str8e3FF5sxmN/SE=
 
 - project:
     check:
