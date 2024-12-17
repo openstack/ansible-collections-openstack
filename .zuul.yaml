@@ -456,24 +456,6 @@
     name: ansible-collections-openstack-release
     parent: base
     run: ci/publish/publish_collection.yml
-    secrets:
-      - ansible_galaxy_info
-
-- secret:
-    name: ansible_galaxy_info
-    data:
-      url: https://galaxy.ansible.com
-      token: !encrypted/pkcs1-oaep
-        - lZFzfoCbuwqV1k6qRfl/VS7E+knUW7+zpg7BptrenK4n0g7UY0HtdVkYq0pV0Tj/LbhzG
-          jHD0mehcV1iS6B7ORKg4criJkdDfEx09BD8z8yv0EleiIMmhlrCoMcY593OZMBtVbGi0D
-          CwQtNO98QIsfZogChfLfvRNiBmUV98mEb/p6p3EtGx8J7qcAsqfWxc/CzB8GCleLAHHHT
-          FuikMM03ZnV0ew7E+TPkHbzzPhBZOqS5HYF0HtgttHwIXdfIWp/XdTuEEk7uRRgYZ2Iao
-          ifWRzoKaOQmhM++e1ydCqw9D4y9dZEFNMQLwSqcrvtb8cNwT1kl7SCFqYNE2lbutj4ne6
-          PTBQRsKegMB4Y3ena14fNF6tCynvJLPhF/cjPH2Jhs+B19XQhWkL3TgiOY02W24YHwRcP
-          +LdkM8inAvyVi3DEbEqdjBPO9OFJcBOKPlCdkGvuwdNCuEpEwctWs0gV3voflG2CDKzmJ
-          wu9JJOAWnq/0l1WpuDqWreKeQ/BUGZC2Gb4xRAqofulgvhs4WuYoEccjH4EJFIZ90S1EP
-          R/ZLadqZaEhmjwGM5sMWbBbjT23XsRgg0Tzt9m8DENYMuYDqkMdRbt2jYZa+32p4hyxVe
-          Y6H/pqYq5b9uOzumnShaK4WlmkQyXcNPkoSlMC1h4OGvqX/WUixpI38jyMA5Tc=
 
 - project:
     check:
