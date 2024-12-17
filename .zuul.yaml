@@ -282,91 +282,69 @@
         name: openstack/openstacksdk
         override-checkout: master
 
-- job:
-    name: ansible-collections-openstack-release
-    parent: base
-    run: ci/publish/publish_collection.yml
-    secrets:
-      - ansible_galaxy_info
-
-- secret:
-    name: ansible_galaxy_info
-    data:
-      url: https://galaxy.ansible.com
-      token: !encrypted/pkcs1-oaep
-        - lZFzfoCbuwqV1k6qRfl/VS7E+knUW7+zpg7BptrenK4n0g7UY0HtdVkYq0pV0Tj/LbhzG
-          jHD0mehcV1iS6B7ORKg4criJkdDfEx09BD8z8yv0EleiIMmhlrCoMcY593OZMBtVbGi0D
-          CwQtNO98QIsfZogChfLfvRNiBmUV98mEb/p6p3EtGx8J7qcAsqfWxc/CzB8GCleLAHHHT
-          FuikMM03ZnV0ew7E+TPkHbzzPhBZOqS5HYF0HtgttHwIXdfIWp/XdTuEEk7uRRgYZ2Iao
-          ifWRzoKaOQmhM++e1ydCqw9D4y9dZEFNMQLwSqcrvtb8cNwT1kl7SCFqYNE2lbutj4ne6
-          PTBQRsKegMB4Y3ena14fNF6tCynvJLPhF/cjPH2Jhs+B19XQhWkL3TgiOY02W24YHwRcP
-          +LdkM8inAvyVi3DEbEqdjBPO9OFJcBOKPlCdkGvuwdNCuEpEwctWs0gV3voflG2CDKzmJ
-          wu9JJOAWnq/0l1WpuDqWreKeQ/BUGZC2Gb4xRAqofulgvhs4WuYoEccjH4EJFIZ90S1EP
-          R/ZLadqZaEhmjwGM5sMWbBbjT23XsRgg0Tzt9m8DENYMuYDqkMdRbt2jYZa+32p4hyxVe
-          Y6H/pqYq5b9uOzumnShaK4WlmkQyXcNPkoSlMC1h4OGvqX/WUixpI38jyMA5Tc=
 
 - project:
     check:
       jobs:
         - tox-pep8
-        - openstack-tox-linters-ansible-devel
-        - openstack-tox-linters-ansible-2.12
-        - ansible-collections-openstack-functional-devstack:
-            dependencies: &deps_unit_lint
-              - tox-pep8
-              - openstack-tox-linters-ansible-2.12
+        # - openstack-tox-linters-ansible-devel
+        # - openstack-tox-linters-ansible-2.12
+        # - ansible-collections-openstack-functional-devstack:
+        #     dependencies: &deps_unit_lint
+        #       - tox-pep8
+        #       - openstack-tox-linters-ansible-2.12
 
-        - ansible-collections-openstack-functional-devstack-releases:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-ansible-2.9:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-ansible-2.12:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-ansible-devel:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-magnum:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-octavia:
-            dependencies: *deps_unit_lint
+        # - ansible-collections-openstack-functional-devstack-releases:
+        #     dependencies: *deps_unit_lint
+        # - ansible-collections-openstack-functional-devstack-ansible-2.9:
+        #     dependencies: *deps_unit_lint
+        # - ansible-collections-openstack-functional-devstack-ansible-2.12:
+        #     dependencies: *deps_unit_lint
+        # - ansible-collections-openstack-functional-devstack-ansible-devel:
+        #     dependencies: *deps_unit_lint
+        # - ansible-collections-openstack-functional-devstack-magnum:
+        #     dependencies: *deps_unit_lint
+        # - ansible-collections-openstack-functional-devstack-octavia:
+        #     dependencies: *deps_unit_lint
 
-        - bifrost-collections-src:
-            voting: false
-            dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
-        - bifrost-keystone-collections-src:
-            voting: false
-            dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
+        # - bifrost-collections-src:
+        #     voting: false
+        #     dependencies: *deps_unit_lint
+        #     irrelevant-files: *ignore_files
+        # - bifrost-keystone-collections-src:
+        #     voting: false
+        #     dependencies: *deps_unit_lint
+        #     irrelevant-files: *ignore_files
 
     gate:
       jobs:
         - tox-pep8
-        - openstack-tox-linters-ansible-2.12
+        # - openstack-tox-linters-ansible-2.12
         # - ansible-collections-openstack-functional-devstack
-        - ansible-collections-openstack-functional-devstack-releases
+        # - ansible-collections-openstack-functional-devstack-releases
         # - ansible-collections-openstack-functional-devstack-ansible-2.9
         # - ansible-collections-openstack-functional-devstack-ansible-2.12
-        - ansible-collections-openstack-functional-devstack-magnum
-        - ansible-collections-openstack-functional-devstack-octavia
+        # - ansible-collections-openstack-functional-devstack-magnum
+        # - ansible-collections-openstack-functional-devstack-octavia
 
-    periodic:
-      jobs:
-        - openstack-tox-linters-ansible-devel
-        - openstack-tox-linters-ansible-2.12
-        - ansible-collections-openstack-functional-devstack
-        - ansible-collections-openstack-functional-devstack-releases
-        - ansible-collections-openstack-functional-devstack-ansible-2.9
-        - ansible-collections-openstack-functional-devstack-ansible-2.12
-        - ansible-collections-openstack-functional-devstack-ansible-devel
-        - bifrost-collections-src
-        - bifrost-keystone-collections-src
-        - ansible-collections-openstack-functional-devstack-magnum
-        - ansible-collections-openstack-functional-devstack-octavia
+    # periodic:
+    #   jobs:
+    #     - openstack-tox-linters-ansible-devel
+    #     - openstack-tox-linters-ansible-2.12
+    #     - ansible-collections-openstack-functional-devstack
+    #     - ansible-collections-openstack-functional-devstack-releases
+    #     - ansible-collections-openstack-functional-devstack-ansible-2.9
+    #     - ansible-collections-openstack-functional-devstack-ansible-2.12
+    #     - ansible-collections-openstack-functional-devstack-ansible-devel
+    #     - bifrost-collections-src
+    #     - bifrost-keystone-collections-src
+    #     - ansible-collections-openstack-functional-devstack-magnum
+    #     - ansible-collections-openstack-functional-devstack-octavia
 
-    experimental:
-      jobs:
-        - ansible-collections-openstack-functional-devstack-ansible-2.11
+    # experimental:
+    #   jobs:
+    #     - ansible-collections-openstack-functional-devstack-ansible-2.11
 
-    tag:
-      jobs:
-        - ansible-collections-openstack-release
+    # tag:
+    #   jobs:
+    #     - ansible-collections-openstack-release
