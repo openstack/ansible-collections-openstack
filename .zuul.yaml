@@ -480,49 +480,14 @@
       jobs:
         - tox-pep8
         - openstack-tox-linters-ansible-devel
-        - openstack-tox-linters-ansible-2.12
         - ansible-collections-openstack-functional-devstack-releases:
-            dependencies: &deps_unit_lint
+            dependencies:
               - tox-pep8
-              - openstack-tox-linters-ansible-2.12
-        - ansible-collections-openstack-functional-devstack-ansible-2.9:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-ansible-2.12:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-ansible-devel:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-xena-ansible-2.12:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-train-ansible-2.11:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-magnum:
-            dependencies: *deps_unit_lint
-        - ansible-collections-openstack-functional-devstack-octavia:
-            dependencies: *deps_unit_lint
-
-        - bifrost-collections-src:
-            voting: false
-            dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
-        - bifrost-keystone-collections-src:
-            voting: false
-            dependencies: *deps_unit_lint
-            irrelevant-files: *ignore_files
 
     gate:
       jobs:
         - tox-pep8
-        - openstack-tox-linters-ansible-2.12
         - ansible-collections-openstack-functional-devstack-releases
-        # - ansible-collections-openstack-functional-devstack-ansible-2.9
-        # - ansible-collections-openstack-functional-devstack-ansible-2.12
-        - ansible-collections-openstack-functional-devstack-wallaby-ansible-2.12
-        - ansible-collections-openstack-functional-devstack-xena-ansible-2.12
-        - ansible-collections-openstack-functional-devstack-train-ansible-2.11
-        - ansible-collections-openstack-functional-devstack-magnum
-        - ansible-collections-openstack-functional-devstack-octavia
 
     periodic:
       jobs:

@@ -42,10 +42,12 @@
     register: userinfo
   - name: Assert only one result exists
     assert:
-      that: "{{ userinfo.openstack_users | length }} == 1"
+      that:
+        - userinfo.openstack_users | length == 1
   - name: Assert userinfo has fields
     assert:
-      that: item in userinfo.openstack_users[0]
+      that:
+        - item in userinfo.openstack_users[0]
     loop: "{{ os_expected_user_info_fields }}"
 
 - block:
@@ -55,7 +57,8 @@
     register: userinfo
   - name: Assert results were returned
     assert:
-      that: "{{ userinfo.openstack_users | length }} > 0"
+      that:
+        - userinfo.openstack_users | length > 0
 
 - name: Post-test cleanup
   block:

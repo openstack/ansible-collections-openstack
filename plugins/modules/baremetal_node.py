@@ -123,6 +123,7 @@ options:
       description:
         - Definition of the physical characteristics of this server, used for scheduling purposes
       type: dict
+      default: {}
       suboptions:
         cpu_arch:
           description:

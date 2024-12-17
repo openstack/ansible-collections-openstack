@@ -54,10 +54,12 @@ options:
      description:
         - The minimum disk space (in GB) required to boot this image
      type: int
+     default: 0
    min_ram:
      description:
         - The minimum ram (in MB) required to boot this image
      type: int
+     default: 0
    is_public:
      description:
         - Whether the image can be accessed publicly. Note that publicizing an image requires admin role by default.

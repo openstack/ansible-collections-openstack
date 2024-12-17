@@ -41,6 +41,7 @@ options:
       description:
         - Dictionary of parameters for the stack creation
       type: dict
+      default: {}
     rollback:
       description:
         - Rollback stack creation

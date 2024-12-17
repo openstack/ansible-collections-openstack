@@ -51,6 +51,7 @@ options:
             - Per driver volume storage quotas.  Keys should be
               prefixed with C(gigabytes_) values should be ints.
         type: dict
+        default: {}
     injected_file_size:
         description: Maximum file size in bytes.
         type: int
@@ -116,6 +117,7 @@ options:
             - Per-driver volume snapshot quotas.  Keys should be
               prefixed with C(snapshots_) values should be ints.
         type: dict
+        default: {}
     subnet:
         description: Number of subnets to allow.
         type: int
@@ -130,6 +132,7 @@ options:
             - Per-driver volume count quotas.  Keys should be
               prefixed with C(volumes_) values should be ints.
         type: dict
+        default: {}
     project:
         description: Unused, kept for compatability
         type: int

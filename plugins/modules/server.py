@@ -82,6 +82,7 @@ options:
           Only one of network or nics should be supplied.'
      type: list
      elements: raw
+     default: []
      suboptions:
        tag:
          description:
