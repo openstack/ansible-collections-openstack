@@ -1,7 +1,0 @@
----
-
-minor_changes:
-  - |
-    openstack.cloud.image - Added new `inactive` option for the image  `state`
-    It will deactivate the image. Setting state `present` can re-activate it
-    again for deactivated previously images.

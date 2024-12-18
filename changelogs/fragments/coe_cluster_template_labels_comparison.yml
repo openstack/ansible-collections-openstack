@@ -1,7 +1,0 @@
----
-
-bugfixes:
-  - |
-    coe_cluster_template - now labels are converted to strings by module that
-    fixes module idempotence in case label values defined by users are
-    integers or booleans.

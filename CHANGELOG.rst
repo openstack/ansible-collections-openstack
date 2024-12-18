@@ -5,6 +5,19 @@ Ansible OpenStack Collection Release Notes
 .. contents:: Topics
 
 
+v2.3.1
+======
+
+Release Summary
+---------------
+
+Client TLS certificate support
+
+Minor Changes
+-------------
+
+- Add ability to pass client tls certificate
+
 v2.3.0
 ======
 
