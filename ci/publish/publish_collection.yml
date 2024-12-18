@@ -3,7 +3,8 @@
   vars:
     collection_path: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
     build_collection_path: /tmp/collection_built/
-    ansible_galaxy_path: "~/.local/bin/ansible-galaxy"
+    ansible_virtualenv_path: /tmp/ansible_venv
+    ansible_galaxy_path: "{{ ansible_virtualenv_path }}/bin/ansible-galaxy"
 
   tasks:
 
@@ -11,9 +12,15 @@
       include_role:
         name: ensure-pip
 
-    - name: Install ansible
+    - name: Install Ansible in virtualenv
       pip:
-        name: ansible-core<2.12
+        name: ansible-core<2.19
+        virtualenv: "{{ ansible_virtualenv_path }}"
+        virtualenv_command: "{{ ensure_pip_virtualenv_command }}"
+
+    - name: Detect ansible version
+      command: "{{ ansible_virtualenv_path }}/bin/ansible --version"
+      register: ansible_version
 
     - name: Discover tag version
       set_fact:

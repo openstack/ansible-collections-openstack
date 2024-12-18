@@ -256,7 +256,7 @@
 
 - job:
     name: ansible-collections-openstack-release
-    parent: base
+    parent: openstack-tox-linters-ansible
     run: ci/publish/publish_collection.yml
     secrets:
       - ansible_galaxy_info
