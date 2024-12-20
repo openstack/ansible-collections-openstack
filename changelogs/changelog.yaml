@@ -578,3 +578,11 @@ releases:
       - Add ability to pass client tls certificate
       release_summary: Client TLS certificate support
     release_date: '2024-12-18'
+  2.3.2:
+    changes:
+      bugfixes:
+      - Fix openstack.cloud.port module failure in check mode
+      minor_changes:
+      - Drop compat implementations for tests
+      release_summary: Bugfixes and minor changes
+    release_date: '2024-12-20'

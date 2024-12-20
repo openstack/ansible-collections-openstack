@@ -5,6 +5,24 @@ Ansible OpenStack Collection Release Notes
 .. contents:: Topics
 
 
+v2.3.2
+======
+
+Release Summary
+---------------
+
+Bugfixes and minor changes
+
+Minor Changes
+-------------
+
+- Drop compat implementations for tests
+
+Bugfixes
+--------
+
+- Fix openstack.cloud.port module failure in check mode
+
 v2.3.1
 ======
 
