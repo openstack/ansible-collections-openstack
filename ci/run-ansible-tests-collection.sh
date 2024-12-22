@@ -75,10 +75,10 @@ ansible-galaxy collection install --requirements-file ci/requirements.yml
 if [ -z "$PIP_INSTALL" ]; then
     tox -ebuild
     ansible-galaxy collection install "$(find build_artifact/ -maxdepth 1 -name 'openstack-cloud-*')" --force
-    TEST_COLLECTIONS_PATHS=${HOME}/.ansible/collections:$ANSIBLE_COLLECTIONS_PATHS
+    TEST_COLLECTIONS_PATHS=${HOME}/.ansible/collections:$ANSIBLE_COLLECTIONS_PATH
 else
     pip freeze | grep ansible-collections-openstack
-    TEST_COLLECTIONS_PATHS=$VIRTUAL_ENV/share/ansible/collections:$ANSIBLE_COLLECTIONS_PATHS
+    TEST_COLLECTIONS_PATHS=$VIRTUAL_ENV/share/ansible/collections:$ANSIBLE_COLLECTIONS_PATH
 fi
 
 # We need to source the current tox environment so that Ansible will
@@ -129,7 +129,7 @@ cd ci/
 # Run tests
 set -o pipefail
 # shellcheck disable=SC2086
-ANSIBLE_COLLECTIONS_PATHS=$TEST_COLLECTIONS_PATHS ansible-playbook \
+ANSIBLE_COLLECTIONS_PATH=$TEST_COLLECTIONS_PATHS ansible-playbook \
     -vvv ./run-collection.yml \
     -e "sdk_version=${SDK_VER} cloud=${CLOUD} cloud_alt=${CLOUD_ALT} ${ANSIBLE_VARS}" \
     ${tag_opt} 2>&1 | sudo tee /opt/stack/logs/test_output.log
