@@ -303,6 +303,25 @@
             that:
               - inventory.all.children.RegionOne.hosts.keys() | sort == ['ansible_server1', 'ansible_server2'] | sort
 
+        - name: List servers with inventory plugin with IPv4 only
+          ansible.builtin.command:
+            cmd: ansible-inventory --list --yaml --extra-vars only_ipv4=true --inventory-file openstack.yaml
+            chdir: "{{ tmp_dir.path }}"
+          environment:
+            ANSIBLE_INVENTORY_CACHE: "True"
+            ANSIBLE_INVENTORY_CACHE_PLUGIN: "jsonfile"
+            ANSIBLE_CACHE_PLUGIN_CONNECTION: "{{ tmp_dir.path }}/.cache/"
+          register: inventory
+
+        - name: Read YAML output from inventory plugin again
+          ansible.builtin.set_fact:
+            inventory: "{{ inventory.stdout | from_yaml }}"
+
+        - name: Check YAML output from inventory plugin again
+          assert:
+            that:
+              - inventory.all.children.RegionOne.hosts.keys() | sort == ['ansible_server1', 'ansible_server2'] | sort
+
     - name: Delete server 2
       openstack.cloud.resource:
         service: compute
