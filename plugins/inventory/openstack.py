@@ -96,6 +96,12 @@ options:
         only.
     type: bool
     default: false
+  only_ipv4:
+    description:
+      - Use only ipv4 addresses for ansible_host and ansible_ssh_host.
+      - Using I(only_ipv4) helps when running Ansible in a ipv4 only setup.
+    type: bool
+    default: false
   show_all:
     description:
       - Whether all servers should be listed or not.
@@ -384,10 +390,17 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                  if address['OS-EXT-IPS:type'] == 'floating'),
                 None)
 
-            fixed_ip = next(
-                (address['addr'] for address in addresses
-                 if address['OS-EXT-IPS:type'] == 'fixed'),
-                None)
+            if self.get_option('only_ipv4'):
+                fixed_ip = next(
+                    (address['addr'] for address in addresses
+                     if (address['OS-EXT-IPS:type'] == 'fixed' and address['version'] == 4)),
+                    None)
+
+            else:
+                fixed_ip = next(
+                    (address['addr'] for address in addresses
+                     if address['OS-EXT-IPS:type'] == 'fixed'),
+                    None)
 
             ip = floating_ip if floating_ip is not None and not self.get_option('private') else fixed_ip
 
