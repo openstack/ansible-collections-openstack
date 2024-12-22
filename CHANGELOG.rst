@@ -5,6 +5,25 @@ Ansible OpenStack Collection Release Notes
 .. contents:: Topics
 
 
+v2.3.3
+======
+
+Release Summary
+---------------
+
+Bugfixes and minor changes
+
+Minor Changes
+-------------
+
+- Add test to only_ipv4 in inventory
+- add an option to use only IPv4 only for ansible_host and ansible_ssh_host
+
+Bugfixes
+--------
+
+- CI - Fix deprecated ANSIBLE_COLLECTIONS_PATHS variable
+
 v2.3.2
 ======
 

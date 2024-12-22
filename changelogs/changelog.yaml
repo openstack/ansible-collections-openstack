@@ -586,3 +586,12 @@ releases:
       - Drop compat implementations for tests
       release_summary: Bugfixes and minor changes
     release_date: '2024-12-20'
+  2.3.3:
+    changes:
+      bugfixes:
+      - CI - Fix deprecated ANSIBLE_COLLECTIONS_PATHS variable
+      minor_changes:
+      - Add test to only_ipv4 in inventory
+      - add an option to use only IPv4 only for ansible_host and ansible_ssh_host
+      release_summary: Bugfixes and minor changes
+    release_date: '2024-12-22'
