@@ -38,6 +38,9 @@ options:
     groups:
         description: Number of groups that are allowed for the project
         type: int
+    health_monitors:
+        description: Maximum number of health monitors that can be created.
+        type: int
     injected_file_content_bytes:
         description:
           - Maximum file size in bytes.
@@ -61,12 +64,21 @@ options:
     key_pairs:
         description: Number of key pairs to allow.
         type: int
+    l7_policies:
+        description: The maximum amount of L7 policies you can create.
+        type: int
+    listeners:
+        description: The maximum number of listeners you can create.
+        type: int
     load_balancers:
         description: The maximum amount of load balancers you can create
         type: int
         aliases: [loadbalancer]
     metadata_items:
        description: Number of metadata items allowed per instance.
+       type: int
+    members:
+       description: Number of members allowed for loadbalancer.
        type: int
     name:
         description: Name of the OpenStack Project to manage.
@@ -227,6 +239,33 @@ quotas:
                 server_groups:
                     description: Number of server groups to allow.
                     type: int
+        load_balancer:
+            description: Load_balancer service quotas
+            type: dict
+            contains:
+                health_monitors:
+                    description: Maximum number of health monitors that can be
+                      created.
+                    type: int
+                l7_policies:
+                    description: The maximum amount of L7 policies you can
+                       create.
+                    type: int
+                listeners:
+                    description: The maximum number of listeners you can create
+                    type: int
+                load_balancers:
+                    description: The maximum amount of load balancers one can
+                                 create
+                    type: int
+                members:
+                    description: The maximum amount of members for
+                      loadbalancer.
+                    type: int
+                pools:
+                    description: The maximum amount of pools one can create.
+                    type: int
+
         network:
             description: Network service quotas
             type: dict
@@ -234,15 +273,8 @@ quotas:
                 floating_ips:
                     description: Number of floating IP's to allow.
                     type: int
-                load_balancers:
-                    description: The maximum amount of load balancers one can
-                                 create
-                    type: int
                 networks:
                     description: Number of networks to allow.
-                    type: int
-                pools:
-                    description: The maximum amount of pools one can create.
                     type: int
                 ports:
                     description: Number of Network ports to allow, this needs
@@ -312,9 +344,7 @@ quotas:
                 server_groups: 10,
             network:
                 floating_ips: 50,
-                load_balancers: 10,
                 networks: 10,
-                pools: 10,
                 ports: 160,
                 rbac_policies: 10,
                 routers: 10,
@@ -330,6 +360,13 @@ quotas:
                 per_volume_gigabytes: -1,
                 snapshots: 10,
                 volumes: 10,
+            load_balancer:
+                health_monitors: 10,
+                load_balancers: 10,
+                l7_policies: 10,
+                listeners: 10,
+                pools: 5,
+                members: 5,
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -337,9 +374,8 @@ from collections import defaultdict
 
 
 class QuotaModule(OpenStackModule):
-    # TODO: Add missing network quota options 'check_limit', 'health_monitors',
-    #       'l7_policies', 'listeners' to argument_spec, DOCUMENTATION and
-    #       RETURN docstrings
+    # TODO: Add missing network quota options 'check_limit'
+    #       to argument_spec, DOCUMENTATION and RETURN docstrings
     argument_spec = dict(
         backup_gigabytes=dict(type='int'),
         backups=dict(type='int'),
@@ -350,6 +386,7 @@ class QuotaModule(OpenStackModule):
                                  'network_floating_ips']),
         gigabytes=dict(type='int'),
         groups=dict(type='int'),
+        health_monitors=dict(type='int'),
         injected_file_content_bytes=dict(type='int',
                                          aliases=['injected_file_size']),
         injected_file_path_bytes=dict(type='int',
@@ -357,8 +394,11 @@ class QuotaModule(OpenStackModule):
         injected_files=dict(type='int'),
         instances=dict(type='int'),
         key_pairs=dict(type='int', no_log=False),
+        l7_policies=dict(type='int'),
+        listeners=dict(type='int'),
         load_balancers=dict(type='int', aliases=['loadbalancer']),
         metadata_items=dict(type='int'),
+        members=dict(type='int'),
         name=dict(required=True),
         networks=dict(type='int', aliases=['network']),
         per_volume_gigabytes=dict(type='int'),
@@ -382,9 +422,9 @@ class QuotaModule(OpenStackModule):
         supports_check_mode=True
     )
 
-    # Some attributes in quota resources don't exist in the api anymore, mostly
-    # compute quotas that were simply network proxies. This map allows marking
-    # them to be skipped.
+    # Some attributes in quota resources don't exist in the api anymore, e.g.
+    # compute quotas that were simply network proxies, and pre-Octavia network
+    # quotas. This map allows marking them to be skipped.
     exclusion_map = {
         'compute': {
             # 'fixed_ips',  # Available until Nova API version 2.35
@@ -397,7 +437,16 @@ class QuotaModule(OpenStackModule):
             # 'injected_file_path_bytes',     # Nova API
             # 'injected_files',               # version 2.56
         },
-        'network': {'name'},
+        'load_balancer': {'name'},
+        'network': {
+            'name',
+            'l7_policies',
+            'load_balancers',
+            'loadbalancer',
+            'health_monitors',
+            'pools',
+            'listeners',
+        },
         'volume': {'name'},
     }
 
@@ -409,12 +458,18 @@ class QuotaModule(OpenStackModule):
             self.warn('Block storage service aka volume service is not'
                       ' supported by your cloud. Ignoring volume quotas.')
 
+        if self.conn.has_service('load-balancer'):
+            quota['load_balancer'] = self.conn.load_balancer.get_quota(
+                project.id)
+        else:
+            self.warn('Loadbalancer service is not supported by your'
+                      ' cloud. Ignoring loadbalancer quotas.')
+
         if self.conn.has_service('network'):
             quota['network'] = self.conn.network.get_quota(project.id)
         else:
             self.warn('Network service is not supported by your cloud.'
                       ' Ignoring network quotas.')
-
         quota['compute'] = self.conn.compute.get_quota_set(project.id)
 
         return quota
@@ -452,7 +507,6 @@ class QuotaModule(OpenStackModule):
 
         # Get current quota values
         quotas = self._get_quotas(project)
-
         changed = False
 
         if self.ansible.check_mode:
@@ -468,6 +522,8 @@ class QuotaModule(OpenStackModule):
                 self.conn.network.delete_quota(project.id)
             if 'volume' in quotas:
                 self.conn.block_storage.revert_quota_set(project)
+            if 'load_balancer' in quotas:
+                self.conn.load_balancer.delete_quota(project.id)
 
             # Necessary since we can't tell what the default quotas are
             quotas = self._get_quotas(project)
@@ -485,6 +541,10 @@ class QuotaModule(OpenStackModule):
                 if 'network' in changes:
                     quotas['network'] = self.conn.network.update_quota(
                         project.id, **changes['network'])
+                if 'load_balancer' in changes:
+                    quotas['load_balancer'] = \
+                        self.conn.load_balancer.update_quota(
+                        project.id, **changes['load_balancer'])
                 changed = True
 
         quotas = {k: v.to_dict(computed=False) for k, v in quotas.items()}
