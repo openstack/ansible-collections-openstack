@@ -241,6 +241,40 @@
     name: "{{ server_name }}"
     wait: true
 
+- name: Create server with tags
+  openstack.cloud.server:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ server_name }}"
+    image: "{{ image_name }}"
+    flavor: "{{ flavor_name }}"
+    network: "{{ server_network }}"
+    auto_ip: false
+    tags:
+      - first
+      - second
+    wait: true
+  register: server
+
+- debug: var=server
+
+- name: Get info about tags
+  openstack.cloud.server_info:
+    cloud: "{{ cloud }}"
+    server: "{{ server_name }}"
+  register: info
+
+- name: Check filter results
+  assert:
+    that: info.servers[0].tags == ["first", "second"]
+
+- name: Delete server with tags
+  openstack.cloud.server:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ server_name }}"
+    wait: true
+
 - name: Create server from volume
   openstack.cloud.server:
     cloud: "{{ cloud }}"

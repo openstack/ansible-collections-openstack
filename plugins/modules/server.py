@@ -205,6 +205,11 @@ options:
       choices: [present, absent]
       default: present
       type: str
+    tags:
+      description:
+        -  A list of tags should be added to instance
+      type: list
+      elements: str
     terminate_volume:
       description:
         - If C(true), delete volume when deleting the instance and if it has
@@ -756,6 +761,7 @@ server:
             description:  A list of associated tags.
             returned: success
             type: list
+            elements: str
         task_state:
             description: The task state of this server.
             returned: success
@@ -825,6 +831,7 @@ class ServerModule(OpenStackModule):
         scheduler_hints=dict(type='dict'),
         security_groups=dict(default=[], type='list', elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
+        tags=dict(type='list', elements='str'),
         terminate_volume=dict(default=False, type='bool'),
         userdata=dict(),
         volume_size=dict(type='int'),
@@ -1072,7 +1079,7 @@ class ServerModule(OpenStackModule):
         for k in ['auto_ip', 'availability_zone', 'boot_from_volume',
                   'boot_volume', 'config_drive', 'description', 'key_name',
                   'name', 'network', 'reuse_ips', 'scheduler_hints',
-                  'security_groups', 'terminate_volume', 'timeout',
+                  'security_groups', 'tags', 'terminate_volume', 'timeout',
                   'userdata', 'volume_size', 'volumes', 'wait']:
             if self.params[k] is not None:
                 args[k] = self.params[k]
