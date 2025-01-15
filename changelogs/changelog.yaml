@@ -595,3 +595,16 @@ releases:
       - add an option to use only IPv4 only for ansible_host and ansible_ssh_host
       release_summary: Bugfixes and minor changes
     release_date: '2024-12-22'
+  2.4.0:
+    changes:
+      major_changes:
+      - Add trait module
+      minor_changes:
+      - Add loadbalancer quota options
+      - Allow create instance with tags
+      release_summary: New trait module and minor changes
+    modules:
+    - description: Add or Delete a trait from OpenStack
+      name: trait
+      namespace: ''
+    release_date: '2025-01-15'

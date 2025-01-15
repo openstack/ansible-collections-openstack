@@ -5,6 +5,30 @@ Ansible OpenStack Collection Release Notes
 .. contents:: Topics
 
 
+v2.4.0
+======
+
+Release Summary
+---------------
+
+New trait module and minor changes
+
+Major Changes
+-------------
+
+- Add trait module
+
+Minor Changes
+-------------
+
+- Add loadbalancer quota options
+- Allow create instance with tags
+
+New Modules
+-----------
+
+- openstack.cloud.trait - Add or Delete a trait from OpenStack
+
 v2.3.3
 ======
 
