@@ -210,6 +210,7 @@ options:
         -  A list of tags should be added to instance
       type: list
       elements: str
+      default: []
     terminate_volume:
       description:
         - If C(true), delete volume when deleting the instance and if it has
@@ -831,7 +832,7 @@ class ServerModule(OpenStackModule):
         scheduler_hints=dict(type='dict'),
         security_groups=dict(default=[], type='list', elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
-        tags=dict(type='list', elements='str'),
+        tags=dict(type='list', default=[], elements='str'),
         terminate_volume=dict(default=False, type='bool'),
         userdata=dict(),
         volume_size=dict(type='int'),
@@ -897,7 +898,8 @@ class ServerModule(OpenStackModule):
         return {
             **self._build_update_ips(server),
             **self._build_update_security_groups(server),
-            **self._build_update_server(server)}
+            **self._build_update_server(server),
+            **self._build_update_tags(server)}
 
     def _build_update_ips(self, server):
         auto_ip = self.params['auto_ip']
@@ -1037,6 +1039,13 @@ class ServerModule(OpenStackModule):
 
         return update
 
+    def _build_update_tags(self, server):
+        required_tags = self.params.get('tags')
+        if set(server["tags"]) == set(required_tags):
+            return {}
+        update = dict(tags=required_tags)
+        return update
+
     def _create(self):
         for k in ['auto_ip', 'floating_ips', 'floating_ip_pools']:
             if self.params[k] \
@@ -1111,6 +1120,7 @@ class ServerModule(OpenStackModule):
     def _update(self, server, update):
         server = self._update_ips(server, update)
         server = self._update_security_groups(server, update)
+        server = self._update_tags(server, update)
         server = self._update_server(server, update)
         # Refresh server attributes after security groups etc. have changed
         #
@@ -1181,6 +1191,16 @@ class ServerModule(OpenStackModule):
         # Whenever server attributes such as metadata have changed,
         # the server object has to be refreshed. This will
         # be postponed until all updates have been applied.
+        return server
+
+    def _update_tags(self, server, update):
+        tags = update.get('tags')
+
+        self.conn.compute.put(
+            "/servers/{server_id}/tags".format(server_id=server['id']),
+            json={"tags": tags},
+            microversion="2.26"
+        )
         return server
 
     def _parse_metadata(self, metadata):

@@ -241,40 +241,6 @@
     name: "{{ server_name }}"
     wait: true
 
-- name: Create server with tags
-  openstack.cloud.server:
-    cloud: "{{ cloud }}"
-    state: present
-    name: "{{ server_name }}"
-    image: "{{ image_name }}"
-    flavor: "{{ flavor_name }}"
-    network: "{{ server_network }}"
-    auto_ip: false
-    tags:
-      - first
-      - second
-    wait: true
-  register: server
-
-- debug: var=server
-
-- name: Get info about tags
-  openstack.cloud.server_info:
-    cloud: "{{ cloud }}"
-    server: "{{ server_name }}"
-  register: info
-
-- name: Check filter results
-  assert:
-    that: info.servers[0].tags == ["first", "second"]
-
-- name: Delete server with tags
-  openstack.cloud.server:
-    cloud: "{{ cloud }}"
-    state: absent
-    name: "{{ server_name }}"
-    wait: true
-
 - name: Create server from volume
   openstack.cloud.server:
     cloud: "{{ cloud }}"
@@ -433,6 +399,9 @@
       - port-id: "{{ port.port.id }}"
     reuse_ips: false
     state: present
+    tags:
+      - first
+      - second
     wait: true
   register: server
 
@@ -447,6 +416,7 @@
         |selectattr('OS-EXT-IPS:type', 'equalto', 'floating')
         |map(attribute='addr')
         |list|length == 0
+      - server.server.tags == ["first", "second"]
 
 - name: Find all floating ips for debugging
   openstack.cloud.floating_ip_info:
@@ -488,6 +458,8 @@
       - '{{ server_security_group }}'
       - '{{ server_alt_security_group }}'
     state: present
+    tags:
+      - yellow
     wait: true
   register: server_updated
 
@@ -509,6 +481,7 @@
       - server_updated.server.addresses[server_network]|length == 2
       - port.port.fixed_ips[0].ip_address in
         server_updated.server.addresses[server_network]|map(attribute='addr')
+      - server_updated.server.tags == ['yellow']
       # TODO: Verify networks once openstacksdk's issue #2010352 has been solved
       # Ref.: https://storyboard.openstack.org/#!/story/2010352
       #- server_updated.server.addresses.public|length > 0
@@ -543,6 +516,8 @@
       - '{{ server_security_group }}'
       - '{{ server_alt_security_group }}'
     state: present
+    tags:
+      - yellow
     wait: true
   register: server_updated_again
 
@@ -551,6 +526,7 @@
     that:
       - server.server.id == server_updated_again.server.id
       - server_updated_again is not changed
+      - server_updated_again.server.tags == ['yellow']
 
 # TODO: Drop failure test once openstacksdk's issue #2010352 has been solved
 # Ref.: https://storyboard.openstack.org/#!/story/2010352
