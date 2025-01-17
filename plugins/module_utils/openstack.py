@@ -374,6 +374,7 @@ class OpenStackModule:
                 verify=self.params['validate_certs'],
                 cacert=self.params['ca_cert'],
                 key=self.params['client_key'],
+                cert=self.params['client_cert'],
                 api_timeout=self.params['api_timeout'],
                 interface=self.params['interface'],
             )
