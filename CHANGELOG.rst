@@ -5,6 +5,24 @@ Ansible OpenStack Collection Release Notes
 .. contents:: Topics
 
 
+v2.4.1
+======
+
+Release Summary
+---------------
+
+Bugfixes and minor changes
+
+Minor Changes
+-------------
+
+- Update tags when changing server
+
+Bugfixes
+--------
+
+- Fix missed client_cert in OpenStackModule
+
 v2.4.0
 ======
 
