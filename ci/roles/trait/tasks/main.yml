@@ -1,23 +1,28 @@
 ---
-- openstack.cloud.trait:
+- name: Create trait
+  openstack.cloud.trait:
     cloud: "{{ cloud }}"
     state: present
     id: "{{ trait_name }}"
-  delegate_to: localhost
-  register: item
+  until: result is success
+  retries: 5
+  delay: 20
+  register: result
 
-- assert:
+- name: Assert trait
+  assert:
     that:
-      - "'name' in item.trait"
-      - "item.trait.id == trait_name"
+      - "'name' in result.trait"
+      - "result.trait.id == trait_name"
 
-- openstack.cloud.trait:
+- name: Remove trait
+  openstack.cloud.trait:
     cloud: "{{ cloud }}"
     state: absent
     id: "{{ trait_name }}"
-  delegate_to: localhost
-  register: item
+  register: result1
 
-- assert:
+- name: Assert trait removed
+  assert:
     that:
-      - "'trait' not in item"
+      - "'trait' not in result1"
