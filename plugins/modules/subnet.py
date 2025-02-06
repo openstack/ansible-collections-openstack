@@ -382,6 +382,8 @@ class SubnetModule(OpenStackModule):
             params['allocation_pools'] = self.params['allocation_pools']
         params = self._add_extra_attrs(params)
         params = {k: v for k, v in params.items() if v is not None}
+        if self.params['disable_gateway_ip']:
+            params['gateway_ip'] = None
         return params
 
     def _build_updates(self, subnet, params):

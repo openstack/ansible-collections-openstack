@@ -142,6 +142,41 @@
   assert:
     that: subnet is not changed
 
+- name: Create subnet {{ subnet_name }} on network {{ network_name }} without gateway IP
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    network_name: "{{ network_name }}"
+    name: "{{ subnet_name }}"
+    state: present
+    cidr: 192.168.0.0/24
+    disable_gateway_ip: true
+  register: subnet
+
+- name: Assert changed
+  assert:
+    that: subnet is changed
+
+- name: Create subnet {{ subnet_name }} on network {{ network_name }} without gateway IP
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    network_name: "{{ network_name }}"
+    name: "{{ subnet_name }}"
+    state: present
+    cidr: 192.168.0.0/24
+    disable_gateway_ip: true
+  register: subnet
+
+- name: Assert not changed
+  assert:
+    that: subnet is not changed
+
+- name: Delete subnet {{ subnet_name }} again
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    name: "{{ subnet_name }}"
+    state: absent
+  register: subnet
+
 - name: Delete network {{ network_name }}
   openstack.cloud.network:
     cloud: "{{ cloud }}"
