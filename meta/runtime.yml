@@ -51,6 +51,7 @@ action_groups:
     - lb_pool
     - loadbalancer
     - network
+    - network_segment
     - networks_info
     - neutron_rbac_policies_info
     - neutron_rbac_policy

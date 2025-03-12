@@ -17,10 +17,20 @@
     name: "{{ network_name }}"
     state: present
 
+- name: Create network segment {{ segment_name }}
+  openstack.cloud.network_segment:
+    cloud: "{{ cloud }}"
+    name: "{{ segment_name }}"
+    network: "{{ network_name }}"
+    network_type: "vxlan"
+    segmentation_id: 1000
+    state: present
+
 - name: Create subnet {{ subnet_name }} on network {{ network_name }}
   openstack.cloud.subnet:
     cloud: "{{ cloud }}"
     network_name: "{{ network_name }}"
+    network_segment: "{{ segment_name }}"
     name: "{{ subnet_name }}"
     state: present
     enable_dhcp: "{{ enable_subnet_dhcp }}"
@@ -176,6 +186,13 @@
     name: "{{ subnet_name }}"
     state: absent
   register: subnet
+
+- name: Delete network segment {{ segment_name }}
+  openstack.cloud.network_segment:
+    cloud: "{{ cloud }}"
+    name: "{{ segment_name }}"
+    network: "{{ network_name }}"
+    state: absent
 
 - name: Delete network {{ network_name }}
   openstack.cloud.network:
