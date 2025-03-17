@@ -558,6 +558,46 @@
   assert:
     that: router is not changed
 
+- name: Create router without explicit IP address
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     enable_snat: false
+     interfaces:
+         - shade_subnet1
+     network: "{{ external_network_name }}"
+     external_fixed_ips:
+        - subnet_id: shade_subnet5
+  register: router
+
+- name: Assert idempotent module
+  assert:
+    that: router is changed
+
+- name: Update router without explicit IP address
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: present
+     name: "{{ router_name }}"
+     enable_snat: false
+     interfaces:
+         - shade_subnet1
+     network: "{{ external_network_name }}"
+     external_fixed_ips:
+        - subnet_id: shade_subnet5
+  register: router
+
+- name: Assert idempotent module
+  assert:
+    that: router is not changed
+
+- name: Delete router
+  openstack.cloud.router:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ router_name }}"
+
 - name: Create router with simple interface
   openstack.cloud.router:
      cloud: "{{ cloud }}"
