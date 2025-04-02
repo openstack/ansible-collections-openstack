@@ -11,7 +11,7 @@ dependencies: {}
 repository: https://opendev.org/openstack/ansible-collections-openstack
 documentation: https://docs.ansible.com/ansible/latest/collections/openstack/cloud/index.html
 homepage: https://opendev.org/openstack/ansible-collections-openstack
-issues: https://storyboard.openstack.org/#!/project/openstack/ansible-collections-openstack
+issues: https://bugs.launchpad.net/ansible-collections-openstack
 build_ignore:
   - "*.tar.gz"
   - build_artifact

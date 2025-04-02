@@ -11,7 +11,7 @@ For hacking on the Ansible OpenStack collection it helps to [prepare a DevStack 
 
 ## Hosting
 
-* [Bug tracker][storyboard]
+* [Bug tracker][bugtracker]
 * [Mailing list `openstack-discuss@lists.openstack.org`][openstack-discuss].
   Prefix subjects with `[aoc]` or `[aco]` for faster responses.
 * [Code Hosting][opendev-a-c-o]
@@ -188,4 +188,4 @@ Read [Release Guide](releasing.md) on how to publish new releases.
 [openstacksdk-cloud-layer-stays]: https://meetings.opendev.org/irclogs/%23openstack-sdks/%23openstack-sdks.2022-04-27.log.html
 [openstacksdk-to-dict]: https://opendev.org/openstack/openstacksdk/src/branch/master/openstack/resource.py
 [openstacksdk]: https://opendev.org/openstack/openstacksdk
-[storyboard]: https://storyboard.openstack.org/#!/project/openstack/ansible-collections-openstack
+[bugtracker]: https://bugs.launchpad.net/ansible-collections-openstack

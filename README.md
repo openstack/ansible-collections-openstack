@@ -211,7 +211,7 @@ Thank you for your interest in our Ansible OpenStack collection ☺️
 There are many ways in which you can participate in the project, for example:
 
 - [Report and verify bugs and help with solving issues](
-  https://storyboard.openstack.org/#!/project/openstack/ansible-collections-openstack).
+  https://bugs.launchpad.net/ansible-collections-openstack).
 - [Submit and review patches](
   https://review.opendev.org/#/q/project:openstack/ansible-collections-openstack).
 - Follow OpenStack's [How To Contribute](https://wiki.openstack.org/wiki/How_To_Contribute) guide.
