@@ -136,6 +136,9 @@ class ServerActionModule(OpenStackModule):
         # rebuild does not depend on state
         will_change = (
             (action == 'rebuild')
+            # `reboot_*` actions do not change state, servers remain `ACTIVE`
+            or (action == 'reboot_hard')
+            or (action == 'reboot_soft')
             or (action == 'lock' and not server['is_locked'])
             or (action == 'unlock' and server['is_locked'])
             or server.status.lower() not in [a.lower()
