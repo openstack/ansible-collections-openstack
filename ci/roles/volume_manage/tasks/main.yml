@@ -1,0 +1,65 @@
+---
+- name: Create volume
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: present
+     size: 1
+     name: "{{ test_volume }}"
+     description: Test volume
+  register: vol
+
+- assert:
+    that: item in vol.volume
+  loop: "{{ expected_fields }}"
+
+- name: Unmanage volume
+  openstack.cloud.volume_manage:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ vol.volume.id }}"
+
+- name: Unmanage volume again
+  openstack.cloud.volume_manage:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ vol.volume.id }}"
+  register: unmanage_idempotency
+
+- assert:
+    that:
+      - unmanage_idempotency is not changed
+
+- name: Manage volume
+  openstack.cloud.volume_manage:
+     cloud: "{{ cloud }}"
+     state: present
+     source_name: volume-{{ vol.volume.id }}
+     host: "{{ vol.volume.host }}"
+     name: "{{ managed_volume }}"
+  register: new_vol
+
+- assert:
+    that:
+      - new_vol.volume.name == "{{ managed_volume }}"
+
+- name: Manage volume again
+  openstack.cloud.volume_manage:
+     cloud: "{{ cloud }}"
+     state: present
+     source_name: volume-{{ vol.volume.id }}
+     host: "{{ vol.volume.host }}"
+     name: "{{ managed_volume }}"
+  register: vol_idempotency
+
+- assert:
+    that:
+      - vol_idempotency is not changed
+
+- pause:
+    seconds: 10
+
+- name: Delete volume
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: "{{ managed_volume }}"

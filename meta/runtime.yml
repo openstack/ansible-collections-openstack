@@ -85,6 +85,7 @@ action_groups:
     - subnets_info
     - trunk
     - volume
+    - volume_manage
     - volume_backup
     - volume_backup_info
     - volume_info
