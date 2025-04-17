@@ -239,7 +239,11 @@ class DnsRecordsetModule(OpenStackModule):
             elif self._needs_update(kwargs, recordset):
                 recordset = self.conn.dns.update_recordset(recordset, **kwargs)
                 changed = True
-            self.exit_json(changed=changed, recordset=recordset)
+            # NOTE(gtema): this is a workaround to temporarily bring the
+            # zone_id param back which may not me populated by SDK
+            rs = recordset.to_dict(computed=False)
+            rs["zone_id"] = zone.id
+            self.exit_json(changed=changed, recordset=rs)
         elif state == 'absent' and recordset is not None:
             self.conn.dns.delete_recordset(recordset)
             changed = True

@@ -14,6 +14,15 @@
     email: test@example.net
   register: dns_zone
 
+- name: Ensure recordset not present
+  openstack.cloud.recordset:
+    cloud: "{{ cloud }}"
+    zone: "{{ dns_zone.zone.name }}"
+    name: "{{ recordset_name }}"
+    recordset_type: "a"
+    records: "{{ records }}"
+    state: absent
+
 - name: Create a recordset
   openstack.cloud.recordset:
     cloud: "{{ cloud }}"
@@ -22,11 +31,13 @@
     recordset_type: "a"
     records: "{{ records }}"
   register: recordset
+  until: '"PENDING" not in recordset["recordset"].status'
+  retries: 10
+  delay: 5
 
 - name: Verify recordset info
   assert:
     that:
-      - recordset is changed
       - recordset["recordset"].name == recordset_name
       - recordset["recordset"].zone_name ==  dns_zone.zone.name
       - recordset["recordset"].records | list | sort == records | list | sort
