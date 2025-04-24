@@ -45,12 +45,6 @@
     state: absent
     user: admin
 
-- name: Delete project
-  openstack.cloud.project:
-     cloud: "{{ cloud }}"
-     state: absent
-     name: ansible_project
-
 - name: Create domain
   openstack.cloud.identity_domain:
      cloud: "{{ cloud }}"
@@ -78,6 +72,7 @@
      state: present
      name: ansible_user
      domain: default
+  register: specific_user
 
 - name: Create user in specific domain
   openstack.cloud.identity_user:
@@ -138,6 +133,45 @@
     that:
       - role_assignment is changed
 
+- name: Assign role to user in specific domain on default domain project
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud }}"
+    role: anotherrole
+    user: "{{ specific_user.user.id }}"
+    domain: default
+    project: ansible_project
+  register: role_assignment
+
+- name: Assert role assignment
+  assert:
+    that:
+      - role_assignment is changed
+
+- name: Revoke role to user in specific domain
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud }}"
+    role: anotherrole
+    user: "{{ specific_user.user.id }}"
+    domain: default
+    project: ansible_project
+    state: absent
+  register: role_assignment
+
+- name: Assert role assignment revoked
+  assert:
+    that:
+      - role_assignment is changed
+
+- name: Assign role to user in specific domain on default domain project
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud }}"
+    role: anotherrole
+    user: ansible_user
+    user_domain: "{{ specific_user.user.domain_id }}"
+    project: ansible_project
+    project_domain: default
+  register: role_assignment
+
 - name: Delete group in default domain
   openstack.cloud.identity_group:
      cloud: "{{ cloud }}"
@@ -171,3 +205,10 @@
      cloud: "{{ cloud }}"
      state: absent
      name: ansible_domain
+
+- name: Delete project
+  openstack.cloud.project:
+     cloud: "{{ cloud }}"
+     state: absent
+     name: ansible_project
+
