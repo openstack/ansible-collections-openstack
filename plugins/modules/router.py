@@ -372,6 +372,10 @@ class RouterModule(OpenStackModule):
             for p in external_fixed_ips:
                 if 'ip_address' in p:
                     req_fip_map[p['subnet_id']].add(p['ip_address'])
+                elif p['subnet_id'] in cur_fip_map:
+                    # handle idempotence of updating with no explicit ip
+                    req_fip_map[p['subnet_id']].update(
+                        cur_fip_map[p['subnet_id']])
 
             # Check if external ip addresses need to be added
             for fip in external_fixed_ips:
@@ -464,7 +468,7 @@ class RouterModule(OpenStackModule):
                 subnet = self.conn.network.find_subnet(
                     iface['subnet_id'], ignore_missing=False, **filters)
                 fip = dict(subnet_id=subnet.id)
-                if 'ip_address' in iface:
+                if iface.get('ip_address', None) is not None:
                     fip['ip_address'] = iface['ip_address']
                 external_fixed_ips.append(fip)
 
