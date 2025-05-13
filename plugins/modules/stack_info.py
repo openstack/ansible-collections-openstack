@@ -229,8 +229,10 @@ class StackInfoModule(OpenStackModule):
             if self.params[k] is not None:
                 kwargs[k] = self.params[k]
 
-        stacks = [stack.to_dict(computed=False)
-                  for stack in self.conn.orchestration.stacks(**kwargs)]
+        stacks = []
+        for stack in self.conn.orchestration.stacks(**kwargs):
+            stack_obj = self.conn.orchestration.get_stack(stack.id)
+            stacks.append(stack_obj.to_dict(computed=False))
 
         self.exit_json(changed=False, stacks=stacks)
 
