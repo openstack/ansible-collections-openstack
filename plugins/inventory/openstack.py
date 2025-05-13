@@ -279,7 +279,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
             clouds_yaml_path = self.get_option('clouds_yaml_path')
             config_files = openstack.config.loader.CONFIG_FILES
             if clouds_yaml_path:
-                config_files += clouds_yaml_path
+                config_files = clouds_yaml_path + config_files
 
             config = openstack.config.loader.OpenStackConfig(
                 config_files=config_files)
