@@ -553,7 +553,7 @@
   assert:
     that:
       - servers.servers.0.status == 'ACTIVE'
-      - server is not changed
+      - server is changed
 
 - name: Reboot server (HARD)
   openstack.cloud.server_action:
@@ -573,7 +573,7 @@
   assert:
     that:
       - servers.servers.0.status == 'ACTIVE'
-      - server is not changed
+      - server is changed
 
 - name: Delete server
   openstack.cloud.server:
