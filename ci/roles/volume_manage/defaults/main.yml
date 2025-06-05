@@ -1,0 +1,32 @@
+test_volume: ansible_test_volume
+managed_volume: managed_test_volume
+expected_fields:
+  - attachments
+  - availability_zone
+  - consistency_group_id
+  - created_at
+  - updated_at
+  - description
+  - extended_replication_status
+  - group_id
+  - host
+  - image_id
+  - is_bootable
+  - is_encrypted
+  - is_multiattach
+  - migration_id
+  - migration_status
+  - project_id
+  - replication_driver_data
+  - replication_status
+  - scheduler_hints
+  - size
+  - snapshot_id
+  - source_volume_id
+  - status
+  - user_id
+  - volume_image_metadata
+  - volume_type
+  - id
+  - name
+  - metadata
