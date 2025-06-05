@@ -102,6 +102,12 @@ options:
       - Using I(only_ipv4) helps when running Ansible in a ipv4 only setup.
     type: bool
     default: false
+  server_filters:
+    description:
+      - A dictionary of server filter value pairs.
+      - Available parameters can be seen under https://docs.openstack.org/api-ref/compute/#list-servers
+    type: dict
+    default: {}
   show_all:
     description:
       - Whether all servers should be listed or not.
@@ -309,6 +315,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
 
             expand_hostvars = self.get_option('expand_hostvars')
             all_projects = self.get_option('all_projects')
+            server_filters = self.get_option('server_filters')
             servers = []
 
             def _expand_server(server, cloud, volumes):
@@ -355,7 +362,8 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
                             all_projects=all_projects,
                             # details are required because 'addresses'
                             # attribute must be populated
-                            details=True)
+                            details=True,
+                            **server_filters)
                     ]:
                         servers.append(server)
                 except openstack.exceptions.OpenStackCloudException as e:
