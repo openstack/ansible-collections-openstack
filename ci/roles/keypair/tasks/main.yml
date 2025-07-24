@@ -38,7 +38,7 @@
 - name: Ensure public key is returned
   assert:
     that:
-      - keypair.keypair.public_key is defined and keypair.keypair.public_key
+      - keypair.keypair.public_key is defined and keypair.keypair.public_key|length > 0
 
 - name: Create another keypair
   openstack.cloud.keypair:

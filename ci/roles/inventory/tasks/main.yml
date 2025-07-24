@@ -279,6 +279,11 @@
           ansible.builtin.set_fact:
             cache: "{{ cache.content | b64decode | from_yaml }}"
 
+        - name: Further process Ansible 2.19+ cache
+          ansible.builtin.set_fact:
+            cache: "{{ cache.__payload__ | from_yaml }}"
+          when: cache.__payload__ is defined
+
         - name: Check Ansible's cache
           assert:
             that:

@@ -11,7 +11,7 @@
 - name: Check output of creating network
   assert:
     that:
-      - infonet.network
+      - infonet.network is defined
       - item in infonet.network
   loop: "{{ expected_fields }}"
 

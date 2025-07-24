@@ -72,6 +72,8 @@
     image_id: '{{ image_id }}'
     is_floating_ip_enabled: true
     keypair_id: '{{ keypair.keypair.id }}'
+    flavor_id: 'm1.small'
+    master_flavor_id: 'm1.small'
     name: k8s
     state: present
   register: coe_cluster_template

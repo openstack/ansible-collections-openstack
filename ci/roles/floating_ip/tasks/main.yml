@@ -241,7 +241,7 @@
     that:
       - server1_fips is success
       - server1_fips is not changed
-      - server1_fips.floating_ips
+      - server1_fips.floating_ips|length > 0
       # allow new fields to be introduced but prevent fields from being removed
       - expected_fields|difference(server1_fips.floating_ips[0].keys())|length == 0
 
@@ -260,7 +260,7 @@
 - name: Assert return values of floating_ip module
   assert:
     that:
-      - floating_ip.floating_ip
+      - floating_ip.floating_ip|length > 0
       # allow new fields to be introduced but prevent fields from being removed
       - expected_fields|difference(floating_ip.floating_ip.keys())|length == 0
 
@@ -312,7 +312,7 @@
 - name: Assert floating ip attached to server 2
   assert:
     that:
-      - server2_fip.floating_ip
+      - server2_fip.floating_ip|length > 0
 
 - name: Find all floating ips for debugging
   openstack.cloud.floating_ip_info:
