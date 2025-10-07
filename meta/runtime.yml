@@ -78,6 +78,8 @@ action_groups:
     - server_info
     - server_metadata
     - server_volume
+    - share_type
+    - share_type_info
     - stack
     - stack_info
     - subnet

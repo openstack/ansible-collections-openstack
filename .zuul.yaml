@@ -96,6 +96,39 @@
       tox_extra_args: -vv --skip-missing-interpreters=false -- coe_cluster coe_cluster_template
 
 - job:
+    name: ansible-collections-openstack-functional-devstack-manila-base
+    parent: ansible-collections-openstack-functional-devstack-base
+    # Do not restrict branches in base jobs because else Zuul would not find a matching
+    # parent job variant during job freeze when child jobs are on other branches.
+    description: |
+      Run openstack collections functional tests against a devstack with Manila plugin enabled
+    # Do not set job.override-checkout or job.required-projects.override-checkout in base job because
+    # else Zuul will use this branch when matching variants for parent jobs during job freeze
+    required-projects:
+      - openstack/manila
+      - openstack/python-manilaclient
+    files:
+      - ^ci/roles/share_type/.*$
+      - ^plugins/modules/share_type.py
+      - ^plugins/modules/share_type_info.py
+    timeout: 10800
+    vars:
+      devstack_localrc:
+        MANILA_ENABLED_BACKENDS: generic
+        MANILA_OPTGROUP_generic_driver_handles_share_servers: true
+        MANILA_OPTGROUP_generic_connect_share_server_to_tenant_network: true
+        MANILA_USE_SERVICE_INSTANCE_PASSWORD: true
+      devstack_plugins:
+        manila: https://opendev.org/openstack/manila
+      devstack_services:
+        manila: true
+        m-api: true
+        m-sch: true
+        m-shr: true
+        m-dat: true
+      tox_extra_args: -vv --skip-missing-interpreters=false -- share_type share_type_info
+
+- job:
     name: ansible-collections-openstack-functional-devstack-magnum
     parent: ansible-collections-openstack-functional-devstack-magnum-base
     branches: master
@@ -103,6 +136,15 @@
       Run openstack collections functional tests against a master devstack
       with Magnum plugin enabled, using master of openstacksdk and latest
       ansible release. Run it only on coe_cluster{,_template} changes.
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-manila
+    parent: ansible-collections-openstack-functional-devstack-manila-base
+    branches: master
+    description: |
+      Run openstack collections functional tests against a master devstack
+      with Manila plugin enabled, using master of openstacksdk and latest
+      ansible release. Run it only on share_type{,_info} changes.
 
 - job:
     name: ansible-collections-openstack-functional-devstack-octavia-base
@@ -288,6 +330,7 @@
         - ansible-collections-openstack-functional-devstack-ansible-2.18
         - ansible-collections-openstack-functional-devstack-ansible-devel
         - ansible-collections-openstack-functional-devstack-magnum
+        - ansible-collections-openstack-functional-devstack-manila
         - ansible-collections-openstack-functional-devstack-octavia
 
         - bifrost-collections-src:
@@ -303,6 +346,7 @@
         - openstack-tox-linters-ansible-2.18
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-magnum
+        - ansible-collections-openstack-functional-devstack-manila
         - ansible-collections-openstack-functional-devstack-octavia
 
     periodic:
@@ -316,6 +360,7 @@
         - bifrost-collections-src
         - bifrost-keystone-collections-src
         - ansible-collections-openstack-functional-devstack-magnum
+        - ansible-collections-openstack-functional-devstack-manila
         - ansible-collections-openstack-functional-devstack-octavia
 
     tag:

@@ -1,0 +1,130 @@
+---
+- name: Create share type
+  openstack.cloud.share_type:
+    name: "{{ share_type_name }}"
+    cloud: "{{ cloud }}"
+    state: present
+    extra_specs:
+      share_backend_name: "{{ share_backend_name }}"
+      snapshot_support: true
+      create_share_from_snapshot_support: true
+    description: "{{ share_type_description }}"
+  register: the_result
+
+- name: Check created share type
+  vars:
+    the_share_type: "{{ the_result.share_type }}"
+  ansible.builtin.assert:
+    that:
+      - "'id' in the_result.share_type"
+      - the_share_type.description == share_type_description
+      - the_share_type.is_public == True
+      - the_share_type.name == share_type_name
+      - the_share_type.extra_specs['share_backend_name'] == share_backend_name
+      - the_share_type.extra_specs['snapshot_support'] == "True"
+      - the_share_type.extra_specs['create_share_from_snapshot_support'] == "True"
+    success_msg: >-
+      Created share type: {{ the_result.share_type.id }},
+      Name: {{ the_result.share_type.name }},
+      Description: {{ the_result.share_type.description }}
+
+- name: Test share type info module
+  openstack.cloud.share_type_info:
+    name: "{{ share_type_name }}"
+    cloud: "{{ cloud }}"
+  register: info_result
+
+- name: Check share type info result
+  ansible.builtin.assert:
+    that:
+      - info_result.share_type.id == the_result.share_type.id
+      - info_result.share_type.name == share_type_name
+      - info_result.share_type.description == share_type_description
+    success_msg: "Share type info retrieved successfully"
+
+- name: Test, check idempotency
+  openstack.cloud.share_type:
+    name: "{{ share_type_name }}"
+    cloud: "{{ cloud }}"
+    state: present
+    extra_specs:
+      share_backend_name: "{{ share_backend_name }}"
+      snapshot_support: true
+      create_share_from_snapshot_support: true
+    description: "{{ share_type_description }}"
+    is_public: true
+  register: the_result
+
+- name: Check result.changed is false
+  ansible.builtin.assert:
+    that:
+      - the_result.changed == false
+    success_msg: "Request with the same details lead to no changes"
+
+- name: Add extra spec
+  openstack.cloud.share_type:
+    cloud: "{{ cloud }}"
+    name: "{{ share_type_name }}"
+    state: present
+    extra_specs:
+      share_backend_name: "{{ share_backend_name }}"
+      snapshot_support: true
+      create_share_from_snapshot_support: true
+      some_spec: fake_spec
+    description: "{{ share_type_alt_description }}"
+    is_public: true
+  register: the_result
+
+- name: Check share type extra spec
+  ansible.builtin.assert:
+    that:
+      - "'some_spec' in the_result.share_type.extra_specs"
+      - the_result.share_type.extra_specs["some_spec"] == "fake_spec"
+      - the_result.share_type.description == share_type_alt_description
+    success_msg: >-
+      New extra specs: {{ the_result.share_type.extra_specs }}
+
+- name: Remove extra spec by updating with reduced set
+  openstack.cloud.share_type:
+    cloud: "{{ cloud }}"
+    name: "{{ share_type_name }}"
+    state: present
+    extra_specs:
+      share_backend_name: "{{ share_backend_name }}"
+      snapshot_support: true
+      create_share_from_snapshot_support: true
+    description: "{{ share_type_alt_description }}"
+    is_public: true
+  register: the_result
+
+- name: Check extra spec was removed
+  ansible.builtin.assert:
+    that:
+      - "'some_spec' not in the_result.share_type.extra_specs"
+    success_msg: "Extra spec was successfully removed"
+
+- name: Delete share type
+  openstack.cloud.share_type:
+    cloud: "{{ cloud }}"
+    name: "{{ share_type_name }}"
+    state: absent
+  register: the_result
+
+- name: Check deletion was successful
+  ansible.builtin.assert:
+    that:
+      - the_result.changed == true
+    success_msg: "Share type deleted successfully"
+
+- name: Test deletion idempotency
+  openstack.cloud.share_type:
+    cloud: "{{ cloud }}"
+    name: "{{ share_type_name }}"
+    state: absent
+  register: the_result
+
+- name: Check deletion idempotency
+  ansible.builtin.assert:
+    that:
+      - the_result.changed == false
+    success_msg: "Deletion idempotency works correctly"

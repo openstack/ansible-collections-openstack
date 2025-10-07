@@ -53,6 +53,7 @@
     - { role: server_group, tags: server_group }
     - { role: server_metadata, tags: server_metadata }
     - { role: server_volume, tags: server_volume }
+    - { role: share_type, tags: share_type }
     - { role: stack, tags: stack }
     - { role: subnet, tags: subnet }
     - { role: subnet_pool, tags: subnet_pool }

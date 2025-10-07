@@ -124,6 +124,11 @@ if [ ! -e /etc/magnum ]; then
     tag_opt+=" --skip-tags coe_cluster,coe_cluster_template"
 fi
 
+if ! systemctl is-enabled devstack@m-api.service 2>&1; then
+    # Skip share_type tasks if Manila is not available
+    tag_opt+=" --skip-tags share_type"
+fi
+
 cd ci/
 
 # Run tests

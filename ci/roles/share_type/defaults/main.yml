@@ -1,0 +1,5 @@
+---
+share_backend_name: GENERIC_BACKEND
+share_type_name: test_share_type
+share_type_description: Test share type for CI
+share_type_alt_description: Changed test share type
