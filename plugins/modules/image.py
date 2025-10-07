@@ -128,6 +128,20 @@ options:
       - Should only be used when needed, such as when the user needs the cloud to
         transform image format.
     type: bool
+  import_method:
+    description:
+      - Method to use for importing the image. Not all deployments support all methods.
+      - Supports web-download or glance-download.
+      - copy-image is not supported with create actions.
+      - glance-direct is removed from the import method so use_import can be used in that case.
+    type: str
+    choices: [web-download, glance-download]
+  uri:
+    description:
+      - Required only if using the web-download import method.
+      - This url is where the data is made available to the Image service.
+    type: str
+
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''
@@ -399,11 +413,13 @@ class ImageModule(OpenStackModule):
         visibility=dict(choices=['public', 'private', 'shared', 'community']),
         volume=dict(),
         use_import=dict(type='bool'),
+        import_method=dict(choices=['web-download', 'glance-download']),
+        uri=dict()
     )
 
     module_kwargs = dict(
         mutually_exclusive=[
-            ('filename', 'volume'),
+            ('filename', 'volume', 'uri'),
             ('visibility', 'is_public'),
         ],
     )
@@ -412,7 +428,7 @@ class ImageModule(OpenStackModule):
     attr_params = ('id', 'name', 'filename', 'disk_format',
                    'container_format', 'wait', 'timeout', 'is_public',
                    'is_protected', 'min_disk', 'min_ram', 'volume', 'tags',
-                   'use_import')
+                   'use_import', 'import_method', 'uri')
 
     def _resolve_visibility(self):
         """resolve a visibility value to be compatible with older versions"""
