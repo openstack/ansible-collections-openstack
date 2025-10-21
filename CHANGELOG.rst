@@ -4,6 +4,35 @@ Ansible OpenStack Collection Release Notes
 
 .. contents:: Topics
 
+v2.5.0
+======
+
+Release Summary
+---------------
+
+Bugfixes and minor changes
+
+Major Changes
+-------------
+
+- Add import_method to module
+- Add object_containers_info module
+- Add support for filters in inventory
+- Add volume_manage module
+- Introduce share_type modules
+
+Minor Changes
+-------------
+
+- Allow role_assignment module to work cross domain
+- Don't compare current state for `reboot_*` actions
+- Fix disable_gateway_ip for subnet
+- Fix disable_gateway_ip for subnet
+- Fix example in the dns_zone_info module doc
+- Fix router module external IPs when only subnet specified
+- Fix the bug reporting url
+- Let clouds_yaml_path behave as documented (Override path to clouds.yaml file)
+- Shows missing data in `stack_info` module output
 
 v2.4.1
 ======
