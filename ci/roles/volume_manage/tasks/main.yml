@@ -40,7 +40,7 @@
 
 - assert:
     that:
-      - new_vol.volume.name == "{{ managed_volume }}"
+      - new_vol.volume.name == managed_volume
 
 - name: Manage volume again
   openstack.cloud.volume_manage:
