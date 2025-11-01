@@ -75,7 +75,10 @@ options:
       description:
         - 'A list of network interface cards, eg, C( - mac: aa:bb:cc:aa:bb:cc)'
         - This node attribute cannot be updated.
-      required: true
+        - If this option is not set, the target provision state of the node
+          changes from available to enroll.
+      required: false
+      default: []
       type: list
       elements: dict
       suboptions:
@@ -508,7 +511,7 @@ class BaremetalNodeModule(OpenStackModule):
         management_interface=dict(),
         name=dict(),
         network_interface=dict(),
-        nics=dict(type='list', required=True, elements='dict'),
+        nics=dict(type='list', default=[], elements='dict'),
         power_interface=dict(),
         properties=dict(
             type='dict',
@@ -655,6 +658,8 @@ class BaremetalNodeModule(OpenStackModule):
             nics=self.params['nics'],
             wait=self.params['wait'],
             timeout=self.params['timeout'],
+            provision_state=(
+                'available' if len(self.params['nics']) > 0 else 'enroll'),
             **kwargs)
 
         self.exit_json(changed=True, node=node.to_dict(computed=False))
