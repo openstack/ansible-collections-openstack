@@ -69,6 +69,9 @@
      external: false
      mtu: "{{ mtu }}"
      port_security_enabled: "{{ port_security_enabled }}"
+     tags:
+       - foo
+       - bar
   register: result_create_nw_with_new_params
   ignore_errors: true
 
@@ -85,6 +88,8 @@
       - result_newparams.networks.0.mtu == mtu
       - "'is_port_security_enabled' in result_newparams.networks.0"
       - result_newparams.networks.0['is_port_security_enabled'] == port_security_enabled
+      - "'foo' in result_newparams.networks.0.tags"
+      - "'bar' in result_newparams.networks.0.tags"
 
 - name: Delete network - generic and with new SDK params
   openstack.cloud.network:
@@ -115,6 +120,9 @@
      external: false
      mtu: "{{ mtu }}"
      port_security_enabled: "{{ port_security_enabled }}"
+     tags:
+       - foo
+       - bar
   register: result_create_nw_for_updates
 
 - name: Update network - update failure
@@ -147,6 +155,11 @@
      mtu: "{{ mtu - 50 }}"
      # NOTE: This property should be updated
      port_security_enabled: "{{ not port_security_enabled }}"
+     # NOTE: This property should be updated
+     tags:
+       - foo
+       - bar
+       - baz
   register: result_nw_update_success
 
 - name: Gather networks info - updates
@@ -162,6 +175,29 @@
       - result_network_updates_info.networks.0.name == network_name_updates
       - result_network_updates_info.networks.0.mtu == mtu - 50
       - result_network_updates_info.networks.0['is_port_security_enabled'] == (not port_security_enabled)
+      - "'foo' in result_network_updates_info.networks.0.tags"
+      - "'bar' in result_network_updates_info.networks.0.tags"
+      - "'baz' in result_network_updates_info.networks.0.tags"
+
+- name: Update network - no change
+  openstack.cloud.network:
+     cloud: "{{ cloud }}"
+     name: "{{ network_name_updates }}"
+     state: present
+     shared: "{{ network_shared }}"
+     external: false
+     mtu: "{{ mtu - 50 }}"
+     port_security_enabled: "{{ not port_security_enabled }}"
+     tags:
+       - foo
+       - bar
+       - baz
+  register: result_nw_update_no_change
+
+- name: Verify networks info - no change
+  assert:
+    that:
+      - result_nw_update_no_change is not changed
 
 - name: Delete network - updates
   openstack.cloud.network:

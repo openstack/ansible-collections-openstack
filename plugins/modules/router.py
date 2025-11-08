@@ -112,6 +112,11 @@ options:
       choices: ['present', 'absent']
       default: present
       type: str
+    tags:
+      description:
+        - A list of tags to set on the network
+      type: list
+      elements: str
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
@@ -326,6 +331,7 @@ class RouterModule(OpenStackModule):
         network=dict(),
         project=dict(),
         state=dict(default='present', choices=['absent', 'present']),
+        tags=dict(type='list', elements='str'),
     )
 
     module_kwargs = dict(
@@ -603,6 +609,7 @@ class RouterModule(OpenStackModule):
         name = self.params['name']
         network_name_or_id = self._get_external_gateway_network_name()
         project_name_or_id = self.params['project']
+        tags = self.params['tags']
 
         if self.params['external_fixed_ips'] and not network_name_or_id:
             self.fail(
@@ -685,6 +692,12 @@ class RouterModule(OpenStackModule):
                     if to_add or to_remove or missing_internal_ports:
                         self._update_ifaces(router, to_add, to_remove,
                                             missing_internal_ports)
+
+            if tags is not None:
+                old_tags = self.conn.network.get_tags(router)
+                if set(old_tags) != set(tags):
+                    self.conn.network.set_tags(router, tags)
+                    changed = True
 
             self.exit_json(changed=changed,
                            router=router.to_dict(computed=False))

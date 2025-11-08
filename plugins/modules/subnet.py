@@ -133,6 +133,11 @@ options:
             - The subnet pool name or ID from which to obtain a CIDR
         type: str
         required: false
+    tags:
+        description:
+            - A list of tags to set on the network
+        type: list
+        elements: str
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''
@@ -317,6 +322,7 @@ class SubnetModule(OpenStackModule):
         state=dict(default='present',
                    choices=['absent', 'present']),
         project=dict(),
+        tags=dict(type='list', elements='str'),
     )
 
     module_kwargs = dict(
@@ -421,6 +427,7 @@ class SubnetModule(OpenStackModule):
         subnet_name = self.params['name']
         gateway_ip = self.params['gateway_ip']
         disable_gateway_ip = self.params['disable_gateway_ip']
+        tags = self.params['tags']
 
         # fail early if incompatible options have been specified
         if disable_gateway_ip and gateway_ip:
@@ -470,6 +477,12 @@ class SubnetModule(OpenStackModule):
                     self._validate_update(subnet, updates)
                     subnet = self.conn.network.update_subnet(subnet, **updates)
                     changed = True
+            if tags is not None:
+                old_tags = self.conn.network.get_tags(subnet)
+                if set(old_tags) != set(tags):
+                    self.conn.network.set_tags(subnet, tags)
+                    changed = True
+
             self.exit_json(changed=changed, subnet=subnet, id=subnet.id)
         elif state == 'absent' and subnet is not None:
             self.conn.network.delete_subnet(subnet)
