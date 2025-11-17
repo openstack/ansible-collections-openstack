@@ -628,7 +628,6 @@ releases:
       - Allow role_assignment module to work cross domain
       - Don't compare current state for `reboot_*` actions
       - Fix disable_gateway_ip for subnet
-      - Fix disable_gateway_ip for subnet
       - Fix example in the dns_zone_info module doc
       - Fix router module external IPs when only subnet specified
       - Fix the bug reporting url
