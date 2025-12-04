@@ -1,0 +1,272 @@
+---
+- name: Create test network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: present
+    name: test_internal_network
+
+- name: Create test subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: present
+    name: test_internal_subnet
+    network_name: test_internal_network
+    cidr: 192.168.100.0/24
+    gateway_ip: 192.168.100.1
+
+- name: Create test port
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    state: present
+    name: test_internal_port
+    network: test_internal_network
+    fixed_ips:
+      - ip_address: 192.168.100.10
+  register: test_internal_port
+
+- name: Create test external network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: present
+    name: test_external_network
+    external: true
+
+- name: Create test external subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: present
+    network_name: test_external_network
+    name: test_external_subnet
+    cidr: 10.6.6.0/24
+
+- name: Create router
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    state: present
+    name: test_router
+    network: test_external_network
+    external_fixed_ips:
+      - subnet: test_external_subnet
+    interfaces:
+      - test_internal_subnet
+
+- name: Create test floating IP
+  openstack.cloud.floating_ip:
+    cloud: "{{ cloud }}"
+    state: present
+    network: test_external_network
+  register: test_floating_ip
+
+- name: Test - Create port forwarding rule
+  openstack.cloud.port_forwarding:
+    cloud: "{{ cloud }}"
+    state: present
+    floating_ip: "{{ test_floating_ip.floating_ip.id }}"
+    network_port: test_internal_port
+    internal_ip: 192.168.100.10
+    external_protocol_port: 8080
+    internal_protocol_port: 80
+    protocol: tcp
+  register: pf_create
+
+- name: Get port forwarding info
+  openstack.cloud.port_forwarding_info:
+    cloud: "{{ cloud }}"
+    floating_ip: "{{ test_floating_ip.floating_ip.id }}"
+    port_forwarding_id: "{{ pf_create.port_forwarding.id }}"
+  register: pf_create_info
+
+- name: Verify - Port forwarding created successfully
+  assert:
+    that:
+      - pf_create is changed
+      - pf_create.port_forwarding is defined
+      - pf_create.port_forwarding.external_port == 8080
+      - pf_create.port_forwarding.internal_port == 80
+      - pf_create.port_forwarding.protocol == "tcp"
+      - pf_create_info.port_forwardings | length == 1
+      - pf_create_info.port_forwardings.0.id == pf_create.port_forwarding.id
+
+- name: Test - Create port forwarding rule again (idempotency)
+  openstack.cloud.port_forwarding:
+    cloud: "{{ cloud }}"
+    state: present
+    floating_ip: "{{ test_floating_ip.floating_ip.id }}"
+    network_port: test_internal_port
+    internal_ip: 192.168.100.10
+    external_protocol_port: 8080
+    internal_protocol_port: 80
+    protocol: tcp
+  register: pf_idempotent
+
+- name: Verify - No changes
+  assert:
+    that:
+      - pf_idempotent is not changed
+
+- name: Test - Update port forwarding internal port
+  openstack.cloud.port_forwarding:
+    cloud: "{{ cloud }}"
+    state: present
+    floating_ip: "{{ test_floating_ip.floating_ip.id }}"
+    network_port: test_internal_port
+    internal_ip: 192.168.100.10
+    external_protocol_port: 8080
+    internal_protocol_port: 8080  # Changed from 80 to 8080
+    protocol: tcp
+  register: pf_update
+
+- name: Get port forwarding info
+  openstack.cloud.port_forwarding_info:
+    cloud: "{{ cloud }}"
+    floating_ip: "{{ test_floating_ip.floating_ip.id }}"
+    port_forwarding_id: "{{ pf_update.port_forwarding.id }}"
+  register: pf_update_info
+
+- name: Verify - Port forwarding updated successfully
+  assert:
+    that:
+      - pf_update is changed
+      - pf_update.port_forwarding.internal_port == 8080
+      - pf_update_info.port_forwardings | length == 1
+      - pf_update_info.port_forwardings.0.id == pf_update.port_forwarding.id
+
+- name: Test - Update with same values (idempotency)
+  openstack.cloud.port_forwarding:
+    cloud: "{{ cloud }}"
+    state: present
+    floating_ip: "{{ test_floating_ip.floating_ip.id }}"
+    network_port: test_internal_port
+    internal_ip: 192.168.100.10
+    external_protocol_port: 8080
+    internal_protocol_port: 8080
+    protocol: tcp
+  register: pf_update_idempotent
+
+- name: Verify - No changes
+  assert:
+    that:
+      - pf_update_idempotent is not changed
+
+- name: Test - Change just one attribute
+  openstack.cloud.port_forwarding:
+    cloud: "{{ cloud }}"
+    state: present
+    port_forwarding_id: "{{ pf_create.port_forwarding.id }}"
+    floating_ip: "{{ test_floating_ip.floating_ip.id }}"
+    internal_protocol_port: 9090  # Different internal port
+  register: pf_update_by_id
+
+- name: Verify - Port forwarding updated by ID
+  assert:
+    that:
+      - pf_update_by_id.changed == true
+      - pf_update_by_id.port_forwarding.id == pf_create.port_forwarding.id
+      - pf_update_by_id.port_forwarding.internal_port_id == test_internal_port.port.id
+      - pf_update_by_id.port_forwarding.internal_ip_address == "192.168.100.10"
+      - pf_update_by_id.port_forwarding.external_port == 8080
+      - pf_update_by_id.port_forwarding.internal_port == 9090
+
+- name: Test - Create port forwarding without specifying internal IP
+  openstack.cloud.port_forwarding:
+    cloud: "{{ cloud }}"
+    state: present
+    floating_ip: "{{ test_floating_ip.floating_ip.id }}"
+    network_port: test_internal_port
+    external_protocol_port: 2222
+    internal_protocol_port: 22
+    protocol: tcp
+  register: pf_auto_internal_ip
+
+- name: Verify - Port forwarding created with auto internal IP
+  assert:
+    that:
+      - pf_auto_internal_ip.changed == true
+      - pf_auto_internal_ip.port_forwarding.internal_ip_address == "192.168.100.10"
+
+- name: Test - Delete port forwarding
+  openstack.cloud.port_forwarding:
+    cloud: "{{ cloud }}"
+    state: absent
+    floating_ip: "{{ test_floating_ip.floating_ip.id }}"
+    network_port: test_internal_port
+    external_protocol_port: 8080
+    internal_protocol_port: 9090
+    protocol: tcp
+  register: pf_delete
+
+- name: Verify - Port forwarding deleted successfully
+  assert:
+    that:
+      - pf_delete.changed == true
+
+- name: Test - Delete port forwarding by ID
+  openstack.cloud.port_forwarding:
+    cloud: "{{ cloud }}"
+    state: absent
+    floating_ip: "{{ test_floating_ip.floating_ip.id }}"
+    port_forwarding_id: "{{ pf_auto_internal_ip.port_forwarding.id }}"
+  register: pf_delete_by_id
+
+- name: Verify - Port forwarding deleted by ID
+  assert:
+    that:
+      - pf_delete_by_id.changed == true
+
+- name: Test - Delete already deleted port forwarding (idempotency)
+  openstack.cloud.port_forwarding:
+    cloud: "{{ cloud }}"
+    state: absent
+    port_forwarding_id: "{{ pf_auto_internal_ip.port_forwarding.id }}"
+    floating_ip: "{{ test_floating_ip.floating_ip.id }}"
+  register: pf_delete_idempotent
+
+- name: Verify - No errors on deleting non-existent rule (idempotency)
+  assert:
+    that:
+      - pf_delete_idempotent is not changed
+      - pf_delete_idempotent is not failed
+
+- name: Clean up - Delete test floating IP
+  openstack.cloud.floating_ip:
+    cloud: "{{ cloud }}"
+    state: absent
+    floating_ip_address: "{{ test_floating_ip.floating_ip.floating_ip_address }}"
+    network: test_external_network
+    purge: true
+
+- name: Clean up - Delete router
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: test_router
+
+- name: Clean up - Delete test external subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: test_external_subnet
+
+- name: Clean up - Delete test external network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: test_external_network
+
+- name: Clean up - Delete test port
+  openstack.cloud.port:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: test_internal_port
+
+- name: Clean up - Delete test subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: test_internal_subnet
+
+- name: Clean up - Delete test network
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: test_internal_network

@@ -1,0 +1,10 @@
+expected_fields:
+  - description
+  - external_port
+  - floatingip_id
+  - id
+  - internal_ip_address
+  - internal_port
+  - internal_port_id
+  - name
+  - protocol

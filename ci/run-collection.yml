@@ -37,6 +37,7 @@
     - { role: object_container, tags: object_container }
     - { role: object_containers_info, tags: object_containers_info }
     - { role: port, tags: port }
+    - { role: port_forwarding, tags: port_forwarding }
     - { role: trait, tags: trait }
     - { role: trunk, tags: trunk }
     - { role: project, tags: project }
