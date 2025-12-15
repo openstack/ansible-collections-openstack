@@ -21,3 +21,50 @@
   assert:
     that:
       - compute_services.compute_services | length > 0
+
+- name: Disable compute service on a node
+  openstack.cloud.compute_service:
+    cloud: "{{ cloud }}"
+    host: "{{ compute_services.compute_services[0].host }}"
+    binary: 'nova-compute'
+    status: 'disabled'
+    disabled_reason: 'maintenance'
+  register: compute_service_disabled
+
+- name: Assert service being "disabled"
+  ansible.builtin.assert:
+    that:
+      - compute_service_disabled.compute_services | map(attribute='status') | unique | length == 1
+      - compute_service_disabled.compute_services | map(attribute='disabled_reason') | unique | length == 1
+      - compute_service_disabled.compute_services[0].status == "disabled"
+      - compute_service_disabled.compute_services[0].disabled_reason == "maintenance"
+      - compute_service_disabled is changed
+
+- name: Disable compute service on a node again
+  openstack.cloud.compute_service:
+    cloud: "{{ cloud }}"
+    host: "{{ compute_services.compute_services[0].host }}"
+    binary: 'nova-compute'
+    status: 'disabled'
+    disabled_reason: 'maintenance'
+  register: compute_service_disabled_again
+
+- name: Assert idempotency of service disable
+  ansible.builtin.assert:
+    that:
+      - compute_service_disabled_again is not changed
+
+- name: Re-enable compute service
+  openstack.cloud.compute_service:
+    cloud: "{{ cloud }}"
+    host: "{{ compute_services.compute_services[0].host }}"
+    binary: 'nova-compute'
+    status: 'enabled'
+  register: compute_service_enabled
+
+- name: Assert service being "disabled"
+  ansible.builtin.assert:
+    that:
+      - compute_service_enabled.compute_services | map(attribute='status') | unique | length == 1
+      - compute_service_enabled.compute_services[0].status == "enabled"
+      - compute_service_enabled is changed
