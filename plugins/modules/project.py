@@ -181,7 +181,7 @@ class IdentityProjectModule(OpenStackModule):
                 raise ValueError('Duplicate key(s) in extra_specs: {0}'
                                  .format(', '.join(list(duplicate_keys))))
             for k, v in extra_specs.items():
-                if v != project[k]:
+                if k not in project or v != project[k]:
                     attributes[k] = v
 
         if attributes:
