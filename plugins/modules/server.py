@@ -195,10 +195,12 @@ options:
           added.
         - On server creation, if I(security_groups) is omitted, the API creates
           the server in the default security group.
-        - Requested security groups are not applied to pre-existing ports.
+        - On server creation, requested security groups are not applied to
+          pre-existing ports.
+        - On update, if I(security_groups) is set, the security groups are
+          applied to all attached ports.
       type: list
       elements: str
-      default: []
     state:
       description:
         - Should the resource be C(present) or C(absent).
@@ -830,7 +832,7 @@ class ServerModule(OpenStackModule):
         nics=dict(default=[], type='list', elements='raw'),
         reuse_ips=dict(default=True, type='bool'),
         scheduler_hints=dict(type='dict'),
-        security_groups=dict(default=[], type='list', elements='str'),
+        security_groups=dict(type='list', elements='str'),
         state=dict(default='present', choices=['absent', 'present']),
         tags=dict(type='list', default=[], elements='str'),
         terminate_volume=dict(default=False, type='bool'),
@@ -951,6 +953,9 @@ class ServerModule(OpenStackModule):
 
     def _build_update_security_groups(self, server):
         update = {}
+
+        if self.params['security_groups'] is None:
+            return update
 
         required_security_groups = dict(
             (sg['id'], sg) for sg in [
