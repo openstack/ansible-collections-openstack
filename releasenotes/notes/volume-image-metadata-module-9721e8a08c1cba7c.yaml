@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Added a new ``openstack.cloud.volume_image_metadata`` module to manage
+    Cinder volume image metadata via the ``os-set_image_metadata`` API.
+    This enables correct preservation of image provenance and boot semantics
+    for volumes, which cannot be achieved using regular volume metadata.

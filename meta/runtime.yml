@@ -97,3 +97,4 @@ action_groups:
     - volume_snapshot
     - volume_snapshot_info
     - volume_type_access
+    - volume_image_metadata

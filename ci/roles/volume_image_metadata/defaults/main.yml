@@ -1,0 +1,7 @@
+---
+volume_image_metadata_cloud: "{{ cloud | default(omit) }}"
+volume_image_metadata_volume_name: test-image-metadata-volume
+volume_image_metadata_size: 1
+volume_image_metadata:
+  disk_format: qcow2
+  container_format: bare
