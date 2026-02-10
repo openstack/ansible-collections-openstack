@@ -1,0 +1,5 @@
+---
+minor_changes:
+  - Added the new ``openstack.cloud.baremetal_port_group`` module to manage
+    Bare Metal port groups (create, update, and delete), including CI role
+    coverage and unit tests.
