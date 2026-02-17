@@ -212,7 +212,7 @@
     branches: master
     description: |
       Run openstack collections functional tests against a master devstack
-      using master of openstacksdk and stable 2.16 branch of ansible
+      using master of openstacksdk and stable 2.18 branch of ansible
     required-projects:
       - name: github.com/ansible/ansible
         override-checkout: stable-2.18
@@ -220,9 +220,34 @@
       tox_envlist: ansible_2_18
 
 - job:
+    name: ansible-collections-openstack-functional-devstack-ansible-2.19
+    parent: ansible-collections-openstack-functional-devstack-base
+    branches: master
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using master of openstacksdk and stable 2.19 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.19
+    vars:
+      tox_envlist: ansible_2_19
+
+- job:
+    name: ansible-collections-openstack-functional-devstack-ansible-2.20
+    parent: ansible-collections-openstack-functional-devstack-base
+    branches: master
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using master of openstacksdk and stable 2.20 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.20
+    vars:
+      tox_envlist: ansible_2_20
+
+- job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
     parent: ansible-collections-openstack-functional-devstack-base
-    nodeset: openstack-single-node-jammy
     branches: master
     description: |
       Run openstack collections functional tests against a master devstack
@@ -251,13 +276,13 @@
 - job:
     name: openstack-tox-linters-ansible-devel
     parent: openstack-tox-linters-ansible
-    nodeset: ubuntu-jammy
+    nodeset: ubuntu-noble
     description: |
       Run openstack collections linter tests using the devel branch of ansible
     # non-voting because we can't prevent ansible devel from breaking us
     voting: false
     vars:
-      python_version: '3.10'
+      python_version: '3.12'
       bindep_profile: test py310
 
 - job:
@@ -273,10 +298,36 @@
       python_version: "3.12"
       bindep_profile: test py312
 
+- job:
+    name: openstack-tox-linters-ansible-2.19
+    parent: openstack-tox-linters-ansible
+    description: |
+      Run openstack collections linter tests using the 2.19 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.19
+    vars:
+      tox_envlist: linters_2_19
+      python_version: "3.12"
+      bindep_profile: test py312
+
+- job:
+    name: openstack-tox-linters-ansible-2.20
+    parent: openstack-tox-linters-ansible
+    description: |
+      Run openstack collections linter tests using the 2.20 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.20
+    vars:
+      tox_envlist: linters_2_20
+      python_version: "3.12"
+      bindep_profile: test py312
+
 # Cross-checks with other projects
 - job:
     name: bifrost-collections-src
-    parent: bifrost-integration-on-ubuntu-jammy
+    parent: bifrost-integration-on-ubuntu-noble
     required-projects:
       - openstack/ansible-collections-openstack
       - # always use master branch when collecting parent job variants, refer to git blame for rationale.
@@ -287,7 +338,7 @@
         override-checkout: master
 - job:
     name: bifrost-keystone-collections-src
-    parent: bifrost-integration-keystone-on-ubuntu-jammy
+    parent: bifrost-integration-keystone-on-ubuntu-noble
     required-projects:
       - openstack/ansible-collections-openstack
       - # always use master branch when collecting parent job variants, refer to git blame for rationale.
@@ -326,9 +377,13 @@
         - tox-pep8
         - openstack-tox-linters-ansible-devel
         - openstack-tox-linters-ansible-2.18
+        - openstack-tox-linters-ansible-2.19
+        - openstack-tox-linters-ansible-2.20
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-ansible-2.18
+        - ansible-collections-openstack-functional-devstack-ansible-2.19
+        - ansible-collections-openstack-functional-devstack-ansible-2.20
         - ansible-collections-openstack-functional-devstack-ansible-devel
         - ansible-collections-openstack-functional-devstack-magnum
         - ansible-collections-openstack-functional-devstack-manila
@@ -345,6 +400,8 @@
       jobs:
         - tox-pep8
         - openstack-tox-linters-ansible-2.18
+        - openstack-tox-linters-ansible-2.19
+        - openstack-tox-linters-ansible-2.20
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-magnum
         - ansible-collections-openstack-functional-devstack-manila
@@ -354,9 +411,13 @@
       jobs:
         - openstack-tox-linters-ansible-devel
         - openstack-tox-linters-ansible-2.18
+        - openstack-tox-linters-ansible-2.19
+        - openstack-tox-linters-ansible-2.20
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-ansible-2.18
+        - ansible-collections-openstack-functional-devstack-ansible-2.19
+        - ansible-collections-openstack-functional-devstack-ansible-2.20
         - ansible-collections-openstack-functional-devstack-ansible-devel
         - bifrost-collections-src
         - bifrost-keystone-collections-src
