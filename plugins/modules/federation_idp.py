@@ -12,6 +12,11 @@ description:
   - Create, update or delete an identity provider of the OpenStack
     identity (Keystone) service.
 options:
+  authorization_ttl:
+    description:
+      - Time to keep the role assignments for users authenticating via this identity provider.
+      - When not provided, global default configured in the Identity service will be used.
+    type: int
   description:
     description:
       - The description of the identity provider.
@@ -58,6 +63,7 @@ EXAMPLES = r'''
     name: example_provider
     domain_id: 0123456789abcdef0123456789abcdef
     description: 'My example IDP'
+    authorization_ttl: 300
     remote_ids:
       - 'https://auth.example.com/auth/realms/ExampleRealm'
 
@@ -74,6 +80,10 @@ identity_provider:
   returned: On success when I(state) is C(present).
   type: dict
   contains:
+    authorization_ttl:
+      description: Time to keep the role assignments for users authenticating via this identity provider.
+      type: int
+      sample: 300
     description:
       description: Identity provider description
       type: str
@@ -104,6 +114,7 @@ from ansible_collections.openstack.cloud.plugins.module_utils.resource import St
 
 class IdentityProviderModule(OpenStackModule):
     argument_spec = dict(
+        authorization_ttl=dict(type='int'),
         description=dict(),
         domain_id=dict(),
         id=dict(required=True, aliases=['name']),
@@ -127,7 +138,7 @@ class IdentityProviderModule(OpenStackModule):
 
         kwargs['attributes'] = \
             dict((k, self.params[k])
-                 for k in ['description', 'domain_id', 'id', 'is_enabled',
+                 for k in ['authorization_ttl', 'description', 'domain_id', 'id', 'is_enabled',
                            'remote_ids']
                  if self.params[k] is not None)
 
