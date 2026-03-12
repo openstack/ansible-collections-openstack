@@ -529,6 +529,22 @@ class ImageModule(OpenStackModule):
             if image['status'] == 'deactivated':
                 self.conn.image.reactivate_image(image)
                 changed = True
+            elif image['status'] == 'queued':
+                if (
+                        self.params['filename']
+                        and hasattr(self.conn.image, 'stage_image')):
+                    self.conn.image.stage_image(
+                        image, filename=self.params['filename'])
+                    changed = True
+                elif self.params['filename']:
+                    with open(self.params['filename'], 'rb') as image_data:
+                        self.conn.image.upload_image(
+                            container_format=self.params['container_format'],
+                            disk_format=self.params['disk_format'],
+                            data=image_data,
+                            id=image.id,
+                            name=image.name)
+                    changed = True
 
             update_payload = self._build_update(image)
 
