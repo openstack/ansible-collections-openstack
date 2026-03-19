@@ -174,6 +174,38 @@
     that:
       - project.project.is_enabled == True
 
+- name: Update project to add new extra_specs
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    extra_specs:
+      is_enabled: True
+      another_tag: True
+  register: project
+
+- name: Assert return values of project module
+  assert:
+    that:
+      - project.project.is_enabled == True
+      - project.project.another_tag == True
+
+- name: Update project to change existing extra_specs
+  openstack.cloud.project:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_project
+    extra_specs:
+      is_enabled: True
+      another_tag: False
+  register: project
+
+- name: Assert return values of project module
+  assert:
+    that:
+      - project.project.is_enabled == True
+      - project.project.another_tag == False
+
 - name: Delete project
   openstack.cloud.project:
      cloud: "{{ cloud }}"
