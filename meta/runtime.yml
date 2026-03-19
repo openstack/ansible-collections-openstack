@@ -10,6 +10,7 @@ action_groups:
     - baremetal_node_action
     - baremetal_node_info
     - baremetal_port
+    - baremetal_port_group
     - baremetal_port_info
     - catalog_service
     - catalog_service_info

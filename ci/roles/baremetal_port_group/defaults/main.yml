@@ -1,0 +1,12 @@
+expected_fields:
+  - address
+  - created_at
+  - extra
+  - id
+  - links
+  - mode
+  - name
+  - node_id
+  - properties
+  - standalone_ports_supported
+  - updated_at

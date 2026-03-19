@@ -1,0 +1,100 @@
+---
+# TODO: Actually run this role in CI. Atm we do not have DevStack's ironic plugin enabled.
+- name: Create baremetal node
+  openstack.cloud.baremetal_node:
+    cloud: "{{ cloud }}"
+    driver_info:
+      ipmi_address: "1.2.3.4"
+      ipmi_username: "admin"
+      ipmi_password: "secret"
+    name: ansible_baremetal_node
+    nics:
+      - mac: "aa:bb:cc:aa:bb:cc"
+    state: present
+  register: node
+
+- name: Create baremetal port group
+  openstack.cloud.baremetal_port_group:
+    cloud: "{{ cloud }}"
+    state: present
+    name: ansible_baremetal_port_group
+    node: ansible_baremetal_node
+    address: fa:16:3e:aa:aa:ab
+    mode: active-backup
+    standalone_ports_supported: true
+    extra:
+      test: created
+    properties:
+      miimon: '100'
+  register: port_group
+
+- debug: var=port_group
+
+- name: Assert return values of baremetal_port_group module
+  assert:
+    that:
+      # allow new fields to be introduced but prevent fields from being removed
+      - expected_fields|difference(port_group.port_group.keys())|length == 0
+      - port_group.port_group.name == "ansible_baremetal_port_group"
+      - port_group.port_group.node_id == node.node.id
+
+- name: Update baremetal port group
+  openstack.cloud.baremetal_port_group:
+    cloud: "{{ cloud }}"
+    state: present
+    id: "{{ port_group.port_group.id }}"
+    mode: 802.3ad
+    standalone_ports_supported: false
+    extra:
+      test: updated
+  register: updated_port_group
+
+- name: Assert return values of updated baremetal port group
+  assert:
+    that:
+      - updated_port_group is changed
+      - updated_port_group.port_group.id == port_group.port_group.id
+      - updated_port_group.port_group.mode == "802.3ad"
+      - not updated_port_group.port_group.standalone_ports_supported
+      - updated_port_group.port_group.extra.test == "updated"
+
+- name: Update baremetal port group again
+  openstack.cloud.baremetal_port_group:
+    cloud: "{{ cloud }}"
+    state: present
+    id: "{{ port_group.port_group.id }}"
+    mode: 802.3ad
+    standalone_ports_supported: false
+    extra:
+      test: updated
+  register: updated_port_group
+
+- name: Assert idempotency for baremetal port group module
+  assert:
+    that:
+      - updated_port_group is not changed
+      - updated_port_group.port_group.id == port_group.port_group.id
+
+- name: Delete baremetal port group
+  openstack.cloud.baremetal_port_group:
+    cloud: "{{ cloud }}"
+    state: absent
+    id: "{{ port_group.port_group.id }}"
+
+- name: Delete baremetal port group again
+  openstack.cloud.baremetal_port_group:
+    cloud: "{{ cloud }}"
+    state: absent
+    id: "{{ port_group.port_group.id }}"
+  register: deleted_port_group
+
+- name: Assert idempotency for deleted baremetal port group
+  assert:
+    that:
+      - deleted_port_group is not changed
+
+- name: Delete baremetal node
+  openstack.cloud.baremetal_node:
+    cloud: "{{ cloud }}"
+    name: ansible_baremetal_node
+    state: absent
