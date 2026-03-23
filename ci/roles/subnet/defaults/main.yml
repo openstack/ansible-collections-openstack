@@ -25,3 +25,4 @@ expected_fields:
   - updated_at
   - use_default_subnet_pool
 subnet_name: shade_subnet
+segment_name: example_segment

@@ -1,0 +1,17 @@
+---
+expected_fields:
+  - description
+  - id
+  - name
+  - network_id
+  - network_type
+  - physical_network
+  - segmentation_id
+
+network_name: segment_network
+segment_name: example_segment
+network_type: vlan
+segmentation_id: 999
+physical_network: public
+initial_description: "example segment description"
+updated_description: "updated segment description"

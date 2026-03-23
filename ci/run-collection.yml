@@ -32,6 +32,7 @@
     - { role: loadbalancer, tags: loadbalancer }
     - { role: logging, tags: logging }
     - { role: network, tags: network }
+    - { role: network_segment, tags: network_segment }
     - { role: neutron_rbac_policy, tags: neutron_rbac_policy }
     - { role: object, tags: object }
     - { role: object_container, tags: object_container }

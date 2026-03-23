@@ -1,0 +1,72 @@
+---
+- name: Create network {{ network_name }}
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: "{{ network_name }}"
+    state: present
+
+- name: Create segment {{ segment_name }}
+  openstack.cloud.network_segment:
+    cloud: "{{ cloud }}"
+    name: "{{ segment_name }}"
+    description: "{{ initial_description }}"
+    network: "{{ network_name }}"
+    network_type: "{{ network_type }}"
+    segmentation_id: "{{ segmentation_id }}"
+    physical_network: "{{ physical_network }}"
+    state: present
+  register: segment
+
+- name: Assert changed
+  assert:
+    that: segment is changed
+
+- name: Assert segment fields
+  assert:
+    that: item in segment.network_segment
+  loop: "{{ expected_fields }}"
+
+- name: Update segment {{ segment_name }} by name - no changes
+  openstack.cloud.network_segment:
+    cloud: "{{ cloud }}"
+    name: "{{ segment_name }}"
+    description: "{{ initial_description }}"
+    state: present
+  register: segment
+
+- name: Assert not changed
+  assert:
+    that: segment is not changed
+
+- name: Update segment {{ segment_name }} by all fields - changes
+  openstack.cloud.network_segment:
+    cloud: "{{ cloud }}"
+    name: "{{ segment_name }}"
+    description: "{{ updated_description }}"
+    network: "{{ network_name }}"
+    network_type: "{{ network_type }}"
+    segmentation_id: "{{ segmentation_id }}"
+    physical_network: "{{ physical_network }}"
+    state: present
+  register: segment
+
+- name: Assert changed
+  assert:
+    that: segment is changed
+
+- name: Delete segment {{ segment_name }}
+  openstack.cloud.network_segment:
+    cloud: "{{ cloud }}"
+    name: "{{ segment_name }}"
+    state: absent
+  register: segment
+
+- name: Assert changed
+  assert:
+    that: segment is changed
+
+- name: Delete network {{ network_name }}
+  openstack.cloud.network:
+    cloud: "{{ cloud }}"
+    name: "{{ network_name }}"
+    state: absent

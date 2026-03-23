@@ -115,6 +115,10 @@ options:
             - Required when I(state) is 'present'
         aliases: ['network_name']
         type: str
+    network_segment:
+        description:
+            - Name or id of the network segment to which the subnet should be associated
+        type: str
     project:
         description:
             - Project name or ID containing the subnet (name admin-only)
@@ -294,6 +298,7 @@ class SubnetModule(OpenStackModule):
     argument_spec = dict(
         name=dict(required=True),
         network=dict(aliases=['network_name']),
+        network_segment=dict(),
         cidr=dict(),
         description=dict(),
         ip_version=dict(type='int', default=4, choices=[4, 6]),
@@ -369,9 +374,11 @@ class SubnetModule(OpenStackModule):
             return [dict(start=pool_start, end=pool_end)]
         return None
 
-    def _build_params(self, network, project, subnet_pool):
+    def _build_params(self, network, segment, project, subnet_pool):
         params = {attr: self.params[attr] for attr in self.attr_params}
         params['network_id'] = network.id
+        if segment:
+            params['segment_id'] = segment.id
         if project:
             params['project_id'] = project.id
         if subnet_pool:
@@ -416,6 +423,7 @@ class SubnetModule(OpenStackModule):
     def run(self):
         state = self.params['state']
         network_name_or_id = self.params['network']
+        network_segment_name_or_id = self.params['network_segment']
         project_name_or_id = self.params['project']
         subnet_pool_name_or_id = self.params['subnet_pool']
         subnet_name = self.params['name']
@@ -444,6 +452,13 @@ class SubnetModule(OpenStackModule):
                                                      **filters)
             filters['network_id'] = network.id
 
+        segment = None
+        if network_segment_name_or_id:
+            segment = self.conn.network.find_segment(network_segment_name_or_id,
+                                                     ignore_missing=False,
+                                                     **filters)
+            filters['segment_id'] = segment.id
+
         subnet_pool = None
         if subnet_pool_name_or_id:
             subnet_pool = self.conn.network.find_subnet_pool(
@@ -460,7 +475,7 @@ class SubnetModule(OpenStackModule):
 
         changed = False
         if state == 'present':
-            params = self._build_params(network, project, subnet_pool)
+            params = self._build_params(network, segment, project, subnet_pool)
             if subnet is None:
                 subnet = self.conn.network.create_subnet(**params)
                 changed = True
