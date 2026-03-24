@@ -485,6 +485,28 @@ class ImageModule(OpenStackModule):
 
         return update_payload
 
+    def _wait_for_image_active(self, image):
+        if not self.params['wait']:
+            return image
+
+        return self.sdk.resource.wait_for_status(
+            self.conn.image,
+            image,
+            status='active',
+            failures=['error', 'deleted', 'killed'],
+            wait=self.params['timeout'],
+            attribute='status')
+
+    def _import_uploaded_image(self, image):
+        if not hasattr(self.conn.image, 'import_image'):
+            self.fail_json(
+                msg="The installed openstacksdk library does not support "
+                    "image import operations required for images in the "
+                    "'uploading' state.")
+
+        self.conn.image.import_image(image, method='glance-direct')
+        return self._wait_for_image_active(self.conn.get_image(image.id))
+
     def run(self):
         changed = False
         image_name_or_id = self.params['id'] or self.params['name']
@@ -545,6 +567,13 @@ class ImageModule(OpenStackModule):
                             id=image.id,
                             name=image.name)
                     changed = True
+                image = self.conn.get_image(image.id)
+
+            if image['status'] == 'uploading' and self.params['use_import']:
+                image = self._import_uploaded_image(image)
+                changed = True
+            elif image['status'] == 'importing':
+                image = self._wait_for_image_active(image)
 
             update_payload = self._build_update(image)
 
