@@ -1,3 +1,0 @@
----
-minor_changes:
-  - Add support for setting the shard key on a baremetal node.

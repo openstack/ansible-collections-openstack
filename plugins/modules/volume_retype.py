@@ -58,6 +58,7 @@ options:
       - Ignored when I(wait=false).
     type: int
     default: 600
+version_added: 2.6.0
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

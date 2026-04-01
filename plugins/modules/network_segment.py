@@ -48,6 +48,7 @@ options:
      choices: ['present', 'absent']
      default: present
      type: str
+version_added: 2.6.0
 extends_documentation_fragment:
 - openstack.cloud.openstack
 '''

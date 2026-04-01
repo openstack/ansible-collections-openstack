@@ -4,6 +4,37 @@ Ansible OpenStack Collection Release Notes
 
 .. contents:: Topics
 
+v2.6.0
+======
+
+Release Summary
+---------------
+
+New modules for Bare Metal port groups and Neutron network segments, plus image/project enhancements and bugfixes.
+
+
+Minor Changes
+-------------
+
+- Add support for setting the shard key on a baremetal node.
+- image - Add support for image ID reservation and queued image creation
+- project - Support updating extra_specs
+
+Bugfixes
+--------
+
+- Fix Ansible errors
+- Fixed compatability with openstacksdk version 4.15.0
+
+New Modules
+-----------
+
+- openstack.cloud.baremetal_port_group - Create/Delete Bare Metal port group resources from OpenStack
+- openstack.cloud.compute_service - Update OpenStack Compute (Nova) services
+- openstack.cloud.network_segment - Creates/removes network segments from OpenStack
+- openstack.cloud.volume_image_metadata - Manage OpenStack Cinder volume image metadata
+- openstack.cloud.volume_retype - Retype (change the volume type of) a Cinder block storage volume
+
 v2.5.0
 ======
 

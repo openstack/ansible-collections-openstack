@@ -32,6 +32,7 @@ options:
     description:
       - Reason for disabling the service. Should be used with state `disabled`.
     type: str
+version_added: 2.6.0
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

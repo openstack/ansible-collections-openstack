@@ -635,3 +635,33 @@ releases:
       - Shows missing data in `stack_info` module output
       release_summary: Bugfixes and minor changes
     release_date: '2025-10-24'
+  2.6.0:
+    changes:
+      bugfixes:
+      - Fix Ansible errors
+      - Fixed compatability with openstacksdk version 4.15.0
+      minor_changes:
+      - Add support for setting the shard key on a baremetal node.
+      - image - Add support for image ID reservation and queued image creation
+      - project - Support updating extra_specs
+      release_summary: New modules for Bare Metal port groups and Neutron network
+        segments, plus image/project enhancements and bugfixes.
+    fragments:
+    - add_shard_key_field_for_baremetal_node.yaml
+    modules:
+    - description: Create/Delete Bare Metal port group resources from OpenStack
+      name: baremetal_port_group
+      namespace: ''
+    - description: Update OpenStack Compute (Nova) services
+      name: compute_service
+      namespace: ''
+    - description: Creates/removes network segments from OpenStack
+      name: network_segment
+      namespace: ''
+    - description: Manage OpenStack Cinder volume image metadata
+      name: volume_image_metadata
+      namespace: ''
+    - description: Retype (change the volume type of) a Cinder block storage volume
+      name: volume_retype
+      namespace: ''
+    release_date: '2026-06-10'

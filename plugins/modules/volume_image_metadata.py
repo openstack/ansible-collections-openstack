@@ -27,6 +27,7 @@ options:
     type: dict
 author:
   - Simon Dodsley (@simondodsley)
+version_added: 2.6.0
 """
 
 EXAMPLES = r"""
