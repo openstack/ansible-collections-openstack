@@ -40,6 +40,13 @@ options:
         required: true
         type: list
         elements: dict
+  schema_version:
+    description:
+      - The federated attribute mapping schema version.
+        The default value on the client side is 'None';
+        however, that will lead the backend to set the default according
+        to 'attribute_mapping_default_schema_version' option.
+    type: str
   state:
     description:
       - Whether the mapping should be C(present) or C(absent).
@@ -69,6 +76,7 @@ EXAMPLES = r'''
         any_one_of:
         - Contractor
         - SubContractor
+    schema_version: '1.0'
 
 - name: Delete a mapping
   openstack.cloud.federation_mapping:
@@ -93,6 +101,9 @@ mapping:
     rules:
       description: List of rules for the mapping
       type: list
+    schema_version:
+      description: Schema version of the mapping
+      type: str
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -108,6 +119,7 @@ class IdentityFederationMappingModule(OpenStackModule):
                 local=dict(required=True, type='list', elements='dict'),
                 remote=dict(required=True, type='list', elements='dict')
             )),
+        schema_version=dict(default=None),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
@@ -155,7 +167,7 @@ class IdentityFederationMappingModule(OpenStackModule):
         if len(self.params['rules']) < 1:
             self.fail_json(msg='At least one rule must be passed')
 
-        attributes = dict((k, self.params[k]) for k in ['rules']
+        attributes = dict((k, self.params[k]) for k in ['rules', 'schema_version']
                           if k in self.params and self.params[k] is not None
                           and self.params[k] != mapping[k])
 
@@ -166,7 +178,8 @@ class IdentityFederationMappingModule(OpenStackModule):
 
     def _create(self):
         return self.conn.identity.create_mapping(id=self.params['name'],
-                                                 rules=self.params['rules'])
+                                                 rules=self.params['rules'],
+                                                 schema_version=self.params['schema_version'])
 
     def _delete(self, mapping):
         self.conn.identity.delete_mapping(mapping.id)
