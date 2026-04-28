@@ -15,16 +15,19 @@ options:
    availability_zone:
      description:
        - The availability zone.
+       - This attribute cannot be updated.
      type: str
    description:
      description:
        - String describing the volume
+       - This attribute cannot be updated.
      type: str
      aliases: [display_description]
    image:
      description:
        - Image name or id for boot from volume
        - Mutually exclusive with I(snapshot) and I(volume)
+       - This attribute cannot be updated.
      type: str
    is_bootable:
      description:
@@ -40,30 +43,36 @@ options:
        - Note that support for multiattach volumes depends on the volume
          type being used.
        - "Cinder's default for I(is_multiattach) is C(false)."
+       - This attribute cannot be updated.
      type: bool
    metadata:
      description:
        - Metadata for the volume
+       - This attribute cannot be updated.
      type: dict
    name:
      description:
         - Name of volume
+        - This attribute cannot be updated.
      required: true
      type: str
      aliases: [display_name]
    scheduler_hints:
      description:
        - Scheduler hints passed to volume API in form of dict
+       - This attribute cannot be updated.
      type: dict
    size:
      description:
         - Size of volume in GB. This parameter is required when the
           I(state) parameter is 'present'.
+        - This attribute can only be updated to a larger size.
      type: int
    snapshot:
      description:
        - Volume snapshot name or id to create from
        - Mutually exclusive with I(image) and I(volume)
+       - This attribute cannot be updated.
      type: str
      aliases: [snapshot_id]
    state:
@@ -76,10 +85,12 @@ options:
      description:
        - Volume name or id to create from
        - Mutually exclusive with I(image) and I(snapshot)
+       - This attribute cannot be updated.
      type: str
    volume_type:
      description:
        - Volume type for volume
+       - This attribute cannot be updated.
      type: str
 extends_documentation_fragment:
 - openstack.cloud.openstack
@@ -238,16 +249,13 @@ class VolumeModule(OpenStackModule):
     )
 
     def _build_update(self, volume):
-        keys = ('size',)
+        keys = ('size', 'is_bootable')
         return {k: self.params[k] for k in keys if self.params[k] is not None
                 and self.params[k] != volume[k]}
 
     def _update(self, volume):
         '''
-        modify volume, the only modification to an existing volume
-        available at the moment is extending the size, this is
-        limited by the openstacksdk and may change whenever the
-        functionality is extended.
+        modify volume. If the size has changed, it can only be extended.
         '''
         diff = {'before': volume.to_dict(computed=False), 'after': ''}
         diff['after'] = diff['before']
@@ -259,15 +267,19 @@ class VolumeModule(OpenStackModule):
                            volume=volume.to_dict(computed=False), diff=diff)
 
         if self.ansible.check_mode:
-            volume.size = update['size']
+            for k, v in update:
+                volume[k] = v
             self.exit_json(changed=False,
                            volume=volume.to_dict(computed=False), diff=diff)
 
         if 'size' in update and update['size'] != volume.size:
             size = update['size']
             self.conn.volume.extend_volume(volume.id, size)
-            volume = self.conn.block_storage.get_volume(volume)
 
+        if 'is_bootable' in update and update['is_bootable'] != volume.is_bootable:
+            self.conn.volume.set_volume_bootable_status(volume, update['is_bootable'])
+
+        volume = self.conn.block_storage.get_volume(volume)
         volume = volume.to_dict(computed=False)
         diff['after'] = volume
         self.exit_json(changed=True, volume=volume, diff=diff)
@@ -309,6 +321,10 @@ class VolumeModule(OpenStackModule):
         if self.params['wait']:
             self.conn.block_storage.wait_for_status(
                 volume, wait=self.params['timeout'])
+
+        if self.params['is_bootable']:
+            self.conn.volume.set_volume_bootable_status(volume, True)
+            volume.is_bootable = True
 
         volume = volume.to_dict(computed=False)
         diff['after'] = volume

@@ -12,14 +12,35 @@
     that: item in vol.volume
   loop: "{{ expected_fields }}"
 
-- name: Create volume from existing volume
+- assert:
+    that: not vol.volume.is_bootable
+
+- name: Create bootable volume from existing volume
   openstack.cloud.volume:
      cloud: "{{ cloud }}"
      state: present
      size: 1
      volume: "{{ vol.volume.id }}"
      name: ansible_volume1
+     is_bootable: true
      description: Test volume
+  register: vol
+
+- assert:
+    that: vol.volume.is_bootable
+
+- name: Make the first volume bootable
+  openstack.cloud.volume:
+     cloud: "{{ cloud }}"
+     state: present
+     size: 1
+     name: ansible_volume
+     is_bootable: true
+     description: Test volume
+  register: vol
+
+- assert:
+    that: vol.volume.is_bootable
 
 - name: Delete volume
   openstack.cloud.volume:
