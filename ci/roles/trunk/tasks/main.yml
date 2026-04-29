@@ -53,7 +53,7 @@
       - ip_address: 10.5.6.55
   register: subport
 
-- name: Create trunk
+- name: Create trunk without subports
   openstack.cloud.trunk:
     cloud: "{{ cloud }}"
     state: present
@@ -61,15 +61,17 @@
     port: "{{ parent_port_name }}"
   register: trunk
 
-- debug: var=trunk
+- name: Display return values of trunk module
+  ansible.builtin.debug:
+    var: trunk
 
-- name: assert return values of trunk module
-  assert:
+- name: Assert return values of trunk module
+  ansible.builtin.assert:
     that:
       # allow new fields to be introduced but prevent fields from being removed
       - expected_fields|difference(trunk.trunk.keys())|length == 0
 
-- name: Add subport to trunk
+- name: Add subport to trunk by name
   openstack.cloud.trunk:
     cloud: "{{ cloud }}"
     state: present
@@ -79,14 +81,66 @@
       - port: "{{ subport_name }}"
         segmentation_type: vlan
         segmentation_id: 123
+  register: trunk_subport_by_name
 
-- name: Update subport from trunk
+- name: Assert the subport is part of the trunk
+  ansible.builtin.assert:
+    that:
+      - trunk_subport_by_name.trunk.sub_ports|length == 1
+
+- name: Remove subport from trunk
   openstack.cloud.trunk:
     cloud: "{{ cloud }}"
     state: present
     name: "{{ trunk_name }}"
     port: "{{ parent_port_name }}"
     sub_ports: []
+  register: trunk_subport_removed
+
+- name: Assert no subports are part of the trunk
+  ansible.builtin.assert:
+    that:
+      - trunk_subport_removed.trunk.sub_ports|length == 0
+
+- name: Add subport to trunk by ID
+  openstack.cloud.trunk:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ trunk_name }}"
+    port: "{{ parent_port_name }}"
+    sub_ports:
+      - port: "{{ subport.port.id }}"
+        segmentation_type: vlan
+        segmentation_id: 123
+  register: trunk_subport_by_id
+
+- name: Assert the subport is part of the trunk
+  ansible.builtin.assert:
+    that:
+      - trunk_subport_by_id.trunk.sub_ports|length == 1
+
+- name: Delete trunk
+  openstack.cloud.trunk:
+    cloud: "{{ cloud }}"
+    state: absent
+    name: "{{ trunk_name }}"
+
+- name: Create trunk without subports
+  openstack.cloud.trunk:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ trunk_name }}"
+    port: "{{ parent_port_name }}"
+    sub_ports:
+      - port: "{{ subport.port.id }}"
+        segmentation_type: vlan
+        segmentation_id: 123
+  register: trunk_with_subports
+
+- name: Assert the subport is part of the trunk
+  ansible.builtin.assert:
+    that:
+      - trunk_with_subports.trunk.sub_ports|length == 1
 
 - name: Delete trunk
   openstack.cloud.trunk:
