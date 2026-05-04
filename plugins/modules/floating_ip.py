@@ -17,8 +17,9 @@ description:
 options:
    fixed_address:
      description:
-        - To which fixed IP of server the floating IP address should be
+        - To which fixed IP of attached port the floating IP address should be
           attached to.
+     aliases: ["fixed_ip_address"]
      type: str
    floating_ip_address:
      description:
@@ -35,6 +36,7 @@ options:
    network:
      description:
         - The name or ID of a neutron external network or a nova pool name.
+        - When I(server) is not defined, I(network) is required
      type: str
    purge:
      description:
@@ -57,7 +59,6 @@ options:
      description:
         - The name or ID of the server to which the IP address
           should be assigned.
-     required: true
      type: str
    state:
      description:
@@ -183,23 +184,24 @@ from ansible_collections.openstack.cloud.plugins.module_utils.openstack import O
 
 class NetworkingFloatingIPModule(OpenStackModule):
     argument_spec = dict(
-        fixed_address=dict(),
+        fixed_address=dict(aliases=['fixed_ip_address']),
         floating_ip_address=dict(),
         nat_destination=dict(aliases=['fixed_network', 'internal_network']),
         network=dict(),
         purge=dict(type='bool', default=False),
         reuse=dict(type='bool', default=False),
-        server=dict(required=True),
+        server=dict(),
         state=dict(default='present', choices=['absent', 'present']),
     )
 
     module_kwargs = dict(
         required_if=[
-            ['state', 'absent', ['floating_ip_address']]
+            ['state', 'present', ['server', 'network'], True],
+            ['state', 'absent', ['floating_ip_address'], False],
         ],
         required_by={
             'floating_ip_address': ('network'),
-        }
+        },
     )
 
     def run(self):
@@ -214,139 +216,174 @@ class NetworkingFloatingIPModule(OpenStackModule):
         changed = False
         fixed_address = self.params['fixed_address']
         floating_ip_address = self.params['floating_ip_address']
-        nat_destination_name_or_id = self.params['nat_destination']
+        nat_destination_id = (
+            self.nat_destination['id'] if self.nat_destination else None
+        )
         network_id = self.network['id'] if self.network else None
+        server = self.server
 
         ips = self._find_ips(
-            server=self.server,
+            server=server,
             floating_ip_address=floating_ip_address,
             network_id=network_id,
             fixed_address=fixed_address,
-            nat_destination_name_or_id=nat_destination_name_or_id)
+            nat_destination_id=nat_destination_id
+        )
 
-        # First floating ip satisfies our requirements
-        ip = ips[0] if ips else None
+        ip = None
 
-        if floating_ip_address:
-            # A specific floating ip address has been requested
+        if not ips:
+            if server:
+                if floating_ip_address:
+                    # Requested floating ip address does not exist
+                    self.conn.add_ip_list(
+                        server=server,
+                        ips=[floating_ip_address],
+                        wait=self.params['wait'],
+                        timeout=self.params['timeout'],
+                        fixed_address=fixed_address
+                    )
+                    changed = True
 
-            if not ip:
-                # If a specific floating ip address has been requested
-                # and it does not exist yet then create it
+                else:
+                    # No specific floating ip has been requested and none of the
+                    # floating ips which have been assigned to the server matches
+                    # requirements
 
-                # openstacksdk's create_ip requires floating_ip_address
-                # and floating_network_id to be set
-                self.conn.network.create_ip(
-                    floating_ip_address=floating_ip_address,
-                    floating_network_id=network_id)
+                    # add_ips_to_server() will handle several scenarios:
+                    #
+                    # If a specific floating ip address has been requested then it
+                    # will be attached to the server. The floating ip address has
+                    # either been created in previous steps or it already existed.
+                    # Ref.: https://github.com/openstack/openstacksdk/blob/
+                    #       9d3ee1d32149ba2a8bb3dc894295e180746cdddc/openstack/cloud
+                    #       /_floating_ip.py#L985
+                    #
+                    # If no specific floating ip address has been requested, reuse
+                    # is allowed and a network has been given (with ip_pool) from
+                    # which floating ip addresses will be drawn, then any existing
+                    # floating ip address from ip_pool=network which is not
+                    # attached to any other server will be attached to the server.
+                    # If no such floating ip address exists or if reuse is not
+                    # allowed, then a new floating ip address will be created
+                    # within ip_pool=network and attached to the server.
+                    # Ref.: https://github.com/openstack/openstacksdk/blob/
+                    #       9d3ee1d32149ba2a8bb3dc894295e180746cdddc/openstack/cloud/
+                    #       _floating_ip.py#L981
+                    #
+                    # If no specific floating ip address has been requested and no
+                    # network has been given (with ip_pool) from which floating ip
+                    # addresses will be taken, then a floating ip address might be
+                    # added to the server, refer to _needs_floating_ip() for
+                    # details.
+                    # Ref.:
+                    # * https://github.com/openstack/openstacksdk/blob/
+                    #   9d3ee1d32149ba2a8bb3dc894295e180746cdddc/openstack/cloud/\
+                    #   _floating_ip.py#L989
+                    # * https://github.com/openstack/openstacksdk/blob/
+                    #   9d3ee1d32149ba2a8bb3dc894295e180746cdddc/openstack/cloud/
+                    #   _floating_ip.py#L995
+                    #
+                    # Both floating_ip_address and network are mutually exclusive
+                    # in add_ips_to_server(), i.e.add_ips_to_server will ignore
+                    # floating_ip_address if network is not None. To prefer
+                    # attaching a specific floating ip address over assigning any
+                    # fip, ip_pool is only defined if floating_ip_address is None.
+                    # Ref.: https://github.com/openstack/openstacksdk/blob/
+                    #       a6b0ece2821ea79330c4067100295f6bdcbe456e/openstack/cloud/
+                    #       _floating_ip.py#L987
+                    self.conn.add_ips_to_server(
+                        server=server,
+                        ip_pool=network_id,
+                        ips=None,  # No specific floating ip requested
+                        reuse=self.params['reuse'],
+                        fixed_address=fixed_address,
+                        wait=self.params['wait'],
+                        timeout=self.params['timeout'],
+                        nat_destination=nat_destination_id
+                    )
+                    changed = True
+
+            else:  # not server
+                kwargs = self._params_to_kwargs(
+                    floating_ip_address,
+                    network_id,
+                    fixed_address,
+                    self.nat_destination
+                )
+
+                # create the ip
+                ip = self.conn.network.create_ip(**kwargs)
                 changed = True
 
-            else:  # ip
-                # Requested floating ip address exists already
+        else:  # ips
+            ip = ips[0]
 
-                if ip.port_details and (ip.port_details['status'] == 'ACTIVE') \
-                   and (floating_ip_address not in self._filter_ips(
-                        self.server)):
-                    # Floating ip address exists and has been attached
-                    # but to a different server
+            if server:
+                server_ips = self._filter_ips(server)
+                if ip.floating_ip_address not in server_ips:
+                    port_details = ip.port_details
+                    if (port_details
+                            and port_details['status'] == 'ACTIVE'):
+                        # Requested ip has been attached to different server
+                        self.fail_json(
+                            msg="Floating ip {0} has been attached to "
+                                "different server".format(
+                                    floating_ip_address))
 
-                    # Requested ip has been attached to different server
-                    self.fail_json(
-                        msg="Floating ip {0} has been attached to different "
-                            "server".format(floating_ip_address))
+                    else:
+                        # Requested floating ip address has not been
+                        # assigned to server
+                        self.conn.add_ip_list(
+                            server=server,
+                            ips=[ip.floating_ip_address],
+                            wait=self.params['wait'],
+                            timeout=self.params['timeout'],
+                            fixed_address=fixed_address
+                        )
+                        changed = True
 
-            if not ip \
-               or floating_ip_address not in self._filter_ips(self.server):
-                # Requested floating ip address does not exist or has not been
-                # assigned to server
+                else:
+                    # floating ip is already assigned to the server
+                    pass
 
-                self.conn.add_ip_list(
-                    server=self.server,
-                    ips=[floating_ip_address],
-                    wait=self.params['wait'],
-                    timeout=self.params['timeout'],
-                    fixed_address=fixed_address)
-                changed = True
+            elif len(ips) > 1:  # not server
+                self.fail_json(msg='Found more than one floating ip')
+
             else:
-                # Requested floating ip address has been assigned to server
-                pass
+                kwargs = self._params_to_kwargs(
+                    floating_ip_address,
+                    network_id,
+                    fixed_address,
+                    self.nat_destination
+                )
+                for key, value in kwargs.items():
+                    if ip[key] != value:
+                        self.conn.network.update_ip(ip, **kwargs)
+                        changed = True
+                        break
 
-        elif not ips:  # and not floating_ip_address
-            # No specific floating ip has been requested and none of the
-            # floating ips which have been assigned to the server matches
-            # requirements
-
-            # add_ips_to_server() will handle several scenarios:
-            #
-            # If a specific floating ip address has been requested then it
-            # will be attached to the server. The floating ip address has
-            # either been created in previous steps or it already existed.
-            # Ref.: https://github.com/openstack/openstacksdk/blob/
-            #       9d3ee1d32149ba2a8bb3dc894295e180746cdddc/openstack/cloud
-            #       /_floating_ip.py#L985
-            #
-            # If no specific floating ip address has been requested, reuse
-            # is allowed and a network has been given (with ip_pool) from
-            # which floating ip addresses will be drawn, then any existing
-            # floating ip address from ip_pool=network which is not
-            # attached to any other server will be attached to the server.
-            # If no such floating ip address exists or if reuse is not
-            # allowed, then a new floating ip address will be created
-            # within ip_pool=network and attached to the server.
-            # Ref.: https://github.com/openstack/openstacksdk/blob/
-            #       9d3ee1d32149ba2a8bb3dc894295e180746cdddc/openstack/cloud/
-            #       _floating_ip.py#L981
-            #
-            # If no specific floating ip address has been requested and no
-            # network has been given (with ip_pool) from which floating ip
-            # addresses will be taken, then a floating ip address might be
-            # added to the server, refer to _needs_floating_ip() for
-            # details.
-            # Ref.:
-            # * https://github.com/openstack/openstacksdk/blob/
-            #   9d3ee1d32149ba2a8bb3dc894295e180746cdddc/openstack/cloud/\
-            #   _floating_ip.py#L989
-            # * https://github.com/openstack/openstacksdk/blob/
-            #   9d3ee1d32149ba2a8bb3dc894295e180746cdddc/openstack/cloud/
-            #   _floating_ip.py#L995
-            #
-            # Both floating_ip_address and network are mutually exclusive
-            # in add_ips_to_server(), i.e.add_ips_to_server will ignore
-            # floating_ip_address if network is not None. To prefer
-            # attaching a specific floating ip address over assigning any
-            # fip, ip_pool is only defined if floating_ip_address is None.
-            # Ref.: https://github.com/openstack/openstacksdk/blob/
-            #       a6b0ece2821ea79330c4067100295f6bdcbe456e/openstack/cloud/
-            #       _floating_ip.py#L987
-            self.conn.add_ips_to_server(
-                server=self.server,
-                ip_pool=network_id,
-                ips=None,  # No specific floating ip requested
-                reuse=self.params['reuse'],
-                fixed_address=fixed_address,
-                wait=self.params['wait'],
-                timeout=self.params['timeout'],
-                nat_destination=nat_destination_name_or_id)
-            changed = True
-        else:
-            # Found one or more floating ips which satisfy requirements
-            pass
-
-        if changed:
+        if changed and server:
             # update server details such as addresses
-            self.server = self.conn.compute.get_server(self.server)
+            server = self.conn.compute.get_server(server)
 
             # Update the floating ip resource
             ips = self._find_ips(
-                self.server, floating_ip_address, network_id,
-                fixed_address, nat_destination_name_or_id)
+                server,
+                floating_ip_address,
+                network_id,
+                fixed_address,
+                nat_destination_id
+            )
 
-        # ips can be empty, e.g. when server has no private ipv4
-        # address to which a floating ip address can be attached
+            # ips can be empty, e.g. when server has no private ipv4
+            # address to which a floating ip address can be attached
+            ip = ips[0] if ips else None
 
         self.exit_json(
             changed=changed,
-            floating_ip=ips[0].to_dict(computed=False) if ips else None)
+            floating_ip=ip.to_dict(computed=False)
+        )
 
     def _detach_and_delete(self):
         ips = self._find_ips(
@@ -354,7 +391,7 @@ class NetworkingFloatingIPModule(OpenStackModule):
             floating_ip_address=self.params['floating_ip_address'],
             network_id=self.network['id'] if self.network else None,
             fixed_address=self.params['fixed_address'],
-            nat_destination_name_or_id=self.params['nat_destination'])
+            nat_destination_id=self.nat_destination['id'] if self.nat_destination else None)
 
         if not ips:
             # Nothing to detach
@@ -362,19 +399,22 @@ class NetworkingFloatingIPModule(OpenStackModule):
 
         changed = False
         for ip in ips:
-            if ip['fixed_ip_address']:
-                # Silently ignore that ip might not be attached to server
-                #
-                # self.conn.network.update_ip(ip_id, port_id=None) does not
-                # handle nova network but self.conn.detach_ip_from_server()
-                # does so
-                self.conn.detach_ip_from_server(server_id=self.server['id'],
-                                                floating_ip_id=ip['id'])
-
-                # OpenStackSDK sets {"port_id": None} to detach a floating
-                # ip from a device, but there might be a delay until a
-                # server does not list it in addresses any more.
-                changed = True
+            if self.server:
+                if ip['fixed_ip_address']:
+                    # Silently ignore that ip might not be attached to server
+                    #
+                    # self.conn.network.update_ip(ip_id, port_id=None) does not
+                    # handle nova network but self.conn.detach_ip_from_server()
+                    # does so
+                    changed = self.conn.detach_ip_from_server(server_id=self.server['id'],
+                                                              floating_ip_id=ip['id'])
+                    # OpenStackSDK sets {"port_id": None} to detach a floating
+                    # ip from a device, but there might be a delay until a
+                    # server does not list it in addresses any more.
+            else:  # not self.server
+                if ip['port_id']:
+                    changed = True
+                self.conn.network.update_ip(floating_ip=ip['id'], port_id=None)
 
             if self.params['purge']:
                 self.conn.network.delete_ip(ip['id'])
@@ -397,39 +437,56 @@ class NetworkingFloatingIPModule(OpenStackModule):
 
         # Returns a list not an iterator here because
         # it is iterated several times below
-        return [address['addr']
-                for address in _flatten(server['addresses'].values())
-                if address['OS-EXT-IPS:type'] == 'floating']
+        addresses = _flatten(server['addresses'].values())
+        return [
+            address['addr']
+            for address in addresses
+            if address['OS-EXT-IPS:type'] == 'floating'
+        ]
 
     def _find_ips(self,
                   server,
                   floating_ip_address,
                   network_id,
                   fixed_address,
-                  nat_destination_name_or_id):
+                  nat_destination_id):
         # Check which floating ips matches our requirements.
         # They might or might not be attached to our server.
         if floating_ip_address:
             # A specific floating ip address has been requested
             ip = self.conn.network.find_ip(floating_ip_address)
             return [ip] if ip else []
-        elif (not fixed_address and nat_destination_name_or_id):
-            # No specific floating ip and no specific fixed ip have been
-            # requested but a private network (nat_destination) has been
-            # given where the floating ip should be attached to.
-            return self._find_ips_by_nat_destination(
-                server, nat_destination_name_or_id)
-        else:
-            # not floating_ip_address
-            # and (fixed_address or not nat_destination_name_or_id)
+        elif server:
+            if (not fixed_address and nat_destination_id):
+                # No specific floating ip and no specific fixed ip have been
+                # requested but a private network (nat_destination) has been
+                # given where the floating ip should be attached to.
+                return self._find_ips_by_nat_destination(
+                    server, nat_destination_id)
+            else:
+                # not floating_ip_address
+                # and (fixed_address or not nat_destination_id)
 
-            # An analysis of all floating ips of server is required
-            return self._find_ips_by_network_id_and_fixed_address(
-                server, fixed_address, network_id)
+                # An analysis of all floating ips of server is required
+                return self._find_ips_by_network_id_and_fixed_address(
+                    server, fixed_address, network_id)
+        elif fixed_address or nat_destination_id:
+            ports = self._find_ports_by_fixed_address_or_nat_destination(fixed_address, nat_destination_id)
+
+            floating_ips = []
+            for port in ports:
+                ips = list(self.conn.network.ips(port_id=port.id))
+                floating_ips.extend(ips)
+
+            return floating_ips
+        elif network_id:
+            return list(self.conn.network.ips(floating_network_id=network_id))
+        else:
+            return []
 
     def _find_ips_by_nat_destination(self,
                                      server,
-                                     nat_destination_name_or_id):
+                                     nat_destination_id):
 
         if not server['addresses']:
             return None
@@ -437,7 +494,7 @@ class NetworkingFloatingIPModule(OpenStackModule):
         # Check if we have any floating ip on
         # the given nat_destination network
         nat_destination = self.conn.network.find_network(
-            nat_destination_name_or_id, ignore_missing=False)
+            nat_destination_id, ignore_missing=False)
 
         fips_with_nat_destination = [
             addr for addr
@@ -467,7 +524,7 @@ class NetworkingFloatingIPModule(OpenStackModule):
                 # match network of floating ip
                 continue
 
-            if not fixed_address:  # and not nat_destination_name_or_id
+            if not fixed_address:  # and not nat_destination_id
                 # Any floating ip will fullfil these requirements
                 matching_ips.append(ip)
 
@@ -478,19 +535,83 @@ class NetworkingFloatingIPModule(OpenStackModule):
 
         return matching_ips
 
+    def _params_to_kwargs(self,
+                          floating_ip_address,
+                          network_id,
+                          fixed_address,
+                          nat_destination):
+        kwargs = {}
+
+        kwargs['floating_network_id'] = network_id
+
+        if fixed_address:
+            # must indicate internal port identifier
+            ports = self._find_ports_by_fixed_address_or_nat_destination(
+                fixed_address, nat_destination
+            )
+            if len(ports) > 1:
+                self.fail_json(
+                    msg='There are multiple subnets with the fixed ip '
+                        'address {0}'.format(fixed_address)
+                )
+            elif len(ports) == 0:
+                self.fail_json(
+                    msg='No port found with fixed ip address {0}'.format(
+                        fixed_address)
+                )
+            else:
+                kwargs['fixed_ip_address'] = fixed_address
+                kwargs['port_id'] = ports[0].id
+
+        if floating_ip_address:
+            kwargs['floating_ip_address'] = floating_ip_address
+
+        return kwargs
+
+    def _find_ports_by_fixed_address_or_nat_destination(self,
+                                                        fixed_address,
+                                                        nat_destination):
+        port_kwargs = {}
+
+        if fixed_address:
+            port_kwargs['fixed_ips'] = f'ip_address={fixed_address}'
+        if nat_destination:
+            port_kwargs['network_id'] = nat_destination.id
+
+        ports = self.conn.network.ports(**port_kwargs)
+        return list(ports)
+
     def _init(self):
         server_name_or_id = self.params['server']
-        server = self.conn.compute.find_server(server_name_or_id,
-                                               ignore_missing=False)
-        # fetch server details such as addresses
-        self.server = self.conn.compute.get_server(server)
+        if server_name_or_id:
+            self.server = self.conn.compute.find_server(
+                name_or_id=server_name_or_id, ignore_missing=False
+            )
+        else:
+            self.server = None
+
+        if (self.server is None and self.params['fixed_address']
+                and self.params['nat_destination'] is None):
+            self.fail_json(
+                msg='fixed_address requires nat_destination to be defined '
+                    'when server isn\'t'
+            )
 
         network_name_or_id = self.params['network']
         if network_name_or_id:
             self.network = self.conn.network.find_network(
-                name_or_id=network_name_or_id, ignore_missing=False)
+                name_or_id=network_name_or_id, ignore_missing=False
+            )
         else:
             self.network = None
+
+        nat_destination_name_or_id = self.params['nat_destination']
+        if nat_destination_name_or_id:
+            self.nat_destination = self.conn.network.find_network(
+                name_or_id=nat_destination_name_or_id, ignore_missing=False
+            )
+        else:
+            self.nat_destination = None
 
 
 def main():
