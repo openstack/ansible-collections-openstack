@@ -60,6 +60,8 @@ action_groups:
     - object_container
     - object_containers_info
     - port
+    - port_forwarding
+    - port_forwarding_info
     - port_info
     - project
     - project_info
