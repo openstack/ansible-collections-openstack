@@ -1,0 +1,103 @@
+---
+- name: Get available images
+  openstack.cloud.image_info:
+    cloud: "{{ volume_image_metadata_cloud }}"
+  register: image_info
+
+- name: Select test image
+  set_fact:
+    volume_image_metadata_image_id: >-
+      {{
+        image_info.images
+        | selectattr('status', 'equalto', 'active')
+        | list
+        | first
+        | default({})
+      }}
+
+- name: Assert an image is available for testing
+  assert:
+    that:
+      - volume_image_metadata_image_id.id is defined
+    fail_msg: "No active images available in the cloud for volume_image_metadata CI test"
+
+- name: Create a test volume from image
+  openstack.cloud.volume:
+    cloud: "{{ volume_image_metadata_cloud }}"
+    state: present
+    name: "{{ volume_image_metadata_volume_name }}"
+    image: "{{ volume_image_metadata_image_id.id }}"
+    size: "{{ volume_image_metadata_size }}"
+  register: created_volume
+
+- name: Assert volume was created
+  assert:
+    that:
+      - created_volume.volume is defined
+      - created_volume.volume.id is defined
+
+- name: Get volume details
+  openstack.cloud.volume_info:
+    cloud: "{{ volume_image_metadata_cloud }}"
+    name: "{{ volume_image_metadata_volume_name }}"
+  register: volume_info
+
+- name: Assert volume has image metadata
+  assert:
+    that:
+      - volume_info.volumes[0].volume_image_metadata is defined
+      - volume_info.volumes[0].volume_image_metadata | length > 0
+
+# --------------------------------------------------------------------
+# Exercise new module
+# --------------------------------------------------------------------
+- name: Set volume image metadata
+  openstack.cloud.volume_image_metadata:
+    cloud: "{{ volume_image_metadata_cloud }}"
+    volume: "{{ created_volume.volume.id }}"
+    image_metadata: "{{ volume_image_metadata }}"
+  register: image_meta_result
+
+- name: Assert image metadata changed
+  assert:
+    that:
+      - image_meta_result.changed | bool
+
+# --------------------------------------------------------------------
+# Idempotency check
+# --------------------------------------------------------------------
+- name: Set volume image metadata again (idempotent)
+  openstack.cloud.volume_image_metadata:
+    cloud: "{{ volume_image_metadata_cloud }}"
+    volume: "{{ created_volume.volume.id }}"
+    image_metadata: "{{ volume_image_metadata }}"
+  register: image_meta_idempotent
+
+- name: Assert idempotent behavior
+  assert:
+    that:
+      - not image_meta_idempotent.changed | bool
+
+# --------------------------------------------------------------------
+# Verify metadata persisted
+# --------------------------------------------------------------------
+- name: Re-fetch volume details
+  openstack.cloud.volume_info:
+    cloud: "{{ volume_image_metadata_cloud }}"
+    name: "{{ volume_image_metadata_volume_name }}"
+  register: final_volume_info
+
+- name: Verify image metadata values
+  assert:
+    that:
+      - final_volume_info.volumes[0].volume_image_metadata.disk_format == "qcow2"
+      - final_volume_info.volumes[0].volume_image_metadata.container_format == "bare"
+
+# --------------------------------------------------------------------
+# Cleanup
+# --------------------------------------------------------------------
+- name: Delete test volume
+  openstack.cloud.volume:
+    cloud: "{{ volume_image_metadata_cloud }}"
+    state: absent
+    name: "{{ volume_image_metadata_volume_name }}"

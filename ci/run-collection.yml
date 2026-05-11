@@ -66,3 +66,4 @@
     - { role: volume_service, tags: volume_service }
     - { role: volume_snapshot, tags: volume_snapshot }
     - { role: volume_type_access, tags: volume_type_access }
+    - { role: volume_image_metadata, tags: volume_image_metadata }
