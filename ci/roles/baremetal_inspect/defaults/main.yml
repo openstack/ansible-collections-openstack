@@ -46,6 +46,7 @@ expected_fields:
   - reservation
   - resource_class
   - retired_reason
+  - shard
   - states
   - storage_interface
   - target_power_state
