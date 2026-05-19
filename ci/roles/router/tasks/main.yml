@@ -325,6 +325,43 @@
       - ports.ports|rejectattr('device_owner', 'equalto', 'network:router_gateway')|sum(attribute='fixed_ips', start=[])|map(attribute='ip_address')|sort|list ==
         ['10.7.7.1']
 
+- name: Update router (add tags)
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ router_name }}"
+    tags:
+      - foo
+      - bar
+
+- name: Gather routers info
+  openstack.cloud.routers_info:
+     cloud: "{{ cloud }}"
+     name: "{{ router_name }}"
+  register: info
+
+- name: Verify tags
+  assert:
+    that:
+      - info.routers.0.name == router_name
+      - info.routers.0.id == router.router.id
+      - "'foo' in info.routers.0.tags"
+      - "'bar' in info.routers.0.tags"
+
+- name: Update router (add tags) again
+  openstack.cloud.router:
+    cloud: "{{ cloud }}"
+    state: present
+    name: "{{ router_name }}"
+    tags:
+      - foo
+      - bar
+  register: router
+
+- name: Assert idempotent module
+  assert:
+    that: router is not changed
+
 # Admin operation
 - name: Create external network
   openstack.cloud.network:

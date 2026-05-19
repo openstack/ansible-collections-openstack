@@ -41,6 +41,9 @@
     gateway_ip: 192.168.0.1
     allocation_pool_start: 192.168.0.2
     allocation_pool_end: 192.168.0.254
+    tags:
+      - foo
+      - bar
   register: subnet
 
 - name: Assert changed
@@ -66,6 +69,9 @@
     gateway_ip: 192.168.0.1
     allocation_pool_start: 192.168.0.2
     allocation_pool_end: 192.168.0.254
+    tags:
+      - foo
+      - bar
   register: subnet
 
 - name: Assert not changed
@@ -90,6 +96,8 @@
       enable_dhcp: "{{ enable_subnet_dhcp }}"
       gateway_ip: 192.168.0.1
       cidr: 192.168.0.0/24
+      tags:
+        - bar
   register: subnet
 
 - name: Verify Subnet info result
@@ -124,6 +132,10 @@
     dns_nameservers:
       - 8.8.8.7
     cidr: 192.168.0.0/24
+    tags:
+      - foo
+      - bar
+      - baz
   register: subnet
 
 - name: Assert changed
