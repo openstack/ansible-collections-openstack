@@ -32,6 +32,7 @@ action_groups:
     - floating_ip_info
     - group_assignment
     - host_aggregate
+    - host_aggregate_info
     - identity_domain
     - identity_domain_info
     - identity_group
