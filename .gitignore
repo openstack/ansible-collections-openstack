@@ -4,3 +4,7 @@ ansible_collections
 FILES.json
 MANIFEST.json
 importer_result.json
+
+**/__pycache__
+.venv
+.python-version
