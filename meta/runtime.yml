@@ -1,4 +1,4 @@
-requires_ansible: ">=2.8"
+requires_ansible: '>=2.8'
 action_groups:
   openstack:
     - address_scope
@@ -19,6 +19,7 @@ action_groups:
     - compute_flavor
     - compute_flavor_access
     - compute_flavor_info
+    - compute_service
     - compute_service_info
     - config
     - dns_zone
