@@ -1,0 +1,4 @@
+---
+minor_changes:
+  - Added a new ``openstack.cloud.volume_retype`` module to retype
+    Cinder volumes via the ``os-retype`` API.
