@@ -2,16 +2,15 @@
 
 ## Publishing to Ansible Galaxy
 
-1. Create entry in [changelog.yaml](../changelogs/changelog.yaml) with commits since last release.
-   * Modules should be in a separate section `modules`
-   * Bugfixes and minor changes in their sections
-2. Change version in [galaxy.yml](../galaxy.yml). Apply [Semantic Versioning](https://semver.org/):
+1. Change version in galaxy.yml. Apply Semantic Versioning:
    * Increase major version for breaking changes or modules were removed
    * Increase minor version when modules were added
    * Increase patch version for bugfixes
-3. Run `antsibull-changelog release` command (run `pip install antsibull` before) to generate [CHANGELOG.rst](
-   ../CHANGELOG.rst) and verify correctness of generated files.
-4. Commit changes to `changelog.yaml` and `galaxy.yml`, submit patch and wait until it has been merged
+2. Run `antsibull-changelog release` command ([antsibull-changelog documentation](
+   https://docs.ansible.com/projects/ansible/latest/dev_guide/developing_collections_changelogs.html))
+   to aggregate changelog fragments into changelog.yaml and generate CHANGELOG.rst.
+3. Verify correctness of generated files.
+4. Commit changes to `changelog.yaml` and `galaxy.yml`, submit patch and wait until it has been merged.
 5. Tag the release with version as it's described in [OpenStack docs](
    https://docs.opendev.org/opendev/infra-manual/latest/drivers.html#tagging-a-release):
     * [Make sure you have a valid GnuPG key pair](
