@@ -1,0 +1,183 @@
+---
+# ci/roles/volume_retype/tasks/main.yml
+# Integration tests for openstack.cloud.volume_retype
+#
+# Prerequisites (set up in surrounding playbook or defaults):
+#   - cloud: devstack-admin
+#   - A DevStack instance with at least two volume types
+#
+# The tests follow the collection's pattern:
+#   1. Create prerequisites (volume types, volume)
+#   2. Run module - assert changed
+#   3. Re-run module - assert NOT changed (idempotency)
+#   4. Validate returned data
+#   5. Clean up
+
+- name: Create source volume type
+  openstack.cloud.volume_type:
+    cloud: "{{ volume_retype_cloud  }}"
+    state: present
+    name: "{{ vtype_src_name }}"
+    is_public: true
+  register: vtype_src
+
+- name: Create destination volume type
+  openstack.cloud.volume_type:
+    cloud: "{{ volume_retype_cloud }}"
+    state: present
+    name: "{{ vtype_dst_name }}"
+    is_public: true
+  register: vtype_dst
+
+- name: Create a test volume using the source type
+  openstack.cloud.volume:
+    cloud: "{{ volume_retype_cloud }}"
+    state: present
+    name: "{{ volume_name }}"
+    size: 1
+    volume_type: "{{ vtype_src_name }}"
+    wait: true
+  register: test_volume
+
+- name: Assert volume was created with the source type
+  ansible.builtin.assert:
+    that:
+      - test_volume.volume.volume_type == vtype_src_name
+      - test_volume.volume.status == 'available'
+
+# ------------------------------------------------------------------
+# Test 1: Basic retype (migration_policy=never, same-backend assumed)
+# ------------------------------------------------------------------
+- name: Retype volume to destination type (migration_policy=never)
+  openstack.cloud.volume_retype:
+    cloud: "{{ volume_retype_cloud }}"
+    volume: "{{ volume_name }}"
+    new_type: "{{ vtype_dst_name }}"
+    migration_policy: never
+    wait: true
+    timeout: 120
+  register: retype_result
+
+- name: Assert retype was applied
+  ansible.builtin.assert:
+    that:
+      - retype_result is changed
+      - retype_result.volume.volume_type == vtype_dst_name
+      - retype_result.volume.status == 'available'
+
+# ------------------------------------------------------------------
+# Test 2: Idempotency – re-running with same target type must be no-op
+# ------------------------------------------------------------------
+- name: Re-run retype with same target type (idempotency check)
+  openstack.cloud.volume_retype:
+    cloud: "{{ volume_retype_cloud }}"
+    volume: "{{ volume_name }}"
+    new_type: "{{ vtype_dst_name }}"
+    migration_policy: never
+    wait: true
+  register: retype_idempotent
+
+- name: Assert no change on second run
+  ansible.builtin.assert:
+    that:
+      - retype_idempotent is not changed
+
+# ------------------------------------------------------------------
+# Test 3: Check mode – must report changed without touching the API
+# ------------------------------------------------------------------
+- name: Check mode – retype back to source type (should report changed, no action)
+  openstack.cloud.volume_retype:
+    cloud: "{{ volume_retype_cloud }}"
+    volume: "{{ volume_name }}"
+    new_type: "{{ vtype_src_name }}"
+    migration_policy: never
+  check_mode: true
+  register: retype_check_mode
+
+- name: Assert check mode reports changed but volume type is still the destination
+  ansible.builtin.assert:
+    that:
+      - retype_check_mode is changed
+
+- name: Confirm actual volume type did NOT change (check mode was dry-run)
+  openstack.cloud.volume_info:
+    cloud: "{{ volume_retype_cloud }}"
+    name: "{{ volume_name }}"
+  register: volume_info_after_check
+
+- name: Assert volume type unchanged after check mode run
+  ansible.builtin.assert:
+    that:
+      - volume_info_after_check.volumes[0].volume_type == vtype_dst_name
+
+# ------------------------------------------------------------------
+# Test 4: Retype by volume ID (not name)
+# ------------------------------------------------------------------
+- name: Retype volume using its UUID
+  openstack.cloud.volume_retype:
+    cloud: "{{ volume_retype_cloud }}"
+    volume: "{{ test_volume.volume.id }}"
+    new_type: "{{ vtype_src_name }}"
+    migration_policy: never
+    wait: true
+  register: retype_by_id
+
+- name: Assert retype by ID succeeded
+  ansible.builtin.assert:
+    that:
+      - retype_by_id is changed
+      - retype_by_id.volume.volume_type == vtype_src_name
+
+# ------------------------------------------------------------------
+# Test 5: Error handling – non-existent volume
+# ------------------------------------------------------------------
+- name: Attempt retype of non-existent volume (expect failure)
+  openstack.cloud.volume_retype:
+    cloud: "{{ volume_retype_cloud }}"
+    volume: this-volume-does-not-exist
+    new_type: "{{ vtype_dst_name }}"
+  register: retype_missing
+  ignore_errors: true
+
+- name: Assert that missing volume causes failure
+  ansible.builtin.assert:
+    that:
+      - retype_missing is failed
+
+# ------------------------------------------------------------------
+# Test 6: Error handling – non-existent volume type
+# ------------------------------------------------------------------
+- name: Attempt retype to a non-existent volume type (expect failure)
+  openstack.cloud.volume_retype:
+    cloud: "{{ volume_retype_cloud }}"
+    volume: "{{ volume_name }}"
+    new_type: this-type-does-not-exist
+  register: retype_missing_type
+  ignore_errors: true
+
+- name: Assert that missing volume type causes failure
+  ansible.builtin.assert:
+    that:
+      - retype_missing_type is failed
+
+# ------------------------------------------------------------------
+# Clean up
+# ------------------------------------------------------------------
+- name: Delete test volume
+  openstack.cloud.volume:
+    cloud: "{{ volume_retype_cloud }}"
+    state: absent
+    name: "{{ volume_name }}"
+    wait: true
+
+- name: Delete source volume type
+  openstack.cloud.volume_type:
+    cloud: "{{ volume_retype_cloud }}"
+    state: absent
+    name: "{{ vtype_src_name }}"
+
+- name: Delete destination volume type
+  openstack.cloud.volume_type:
+    cloud: "{{ volume_retype_cloud }}"
+    state: absent
+    name: "{{ vtype_dst_name }}"

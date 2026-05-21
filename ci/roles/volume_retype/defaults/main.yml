@@ -1,0 +1,5 @@
+---
+volume_retype_cloud: "{{ cloud | default(omit) }}"
+vtype_src_name: ansible_test_vtype_src
+vtype_dst_name: ansible_test_vtype_dst
+volume_name: ansible_test_retype_vol
