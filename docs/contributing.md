@@ -80,6 +80,8 @@ openstacksdk], please read our [branching docs](branching.md).
   + be based on (be subclasses of) `OpenStackModule` in
     `ansible_collections.openstack.cloud.plugins.module_utils.openstack`,
   + should include `extends_documentation_fragment: openstack` in their  `DOCUMENTATION` docstring,
+  + should contain `version_added` in their `DOCUMENTATION` docstring, where the version is
+    incremented minor version of the collection,
   + be registered in `meta/action_groups.yml` for enabling the variables to be set in
     [group level][ansible-module-defaults].
 * Complex functionality, cloud interaction or interoperability code should be moved to [openstacksdk][openstacksdk].
@@ -135,6 +137,22 @@ openstacksdk], please read our [branching docs](branching.md).
     For example, `list_*` functions from openstacksdk's cloud layer such as `search_users()` allow to filter retrieved
     results with function parameter `filters`. openstacksdk's proxy layer does not provide an equivalent and thus the
     use of `search_users()` is perfectly fine.
+
+## Changelog fragments
+
+Every patch that introduces a new feature, a bugfix, or a breaking change must include a changelog fragment.
+
+When you introduce a new module, the changelog fragment is not required. However, ensure that your module
+`DOCUMENTATION` contains `version_added` field in it. Please, increment a minor version of the collection for
+the value of `version_added`. For example, if current `openstack.cloud` collection version is `2.5.0`, you
+need to use `version_added: 2.6.0`.
+
+As this is an Ansible collection, we follow the Ansible community standard for changelogs. Please note that **the `reno`
+tool should not be used** in this repository. Instead, follow the guide linked below to create fragments manually in the
+`changelogs/fragments/` directory.
+
+Please refer to the Ansible's [changelog fragments documentation](https://docs.ansible.com/projects/ansible/latest/community/development_process.html#creating-a-changelog-fragment)
+for more details on the format, valid sections, and how to create a fragment.
 
 ## Testing
 
