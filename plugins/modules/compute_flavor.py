@@ -289,7 +289,7 @@ class ComputeFlavorModule(OpenStackModule):
 
         return update
 
-    def _create(self):
+    def _create(self, id_default=None):
         kwargs = dict((k, self.params[k])
                       for k in ['name', 'ram', 'vcpus', 'disk', 'ephemeral',
                                 'swap', 'rxtx_factor', 'is_public',
@@ -300,6 +300,8 @@ class ComputeFlavorModule(OpenStackModule):
         id = self.params['id']
         if id is not None and id != 'auto':
             kwargs['id'] = id
+        elif id_default is not None:
+            kwargs['id'] = id_default
 
         flavor = self.conn.compute.create_flavor(**kwargs)
 
@@ -342,7 +344,7 @@ class ComputeFlavorModule(OpenStackModule):
             # Because only flavor descriptions are updateable,
             # flavor has to be recreated to "update" it
             self._delete(flavor)
-            flavor = self._create()
+            flavor = self._create(id_default=flavor.id)
 
         return flavor
 
