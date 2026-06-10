@@ -1228,10 +1228,13 @@ class ServerModule(OpenStackModule):
         if not isinstance(stringified_nets, list):
             self.fail_json(msg="The 'nics' parameter must be a list.")
 
-        nets = [(dict((nested_net.split('='),))
-                for nested_net in net.split(','))
-                if isinstance(net, str) else net
-                for net in stringified_nets]
+        nets = []
+        for net in stringified_nets:
+            if isinstance(net, str):
+                for nested_net in net.split(','):
+                    nets.append(dict((nested_net.split('='),)))
+            else:
+                nets.append(net)
 
         for net in nets:
             if not isinstance(net, dict):

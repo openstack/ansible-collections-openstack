@@ -16,13 +16,48 @@ class AnsibleExit(Exception):
     pass
 
 
+class FakeSDK(object):
+    class exceptions(object):
+        class OpenStackCloudException(Exception):
+            pass
+
+        class ResourceNotFound(OpenStackCloudException):
+            pass
+
+
+class HelperServerModule(os_server.ServerModule):
+    def __init__(self, params, conn, sdk):
+        self.params = {}
+        for k, v in self.argument_spec.items():
+            if 'default' in v:
+                self.params[k] = v['default']
+            else:
+                self.params[k] = None
+        self.params.update(params)
+        if ('floating_ips' in params or 'floating_ip_pools' in params) and 'auto_ip' not in params:
+            self.params['auto_ip'] = False
+        self.params = collections.defaultdict(str, self.params)
+
+        self.conn = conn
+        self.sdk = sdk
+        self.module_name = 'server'
+        self.check_mode = False
+        self.results = {'changed': False}
+        self.ansible = mock.MagicMock()
+        self.ansible.check_mode = False
+        self.ansible.exit_json.side_effect = AnsibleExit
+        self.ansible.fail_json.side_effect = AnsibleFail
+        self.exit_json = self.ansible.exit_json
+        self.fail_json = self.ansible.fail_json
+
+
 def params_from_doc(func):
     '''This function extracts the docstring from the specified function,
     parses it as a YAML document, and returns parameters for the openstack.cloud.server
     module.'''
 
     doc = inspect.getdoc(func)
-    cfg = yaml.load(doc)
+    cfg = yaml.safe_load(doc)
 
     for task in cfg:
         for module, params in task.items():
@@ -95,15 +130,32 @@ class TestNetworkArgs(object):
 
     def setup_method(self, method):
         self.cloud = FakeCloud()
-        self.module = mock.MagicMock()
-        self.module.params = params_from_doc(method)
+        self.cloud.network = mock.MagicMock()
+
+        def find_network(name, ignore_missing=False):
+            net = self.cloud.get_network(name)
+            if net:
+                return mock.MagicMock(id=net['id'])
+            raise Exception("Network not found")
+
+        def find_port(name, ignore_missing=False):
+            port = self.cloud.get_port(name)
+            if port:
+                return mock.MagicMock(id=port['id'])
+            raise Exception("Port not found")
+
+        self.cloud.network.find_network.side_effect = find_network
+        self.cloud.network.find_port.side_effect = find_port
+
+        self.params = params_from_doc(method)
+        self.module = HelperServerModule(self.params, self.cloud, FakeSDK())
 
     def test_nics_string_net_id(self):
         '''
         - openstack.cloud.server:
             nics: net-id=1234
         '''
-        args = os_server._network_args(self.module, self.cloud)
+        args = self.module._parse_nics()
         assert args[0]['net-id'] == '1234'
 
     def test_nics_string_net_id_list(self):
@@ -111,7 +163,7 @@ class TestNetworkArgs(object):
         - openstack.cloud.server:
             nics: net-id=1234,net-id=4321
         '''
-        args = os_server._network_args(self.module, self.cloud)
+        args = self.module._parse_nics()
         assert args[0]['net-id'] == '1234'
         assert args[1]['net-id'] == '4321'
 
@@ -120,7 +172,7 @@ class TestNetworkArgs(object):
         - openstack.cloud.server:
             nics: port-id=1234
         '''
-        args = os_server._network_args(self.module, self.cloud)
+        args = self.module._parse_nics()
         assert args[0]['port-id'] == '1234'
 
     def test_nics_string_net_name(self):
@@ -128,7 +180,7 @@ class TestNetworkArgs(object):
         - openstack.cloud.server:
             nics: net-name=network1
         '''
-        args = os_server._network_args(self.module, self.cloud)
+        args = self.module._parse_nics()
         assert args[0]['net-id'] == '5678'
 
     def test_nics_string_port_name(self):
@@ -136,7 +188,7 @@ class TestNetworkArgs(object):
         - openstack.cloud.server:
             nics: port-name=port1
         '''
-        args = os_server._network_args(self.module, self.cloud)
+        args = self.module._parse_nics()
         assert args[0]['port-id'] == '1234'
 
     def test_nics_structured_net_id(self):
@@ -145,7 +197,7 @@ class TestNetworkArgs(object):
             nics:
                 - net-id: '1234'
         '''
-        args = os_server._network_args(self.module, self.cloud)
+        args = self.module._parse_nics()
         assert args[0]['net-id'] == '1234'
 
     def test_nics_structured_mixed(self):
@@ -156,7 +208,7 @@ class TestNetworkArgs(object):
                 - port-name: port1
                 - 'net-name=network1,port-id=4321'
         '''
-        args = os_server._network_args(self.module, self.cloud)
+        args = self.module._parse_nics()
         assert args[0]['net-id'] == '1234'
         assert args[1]['port-id'] == '1234'
         assert args[2]['net-id'] == '5678'
@@ -166,10 +218,31 @@ class TestNetworkArgs(object):
 class TestCreateServer(object):
     def setup_method(self, method):
         self.cloud = FakeCloud()
-        self.module = mock.MagicMock()
-        self.module.params = params_from_doc(method)
-        self.module.fail_json.side_effect = AnsibleFail()
-        self.module.exit_json.side_effect = AnsibleExit()
+        self.cloud.compute = mock.MagicMock()
+        self.cloud.compute.find_server.return_value = None
+        self.cloud.compute.get_server.return_value = mock.MagicMock()
+        self.cloud.compute.get_server.return_value.to_dict.return_value = {'id': '1234'}
+
+        def find_flavor(name_or_id, ignore_missing=True):
+            flavor = self.cloud.get_flavor(name_or_id)
+            if flavor:
+                return mock.MagicMock(id=flavor['id'])
+            if not ignore_missing:
+                raise FakeSDK.exceptions.ResourceNotFound("Could not find flavor {0}".format(name_or_id))
+            return None
+        self.cloud.compute.find_flavor.side_effect = find_flavor
+
+        self.cloud.network = mock.MagicMock()
+
+        def find_network(name, ignore_missing=False):
+            net = self.cloud.get_network(name)
+            if net:
+                return mock.MagicMock(id=net['id'])
+            raise Exception("Network not found")
+        self.cloud.network.find_network.side_effect = find_network
+
+        self.params = params_from_doc(method)
+        self.module = HelperServerModule(self.params, self.cloud, FakeSDK())
 
         self.meta = mock.MagicMock()
         self.meta.gett_hostvars_from_server.return_value = {
@@ -188,7 +261,7 @@ class TestCreateServer(object):
               - key: value
         '''
         with pytest.raises(AnsibleExit):
-            os_server._create_server(self.module, self.cloud)
+            self.module()
 
         assert self.cloud.create_server.call_count == 1
         assert self.cloud.create_server.call_args[1]['image'] == self.cloud.get_image_id('cirros')
@@ -204,7 +277,7 @@ class TestCreateServer(object):
               - net-name: network1
         '''
         with pytest.raises(AnsibleFail):
-            os_server._create_server(self.module, self.cloud)
+            self.module()
 
         assert 'missing_flavor' in self.module.fail_json.call_args[1]['msg']
 
@@ -216,8 +289,12 @@ class TestCreateServer(object):
             nics:
               - net-name: missing_network
         '''
+        def find_network_fail(name, ignore_missing=False):
+            raise FakeSDK.exceptions.ResourceNotFound("missing_network")
+        self.cloud.network.find_network.side_effect = find_network_fail
+
         with pytest.raises(AnsibleFail):
-            os_server._create_server(self.module, self.cloud)
+            self.module()
 
         assert 'missing_network' in self.module.fail_json.call_args[1]['msg']
 
@@ -231,7 +308,7 @@ class TestCreateServer(object):
               - net-name: network1
         '''
         with pytest.raises(AnsibleFail):
-            os_server._create_server(self.module, self.cloud)
+            self.module()
 
         assert 'auto_ip' in self.module.fail_json.call_args[1]['msg']
 
@@ -245,7 +322,7 @@ class TestCreateServer(object):
               - net-name: network1
         '''
         with pytest.raises(AnsibleFail):
-            os_server._create_server(self.module, self.cloud)
+            self.module()
 
         assert 'floating_ips' in self.module.fail_json.call_args[1]['msg']
 
@@ -259,6 +336,6 @@ class TestCreateServer(object):
               - net-name: network1
         '''
         with pytest.raises(AnsibleFail):
-            os_server._create_server(self.module, self.cloud)
+            self.module()
 
         assert 'floating_ip_pools' in self.module.fail_json.call_args[1]['msg']
