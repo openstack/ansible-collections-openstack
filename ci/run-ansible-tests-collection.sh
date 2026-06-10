@@ -104,9 +104,6 @@ for var in $(env | grep -e '^ANSIBLE_VAR_'); do
   ANSIBLE_VARS+="${ANSIBLE_VAR_NAME}=${ANSIBLE_VAR_VALUE} " # concat variables
 done
 
-# Discover openstacksdk version
-SDK_VER=$(python -c "import openstack; print(openstack.version.__version__)")
-
 # Choose integration tests
 tag_opt=""
 if [ -n "$TAGS" ]; then
@@ -136,5 +133,5 @@ set -o pipefail
 # shellcheck disable=SC2086
 ANSIBLE_COLLECTIONS_PATH=$TEST_COLLECTIONS_PATHS ansible-playbook \
     -vvv ./run-collection.yml \
-    -e "sdk_version=${SDK_VER} cloud=${CLOUD} cloud_alt=${CLOUD_ALT} ${ANSIBLE_VARS}" \
+    -e "cloud=${CLOUD} cloud_alt=${CLOUD_ALT} ${ANSIBLE_VARS}" \
     ${tag_opt} 2>&1 | sudo tee /opt/stack/logs/test_output.log

@@ -79,8 +79,7 @@ list(conn.network.ips())[0].to_dict(computed=False)
 To run the unit tests of the collection, run this in a Bash shell:
 
 ```sh
-SDK_VER=$(python -c "import openstack; print(openstack.version.__version__)")
-ansible-playbook -vvv ci/run-collection.yml -e "sdk_version=${SDK_VER} cloud=devstack-admin cloud_alt=devstack-alt"
+ansible-playbook -vvv ci/run-collection.yml -e "cloud=devstack-admin cloud_alt=devstack-alt"
 ```
 
 Use `ansible-playbook`'s `--tags` and `--skip-tags` parameters to skip CI tests. For a list of available tags, refer to

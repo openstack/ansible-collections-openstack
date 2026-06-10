@@ -48,7 +48,7 @@ How to do a review? What to look for when reviewing patches?
   Example:
   ```sh
   ansible-playbook -vvv ci/run-collection.yml \
-      -e "sdk_version=1.0.0 cloud=devstack-admin cloud_alt=devstack-alt" \
+      -e "cloud=devstack-admin cloud_alt=devstack-alt" \
       --tags floating_ip_info
   ```
 * Does a patch remove any functionality or break backwards compatibility? The author must give a good explanation for

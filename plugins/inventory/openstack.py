@@ -155,9 +155,6 @@ import sys
 
 from ansible.errors import AnsibleParserError
 from ansible.plugins.inventory import BaseInventoryPlugin, Constructable, Cacheable
-from ansible_collections.openstack.cloud.plugins.module_utils.openstack import (
-    ensure_compatibility
-)
 
 try:
     import openstack
@@ -178,12 +175,6 @@ class InventoryModule(BaseInventoryPlugin, Constructable, Cacheable):
         if not HAS_SDK:
             raise AnsibleParserError(
                 'Could not import Python library openstacksdk')
-
-        try:
-            ensure_compatibility(openstack.version.__version__)
-        except ImportError as e:
-            raise AnsibleParserError(
-                'Incompatible openstacksdk library found: {0}'.format(e))
 
         # Redirect logging to stderr so it does not mix with output, in
         # particular JSON output of ansible-inventory.
