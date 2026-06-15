@@ -44,3 +44,7 @@ ansible-test sanity -v \
     --python ${PY_VER} \
     $SKIP_TESTS \
     plugins/ docs/ meta/
+
+ansible-test units -v \
+    --venv \
+    --python ${PY_VER}

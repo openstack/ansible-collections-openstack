@@ -53,16 +53,59 @@ hostvars = {
 }
 
 
+try:
+    from ansible._internal._templating._engine import TrustedAsTemplate
+    has_trusted = True
+except ImportError:
+    has_trusted = False
+
+
+def tag_trusted(val):
+    if not has_trusted:
+        return val
+    if isinstance(val, dict):
+        return {k: tag_trusted(v) for k, v in val.items()}
+    elif isinstance(val, list):
+        return [tag_trusted(v) for v in val]
+    elif isinstance(val, str):
+        return TrustedAsTemplate().tag(val)
+    return val
+
+
 @pytest.fixture(scope="module")
 def inventory():
     inventory = InventoryModule()
-    inventory._config_data = config_data
+    inventory._config_data = tag_trusted(config_data)
     inventory.inventory = InventoryData()
     inventory.templar = Templar(loader=None)
 
     for host in hostvars:
         inventory.inventory.add_host(host)
 
+    def _set_variables(hostvars, groups):
+        for host in hostvars:
+            try:
+                inventory._set_composite_vars(
+                    inventory._config_data.get('compose'), hostvars[host], host, strict=True)
+            except Exception as e:
+                print("set_composite_vars error: %s" % e)
+                raise
+            for key in hostvars[host]:
+                inventory.inventory.set_variable(host, key, hostvars[host][key])
+            try:
+                inventory._add_host_to_composed_groups(
+                    inventory._config_data.get('groups'), hostvars[host], host, strict=True)
+            except Exception as e:
+                print("add_host_to_composed_groups error: %s" % e)
+                raise
+            try:
+                inventory._add_host_to_keyed_groups(
+                    inventory._config_data.get('keyed_groups'), hostvars[host], host, strict=True)
+            except Exception as e:
+                print("add_host_to_keyed_groups error: %s" % e)
+                raise
+
+    inventory._set_variables = _set_variables
     return inventory
 
 
