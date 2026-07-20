@@ -269,7 +269,7 @@ class NeutronRBACPolicy(OpenStackModule):
                                .format(', '.join(missing_keys)))
 
         kwargs = dict((k, self.params[k])
-                      for k in ['action', 'object_type', 'project_id'])
+                      for k in ['action', 'object_type', 'project_id', 'target_project_id'])
 
         policies = self.conn.network.rbac_policies(**kwargs)
 
