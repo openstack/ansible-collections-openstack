@@ -21,6 +21,9 @@ options:
    name:
      description:
         - Name of the recordset. It must be ended with name of dns zone.
+        - A recordset is identified by I(zone), I(name) and I(recordset_type)
+          because DNS allows several recordsets to share a name as long as
+          their types differ.
      required: true
      type: str
    records:
@@ -33,6 +36,11 @@ options:
      description:
         - Recordset type
         - Required when I(state=present).
+        - Used to identify the recordset, together with I(zone) and I(name).
+          When I(state=absent) and this option is omitted, the recordset is
+          looked up by name only, which fails when its name carries more than
+          one type, e.g. at the apex of a zone where SOA and NS recordsets
+          share the name of the zone.
      choices: ['a', 'aaaa', 'mx', 'cname', 'txt', 'ns', 'srv', 'ptr', 'caa']
      type: str
    state:
@@ -76,12 +84,25 @@ EXAMPLES = '''
     records: ['10.1.1.1']
     ttl: 7200
 
-# Delete recordset named "www.example.net."
+# Create a recordset at the apex of zone "example.net.", where the SOA and NS
+# recordsets created with the zone share its name
+- openstack.cloud.recordset:
+    cloud: mycloud
+    state: present
+    zone: example.net.
+    name: example.net.
+    recordset_type: "a"
+    records: ['10.1.1.1']
+    ttl: 3600
+
+# Delete the "a" recordset named "www.example.net.", leaving recordsets of
+# other types with that name untouched
 - openstack.cloud.recordset:
     cloud: mycloud
     state: absent
     zone: example.net.
     name: www.example.net.
+    recordset_type: "a"
 '''
 
 RETURN = '''
@@ -204,6 +225,18 @@ class DnsRecordsetModule(OpenStackModule):
             return True
         return False
 
+    def _find_recordset(self, zone, name):
+        # A recordset is identified by zone, name and type: DNS allows several
+        # recordsets to share a name as long as their types differ, e.g. at the
+        # apex of a zone where the SOA and NS recordsets share the name of the
+        # zone. Looking a recordset up by name only would match all of them and
+        # fail with a DuplicateResource error.
+        query = {}
+        recordset_type = self.params['recordset_type']
+        if recordset_type is not None:
+            query['type'] = recordset_type.upper()
+        return self.conn.dns.find_recordset(zone, name, **query)
+
     def _build_params(self):
         recordset_type = self.params['recordset_type']
         records = self.params['records']
@@ -224,7 +257,7 @@ class DnsRecordsetModule(OpenStackModule):
         ttl = self.params.get('ttl')
 
         zone = self.conn.dns.find_zone(name_or_id=zone, ignore_missing=False)
-        recordset = self.conn.dns.find_recordset(zone, name)
+        recordset = self._find_recordset(zone, name)
 
         if self.ansible.check_mode:
             self.exit_json(changed=self._system_state_change(state, recordset))
