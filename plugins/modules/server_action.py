@@ -17,9 +17,10 @@ options:
       - Action to perform.
       - By default, only server owners and administrators are allowed to
         perform actions C(pause), C(unpause), C(suspend), C(resume), C(lock),
-        C(unlock) and C(shelve_offload).
+        C(unlock), C(shelve_offload) and C(live_migrate).
     choices: [lock, pause, reboot_hard, reboot_soft, rebuild, resume, shelve,
-              shelve_offload, start, stop, suspend, unlock, unpause, unshelve]
+              shelve_offload, start, stop, suspend, unlock, unpause, unshelve,
+              live_migrate]
     type: str
     required: true
   admin_password:
@@ -42,6 +43,12 @@ options:
     required: true
     type: str
     aliases: ['server']
+  host:
+    description:
+      - Target hypervisor host for C(live_migrate) action. If not specified, the server will be
+        live migrated to a suitable host automatically selected by Nova scheduler.
+    type: str
+    required: false
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''
@@ -53,6 +60,20 @@ EXAMPLES = r'''
     action: pause
     server: vm1
     timeout: 200
+
+- name: Live migrate compute instance to an auto-selected hypervisor
+  openstack.cloud.server_action:
+    cloud: devstack-admin
+    action: live_migrate
+    server: vm1
+    timeout: 200
+
+- name: Live migrate compute instance to a specified hypervisor
+  openstack.cloud.server_action:
+    cloud: devstack-admin
+    action: live_migrate
+    server: vm1
+    host: compute1
 '''
 
 from ansible_collections.openstack.cloud.plugins.module_utils.openstack import OpenStackModule
@@ -64,9 +85,10 @@ class ServerActionModule(OpenStackModule):
                     choices=['stop', 'start', 'pause', 'unpause',
                              'lock', 'unlock', 'suspend', 'reboot_soft',
                              'reboot_hard', 'resume', 'rebuild', 'shelve',
-                             'shelve_offload', 'unshelve']),
+                             'shelve_offload', 'unshelve', 'live_migrate']),
         admin_password=dict(no_log=True),
         all_projects=dict(type='bool', default=False),
+        host=dict(type='str', default=None),
         image=dict(),
         name=dict(required=True, aliases=['server']),
     )
@@ -116,7 +138,9 @@ class ServerActionModule(OpenStackModule):
                    'rebuild': ['ACTIVE'],
                    'shelve': ['SHELVED_OFFLOADED', 'SHELVED'],
                    'shelve_offload': ['SHELVED_OFFLOADED'],
-                   'unshelve': ['ACTIVE']}
+                   'unshelve': ['ACTIVE'],
+                   'live_migrate': ['ACTIVE'],
+                   }
 
     def run(self):
         # TODO: Replace with self.conn.compute.find_server(
@@ -141,9 +165,16 @@ class ServerActionModule(OpenStackModule):
             or (action == 'reboot_soft')
             or (action == 'lock' and not server['is_locked'])
             or (action == 'unlock' and server['is_locked'])
+            or (action == 'live_migrate' and not server.status.lower() == 'migrating')
             or server.status.lower() not in [a.lower()
                                              for a
                                              in self._action_map[action]])
+
+        # If live_migrate targets the same host the VM is already on, skip it
+        if action == 'live_migrate' and self.params['host'] is not None:
+            current_host = server.get('OS-EXT-SRV-ATTR:host') or server.get('hypervisor_hostname')
+            if current_host and current_host == self.params['host']:
+                self.exit_json(changed=False, msg='VM is already on target host {0}, skipping migration.'.format(self.params['host']))
 
         if not will_change:
             self.exit_json(changed=False)
@@ -189,6 +220,11 @@ class ServerActionModule(OpenStackModule):
                 func_name(server, 'SOFT')
             elif action == 'reboot_hard':
                 func_name(server, 'HARD')
+            elif action == 'live_migrate':
+                kwargs = {}
+                if self.params['host'] is not None:
+                    kwargs['host'] = self.params['host']
+                func_name(server, **kwargs)
             else:
                 func_name(server)
 
