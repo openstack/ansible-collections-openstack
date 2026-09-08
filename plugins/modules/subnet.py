@@ -361,14 +361,14 @@ class SubnetModule(OpenStackModule):
                 self.fail_json(
                     msg='Cannot update {0} in existing subnet'.format(attr))
 
-    def _system_state_change(self, subnet, network, project, subnet_pool):
+    def _system_state_change(self, subnet, network, segment, project, subnet_pool):
         state = self.params['state']
         if state == 'absent':
             return subnet is not None
         # else state is present
         if not subnet:
             return True
-        params = self._build_params(network, project, subnet_pool)
+        params = self._build_params(network, segment, project, subnet_pool)
         updates = self._build_updates(subnet, params)
         self._validate_update(subnet, updates)
         return bool(updates)
@@ -478,7 +478,7 @@ class SubnetModule(OpenStackModule):
 
         if self.ansible.check_mode:
             self.exit_json(changed=self._system_state_change(
-                subnet, network, project, subnet_pool))
+                subnet, network, segment, project, subnet_pool))
 
         changed = False
         if state == 'present':
