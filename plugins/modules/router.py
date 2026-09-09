@@ -497,8 +497,15 @@ class RouterModule(OpenStackModule):
                     if 'net' not in iface:
                         self.fail(
                             "Network name missing from interface definition")
+                    # First try to find a network in the specified project.
                     net = self.conn.network.find_network(iface['net'],
-                                                         ignore_missing=False)
+                                                         ignore_missing=False,
+                                                         **filters)
+                    # Fall back to a global search for the network.
+                    if not net:
+                        net = self.conn.network.find_network(
+                            iface['net'],
+                            ignore_missing=False)
 
                     if 'portip' not in iface:
                         # portip not set, add any ip from subnet
