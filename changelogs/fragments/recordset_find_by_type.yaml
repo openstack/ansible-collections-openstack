@@ -1,0 +1,8 @@
+---
+bugfixes:
+  - recordset - Look an existing recordset up by zone, name and type instead of
+    by zone and name only. Recordsets sharing a name with recordsets of another
+    type, e.g. an ``A`` recordset at the apex of a zone which shares its name
+    with the ``SOA`` and ``NS`` recordsets created along with the zone, could
+    not be created, updated or deleted because the lookup matched more than one
+    recordset and failed with ``More than one Recordset exists with the name``.
