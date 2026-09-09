@@ -1,0 +1,3 @@
+---
+bugfixes:
+  - modules/router.py in function _build_router_interface_config network search will be performed in defined project first.
