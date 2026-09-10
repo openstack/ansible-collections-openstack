@@ -64,6 +64,10 @@ options:
     choices: [present, absent]
     default: present
     type: str
+  availability_zone:
+    description:
+      - The availability zone, in which the load balancer will be deployed.
+    type: str
   vip_address:
     description:
       - IP address of the load balancer virtual IP.
@@ -279,6 +283,7 @@ class LoadBalancerModule(OpenStackModule):
         floating_ip_network=dict(aliases=['public_network']),
         name=dict(required=True),
         state=dict(default='present', choices=['absent', 'present']),
+        availability_zone=dict(),
         vip_address=dict(),
         vip_network=dict(),
         vip_port=dict(),
@@ -337,7 +342,7 @@ class LoadBalancerModule(OpenStackModule):
     def _build_update(self, load_balancer):
         update = {}
 
-        non_updateable_keys = [k for k in ['name', 'vip_address']
+        non_updateable_keys = [k for k in ['name', 'vip_address', 'availability_zone']
                                if self.params[k] is not None
                                and self.params[k] != load_balancer[k]]
 
@@ -456,7 +461,7 @@ class LoadBalancerModule(OpenStackModule):
 
     def _create(self):
         kwargs = dict((k, self.params[k])
-                      for k in ['description', 'name', 'vip_address']
+                      for k in ['description', 'name', 'vip_address', 'availability_zone']
                       if self.params[k] is not None)
 
         flavor_name_or_id = self.params['flavor']
