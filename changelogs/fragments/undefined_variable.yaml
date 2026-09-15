@@ -1,0 +1,3 @@
+---
+bugfixes:
+  - lb_pool.py - Fix using undefined variable

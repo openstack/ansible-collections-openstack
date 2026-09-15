@@ -235,7 +235,7 @@ class LoadBalancerPoolModule(OpenStackModule):
                 loadbalancer_name_or_id, ignore_missing=False)
             # Field load_balancer_id is not returned from self.conn.\
             # load_balancer.find_load_balancer() so use load_balancers instead.
-            if listener['load_balancers'] != [dict(id=loadbalancer.id)]:
+            if pool['loadbalancers'] != [dict(id=loadbalancer.id)]:
                 non_updateable_keys.append('loadbalancer_id')
 
         if non_updateable_keys:
