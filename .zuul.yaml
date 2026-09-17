@@ -246,6 +246,19 @@
       tox_envlist: ansible_2_20
 
 - job:
+    name: ansible-collections-openstack-functional-devstack-ansible-2.21
+    parent: ansible-collections-openstack-functional-devstack-base
+    branches: master
+    description: |
+      Run openstack collections functional tests against a master devstack
+      using master of openstacksdk and stable 2.21 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.21
+    vars:
+      tox_envlist: ansible_2_21
+
+- job:
     name: ansible-collections-openstack-functional-devstack-ansible-devel
     parent: ansible-collections-openstack-functional-devstack-base
     branches: master
@@ -324,6 +337,19 @@
       python_version: "3.12"
       bindep_profile: test py312
 
+- job:
+    name: openstack-tox-linters-ansible-2.21
+    parent: openstack-tox-linters-ansible
+    description: |
+      Run openstack collections linter tests using the 2.21 branch of ansible
+    required-projects:
+      - name: github.com/ansible/ansible
+        override-checkout: stable-2.21
+    vars:
+      tox_envlist: linters_2_21
+      python_version: "3.12"
+      bindep_profile: test py312
+
 # Cross-checks with other projects
 - job:
     name: bifrost-collections-src
@@ -379,11 +405,13 @@
         - openstack-tox-linters-ansible-2.18
         - openstack-tox-linters-ansible-2.19
         - openstack-tox-linters-ansible-2.20
+        - openstack-tox-linters-ansible-2.21
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-ansible-2.18
         - ansible-collections-openstack-functional-devstack-ansible-2.19
         - ansible-collections-openstack-functional-devstack-ansible-2.20
+        - ansible-collections-openstack-functional-devstack-ansible-2.21
         - ansible-collections-openstack-functional-devstack-ansible-devel
         - ansible-collections-openstack-functional-devstack-magnum
         - ansible-collections-openstack-functional-devstack-manila
@@ -402,6 +430,7 @@
         - openstack-tox-linters-ansible-2.18
         - openstack-tox-linters-ansible-2.19
         - openstack-tox-linters-ansible-2.20
+        - openstack-tox-linters-ansible-2.21
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-magnum
         - ansible-collections-openstack-functional-devstack-manila
@@ -413,11 +442,13 @@
         - openstack-tox-linters-ansible-2.18
         - openstack-tox-linters-ansible-2.19
         - openstack-tox-linters-ansible-2.20
+        - openstack-tox-linters-ansible-2.21
         - ansible-collections-openstack-functional-devstack
         - ansible-collections-openstack-functional-devstack-releases
         - ansible-collections-openstack-functional-devstack-ansible-2.18
         - ansible-collections-openstack-functional-devstack-ansible-2.19
         - ansible-collections-openstack-functional-devstack-ansible-2.20
+        - ansible-collections-openstack-functional-devstack-ansible-2.21
         - ansible-collections-openstack-functional-devstack-ansible-devel
         - bifrost-collections-src
         - bifrost-keystone-collections-src
