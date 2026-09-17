@@ -1,0 +1,3 @@
+---
+bugfixes:
+  - modules/volume_type_access.py in function VolumeTypeAccess._project_and_project_domain() did not properly unpack kwargs for find_project() and thus failed when used with `project_domain`.

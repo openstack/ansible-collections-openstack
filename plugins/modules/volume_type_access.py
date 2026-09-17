@@ -114,7 +114,7 @@ class VolumeTypeAccess(OpenStackModule):
 
         if project_name_or_id:
             project_id = self.conn.identity.find_project(
-                project_name_or_id, ignore_missing=False, *kwargs).id
+                project_name_or_id, ignore_missing=False, **kwargs).id
         else:
             project_id = None
 
