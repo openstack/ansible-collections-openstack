@@ -40,6 +40,13 @@ options:
       - I(name) cannot be updated without deleting and re-creating the user.
     required: true
     type: str
+  options:
+    description:
+      - A dictionary of Keystone user options to set on the user, e.g.
+        C(ignore_password_expiry) or C(ignore_change_password_upon_first_use).
+      - On update, the provided options are merged with the user's existing
+        options, so options not specified here are preserved.
+    type: dict
   password:
     description:
       - Password for the user.
@@ -99,6 +106,17 @@ EXAMPLES = r'''
     email: demo@example.com
     domain: default
     default_project: demo
+
+- name: Create a user with password policy options
+  openstack.cloud.identity_user:
+    cloud: mycloud
+    state: present
+    name: demouser
+    password: secret
+    domain: default
+    options:
+      ignore_password_expiry: true
+      ignore_change_password_upon_first_use: true
 '''
 
 RETURN = r'''
@@ -138,6 +156,10 @@ user:
       description: Unique user name, within the owning domain
       type: str
       sample: "demouser"
+    options:
+      description: The resource options for the user (e.g.
+                   ignore_password_expiry).
+      type: dict
     password:
       description: Credential used during authentication
       type: str
@@ -159,6 +181,7 @@ class IdentityUserModule(OpenStackModule):
         email=dict(),
         is_enabled=dict(default=True, type='bool', aliases=['enabled']),
         name=dict(required=True),
+        options=dict(type='dict'),
         password=dict(no_log=True),
         state=dict(default='present', choices=['absent', 'present']),
         update_password=dict(default='on_create',
@@ -176,6 +199,16 @@ class IdentityUserModule(OpenStackModule):
                                            " but password is missing")
             elif update_password == 'on_create' and 'password' in attributes:
                 attributes.pop('password')
+
+            if 'options' in attributes:
+                # Merge desired options with the user's existing options so
+                # that options not managed by this module are preserved, and
+                # so the update is idempotent when the desired options already
+                # match the current values.
+                current = self.get_function(resource['id'])
+                merged = dict(current['options'] or {})
+                merged.update(attributes['options'])
+                attributes['options'] = merged
 
             return super()._build_update(resource, attributes,
                                          updateable_attributes,
@@ -202,7 +235,7 @@ class IdentityUserModule(OpenStackModule):
         kwargs['attributes'] = \
             dict((k, self.params[k])
                  for k in ['description', 'email', 'is_enabled', 'name',
-                           'password']
+                           'options', 'password']
                  if self.params[k] is not None)
 
         domain_name_or_id = self.params['domain']

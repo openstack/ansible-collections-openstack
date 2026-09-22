@@ -1,0 +1,6 @@
+minor_changes:
+  - identity_user - Added an ``options`` parameter to set Keystone user
+    resource options, e.g. ``ignore_password_expiry`` and
+    ``ignore_change_password_upon_first_use``. On update, the provided
+    options are merged with the user's existing options so options not
+    managed by this module are preserved.
