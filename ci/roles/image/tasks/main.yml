@@ -368,6 +368,53 @@
          name: "{{ tmp_file.path }}"
          state: absent
 
+    - name: Import an image with web-download
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_image_web_download
+         container_format: bare
+         disk_format: qcow2
+         import_method: web-download
+         uri: "{{ image_web_download_uri }}"
+      register: web_download_image
+
+    - name: Assert the image was fetched by the Image service
+      assert:
+         that:
+           - web_download_image is changed
+           - web_download_image.image.status == 'active'
+           - web_download_image.image.size > 0
+
+    - name: Assert import options were not stored as image properties
+      assert:
+         that:
+           - "'uri' not in web_download_image.image.properties"
+           - "'import_method' not in web_download_image.image.properties"
+           - "'use_import' not in web_download_image.image.properties"
+
+    - name: Import the same image again
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: present
+         name: ansible_image_web_download
+         container_format: bare
+         disk_format: qcow2
+         import_method: web-download
+         uri: "{{ image_web_download_uri }}"
+      register: web_download_image
+
+    - name: Assert the second import did not change anything
+      assert:
+         that:
+           - web_download_image is not changed
+
+    - name: Delete the web-download image
+      openstack.cloud.image:
+         cloud: "{{ cloud }}"
+         state: absent
+         name: ansible_image_web_download
+
   always:
     - name: Remove temporary image file
       ansible.builtin.file:
