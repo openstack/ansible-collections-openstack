@@ -16,17 +16,21 @@
       # allow new fields to be introduced but prevent fields from being removed
       - expected_fields|difference(dns_zone.zone.keys())|length == 0
 
+# NOTE(jed-preist): Update ttl as well, to work around
+# https://bugs.launchpad.net/designate/+bug/2171489
 - name: Update dns zone
   openstack.cloud.dns_zone:
     cloud: "{{ cloud }}"
     name: ansible.test.zone.
     description: "Another description"
+    ttl: 1800
   register: dns_zone
 
 - name: Assert return values of dns_zone module
   assert:
     that:
       - dns_zone.zone.description == "Another description"
+      - dns_zone.zone.ttl == 1800
 
 - name: Fetch all dns zones
   openstack.cloud.dns_zone_info:
