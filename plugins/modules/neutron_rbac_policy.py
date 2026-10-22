@@ -252,7 +252,7 @@ class NeutronRBACPolicy(OpenStackModule):
 
         matches = self._find_matches()
         if len(matches) > 1:
-            self.fail_json(msg='Found more a single matching RBAC policy'
+            self.fail_json(msg='Found more than a single matching RBAC policy'
                                ' which match the given parameters.')
         elif len(matches) == 1:
             return matches[0]
@@ -269,7 +269,8 @@ class NeutronRBACPolicy(OpenStackModule):
                                .format(', '.join(missing_keys)))
 
         kwargs = dict((k, self.params[k])
-                      for k in ['action', 'object_type', 'project_id'])
+                      for k in ['action', 'object_type', 'project_id',
+                                'target_project_id'])
 
         policies = self.conn.network.rbac_policies(**kwargs)
 
