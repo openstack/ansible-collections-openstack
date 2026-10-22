@@ -298,7 +298,11 @@ class IdentityApplicationCredentialModule(OpenStackModule):
         return creds
 
     def _get_cloud_config(self, creds):
-        cloud_region = openstack.config.OpenStackConfig().get_one(self.cloud)
+        if isinstance(self.cloud, str):
+            cloud_region = openstack.config.OpenStackConfig().get_one(self.cloud)
+        # If the cloud parameter is not a string, try to send it to kwargs
+        else:
+            cloud_region = openstack.config.OpenStackConfig().get_one(**self.cloud)
 
         conf = cloud_region.config
         cloud_config = copy.deepcopy(conf)
