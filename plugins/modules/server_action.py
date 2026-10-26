@@ -49,6 +49,7 @@ options:
         live migrated to a suitable host automatically selected by Nova scheduler.
     type: str
     required: false
+    version_added: 2.7.0
 extends_documentation_fragment:
   - openstack.cloud.openstack
 '''

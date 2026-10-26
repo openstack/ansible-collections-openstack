@@ -665,3 +665,37 @@ releases:
       name: volume_retype
       namespace: ''
     release_date: '2026-06-10'
+  2.7.0:
+    changes:
+      bugfixes:
+      - application_credential - Handle ``cloud`` passed as a dict.
+      - image - Do a web-download import when ``uri`` is given, instead of ignoring
+        ``uri`` and ``import_method`` and attempting a direct upload with no data.
+      - image - Remove the unimplemented ``glance-download`` choice for ``import_method``.
+      - image - Stop storing ``uri``, ``import_method`` and ``use_import`` on the
+        image as properties.
+      - lb_pool - Fix use of an undefined variable.
+      - neutron_rbac_policy - Include ``target_project_id`` on creation.
+      - recordset - Look an existing recordset up by zone, name and type instead of
+        by zone and name only. Recordsets sharing a name with recordsets of another
+        type, e.g. an ``A`` recordset at the apex of a zone which shares its name
+        with the ``SOA`` and ``NS`` recordsets created along with the zone, could
+        not be created, updated or deleted because the lookup matched more than one
+        recordset and failed with ``More than one Recordset exists with the name``.
+      - router - Search for the network in the router's project first.
+      - subnet - Fix regression when the subnet already exists.
+      - volume_type_access - Fix failure when ``project_domain`` is set.
+      minor_changes:
+      - baremetal_node - Add ``target_provision_state`` option.
+      - baremetal_node - Allow registering nodes without NICs.
+      - server_action - Add ``live_migrate`` action.
+      release_summary: Bugfixes and minor changes.
+    fragments:
+    - baremetal_provision_state.yaml
+    - bug_2167592.yaml
+    - image_web_download.yaml
+    - rbac_target_project_id.yaml
+    - recordset_find_by_type.yaml
+    - router_network.yaml
+    - undefined_variable.yaml
+    release_date: '2026-10-26'

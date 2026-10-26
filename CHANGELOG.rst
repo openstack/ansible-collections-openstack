@@ -4,6 +4,35 @@ Ansible OpenStack Collection Release Notes
 
 .. contents:: Topics
 
+v2.7.0
+======
+
+Release Summary
+---------------
+
+Bugfixes and minor changes.
+
+Minor Changes
+-------------
+
+- baremetal_node - Add ``target_provision_state`` option.
+- baremetal_node - Allow registering nodes without NICs.
+- server_action - Add ``live_migrate`` action.
+
+Bugfixes
+--------
+
+- application_credential - Handle ``cloud`` passed as a dict.
+- image - Do a web-download import when ``uri`` is given, instead of ignoring ``uri`` and ``import_method`` and attempting a direct upload with no data.
+- image - Remove the unimplemented ``glance-download`` choice for ``import_method``.
+- image - Stop storing ``uri``, ``import_method`` and ``use_import`` on the image as properties.
+- lb_pool - Fix use of an undefined variable.
+- neutron_rbac_policy - Include ``target_project_id`` on creation.
+- recordset - Look an existing recordset up by zone, name and type instead of by zone and name only. Recordsets sharing a name with recordsets of another type, e.g. an ``A`` recordset at the apex of a zone which shares its name with the ``SOA`` and ``NS`` recordsets created along with the zone, could not be created, updated or deleted because the lookup matched more than one recordset and failed with ``More than one Recordset exists with the name``.
+- router - Search for the network in the router's project first.
+- subnet - Fix regression when the subnet already exists.
+- volume_type_access - Fix failure when ``project_domain`` is set.
+
 v2.6.0
 ======
 
@@ -11,7 +40,6 @@ Release Summary
 ---------------
 
 New modules for Bare Metal port groups and Neutron network segments, plus image/project enhancements and bugfixes.
-
 
 Minor Changes
 -------------

@@ -165,6 +165,7 @@ options:
       choices: ['enroll', 'manageable', 'available', 'try-available']
       default: try-available
       type: str
+      version_added: 2.7.0
     timeout:
       description:
         - Number of seconds to wait for the newly created node to reach the
