@@ -63,3 +63,6 @@ expected_fields:
   - vm_mode
   - vmware_adaptertype
   - vmware_ostype
+
+# Fetched by the Image service itself in the web-download test.
+image_web_download_uri: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img

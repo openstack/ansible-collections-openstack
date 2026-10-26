@@ -1,0 +1,10 @@
+---
+bugfixes:
+  - modules/image.py now performs a web-download import when ``uri`` is given,
+    instead of ignoring ``uri`` and ``import_method`` and attempting a direct
+    upload with no data.
+  - modules/image.py no longer passes ``uri``, ``import_method`` and
+    ``use_import`` to the image create call, where they were stored on the
+    image as arbitrary properties.
+  - modules/image.py no longer accepts ``import_method=glance-download``.
+    The module never implemented this method.

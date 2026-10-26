@@ -125,21 +125,29 @@ options:
   use_import:
     description:
       - Use the 'glance-direct' method of the interoperable image import mechanism.
+      - Applies only to uploads from I(filename). I(import_method) does not
+        affect it.
       - Should only be used when needed, such as when the user needs the cloud to
         transform image format.
     type: bool
   import_method:
     description:
-      - Method to use for importing the image. Not all deployments support all methods.
-      - Supports web-download or glance-download.
-      - copy-image is not supported with create actions.
-      - glance-direct is removed from the import method so use_import can be used in that case.
+      - Interoperable image import method that the Image service uses to
+        download the image data.
+      - The only supported method is web-download. The Image service downloads
+        the image data from I(uri).
+      - If I(uri) is set and I(import_method) is not, the module uses
+        web-download.
+      - For glance-direct uploads from I(filename), use I(use_import).
     type: str
-    choices: [web-download, glance-download]
+    choices: [web-download]
   uri:
     description:
-      - Required only if using the web-download import method.
-      - This url is where the data is made available to the Image service.
+      - URL the Image service downloads the image data from.
+      - Requires I(import_method=web-download), which is the default when
+        I(uri) is given, and a Glance with that import method enabled.
+      - Mutually exclusive with I(filename) and I(volume). The image data
+        never passes through the Ansible controller.
     type: str
 
 extends_documentation_fragment:
@@ -147,6 +155,15 @@ extends_documentation_fragment:
 '''
 
 EXAMPLES = r'''
+- name: Have the Image service download an image itself
+  openstack.cloud.image:
+    cloud: devstack
+    name: cirros
+    container_format: bare
+    disk_format: qcow2
+    import_method: web-download
+    uri: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
+
 - name: Upload an image from a local file named cirros-0.3.0-x86_64-disk.img
   openstack.cloud.image:
     cloud: devstack-admin
@@ -413,7 +430,7 @@ class ImageModule(OpenStackModule):
         visibility=dict(choices=['public', 'private', 'shared', 'community']),
         volume=dict(),
         use_import=dict(type='bool'),
-        import_method=dict(choices=['web-download', 'glance-download']),
+        import_method=dict(choices=['web-download']),
         uri=dict()
     )
 
@@ -422,13 +439,15 @@ class ImageModule(OpenStackModule):
             ('filename', 'volume', 'uri'),
             ('visibility', 'is_public'),
         ],
+        required_if=[
+            ('import_method', 'web-download', ['uri']),
+        ],
     )
 
     # resource attributes obtainable directly from params
     attr_params = ('id', 'name', 'filename', 'disk_format',
                    'container_format', 'wait', 'timeout', 'is_public',
-                   'is_protected', 'min_disk', 'min_ram', 'volume', 'tags',
-                   'use_import', 'import_method', 'uri')
+                   'is_protected', 'min_disk', 'min_ram', 'volume', 'tags')
 
     def _resolve_visibility(self):
         """resolve a visibility value to be compatible with older versions"""
@@ -497,14 +516,13 @@ class ImageModule(OpenStackModule):
             wait=self.params['timeout'],
             attribute='status')
 
-    def _import_uploaded_image(self, image):
+    def _import_image(self, image, method, **kwargs):
         if not hasattr(self.conn.image, 'import_image'):
             self.fail_json(
                 msg="The installed openstacksdk library does not support "
-                    "image import operations required for images in the "
-                    "'uploading' state.")
+                    "image import operations.")
 
-        self.conn.image.import_image(image, method='glance-direct')
+        self.conn.image.import_image(image, method=method, **kwargs)
         return self._wait_for_image_active(self.conn.get_image(image.id))
 
     def run(self):
@@ -536,15 +554,23 @@ class ImageModule(OpenStackModule):
 
         changed = False
         if self.params['state'] == 'present':
+            import_method = self.params['import_method']
+            if self.params['uri'] and not import_method:
+                import_method = 'web-download'
+
             attrs = self._build_params(owner)
             if not image:
                 # self.conn.image.create_image() cannot be used because it does
                 # not provide self.conn.create_image()'s volume parameter [0].
                 # [0] https://opendev.org/openstack/openstacksdk/src/commit/
                 #     a41d04ea197439c2f134ce3554995693933a46ac/openstack/cloud/_image.py#L306
+                if import_method:
+                    # Without data, the image stays queued until the import
+                    # below starts. Waiting for it here times out.
+                    attrs['wait'] = False
                 image = self.conn.create_image(**attrs)
                 changed = True
-                if not self.params['wait']:
+                if not self.params['wait'] and not import_method:
                     self.exit_json(changed=changed,
                                    image=self._return_value(image.id))
 
@@ -552,7 +578,11 @@ class ImageModule(OpenStackModule):
                 self.conn.image.reactivate_image(image)
                 changed = True
             elif image['status'] == 'queued':
-                if (
+                if import_method == 'web-download':
+                    image = self._import_image(
+                        image, import_method, uri=self.params['uri'])
+                    changed = True
+                elif (
                         self.params['filename']
                         and hasattr(self.conn.image, 'stage_image')):
                     self.conn.image.stage_image(
@@ -570,7 +600,7 @@ class ImageModule(OpenStackModule):
                 image = self.conn.get_image(image.id)
 
             if image['status'] == 'uploading' and self.params['use_import']:
-                image = self._import_uploaded_image(image)
+                image = self._import_image(image, 'glance-direct')
                 changed = True
             elif image['status'] == 'importing':
                 image = self._wait_for_image_active(image)
