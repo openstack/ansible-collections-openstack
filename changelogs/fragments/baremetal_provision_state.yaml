@@ -1,0 +1,4 @@
+---
+minor_changes:
+  - Module ``openstack.cloud.baremetal_node`` gained a
+    ``target_provision_state`` option.

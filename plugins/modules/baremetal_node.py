@@ -75,8 +75,6 @@ options:
       description:
         - 'A list of network interface cards, eg, C( - mac: aa:bb:cc:aa:bb:cc)'
         - This node attribute cannot be updated.
-        - If this option is not set, the target provision state of the node
-          changes from available to enroll.
       required: false
       default: []
       type: list
@@ -155,6 +153,17 @@ options:
       description:
         - Interface used for attaching and detaching volumes on this node, e.g.
           C(cinder).
+      type: str
+    target_provision_state:
+      description:
+        - Indicates desired provision state of the node.
+        - This option is ignored if the node already exists.
+        - If set to available, the node will go through cleaning. This may fail
+          if the nics option has no interfaces specified.
+        - try-available behaves the same as available if the nics option is
+          set, and falls back to enroll if it is not.
+      choices: ['enroll', 'manageable', 'available', 'try-available']
+      default: try-available
       type: str
     timeout:
       description:
@@ -534,6 +543,10 @@ class BaremetalNodeModule(OpenStackModule):
         ),
         state=dict(default='present', choices=['present', 'absent']),
         storage_interface=dict(),
+        target_provision_state=dict(
+            default='try-available',
+            choices=['enroll', 'manageable', 'available', 'try-available']
+        ),
         timeout=dict(default=1800, type='int'),  # increased default value
         vendor_interface=dict(),
     )
@@ -654,12 +667,22 @@ class BaremetalNodeModule(OpenStackModule):
             if properties:
                 kwargs['properties'] = properties
 
+        provision_state = self.params['target_provision_state']
+        if provision_state == 'available':
+            if len(self.params['nics']) == 0:
+                self.warn('Attempting to make node available with no NICs'
+                          ' set. Node may fail cleaning.')
+        elif provision_state == 'try-available':
+            if len(self.params['nics']) == 0:
+                provision_state = 'enroll'
+            else:
+                provision_state = 'available'
+
         node = self.conn.register_machine(
             nics=self.params['nics'],
             wait=self.params['wait'],
             timeout=self.params['timeout'],
-            provision_state=(
-                'available' if len(self.params['nics']) > 0 else 'enroll'),
+            provision_state=provision_state,
             **kwargs)
 
         self.exit_json(changed=True, node=node.to_dict(computed=False))
