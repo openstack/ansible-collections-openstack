@@ -1,0 +1,3 @@
+---
+minor_changes:
+  - loadbalancer - Add option to specify the availability zone a loadbalancer should be created in.
