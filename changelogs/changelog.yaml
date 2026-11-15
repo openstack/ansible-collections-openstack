@@ -688,11 +688,19 @@ releases:
       minor_changes:
       - baremetal_node - Add ``target_provision_state`` option.
       - baremetal_node - Allow registering nodes without NICs.
+      - identity_user - Added an ``options`` parameter to set Keystone user resource
+        options, e.g. ``ignore_password_expiry`` and ``ignore_change_password_upon_first_use``.
+        On update, the provided options are merged with the user's existing options
+        so options not managed by this module are preserved.
+      - loadbalancer - Add option to specify the availability zone a loadbalancer
+        should be created in.
       - server_action - Add ``live_migrate`` action.
       release_summary: Bugfixes and minor changes.
     fragments:
+    - add_az_parameter_to_loadbalancer.yaml
     - baremetal_provision_state.yaml
     - bug_2167592.yaml
+    - identity_user_options.yaml
     - image_web_download.yaml
     - rbac_target_project_id.yaml
     - recordset_find_by_type.yaml

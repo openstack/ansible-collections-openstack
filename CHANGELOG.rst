@@ -17,6 +17,8 @@ Minor Changes
 
 - baremetal_node - Add ``target_provision_state`` option.
 - baremetal_node - Allow registering nodes without NICs.
+- identity_user - Added an ``options`` parameter to set Keystone user resource options, e.g. ``ignore_password_expiry`` and ``ignore_change_password_upon_first_use``. On update, the provided options are merged with the user's existing options so options not managed by this module are preserved.
+- loadbalancer - Add option to specify the availability zone a loadbalancer should be created in.
 - server_action - Add ``live_migrate`` action.
 
 Bugfixes
